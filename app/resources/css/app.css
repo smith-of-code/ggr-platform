@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+
+@source '../**/*.blade.php';
+@source '../**/*.vue';
+
+/* ── Tilda Sans — close match to Rosatom proprietary font ── */
+@font-face {
+  font-family: 'Tilda Sans';
+  src: url('../fonts/tilda-sans-bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Rosatom Brand Theme ── */
+@theme {
+  --color-rosatom-900: #001a3f;
+  --color-rosatom-800: #003274;
+  --color-rosatom-700: #003d8f;
+  --color-rosatom-600: #025EA1;
+  --color-rosatom-500: #0073c4;
+  --color-rosatom-400: #6CACE4;
+  --color-rosatom-300: #92c4ed;
+  --color-rosatom-200: #bddaf4;
+  --color-rosatom-100: #deedfb;
+  --color-rosatom-50: #f0f6fd;
+
+  --color-accent-yellow: #FCC30B;
+  --color-accent-orange: #FD6925;
+  --color-accent-magenta: #E2007A;
+  --color-accent-green: #56C02B;
+  --color-accent-teal: #259793;
+
+  --font-family-brand: 'Tilda Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Scroll reveal animations ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+
+/* ── Page transitions ── */
+.page-enter-active {
+  transition: opacity 0.3s ease-out;
+}
+.page-enter-from {
+  opacity: 0;
+}
+
+/* ── Custom scrollbar for sidebar ── */
+.lms-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.lms-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.lms-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+.lms-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}

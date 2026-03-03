@@ -1,0 +1,80 @@
+<template>
+  <LmsAdminLayout>
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">События</h1>
+        <p class="mt-1 text-sm text-gray-500">Управление событиями LMS</p>
+      </div>
+      <Link :href="route('lms.admin.events.create')" class="flex items-center gap-2 rounded-xl bg-rosatom-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rosatom-700">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        Создать событие
+      </Link>
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <table class="min-w-full">
+        <thead>
+          <tr class="border-b border-gray-200 bg-gray-50">
+            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Название</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Slug</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Авторизация</th>
+            <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Статус</th>
+            <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Действия</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr v-for="evt in events.data" :key="evt.id" class="transition hover:bg-gray-50">
+            <td class="px-5 py-3.5 text-sm font-medium text-gray-900">{{ evt.title }}</td>
+            <td class="px-5 py-3.5 text-sm text-gray-500 font-mono">{{ evt.slug }}</td>
+            <td class="px-5 py-3.5 text-sm text-gray-500">{{ evt.auth_method === 'sso' ? 'SSO' : 'Email' }}</td>
+            <td class="px-5 py-3.5 text-center">
+              <button
+                @click="toggleActive(evt)"
+                :class="evt.is_active ? 'bg-rosatom-50 text-rosatom-700 hover:bg-rosatom-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+                class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition"
+              >
+                <span :class="evt.is_active ? 'bg-rosatom-600' : 'bg-gray-400'" class="h-1.5 w-1.5 rounded-full" />
+                {{ evt.is_active ? 'Активно' : 'Скрыто' }}
+              </button>
+            </td>
+            <td class="px-5 py-3.5 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <Link :href="route('lms.admin.events.edit', evt.id)" class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
+                </Link>
+                <button @click="confirmDestroy(evt)" class="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79" /></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="events.data.length === 0" class="px-5 py-16 text-center text-sm text-gray-500">Событий пока нет</div>
+    </div>
+  </LmsAdminLayout>
+</template>
+
+<script setup>
+import { Link, router } from '@inertiajs/vue3'
+import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+
+defineProps({ events: Object })
+
+function toggleActive(evt) {
+  router.patch(route('lms.admin.events.update', evt.id), {
+    title: evt.title,
+    slug: evt.slug,
+    description: evt.description ?? '',
+    auth_method: evt.auth_method ?? 'email',
+    sso_provider_url: evt.sso_provider_url ?? '',
+    is_active: !evt.is_active,
+  }, { preserveState: true })
+}
+
+function confirmDestroy(evt) {
+  if (confirm(`Удалить событие "${evt.title}"?`)) {
+    router.delete(route('lms.admin.events.destroy', evt.id))
+  }
+}
+</script>
