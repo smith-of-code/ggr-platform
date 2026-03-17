@@ -18,11 +18,13 @@ class LmsVideo extends Model
         'url',
         'file_path',
         'thumbnail',
+        'duration_seconds',
         'is_recording',
         'is_active',
     ];
 
     protected $casts = [
+        'duration_seconds' => 'integer',
         'is_recording' => 'boolean',
         'is_active' => 'boolean',
     ];

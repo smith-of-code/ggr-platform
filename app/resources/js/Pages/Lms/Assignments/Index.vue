@@ -15,40 +15,16 @@
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div
+        <AssignmentCard
           v-for="item in assignmentsList"
           :key="item.assignment.id"
-          class="group cursor-pointer overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
+          :title="item.assignment.title"
+          :description="stripHtml(item.assignment.description)"
+          :status="mapStatus(item.submission?.status)"
+          :deadline="item.assignment.deadline"
+          :attachments="item.submission?.files?.length || 0"
           @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: item.assignment.id }))"
-        >
-          <!-- Header with color based on status -->
-          <div :class="['px-5 py-4', statusHeaderClass(item.submission?.status)]">
-            <div class="flex items-center justify-between">
-              <span :class="['rounded-full px-2.5 py-1 text-xs font-bold', statusBadgeClass(item.submission?.status || 'not_submitted')]">
-                {{ statusLabel(item.submission?.status || 'not_submitted') }}
-              </span>
-              <ClockIcon v-if="item.assignment.deadline" class="h-4 w-4 text-current opacity-50" />
-            </div>
-          </div>
-
-          <!-- Content -->
-          <div class="p-5">
-            <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ item.assignment.title }}</h3>
-            <p v-if="item.assignment.description" class="mt-1 line-clamp-2 text-sm text-gray-500">
-              {{ stripHtml(item.assignment.description) }}
-            </p>
-            <div v-if="item.assignment.deadline" class="mt-3 text-xs text-gray-400">
-              {{ countdown(item.assignment.deadline) }}
-            </div>
-          </div>
-
-          <!-- Footer -->
-          <div class="border-t border-gray-100 px-5 py-3">
-            <span class="text-sm font-medium text-rosatom-600 group-hover:underline">
-              {{ item.submission?.status === 'submitted' ? 'Посмотреть' : 'Открыть задание' }} →
-            </span>
-          </div>
-        </div>
+        />
       </div>
 
       <div v-if="!assignmentsList.length" class="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">
@@ -78,7 +54,7 @@
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
-import { ClockIcon, PencilSquareIcon } from '@heroicons/vue/24/outline'
+import { PencilSquareIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -116,38 +92,7 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120)
 }
 
-function countdown(deadline) {
-  if (!deadline) return 'Без дедлайна'
-  const d = new Date(deadline)
-  const now = new Date()
-  const diff = d - now
-  if (diff < 0) return 'Дедлайн истёк'
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000))
-  if (days > 0) return `Осталось ${days} дн.`
-  const hours = Math.floor(diff / (60 * 60 * 1000))
-  return `Осталось ${hours} ч.`
-}
-
-function statusLabel(status) {
-  return { not_submitted: 'Не сдано', submitted: 'На проверке', revision: 'На доработке', approved: 'Принято', rejected: 'Отклонено' }[status] || 'Не сдано'
-}
-
-function statusBadgeClass(status) {
-  return {
-    not_submitted: 'bg-gray-100 text-gray-600',
-    submitted: 'bg-blue-100 text-blue-700',
-    revision: 'bg-amber-100 text-amber-700',
-    approved: 'bg-green-100 text-green-700',
-    rejected: 'bg-red-100 text-red-700',
-  }[status] || 'bg-gray-100 text-gray-600'
-}
-
-function statusHeaderClass(status) {
-  return {
-    submitted: 'bg-blue-50',
-    revision: 'bg-amber-50',
-    approved: 'bg-green-50',
-    rejected: 'bg-red-50',
-  }[status] || 'bg-gray-50'
+function mapStatus(status) {
+  return { not_submitted: 'pending', submitted: 'review', revision: 'revision', approved: 'approved', rejected: 'revision' }[status] || 'pending'
 }
 </script>

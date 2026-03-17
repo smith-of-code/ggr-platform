@@ -23,7 +23,9 @@ use App\Http\Controllers\Lms\Admin\KnowledgeBaseController as AdminKbController;
 use App\Http\Controllers\Lms\Admin\MaterialController as AdminMaterialController;
 use App\Http\Controllers\Lms\Admin\GroupController as AdminGroupController;
 use App\Http\Controllers\Lms\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Lms\Admin\EnrollmentController as AdminEnrollmentController;
 use App\Http\Controllers\Lms\Admin\GamificationController as AdminGamificationController;
+use App\Http\Controllers\Lms\Admin\InvitationController as AdminInvitationController;
 use Illuminate\Support\Facades\Route;
 
 // ── LMS Auth ──
@@ -33,6 +35,8 @@ Route::prefix('lms/{event:slug}')->name('lms.')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/invite/{token}', [AuthController::class, 'showInvite'])->name('invite');
+    Route::post('/invite/{token}', [AuthController::class, 'registerByInvite'])->name('invite.register');
 });
 
 // ── LMS Participant & Leader (auth required) ──
@@ -51,6 +55,7 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/courses/{course}/stages/{stage}', [StageController::class, 'show'])->name('stages.show');
     Route::post('/courses/{course}/stages/{stage}/complete', [StageController::class, 'complete'])->name('stages.complete');
     Route::post('/courses/{course}/stages/{stage}/scorm', [StageController::class, 'scormData'])->name('stages.scorm');
+    Route::post('/courses/{course}/stages/{stage}/heartbeat', [StageController::class, 'heartbeat'])->name('stages.heartbeat');
 
     // Tests
     Route::get('/tests', [TestController::class, 'index'])->name('tests.index');
@@ -115,6 +120,13 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::resource('users', AdminUserController::class)->only(['index', 'create', 'store', 'show', 'update', 'destroy']);
         Route::post('users-import', [AdminUserController::class, 'import'])->name('users.import');
         Route::get('users-template', [AdminUserController::class, 'downloadTemplate'])->name('users.template');
+        Route::post('invitations', [AdminInvitationController::class, 'store'])->name('invitations.store');
+        Route::post('invitations/{invitation}/toggle', [AdminInvitationController::class, 'toggle'])->name('invitations.toggle');
+        Route::delete('invitations/{invitation}', [AdminInvitationController::class, 'destroy'])->name('invitations.destroy');
+        Route::get('enrollments', [AdminEnrollmentController::class, 'index'])->name('enrollments.index');
+        Route::get('courses/{course}/enrollments', [AdminEnrollmentController::class, 'courseEnrollments'])->name('enrollments.course');
+        Route::post('enrollments/{enrollment}/approve', [AdminEnrollmentController::class, 'approve'])->name('enrollments.approve');
+        Route::post('enrollments/{enrollment}/reject', [AdminEnrollmentController::class, 'reject'])->name('enrollments.reject');
         Route::resource('gamification', AdminGamificationController::class);
         Route::post('gamification/manual-points', [AdminGamificationController::class, 'manualPoints'])->name('gamification.manual-points');
     });

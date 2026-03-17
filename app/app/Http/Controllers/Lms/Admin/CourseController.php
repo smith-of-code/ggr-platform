@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Lms\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsCourse;
+use App\Models\Lms\LmsCourseModule;
 use App\Models\Lms\LmsCourseStage;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsRole;
@@ -42,29 +43,17 @@ class CourseController extends Controller
 
     public function store(Request $request, LmsEvent $event): RedirectResponse
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'string', 'max:500'],
-            'sequential' => ['boolean'],
-            'is_active' => ['boolean'],
-            'stages' => ['nullable', 'array'],
-            'stages.*.title' => ['required', 'string', 'max:255'],
-            'stages.*.type' => ['nullable', 'string'],
-            'stages.*.content' => ['nullable', 'string'],
-            'stages.*.position' => ['nullable', 'integer'],
-            'stages.*.is_locked' => ['nullable', 'boolean'],
-        ]);
+        $validated = $request->validate($this->courseRules());
 
         $validated['lms_event_id'] = $event->id;
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
         $validated['sequential'] = $request->boolean('sequential', true);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['requires_approval'] = $request->boolean('requires_approval', false);
 
         $course = LmsCourse::create($validated);
 
-        $this->syncStages($course, $validated['stages'] ?? []);
+        $this->syncModulesAndStages($course, $validated['modules'] ?? [], $validated['stages'] ?? []);
 
         if ($request->has('role_ids')) {
             $course->roleAccess()->sync($request->input('role_ids', []));
@@ -77,7 +66,7 @@ class CourseController extends Controller
     {
         $this->ensureCourseBelongsToEvent($course, $event);
 
-        $course->load(['stages', 'roleAccess']);
+        $course->load(['stages', 'modules.stages', 'roleAccess']);
 
         return Inertia::render('Lms/Admin/Courses/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -93,28 +82,16 @@ class CourseController extends Controller
     {
         $this->ensureCourseBelongsToEvent($course, $event);
 
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'string', 'max:500'],
-            'sequential' => ['boolean'],
-            'is_active' => ['boolean'],
-            'stages' => ['nullable', 'array'],
-            'stages.*.title' => ['required', 'string', 'max:255'],
-            'stages.*.type' => ['nullable', 'string'],
-            'stages.*.content' => ['nullable', 'string'],
-            'stages.*.position' => ['nullable', 'integer'],
-            'stages.*.is_locked' => ['nullable', 'boolean'],
-        ]);
+        $validated = $request->validate($this->courseRules());
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
         $validated['sequential'] = $request->boolean('sequential', true);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['requires_approval'] = $request->boolean('requires_approval', false);
 
         $course->update($validated);
 
-        $this->syncStages($course, $validated['stages'] ?? []);
+        $this->syncModulesAndStages($course, $validated['modules'] ?? [], $validated['stages'] ?? []);
 
         if ($request->has('role_ids')) {
             $course->roleAccess()->sync($request->input('role_ids', []));
@@ -226,35 +203,101 @@ class CourseController extends Controller
         return 'index.html';
     }
 
-    private function syncStages(LmsCourse $course, array $stages): void
+    private function courseRules(): array
+    {
+        $stageRules = [
+            'title' => ['required', 'string', 'max:255'],
+            'type' => ['nullable', 'string'],
+            'content' => ['nullable', 'string'],
+            'position' => ['nullable', 'integer'],
+            'is_locked' => ['nullable', 'boolean'],
+            'available_from' => ['nullable', 'date'],
+            'duration_minutes' => ['nullable', 'integer', 'min:1'],
+        ];
+
+        $rules = [
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'string', 'max:500'],
+            'sequential' => ['boolean'],
+            'is_active' => ['boolean'],
+            'requires_approval' => ['boolean'],
+            'modules' => ['nullable', 'array'],
+            'modules.*.title' => ['required', 'string', 'max:255'],
+            'modules.*.description' => ['nullable', 'string'],
+            'modules.*.position' => ['nullable', 'integer'],
+            'modules.*.available_from' => ['nullable', 'date'],
+            'modules.*.available_to' => ['nullable', 'date'],
+            'modules.*.stages' => ['nullable', 'array'],
+            'stages' => ['nullable', 'array'],
+        ];
+
+        foreach ($stageRules as $field => $fieldRules) {
+            $rules["modules.*.stages.*.{$field}"] = $fieldRules;
+            $rules["stages.*.{$field}"] = $fieldRules;
+        }
+
+        return $rules;
+    }
+
+    private function syncModulesAndStages(LmsCourse $course, array $modules, array $orphanStages): void
     {
         $course->stages()->delete();
+        $course->modules()->delete();
 
-        foreach ($stages as $index => $stage) {
-            $data = [
+        foreach ($modules as $mIndex => $module) {
+            $mod = LmsCourseModule::create([
                 'lms_course_id' => $course->id,
-                'title' => $stage['title'],
-                'type' => $stage['type'] ?? null,
-                'content' => $stage['content'] ?? null,
-                'position' => $stage['position'] ?? $index,
-                'is_locked' => $stage['is_locked'] ?? false,
-            ];
+                'title' => $module['title'],
+                'description' => $module['description'] ?? null,
+                'position' => $module['position'] ?? $mIndex,
+                'available_from' => $module['available_from'] ?? null,
+                'available_to' => $module['available_to'] ?? null,
+                'unlock_type' => 'date',
+            ]);
 
-            if (($stage['type'] ?? null) === 'test' && !empty($stage['content'])) {
-                $data['lms_test_id'] = is_numeric($stage['content']) ? (int) $stage['content'] : null;
+            foreach ($module['stages'] ?? [] as $sIndex => $stage) {
+                $this->createStage($course, $stage, $sIndex, $mod->id);
             }
-            if (($stage['type'] ?? null) === 'assignment' && !empty($stage['content'])) {
-                $data['lms_assignment_id'] = is_numeric($stage['content']) ? (int) $stage['content'] : null;
-            }
-            if (($stage['type'] ?? null) === 'video' && !empty($stage['content'])) {
-                $data['lms_video_id'] = is_numeric($stage['content']) ? (int) $stage['content'] : null;
-            }
-            if (($stage['type'] ?? null) === 'scorm' && !empty($stage['content'])) {
-                $data['scorm_package'] = $stage['content'];
-            }
-
-            LmsCourseStage::create($data);
         }
+
+        foreach ($orphanStages as $index => $stage) {
+            $this->createStage($course, $stage, $index, null);
+        }
+    }
+
+    private function createStage(LmsCourse $course, array $stage, int $index, ?int $moduleId): void
+    {
+        $data = [
+            'lms_course_id' => $course->id,
+            'lms_course_module_id' => $moduleId,
+            'title' => $stage['title'],
+            'type' => $stage['type'] ?? null,
+            'content' => $stage['content'] ?? null,
+            'position' => $stage['position'] ?? $index,
+            'is_locked' => $stage['is_locked'] ?? false,
+            'available_from' => $stage['available_from'] ?? null,
+            'duration_minutes' => $stage['duration_minutes'] ?? null,
+        ];
+
+        $type = $stage['type'] ?? null;
+        $content = $stage['content'] ?? null;
+
+        if ($type === 'test' && $content && is_numeric($content)) {
+            $data['lms_test_id'] = (int) $content;
+        }
+        if ($type === 'assignment' && $content && is_numeric($content)) {
+            $data['lms_assignment_id'] = (int) $content;
+        }
+        if ($type === 'video' && $content && is_numeric($content)) {
+            $data['lms_video_id'] = (int) $content;
+        }
+        if ($type === 'scorm' && $content) {
+            $data['scorm_package'] = $content;
+        }
+
+        LmsCourseStage::create($data);
     }
 
     private function ensureCourseBelongsToEvent(LmsCourse $course, LmsEvent $event): void

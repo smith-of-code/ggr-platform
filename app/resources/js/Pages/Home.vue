@@ -37,13 +37,13 @@
       <!-- Stats -->
       <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div v-for="(stat, i) in statCards" :key="i" class="reveal rounded-xl border border-gray-100 bg-white p-6 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md" :class="'reveal-delay-' + (i + 1)">
+          <RCard v-for="(stat, i) in statCards" :key="i" elevation="raised" hoverable class="reveal text-center" :class="'reveal-delay-' + (i + 1)">
             <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
               <span v-html="stat.icon" />
             </div>
             <p class="mt-4 text-3xl font-bold text-[#003274]">{{ stat.value }}</p>
             <p class="mt-1 text-sm text-gray-500">{{ stat.label }}</p>
-          </div>
+          </RCard>
         </div>
       </section>
 
@@ -67,21 +67,24 @@
               v-for="(tour, i) in featuredTours"
               :key="tour.id"
               :href="route('tours.show', tour.slug)"
-              class="reveal group overflow-hidden rounded-xl bg-gray-50 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+              class="reveal"
               :class="'reveal-delay-' + (i + 1)"
             >
-              <div class="aspect-video overflow-hidden">
-                <img
-                  v-if="tour.image"
-                  :src="tour.image"
-                  :alt="tour.title"
-                  class="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-                />
-                <div v-else class="h-full w-full bg-gray-200" />
-              </div>
-              <div class="p-5">
+            <RCard elevation="raised" hoverable class="group h-full">
+              <template #cover>
+                <div class="aspect-video overflow-hidden">
+                  <img
+                    v-if="tour.image"
+                    :src="tour.image"
+                    :alt="tour.title"
+                    class="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                  />
+                  <div v-else class="h-full w-full bg-gray-200" />
+                </div>
+              </template>
+              <div>
                 <div class="flex items-center gap-2">
-                  <span class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-[#003274]">{{ tour.start_city }}</span>
+                  <RBadge variant="info" size="sm">{{ tour.start_city }}</RBadge>
                   <span class="text-xs text-gray-400">{{ tour.duration }}</span>
                 </div>
                 <h3 class="mt-3 text-lg font-semibold text-gray-900 transition group-hover:text-[#003274]">{{ tour.title }}</h3>
@@ -94,6 +97,7 @@
                   <span class="text-sm font-medium text-[#003274] opacity-0 transition group-hover:opacity-100">Подробнее &rarr;</span>
                 </div>
               </div>
+            </RCard>
             </Link>
           </div>
           <div v-if="featuredTours.length === 0" class="py-12 text-center text-gray-500">

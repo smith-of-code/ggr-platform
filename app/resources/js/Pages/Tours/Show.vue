@@ -18,10 +18,10 @@
           <h1 class="reveal mt-8 text-3xl font-bold text-gray-900 sm:text-4xl">{{ tour.title }}</h1>
 
           <div class="reveal mt-4 flex flex-wrap gap-2">
-            <span class="rounded-full bg-[#003274] px-4 py-1.5 text-sm font-medium text-white">{{ tour.start_city }}</span>
-            <span class="rounded-full bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-700">{{ tour.duration }}</span>
-            <span v-if="tour.project" class="rounded-full bg-blue-50 px-4 py-1.5 text-sm font-medium text-[#003274]">{{ projectLabel(tour.project) }}</span>
-            <span v-if="tour.closed_city" class="rounded-full bg-amber-50 px-4 py-1.5 text-sm font-medium text-amber-700">Закрытый город</span>
+            <RBadge variant="primary">{{ tour.start_city }}</RBadge>
+            <RBadge variant="neutral">{{ tour.duration }}</RBadge>
+            <RBadge v-if="tour.project" variant="info">{{ projectLabel(tour.project) }}</RBadge>
+            <RBadge v-if="tour.closed_city" variant="warning">Закрытый город</RBadge>
           </div>
 
           <div class="reveal mt-8 text-lg leading-relaxed text-gray-600" v-html="tour.description" />
@@ -45,12 +45,9 @@
                 </div>
                 <div class="flex items-center gap-4">
                   <span class="text-lg font-bold text-[#003274]">{{ formatPrice(dep.price_per_person) }} &#8381;</span>
-                  <button
-                    @click="openApplicationModal(dep.id)"
-                    class="rounded-xl bg-[#003274] px-5 py-2.5 text-sm font-medium text-white transition duration-200 hover:bg-[#025ea1] active:scale-[0.98]"
-                  >
+                  <RButton variant="primary" @click="openApplicationModal(dep.id)">
                     Оставить заявку
-                  </button>
+                  </RButton>
                 </div>
               </div>
             </div>
@@ -59,7 +56,7 @@
 
         <!-- Sidebar -->
         <div class="mt-10 lg:mt-0">
-          <div class="reveal sticky top-20 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <RCard elevation="raised" class="reveal sticky top-20">
             <h2 class="text-lg font-bold text-gray-900">Детали тура</h2>
             <dl class="mt-5 space-y-5">
               <div class="flex items-start gap-3">
@@ -110,69 +107,34 @@
                 </div>
               </div>
             </dl>
-            <button
-              @click="openApplicationModal()"
-              class="mt-6 w-full rounded-xl bg-[#003274] py-3.5 text-base font-semibold text-white shadow-lg transition duration-200 hover:bg-[#025ea1] hover:shadow-xl active:scale-[0.98]"
-            >
+            <RButton variant="primary" size="lg" block class="mt-6" @click="openApplicationModal()">
               Оставить заявку
-            </button>
-          </div>
+            </RButton>
+          </RCard>
         </div>
       </div>
 
       <!-- Application modal -->
-      <Teleport to="body">
-        <Transition
-          enter-active-class="transition duration-200 ease-out"
-          enter-from-class="opacity-0"
-          enter-to-class="opacity-100"
-          leave-active-class="transition duration-150 ease-in"
-          leave-from-class="opacity-100"
-          leave-to-class="opacity-0"
-        >
-          <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" @click.self="showModal = false">
-            <Transition
-              enter-active-class="transition duration-200 ease-out"
-              enter-from-class="scale-95 opacity-0"
-              enter-to-class="scale-100 opacity-100"
-              leave-active-class="transition duration-150 ease-in"
-              leave-from-class="scale-100 opacity-100"
-              leave-to-class="scale-95 opacity-0"
-            >
-              <div v-if="showModal" class="mx-4 w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-                <h3 class="text-xl font-bold text-gray-900">Оставить заявку</h3>
-                <p class="mt-1 text-sm text-gray-500">Заполните форму, и мы свяжемся с вами</p>
-                <form @submit.prevent="submitApplication" class="mt-6 space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Имя</label>
-                    <input v-model="form.name" type="text" required placeholder="Ваше имя" class="mt-1.5 w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20" />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Email</label>
-                    <input v-model="form.email" type="email" required placeholder="your@email.com" class="mt-1.5 w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20" />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Телефон</label>
-                    <input v-model="form.phone" type="tel" placeholder="+7 (___) ___-__-__" class="mt-1.5 w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20" />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Сообщение</label>
-                    <textarea v-model="form.message" rows="3" placeholder="Ваше сообщение..." class="mt-1.5 w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20" />
-                  </div>
-                  <div class="flex gap-3 pt-2">
-                    <button type="submit" class="flex-1 rounded-xl bg-[#003274] py-3 font-semibold text-white transition hover:bg-[#025ea1] active:scale-[0.98]">
-                      Отправить
-                    </button>
-                    <button type="button" @click="showModal = false" class="rounded-xl border border-gray-300 px-5 py-3 font-medium text-gray-600 transition hover:bg-gray-50">
-                      Отмена
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </Transition>
+      <RModal v-model="showModal" title="Оставить заявку" subtitle="Заполните форму, и мы свяжемся с вами" size="md">
+        <form @submit.prevent="submitApplication" class="space-y-4">
+          <RInput v-model="form.name" label="Имя" placeholder="Ваше имя" required />
+          <RInput v-model="form.email" type="email" label="Email" placeholder="your@email.com" required />
+          <RInput v-model="form.phone" type="tel" label="Телефон" placeholder="+7 (___) ___-__-__" />
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Сообщение</label>
+            <textarea v-model="form.message" rows="3" placeholder="Ваше сообщение..." class="mt-1.5 w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20" />
           </div>
-        </Transition>
-      </Teleport>
+        </form>
+
+        <template #footer>
+          <RButton variant="outline" @click="showModal = false">
+            Отмена
+          </RButton>
+          <RButton variant="primary" @click="submitApplication">
+            Отправить
+          </RButton>
+        </template>
+      </RModal>
     </div>
   </MainLayout>
 </template>

@@ -12,6 +12,7 @@ class LmsCourseStage extends Model
 
     protected $fillable = [
         'lms_course_id',
+        'lms_course_module_id',
         'title',
         'description',
         'type',
@@ -22,16 +23,26 @@ class LmsCourseStage extends Model
         'lms_video_id',
         'is_locked',
         'position',
+        'available_from',
+        'duration_minutes',
     ];
 
     protected $casts = [
         'is_locked' => 'boolean',
+        'available_from' => 'datetime',
+        'duration_minutes' => 'integer',
     ];
 
     /** @return BelongsTo<LmsCourse, $this> */
     public function course(): BelongsTo
     {
         return $this->belongsTo(LmsCourse::class, 'lms_course_id');
+    }
+
+    /** @return BelongsTo<LmsCourseModule, $this> */
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(LmsCourseModule::class, 'lms_course_module_id');
     }
 
     /** @return BelongsTo<LmsTest, $this> */

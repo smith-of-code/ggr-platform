@@ -38,109 +38,108 @@
           <div class="flex items-end">
             <RCheckbox v-model="form.is_active" label="Активен" />
           </div>
+          <div class="flex items-end">
+            <RCheckbox v-model="form.requires_approval" label="Требуется одобрение для записи" />
+          </div>
         </div>
       </RCard>
 
+      <!-- Модули -->
       <RCard>
         <template #header>
-          <h2 class="text-base font-bold text-gray-900">Этапы</h2>
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-gray-900">Модули</h2>
+            <RButton variant="outline" size="sm" type="button" @click="addModule">
+              <template #icon><PlusIcon class="h-4 w-4" /></template>
+              Добавить модуль
+            </RButton>
+          </div>
         </template>
-        <div class="space-y-4">
-          <div v-for="(stage, idx) in form.stages" :key="idx" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-            <div class="mb-3 flex items-center justify-between">
-              <span class="text-sm font-medium text-gray-500">Этап {{ idx + 1 }}</span>
-              <div class="flex gap-2">
-                <RButton v-if="idx > 0" variant="ghost" size="sm" icon-only type="button" @click="moveStage(idx, -1)">
-                  <template #icon>
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
-                  </template>
+
+        <div v-if="form.modules.length === 0" class="py-8 text-center text-sm text-gray-400">
+          Модулей пока нет. Нажмите «Добавить модуль», чтобы структурировать курс.
+        </div>
+
+        <div class="space-y-6">
+          <div
+            v-for="(mod, mIdx) in form.modules"
+            :key="mIdx"
+            class="rounded-2xl border border-rosatom-200 bg-rosatom-50/30 p-5"
+          >
+            <div class="mb-4 flex items-start justify-between gap-3">
+              <div class="flex-1 space-y-3">
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-rosatom-500 text-xs font-bold text-white">{{ mIdx + 1 }}</span>
+                  <RInput v-model="mod.title" placeholder="Название модуля *" required class="flex-1" />
+                </div>
+                <RInput v-model="mod.description" placeholder="Описание модуля (необязательно)" />
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <RInput v-model="mod.available_from" label="Открытие" type="datetime-local" />
+                  <RInput v-model="mod.available_to" label="Закрытие" type="datetime-local" />
+                </div>
+              </div>
+              <div class="flex shrink-0 gap-1 pt-1">
+                <RButton v-if="mIdx > 0" variant="ghost" size="sm" icon-only type="button" @click="moveModule(mIdx, -1)">
+                  <template #icon><ChevronUpIcon class="h-4 w-4" /></template>
                 </RButton>
-                <RButton v-if="idx < form.stages.length - 1" variant="ghost" size="sm" icon-only type="button" @click="moveStage(idx, 1)">
-                  <template #icon>
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                  </template>
+                <RButton v-if="mIdx < form.modules.length - 1" variant="ghost" size="sm" icon-only type="button" @click="moveModule(mIdx, 1)">
+                  <template #icon><ChevronDownIcon class="h-4 w-4" /></template>
                 </RButton>
-                <RButton variant="danger" size="sm" icon-only type="button" @click="form.stages.splice(idx, 1)">
-                  <template #icon>
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" /></svg>
-                  </template>
+                <RButton variant="danger" size="sm" icon-only type="button" @click="removeModule(mIdx)">
+                  <template #icon><XMarkIcon class="h-4 w-4" /></template>
                 </RButton>
               </div>
             </div>
-            <div class="space-y-3">
-              <div>
-                <RInput v-model="stage.title" placeholder="Название этапа" required />
+
+            <!-- Этапы внутри модуля -->
+            <div class="ml-4 border-l-2 border-rosatom-200 pl-4">
+              <h4 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Этапы модуля</h4>
+              <div class="space-y-3">
+                <StageEditor
+                  v-for="(stage, sIdx) in mod.stages"
+                  :key="sIdx"
+                  :stage="stage"
+                  :index="sIdx"
+                  :total="mod.stages.length"
+                  :tests="tests"
+                  :assignments="assignments"
+                  :videos="videos"
+                  :event-slug="event.slug"
+                  @move="(delta) => moveModuleStage(mIdx, sIdx, delta)"
+                  @remove="removeModuleStage(mIdx, sIdx)"
+                />
               </div>
-              <div>
-                <select v-model="stage.type" class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-                  <option value="content">Контент</option>
-                  <option value="scorm">SCORM</option>
-                  <option value="test">Тест</option>
-                  <option value="assignment">Задание</option>
-                  <option value="video">Видео</option>
-                </select>
-              </div>
-              <div v-if="stage.type === 'content'">
-                <textarea v-model="stage.content" rows="3" placeholder="Текст контента" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" />
-              </div>
-              <div v-else-if="stage.type === 'scorm'" class="space-y-3">
-                <div
-                  class="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-6 text-center transition hover:border-rosatom-400"
-                  :class="{ 'border-rosatom-500 bg-rosatom-50': stage.uploading }"
-                >
-                  <template v-if="stage.uploading">
-                    <svg class="mx-auto mb-2 h-8 w-8 animate-spin text-rosatom-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                    <p class="text-sm font-medium text-rosatom-600">Загрузка SCORM-пакета...</p>
-                  </template>
-                  <template v-else-if="stage.scormFilename">
-                    <svg class="mx-auto mb-2 h-8 w-8 text-accent-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                    <p class="text-sm font-medium text-gray-900">{{ stage.scormFilename }}</p>
-                    <p class="mt-1 text-xs text-gray-500">SCORM-пакет загружен</p>
-                    <button type="button" class="mt-2 text-xs font-medium text-rosatom-600 hover:underline" @click="clearScorm(idx)">Заменить файл</button>
-                  </template>
-                  <template v-else>
-                    <svg class="mx-auto mb-2 h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
-                    <p class="text-sm font-medium text-gray-700">Загрузить SCORM-пакет (.zip)</p>
-                    <p class="mt-1 text-xs text-gray-400">до 100 МБ, ZIP с imsmanifest.xml</p>
-                    <input
-                      type="file"
-                      accept=".zip"
-                      class="absolute inset-0 cursor-pointer opacity-0"
-                      @change="handleScormUpload($event, idx)"
-                    />
-                  </template>
-                </div>
-                <div v-if="stage.scormError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{{ stage.scormError }}</div>
-                <RInput v-if="stage.content" v-model="stage.content" label="SCORM URL (авто)" disabled />
-              </div>
-              <div v-else-if="stage.type === 'test'" class="space-y-2">
-                <label class="block text-xs text-gray-500">Тест</label>
-                <select v-model="stage.content" class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-                  <option value="">— Выберите тест —</option>
-                  <option v-for="t in tests" :key="t.id" :value="String(t.id)">{{ t.title }}</option>
-                </select>
-              </div>
-              <div v-else-if="stage.type === 'assignment'" class="space-y-2">
-                <label class="block text-xs text-gray-500">Задание</label>
-                <select v-model="stage.content" class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-                  <option value="">— Выберите задание —</option>
-                  <option v-for="a in assignments" :key="a.id" :value="String(a.id)">{{ a.title }}</option>
-                </select>
-              </div>
-              <div v-else-if="stage.type === 'video'" class="space-y-2">
-                <label class="block text-xs text-gray-500">Видео</label>
-                <select v-model="stage.content" class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-                  <option value="">— Выберите видео —</option>
-                  <option v-for="v in videos" :key="v.id" :value="String(v.id)">{{ v.title }}</option>
-                </select>
-              </div>
+              <RButton variant="ghost" size="sm" type="button" class="mt-3" @click="addModuleStage(mIdx)">
+                <template #icon><PlusIcon class="h-4 w-4" /></template>
+                Добавить этап
+              </RButton>
             </div>
           </div>
         </div>
+      </RCard>
+
+      <!-- Свободные этапы (без модуля) -->
+      <RCard>
+        <template #header>
+          <h2 class="text-base font-bold text-gray-900">Этапы без модуля</h2>
+        </template>
+        <div class="space-y-4">
+          <StageEditor
+            v-for="(stage, idx) in form.stages"
+            :key="idx"
+            :stage="stage"
+            :index="idx"
+            :total="form.stages.length"
+            :tests="tests"
+            :assignments="assignments"
+            :videos="videos"
+            :event-slug="event.slug"
+            @move="(delta) => moveStage(idx, delta)"
+            @remove="form.stages.splice(idx, 1)"
+          />
+        </div>
         <RButton variant="outline" block type="button" class="mt-4" @click="addStage">
-          <template #icon>
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-          </template>
+          <template #icon><PlusIcon class="h-4 w-4" /></template>
           Добавить этап
         </RButton>
       </RCard>
@@ -156,9 +155,10 @@
 </template>
 
 <script setup>
-import { Link, useForm, router } from '@inertiajs/vue3'
-import axios from 'axios'
+import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import StageEditor from './StageEditor.vue'
+import { PlusIcon, XMarkIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({ event: Object, course: Object, tests: Array, assignments: Array, videos: Array })
 
@@ -166,16 +166,44 @@ const tests = props.tests ?? []
 const assignments = props.assignments ?? []
 const videos = props.videos ?? []
 
-const buildStages = () => {
-  if (props.course?.stages?.length) {
-    return props.course.stages.map(s => ({
-      title: s.title,
-      type: s.type || 'content',
-      content: s.content ?? '',
-      position: s.position ?? 0,
+function emptyStage() {
+  return { title: '', type: 'content', content: '', position: 0 }
+}
+
+function emptyModule() {
+  return { title: '', description: '', available_from: '', available_to: '', stages: [emptyStage()] }
+}
+
+function buildModules() {
+  if (props.course?.modules?.length) {
+    return props.course.modules.map(m => ({
+      title: m.title ?? '',
+      description: m.description ?? '',
+      available_from: m.available_from ? m.available_from.slice(0, 16) : '',
+      available_to: m.available_to ? m.available_to.slice(0, 16) : '',
+      stages: (m.stages || []).map(s => ({
+        title: s.title,
+        type: s.type || 'content',
+        content: s.content ?? '',
+        position: s.position ?? 0,
+      })),
     }))
   }
-  return [{ title: '', type: 'content', content: '', position: 0 }]
+  return []
+}
+
+function buildOrphanStages() {
+  if (props.course?.stages?.length) {
+    return props.course.stages
+      .filter(s => !s.lms_course_module_id)
+      .map(s => ({
+        title: s.title,
+        type: s.type || 'content',
+        content: s.content ?? '',
+        position: s.position ?? 0,
+      }))
+  }
+  return [emptyStage()]
 }
 
 const form = useForm({
@@ -185,46 +213,41 @@ const form = useForm({
   image: props.course?.image ?? '',
   sequential: props.course?.sequential ?? true,
   is_active: props.course?.is_active ?? true,
-  stages: buildStages(),
+  requires_approval: props.course?.requires_approval ?? false,
+  modules: buildModules(),
+  stages: buildOrphanStages(),
 })
 
+function addModule() {
+  form.modules.push(emptyModule())
+}
+function removeModule(idx) {
+  form.modules.splice(idx, 1)
+}
+function moveModule(idx, delta) {
+  const newIdx = idx + delta
+  if (newIdx < 0 || newIdx >= form.modules.length) return
+  const arr = [...form.modules]
+  ;[arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]]
+  form.modules = arr
+}
+
+function addModuleStage(mIdx) {
+  form.modules[mIdx].stages.push(emptyStage())
+}
+function removeModuleStage(mIdx, sIdx) {
+  form.modules[mIdx].stages.splice(sIdx, 1)
+}
+function moveModuleStage(mIdx, sIdx, delta) {
+  const stages = form.modules[mIdx].stages
+  const newIdx = sIdx + delta
+  if (newIdx < 0 || newIdx >= stages.length) return
+  ;[stages[sIdx], stages[newIdx]] = [stages[newIdx], stages[sIdx]]
+}
+
 function addStage() {
-  form.stages.push({ title: '', type: 'content', content: '', position: form.stages.length })
+  form.stages.push(emptyStage())
 }
-
-async function handleScormUpload(event, stageIdx) {
-  const file = event.target.files?.[0]
-  if (!file) return
-
-  const stage = form.stages[stageIdx]
-  stage.uploading = true
-  stage.scormError = null
-
-  const fd = new FormData()
-  fd.append('scorm_file', file)
-
-  try {
-    const { data } = await axios.post(
-      route('lms.admin.scorm.upload', props.event.slug),
-      fd,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    )
-    stage.content = data.url
-    stage.scormFilename = data.filename
-  } catch (err) {
-    stage.scormError = err.response?.data?.error || err.response?.data?.message || 'Ошибка загрузки'
-  } finally {
-    stage.uploading = false
-  }
-}
-
-function clearScorm(stageIdx) {
-  const stage = form.stages[stageIdx]
-  stage.content = ''
-  stage.scormFilename = null
-  stage.scormError = null
-}
-
 function moveStage(idx, delta) {
   const newIdx = idx + delta
   if (newIdx < 0 || newIdx >= form.stages.length) return
@@ -234,11 +257,17 @@ function moveStage(idx, delta) {
 }
 
 function submit() {
+  const modules = form.modules.map((m, mi) => ({
+    ...m,
+    position: mi,
+    stages: m.stages.map((s, si) => ({ ...s, position: si })),
+  }))
   const stages = form.stages.map((s, i) => ({ ...s, position: i }))
+
   if (props.course) {
-    form.transform(data => ({ ...data, stages })).put(route('lms.admin.courses.update', [props.event.slug, props.course.id]))
+    form.transform(data => ({ ...data, modules, stages })).put(route('lms.admin.courses.update', [props.event.slug, props.course.id]))
   } else {
-    form.transform(data => ({ ...data, stages })).post(route('lms.admin.courses.store', props.event.slug))
+    form.transform(data => ({ ...data, modules, stages })).post(route('lms.admin.courses.store', props.event.slug))
   }
 }
 </script>

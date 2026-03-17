@@ -76,9 +76,7 @@
       <!-- User footer -->
       <div class="border-t border-gray-100 p-4">
         <div class="flex items-center gap-3">
-          <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#003274]/10 text-sm font-bold text-[#003274]">
-            {{ $page.props.auth?.user?.name?.charAt(0) || 'A' }}
-          </div>
+          <RAvatar :name="$page.props.auth?.user?.name || 'A'" size="sm" />
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium text-gray-900">{{ $page.props.auth?.user?.name }}</p>
             <p class="truncate text-xs text-gray-400">{{ $page.props.auth?.user?.email }}</p>

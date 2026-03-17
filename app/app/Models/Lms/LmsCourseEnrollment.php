@@ -15,10 +15,13 @@ class LmsCourseEnrollment extends Model
         'user_id',
         'status',
         'completed_at',
+        'reviewed_at',
+        'reviewed_by',
     ];
 
     protected $casts = [
         'completed_at' => 'datetime',
+        'reviewed_at' => 'datetime',
     ];
 
     /** @return BelongsTo<LmsCourse, $this> */
@@ -31,5 +34,11 @@ class LmsCourseEnrollment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }

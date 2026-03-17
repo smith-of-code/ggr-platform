@@ -1,13 +1,10 @@
 <template>
   <LmsAdminLayout :event="event">
     <div class="mx-auto max-w-4xl">
-      <button
-        @click="router.visit(route('lms.admin.users.index', event.slug))"
-        class="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-rosatom-600"
-      >
-        <ArrowLeftIcon class="h-4 w-4" />
+      <RButton variant="ghost" size="sm" @click="router.visit(route('lms.admin.users.index', event.slug))" class="mb-4">
+        <template #icon><ArrowLeftIcon class="h-4 w-4" /></template>
         Назад к участникам
-      </button>
+      </RButton>
 
       <!-- Success flash -->
       <div v-if="$page.props.flash?.success" class="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
@@ -16,56 +13,30 @@
 
       <div class="grid gap-6 lg:grid-cols-3">
         <!-- Profile card -->
-        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-1">
+        <RCard elevation="raised" class="lg:col-span-1">
           <div class="flex flex-col items-center text-center">
-            <div class="flex h-20 w-20 items-center justify-center rounded-full bg-rosatom-100 text-2xl font-bold text-rosatom-600">
-              {{ initials }}
-            </div>
+            <RAvatar :name="profile.user?.name" size="xl" />
             <h2 class="mt-4 text-lg font-bold text-gray-900">{{ profile.user?.name }}</h2>
             <p v-if="profile.user?.patronymic" class="text-sm text-gray-500">{{ profile.user.patronymic }}</p>
             <p class="mt-1 text-sm text-gray-500">{{ profile.user?.email }}</p>
             <p v-if="profile.user?.phone || profile.phone" class="text-sm text-gray-400">{{ profile.user?.phone || profile.phone }}</p>
-            <span
-              v-if="profile.lms_role"
-              class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold"
-              :class="roleBadgeClass(profile.lms_role.slug)"
-            >
+            <RBadge v-if="profile.lms_role" :variant="roleBadgeVariant(profile.lms_role.slug)" class="mt-3">
               {{ profile.lms_role.name }}
-            </span>
+            </RBadge>
             <p v-if="profile.position" class="mt-2 text-xs text-gray-400">{{ profile.position }}</p>
           </div>
-        </div>
+        </RCard>
 
         <!-- Edit form -->
         <div class="space-y-6 lg:col-span-2">
           <form @submit.prevent="submitUpdate" class="space-y-6">
-            <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <RCard elevation="raised">
               <h3 class="mb-4 text-lg font-bold text-gray-900">Редактировать профиль</h3>
               <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700">ФИО</label>
-                  <input v-model="editForm.name" type="text"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-                  />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700">Отчество</label>
-                  <input v-model="editForm.patronymic" type="text"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-                  />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700">Телефон</label>
-                  <input v-model="editForm.phone" type="tel"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-                  />
-                </div>
-                <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700">Должность</label>
-                  <input v-model="editForm.position" type="text"
-                    class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-                  />
-                </div>
+                <RInput v-model="editForm.name" label="ФИО" />
+                <RInput v-model="editForm.patronymic" label="Отчество" />
+                <RInput v-model="editForm.phone" type="tel" label="Телефон" />
+                <RInput v-model="editForm.position" label="Должность" />
                 <div class="sm:col-span-2">
                   <SearchSelect
                     v-model="editForm.role_id"
@@ -77,16 +48,14 @@
                   />
                 </div>
               </div>
-              <button type="submit" :disabled="editForm.processing"
-                class="mt-5 rounded-xl bg-rosatom-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-rosatom-700 disabled:opacity-50"
-              >
+              <RButton type="submit" variant="primary" class="mt-5" :loading="editForm.processing" :disabled="editForm.processing">
                 {{ editForm.processing ? 'Сохранение...' : 'Сохранить изменения' }}
-              </button>
-            </div>
+              </RButton>
+            </RCard>
           </form>
 
           <!-- Course assignment -->
-          <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <RCard elevation="raised">
             <h3 class="mb-4 text-lg font-bold text-gray-900">Назначенные курсы</h3>
 
             <div v-if="enrollments?.length" class="mb-4 space-y-2">
@@ -95,12 +64,9 @@
                   <p class="text-sm font-medium text-gray-900">{{ e.course?.title }}</p>
                   <p class="text-xs text-gray-400">Статус: {{ enrollmentStatus(e.status) }}</p>
                 </div>
-                <span
-                  class="rounded-full px-2 py-0.5 text-xs font-medium"
-                  :class="e.status === 'completed' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'"
-                >
+                <RBadge :variant="e.status === 'completed' ? 'success' : 'info'" size="sm">
                   {{ enrollmentStatus(e.status) }}
-                </span>
+                </RBadge>
               </div>
             </div>
             <div v-else class="mb-4 text-sm text-gray-400">Курсы не назначены</div>
@@ -114,15 +80,11 @@
                 label="Добавить курсы"
                 placeholder="Выберите курсы для назначения"
               />
-              <button
-                type="submit"
-                :disabled="courseForm.processing || courseForm.course_ids.length === 0"
-                class="mt-3 rounded-xl bg-rosatom-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-rosatom-700 disabled:opacity-50"
-              >
+              <RButton type="submit" variant="primary" size="sm" class="mt-3" :loading="courseForm.processing" :disabled="courseForm.processing || courseForm.course_ids.length === 0">
                 Назначить курсы
-              </button>
+              </RButton>
             </form>
-          </div>
+          </RCard>
         </div>
       </div>
     </div>
@@ -145,10 +107,6 @@ const props = defineProps({
   courses: Array,
 })
 
-const initials = computed(() => {
-  const name = props.profile?.user?.name || ''
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-})
 
 const editForm = useForm({
   name: props.profile?.user?.name || '',
@@ -182,14 +140,7 @@ function enrollmentStatus(status) {
   return { enrolled: 'Записан', in_progress: 'Проходит', completed: 'Завершён' }[status] || status
 }
 
-function roleBadgeClass(slug) {
-  return {
-    admin: 'bg-red-50 text-red-700',
-    curator: 'bg-amber-50 text-amber-700',
-    leader: 'bg-purple-50 text-purple-700',
-    expert: 'bg-blue-50 text-blue-700',
-    observer: 'bg-gray-100 text-gray-600',
-    participant: 'bg-green-50 text-green-700',
-  }[slug] || 'bg-gray-100 text-gray-600'
+function roleBadgeVariant(slug) {
+  return { admin: 'error', curator: 'warning', leader: 'primary', expert: 'info', observer: 'neutral', participant: 'success' }[slug] || 'neutral'
 }
 </script>

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Lms\LmsAssignment;
 use App\Models\Lms\LmsCourse;
+use App\Models\Lms\LmsCourseModule;
 use App\Models\Lms\LmsCourseStage;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGamificationRule;
@@ -71,9 +72,81 @@ class LmsSeeder extends Seeder
             'position' => 1,
         ]);
 
-        LmsCourseStage::create(['lms_course_id' => $course1->id, 'title' => 'Введение в гостеприимство', 'type' => 'content', 'content' => '<h2>Добро пожаловать!</h2><p>В этом модуле вы узнаете об основных принципах территориального гостеприимства и роли атомных городов в развитии туризма.</p>', 'position' => 1]);
-        LmsCourseStage::create(['lms_course_id' => $course1->id, 'title' => 'История атомных городов', 'type' => 'content', 'content' => '<h2>История</h2><p>Атомные города России — уникальные территории с богатой историей и потенциалом для развития внутреннего туризма.</p>', 'position' => 2]);
-        LmsCourseStage::create(['lms_course_id' => $course1->id, 'title' => 'Видеолекция: Туризм в ЗАТО', 'type' => 'video', 'position' => 3]);
+        $modulesData = [
+            [
+                'title' => 'Введение',
+                'description' => 'Знакомство с программой и основами территориального гостеприимства.',
+                'weeks_offset' => 0,
+                'stages' => [
+                    ['title' => 'Добро пожаловать в программу', 'type' => 'content', 'content' => '<h2>Добро пожаловать!</h2><p>В этом модуле вы узнаете об основных принципах территориального гостеприимства и роли атомных городов в развитии туризма.</p>'],
+                    ['title' => 'История атомных городов', 'type' => 'content', 'content' => '<h2>История</h2><p>Атомные города России — уникальные территории с богатой историей и потенциалом для развития внутреннего туризма.</p>'],
+                    ['title' => 'Видеолекция: Туризм в ЗАТО', 'type' => 'video'],
+                ],
+            ],
+            [
+                'title' => 'Территориальный бренд',
+                'description' => 'Формирование и продвижение бренда территории как туристического направления.',
+                'weeks_offset' => 1,
+                'stages' => [
+                    ['title' => 'Что такое территориальный бренд', 'type' => 'content', 'content' => '<h2>Территориальный бренд</h2><p>Бренд территории — это совокупность устойчивых представлений о месте, формирующих его привлекательность для различных целевых аудиторий.</p>'],
+                    ['title' => 'Кейсы успешного брендинга', 'type' => 'content', 'content' => '<h2>Успешные кейсы</h2><p>Рассмотрим примеры атомных городов, которые создали узнаваемый бренд и привлекли туристический поток.</p>'],
+                ],
+            ],
+            [
+                'title' => 'Инфраструктура',
+                'description' => 'Анализ и развитие туристической инфраструктуры атомных городов.',
+                'weeks_offset' => 2,
+                'stages' => [
+                    ['title' => 'Оценка туристической инфраструктуры', 'type' => 'content', 'content' => '<h2>Инфраструктура</h2><p>Методика оценки готовности инфраструктуры города к приёму туристов: транспорт, размещение, питание, навигация.</p>'],
+                    ['title' => 'Практическое задание: Аудит инфраструктуры', 'type' => 'assignment'],
+                    ['title' => 'Тест: Инфраструктура гостеприимства', 'type' => 'test'],
+                ],
+            ],
+            [
+                'title' => 'Маршруты',
+                'description' => 'Проектирование и апробация туристических маршрутов.',
+                'weeks_offset' => 3,
+                'stages' => [
+                    ['title' => 'Принципы построения маршрута', 'type' => 'content', 'content' => '<h2>Маршруты</h2><p>Как создать маршрут, который будет интересен туристам и устойчив для территории.</p>'],
+                    ['title' => 'Видеолекция: Лучшие маршруты атомных городов', 'type' => 'video'],
+                    ['title' => 'Практическое задание: Свой маршрут', 'type' => 'assignment'],
+                ],
+            ],
+            [
+                'title' => 'Итоговый проект',
+                'description' => 'Защита итогового проекта по развитию гостеприимства.',
+                'weeks_offset' => 4,
+                'stages' => [
+                    ['title' => 'Требования к итоговому проекту', 'type' => 'content', 'content' => '<h2>Итоговый проект</h2><p>Подготовьте концепцию развития гостеприимства вашего города. Проект должен включать анализ текущего состояния, целевую аудиторию, маршруты и план реализации.</p>'],
+                    ['title' => 'Загрузка итогового проекта', 'type' => 'assignment'],
+                ],
+            ],
+        ];
+
+        $baseDate = now()->startOfDay();
+
+        foreach ($modulesData as $mIndex => $mData) {
+            $module = LmsCourseModule::create([
+                'lms_course_id' => $course1->id,
+                'title' => $mData['title'],
+                'description' => $mData['description'],
+                'position' => $mIndex,
+                'available_from' => $baseDate->copy()->addWeeks($mData['weeks_offset']),
+                'available_to' => null,
+                'unlock_type' => 'date',
+            ]);
+
+            foreach ($mData['stages'] as $sIndex => $sData) {
+                LmsCourseStage::create([
+                    'lms_course_id' => $course1->id,
+                    'lms_course_module_id' => $module->id,
+                    'title' => $sData['title'],
+                    'type' => $sData['type'],
+                    'content' => $sData['content'] ?? null,
+                    'position' => $sIndex,
+                ]);
+            }
+        }
 
         $course2 = LmsCourse::create([
             'lms_event_id' => $event->id,

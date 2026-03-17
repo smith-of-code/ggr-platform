@@ -19,6 +19,7 @@ class LmsCourse extends Model
         'image',
         'sequential',
         'is_active',
+        'requires_approval',
         'position',
         'starts_at',
         'ends_at',
@@ -27,6 +28,7 @@ class LmsCourse extends Model
     protected $casts = [
         'sequential' => 'boolean',
         'is_active' => 'boolean',
+        'requires_approval' => 'boolean',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
     ];

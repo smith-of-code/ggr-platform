@@ -3,6 +3,8 @@ services:
     build:
       context: ./app
       dockerfile: Dockerfile
+      network: host
+    image: rosatom-app
     container_name: rosatom-app
     restart: unless-stopped
     working_dir: /var/www

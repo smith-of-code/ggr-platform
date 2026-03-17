@@ -69,11 +69,12 @@ class CourseController extends Controller
             $progress = $course->stages->count() > 0
                 ? round(($completedStages / $course->stages->count()) * 100)
                 : 0;
+            $isActiveEnrollment = $enrollment && !in_array($enrollment->status, ['pending', 'rejected']);
             return [
                 'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'starts_at', 'ends_at']),
-                'enrolled' => $enrollment !== null,
+                'enrolled' => $isActiveEnrollment,
                 'enrollment' => $enrollment?->only(['id', 'status', 'completed_at']),
-                'progress' => $progress,
+                'progress' => $isActiveEnrollment ? $progress : 0,
                 'stages_count' => $course->stages->count(),
             ];
         });
@@ -153,10 +154,26 @@ class CourseController extends Controller
         }
         $user = auth()->user();
 
-        LmsCourseEnrollment::firstOrCreate(
-            ['lms_course_id' => $course->id, 'user_id' => $user->id],
-            ['status' => 'enrolled']
-        );
+        $existing = LmsCourseEnrollment::where('lms_course_id', $course->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existing) {
+            if ($existing->status === 'rejected') {
+                $existing->update([
+                    'status' => $course->requires_approval ? 'pending' : 'enrolled',
+                    'reviewed_at' => null,
+                    'reviewed_by' => null,
+                ]);
+            }
+            return redirect()->back();
+        }
+
+        LmsCourseEnrollment::create([
+            'lms_course_id' => $course->id,
+            'user_id' => $user->id,
+            'status' => $course->requires_approval ? 'pending' : 'enrolled',
+        ]);
 
         return redirect()->back();
     }

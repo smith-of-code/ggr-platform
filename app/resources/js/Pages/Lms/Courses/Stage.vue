@@ -11,30 +11,31 @@
           {{ course?.title }}
         </Link>
         <div class="flex gap-3">
-          <button
+          <RButton
             v-if="prevStage"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            variant="outline"
+            size="sm"
             @click="router.visit(route('lms.stages.show', { event: event?.slug, course: course?.id, stage: prevStage.id }))"
           >
-            <ChevronLeftIcon class="h-4 w-4" />
+            <template #icon><ChevronLeftIcon class="h-4 w-4" /></template>
             Назад
-          </button>
-          <button
+          </RButton>
+          <RButton
             v-if="nextStage"
-            class="inline-flex items-center gap-1.5 rounded-lg bg-rosatom-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rosatom-700"
+            variant="primary"
+            size="sm"
             @click="router.visit(route('lms.stages.show', { event: event?.slug, course: course?.id, stage: nextStage.id }))"
           >
             Далее
-            <ChevronRightIcon class="h-4 w-4" />
-          </button>
+          </RButton>
         </div>
       </div>
 
-      <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
+      <RCard elevation="raised">
         <h1 class="font-brand text-xl font-bold text-gray-900">{{ stage?.title }}</h1>
-        <span :class="['mt-2 inline-block rounded-md px-2 py-0.5 text-xs font-medium', typeBadgeClass(stage?.type)]">
+        <RBadge :variant="typeBadgeVariant(stage?.type)" size="sm" class="mt-2">
           {{ typeLabel(stage?.type) }}
-        </span>
+        </RBadge>
 
         <!-- Content by type -->
         <div class="mt-6">
@@ -58,24 +59,18 @@
 
           <!-- test: redirect -->
           <div v-else-if="stage?.type === 'test' && stage?.lms_test_id">
-            <button
-              class="inline-flex items-center gap-2 rounded-xl bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
-              @click="router.visit(route('lms.tests.show', { event: event?.slug, test: stage.lms_test_id }))"
-            >
-              <ClipboardDocumentListIcon class="h-5 w-5" />
+            <RButton variant="outline" @click="router.visit(route('lms.tests.show', { event: event?.slug, test: stage.lms_test_id }))">
+              <template #icon><ClipboardDocumentListIcon class="h-5 w-5" /></template>
               Перейти к тесту
-            </button>
+            </RButton>
           </div>
 
           <!-- assignment: redirect -->
           <div v-else-if="stage?.type === 'assignment' && stage?.lms_assignment_id">
-            <button
-              class="inline-flex items-center gap-2 rounded-xl bg-purple-50 px-6 py-3 text-sm font-semibold text-purple-700 transition hover:bg-purple-100"
-              @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: stage.lms_assignment_id }))"
-            >
-              <PencilSquareIcon class="h-5 w-5" />
+            <RButton variant="outline" @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: stage.lms_assignment_id }))">
+              <template #icon><PencilSquareIcon class="h-5 w-5" /></template>
               Перейти к заданию
-            </button>
+            </RButton>
           </div>
 
           <!-- video: embed -->
@@ -90,6 +85,29 @@
               />
             </div>
             <p v-else class="text-gray-400">Видео недоступно</p>
+
+            <!-- Video watch progress -->
+            <div v-if="videoDuration && !isCompleted" class="mt-4">
+              <div class="flex items-center justify-between text-sm text-gray-600">
+                <div class="flex items-center gap-2">
+                  <PlayCircleIcon class="h-5 w-5" />
+                  <span>Просмотрено: {{ formatTime(watchedSeconds) }} / {{ formatTime(videoDuration) }}</span>
+                </div>
+                <span v-if="!videoWatchComplete" class="text-xs text-gray-400">
+                  Осталось: {{ formatTime(Math.max(0, videoDuration - watchedSeconds)) }}
+                </span>
+              </div>
+              <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                <div
+                  class="h-full rounded-full transition-all duration-500"
+                  :class="videoWatchComplete ? 'bg-accent-green' : 'bg-rosatom-500'"
+                  :style="{ width: videoProgressPercent + '%' }"
+                />
+              </div>
+              <p v-if="!videoWatchComplete" class="mt-2 text-xs text-gray-400">
+                Таймер останавливается при переключении на другую вкладку
+              </p>
+            </div>
           </div>
 
           <div v-else class="py-12 text-center text-gray-400">
@@ -99,18 +117,22 @@
 
         <!-- Mark as Complete -->
         <div v-if="stage?.type !== 'test' && stage?.type !== 'assignment' && !isCompleted" class="mt-8">
-          <button
-            class="rounded-xl bg-rosatom-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700"
+          <RButton
+            v-if="!videoDuration || videoWatchComplete"
+            variant="primary"
             @click="markComplete"
           >
             Отметить как пройденное
-          </button>
+          </RButton>
+          <p v-else class="text-sm text-gray-400">
+            Кнопка завершения появится после полного просмотра видео
+          </p>
         </div>
         <div v-else-if="isCompleted" class="mt-8 flex items-center gap-2 text-accent-green">
           <CheckCircleIcon class="h-5 w-5" />
           <span class="font-medium">Этап пройден</span>
         </div>
-      </div>
+      </RCard>
     </div>
   </LmsLayout>
 </template>
@@ -126,6 +148,7 @@ import {
   ChevronRightIcon,
   ClipboardDocumentListIcon,
   PencilSquareIcon,
+  PlayCircleIcon,
 } from '@heroicons/vue/24/outline'
 import { CheckCircleIcon } from '@heroicons/vue/24/solid'
 
@@ -143,6 +166,78 @@ const props = defineProps({
 })
 
 const scormFrame = ref(null)
+
+// ── Video watch tracking ──
+const watchedSeconds = ref(0)
+const isVideoTimerRunning = ref(false)
+let videoTimerInterval = null
+let heartbeatInterval = null
+
+const videoDuration = computed(() => {
+  if (props.stage?.type !== 'video') return 0
+  return props.linkedVideo?.duration_seconds ?? 0
+})
+
+const videoWatchComplete = computed(() => {
+  if (!videoDuration.value) return true
+  return watchedSeconds.value >= Math.floor(videoDuration.value * 0.9)
+})
+
+const videoProgressPercent = computed(() => {
+  if (!videoDuration.value) return 100
+  return Math.min(100, Math.round((watchedSeconds.value / videoDuration.value) * 100))
+})
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+function startVideoTimer() {
+  if (isVideoTimerRunning.value) return
+  isVideoTimerRunning.value = true
+
+  videoTimerInterval = setInterval(() => {
+    if (videoWatchComplete.value) {
+      stopVideoTimer()
+      sendHeartbeat()
+      return
+    }
+    watchedSeconds.value++
+  }, 1000)
+
+  heartbeatInterval = setInterval(sendHeartbeat, 15000)
+}
+
+function stopVideoTimer() {
+  isVideoTimerRunning.value = false
+  if (videoTimerInterval) {
+    clearInterval(videoTimerInterval)
+    videoTimerInterval = null
+  }
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval)
+    heartbeatInterval = null
+  }
+}
+
+function sendHeartbeat() {
+  const url = route('lms.stages.heartbeat', {
+    event: props.event?.slug,
+    course: props.course?.id,
+    stage: props.stage?.id,
+  })
+  axios.post(url, { watched_seconds: watchedSeconds.value }).catch(() => {})
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    stopVideoTimer()
+  } else if (props.stage?.type === 'video' && videoDuration.value && !videoWatchComplete.value) {
+    startVideoTimer()
+  }
+}
 
 const allStages = computed(() => {
   if (props.stages?.length) return props.stages
@@ -233,6 +328,14 @@ onMounted(() => {
     }
     createScormApi()
   }
+
+  if (props.stage?.type === 'video' && videoDuration.value) {
+    watchedSeconds.value = props.progress?.watched_seconds ?? 0
+    if (!videoWatchComplete.value) {
+      startVideoTimer()
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }
 })
 
 onUnmounted(() => {
@@ -240,6 +343,9 @@ onUnmounted(() => {
     if (window.API) delete window.API
     if (window.API_1484_11) delete window.API_1484_11
   }
+
+  stopVideoTimer()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
 function typeLabel(type) {
@@ -247,15 +353,8 @@ function typeLabel(type) {
   return map[type] || type || 'Контент'
 }
 
-function typeBadgeClass(type) {
-  const map = {
-    content: 'bg-gray-100 text-gray-600',
-    scorm: 'bg-rosatom-50 text-rosatom-600',
-    test: 'bg-amber-50 text-amber-600',
-    assignment: 'bg-purple-50 text-purple-600',
-    video: 'bg-rose-50 text-rose-600',
-  }
-  return map[type] || 'bg-gray-100 text-gray-600'
+function typeBadgeVariant(type) {
+  return { content: 'neutral', scorm: 'primary', test: 'warning', assignment: 'info', video: 'error' }[type] || 'neutral'
 }
 
 function markComplete() {

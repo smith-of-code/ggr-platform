@@ -38,44 +38,12 @@
           </div>
 
           <form @submit.prevent="submit" class="mt-8 space-y-5">
-            <div>
-              <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-              <input
-                id="email"
-                type="email"
-                v-model="form.email"
-                required
-                autofocus
-                autocomplete="username"
-                placeholder="admin@rosatom-travel.ru"
-                class="mt-2 block w-full rounded-xl border border-gray-300 px-4 py-3.5 text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/20"
-              />
-              <p v-if="form.errors.email" class="mt-1.5 text-sm text-red-600">{{ form.errors.email }}</p>
-            </div>
+            <RInput v-model="form.email" type="email" label="Email" placeholder="admin@rosatom-travel.ru" :error="form.errors.email" required id="email" />
 
-            <div>
-              <label for="password" class="block text-sm font-medium text-gray-700">Пароль</label>
-              <input
-                id="password"
-                type="password"
-                v-model="form.password"
-                required
-                autocomplete="current-password"
-                placeholder="Введите пароль"
-                class="mt-2 block w-full rounded-xl border border-gray-300 px-4 py-3.5 text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/20"
-              />
-              <p v-if="form.errors.password" class="mt-1.5 text-sm text-red-600">{{ form.errors.password }}</p>
-            </div>
+            <RInput v-model="form.password" type="password" label="Пароль" placeholder="Введите пароль" :error="form.errors.password" required id="password" />
 
             <div class="flex items-center justify-between">
-              <label class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  v-model="form.remember"
-                  class="h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
-                />
-                <span class="text-sm text-gray-600">Запомнить меня</span>
-              </label>
+              <RCheckbox v-model="form.remember" label="Запомнить меня" />
               <Link
                 v-if="canResetPassword"
                 :href="route('password.request')"
@@ -85,20 +53,9 @@
               </Link>
             </div>
 
-            <button
-              type="submit"
-              :disabled="form.processing"
-              class="w-full rounded-xl bg-[#003274] px-6 py-3.5 text-base font-semibold text-white shadow-lg transition duration-200 hover:bg-[#025ea1] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#003274] focus:ring-offset-2 active:scale-[0.98] disabled:opacity-50"
-            >
-              <span v-if="form.processing" class="inline-flex items-center gap-2">
-                <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Вход...
-              </span>
-              <span v-else>Войти</span>
-            </button>
+            <RButton variant="primary" size="lg" block :loading="form.processing" :disabled="form.processing">
+              Войти
+            </RButton>
           </form>
 
           <p class="mt-8 text-center text-sm text-gray-500">

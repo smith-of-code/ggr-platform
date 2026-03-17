@@ -39,8 +39,8 @@ class StageController extends Controller
             'stages' => $allStages,
             'linkedTest' => $stage->test?->only(['id', 'title']),
             'linkedAssignment' => $stage->assignment?->only(['id', 'title']),
-            'linkedVideo' => $stage->video?->only(['id', 'title', 'url', 'source']),
-            'progress' => $progress?->only(['status', 'scorm_data', 'score', 'completed_at']),
+            'linkedVideo' => $stage->video?->only(['id', 'title', 'url', 'source', 'duration_seconds']),
+            'progress' => $progress?->only(['status', 'scorm_data', 'score', 'watched_seconds', 'completed_at']),
         ]);
     }
 
@@ -54,6 +54,21 @@ class StageController extends Controller
             abort(404);
         }
         $user = auth()->user();
+
+        if ($stage->type === 'video' && $stage->video?->duration_seconds) {
+            $progress = LmsStageProgress::where('lms_course_stage_id', $stage->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            $watched = $progress?->watched_seconds ?? 0;
+            $required = (int) ($stage->video->duration_seconds * 0.9);
+
+            if ($watched < $required) {
+                return redirect()->back()->withErrors([
+                    'video' => 'Необходимо просмотреть видео полностью перед завершением этапа.',
+                ]);
+            }
+        }
 
         LmsStageProgress::updateOrCreate(
             [
@@ -79,6 +94,39 @@ class StageController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    public function heartbeat(
+        Request $request,
+        LmsEvent $event,
+        LmsCourse $course,
+        LmsCourseStage $stage
+    ): JsonResponse {
+        if ($course->lms_event_id !== $event->id || $stage->lms_course_id !== $course->id) {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'watched_seconds' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $user = auth()->user();
+
+        $progress = LmsStageProgress::firstOrCreate(
+            [
+                'lms_course_stage_id' => $stage->id,
+                'user_id' => $user->id,
+            ],
+            ['status' => 'in_progress']
+        );
+
+        if ($data['watched_seconds'] > $progress->watched_seconds) {
+            $progress->update(['watched_seconds' => $data['watched_seconds']]);
+        }
+
+        return response()->json([
+            'watched_seconds' => $progress->watched_seconds,
+        ]);
     }
 
     public function scormData(

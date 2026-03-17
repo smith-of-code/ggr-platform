@@ -11,12 +11,12 @@
       </Link>
 
       <!-- Assignment info -->
-      <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
+      <RCard elevation="raised">
         <div class="flex items-start justify-between gap-4">
           <h1 class="font-brand text-2xl font-bold text-gray-900">{{ assignment?.title }}</h1>
-          <span :class="['shrink-0 rounded-full px-3 py-1 text-xs font-bold', statusBadgeClass(submission?.status || 'not_submitted')]">
+          <RBadge :variant="statusBadgeVariant(submission?.status || 'not_submitted')" size="sm" class="shrink-0">
             {{ statusLabel(submission?.status || 'not_submitted') }}
-          </span>
+          </RBadge>
         </div>
 
         <!-- Deadline -->
@@ -67,10 +67,10 @@
             <span v-for="step in timelineSteps" :key="step.key">{{ step.label }}</span>
           </div>
         </div>
-      </div>
+      </RCard>
 
       <!-- Submission form -->
-      <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
+      <RCard elevation="raised">
         <h2 class="font-brand text-lg font-bold text-gray-900">
           {{ submission?.status === 'submitted' ? 'Ваша работа отправлена' : 'Отправка работы' }}
         </h2>
@@ -119,16 +119,7 @@
             <p v-if="form.errors.text_content" class="mt-1.5 text-sm text-red-600">{{ form.errors.text_content }}</p>
           </div>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Ссылка (по желанию)</label>
-            <input
-              v-model="form.link"
-              type="url"
-              placeholder="https://docs.google.com/..."
-              class="mt-2 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
-            />
-            <p v-if="form.errors.link" class="mt-1.5 text-sm text-red-600">{{ form.errors.link }}</p>
-          </div>
+          <RInput v-model="form.link" type="url" label="Ссылка (по желанию)" placeholder="https://docs.google.com/..." :error="form.errors.link" />
 
           <div>
             <label class="block text-sm font-medium text-gray-700">Прикрепить файлы</label>
@@ -168,13 +159,9 @@
             <p v-if="form.errors.files" class="mt-1.5 text-sm text-red-600">{{ form.errors.files }}</p>
           </div>
 
-          <button
-            type="submit"
-            :disabled="form.processing"
-            class="rounded-xl bg-rosatom-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700 disabled:opacity-50"
-          >
+          <RButton variant="primary" :loading="form.processing" :disabled="form.processing">
             {{ form.processing ? 'Отправка...' : (submission?.status === 'revision' ? 'Отправить доработку' : 'Отправить работу') }}
-          </button>
+          </RButton>
         </form>
 
         <!-- Reviews -->
@@ -191,7 +178,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </RCard>
     </div>
   </LmsLayout>
 </template>
@@ -260,15 +247,8 @@ function statusLabel(status) {
   return { not_submitted: 'Не сдано', submitted: 'На проверке', revision: 'На доработке', approved: 'Принято', rejected: 'Отклонено', resubmitted: 'Пересдано' }[status] || status
 }
 
-function statusBadgeClass(status) {
-  return {
-    not_submitted: 'bg-gray-100 text-gray-600',
-    submitted: 'bg-blue-50 text-blue-600',
-    revision: 'bg-amber-50 text-amber-600',
-    approved: 'bg-green-50 text-green-600',
-    rejected: 'bg-red-50 text-red-600',
-    resubmitted: 'bg-blue-50 text-blue-600',
-  }[status] || 'bg-gray-100 text-gray-600'
+function statusBadgeVariant(status) {
+  return { not_submitted: 'neutral', submitted: 'info', revision: 'warning', approved: 'success', rejected: 'error', resubmitted: 'info' }[status] || 'neutral'
 }
 
 function onFilesSelected(e) {

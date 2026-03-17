@@ -40,42 +40,50 @@
 
       <!-- Stats cards -->
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rosatom-50">
-            <BookOpenIcon class="h-5 w-5 text-rosatom-600" />
+        <RCard elevation="raised">
+          <div class="flex items-center gap-4">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rosatom-50">
+              <BookOpenIcon class="h-5 w-5 text-rosatom-600" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Записанных курсов</p>
+              <p class="text-2xl font-bold text-gray-900">{{ courses?.length || 0 }}</p>
+            </div>
           </div>
-          <div>
-            <p class="text-sm text-gray-500">Записанных курсов</p>
-            <p class="text-2xl font-bold text-gray-900">{{ courses?.length || 0 }}</p>
+        </RCard>
+        <RCard elevation="raised">
+          <div class="flex items-center gap-4">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-green/10">
+              <CheckCircleIcon class="h-5 w-5 text-accent-green" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Завершённых курсов</p>
+              <p class="text-2xl font-bold text-gray-900">{{ completedCoursesCount }}</p>
+            </div>
           </div>
-        </div>
-        <div class="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-green/10">
-            <CheckCircleIcon class="h-5 w-5 text-accent-green" />
+        </RCard>
+        <RCard elevation="raised">
+          <div class="flex items-center gap-4">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-yellow/10">
+              <StarIcon class="h-5 w-5 text-accent-yellow" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Всего баллов</p>
+              <p class="text-2xl font-bold text-gray-900">{{ totalPoints ?? 0 }}</p>
+            </div>
           </div>
-          <div>
-            <p class="text-sm text-gray-500">Завершённых курсов</p>
-            <p class="text-2xl font-bold text-gray-900">{{ completedCoursesCount }}</p>
+        </RCard>
+        <RCard elevation="raised">
+          <div class="flex items-center gap-4">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-magenta/10">
+              <TrophyIcon class="h-5 w-5 text-accent-magenta" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Ранг</p>
+              <p class="text-2xl font-bold text-gray-900">{{ profile?.rank ?? '–' }}</p>
+            </div>
           </div>
-        </div>
-        <div class="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-yellow/10">
-            <StarIcon class="h-5 w-5 text-accent-yellow" />
-          </div>
-          <div>
-            <p class="text-sm text-gray-500">Всего баллов</p>
-            <p class="text-2xl font-bold text-gray-900">{{ totalPoints ?? 0 }}</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-magenta/10">
-            <TrophyIcon class="h-5 w-5 text-accent-magenta" />
-          </div>
-          <div>
-            <p class="text-sm text-gray-500">Ранг</p>
-            <p class="text-2xl font-bold text-gray-900">{{ profile?.rank ?? '–' }}</p>
-          </div>
-        </div>
+        </RCard>
       </div>
 
       <!-- My Courses -->
@@ -90,46 +98,16 @@
           </Link>
         </div>
         <div v-if="courses?.length" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div
+          <CourseCard
             v-for="course in courses.slice(0, 6)"
             :key="course.id"
-            class="group cursor-pointer overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
+            :title="course.title"
+            :description="course.description"
+            :image="course.image"
+            :progress="course.progress_percent ?? 0"
+            :badge="(course.progress_percent ?? 0) >= 100 ? { text: 'Завершён', variant: 'success' } : undefined"
             @click="router.visit(route('lms.courses.show', { event: event?.slug, course: course.id }))"
-          >
-            <div class="relative h-40 bg-gradient-to-br from-rosatom-100 to-rosatom-50">
-              <img
-                v-if="course.image"
-                :src="course.image"
-                :alt="course.title"
-                class="h-full w-full object-cover"
-              />
-              <div v-else class="flex h-full items-center justify-center">
-                <BookOpenIcon class="h-12 w-12 text-rosatom-300" />
-              </div>
-              <div
-                v-if="(course.progress_percent ?? 0) >= 100"
-                class="absolute right-3 top-3 rounded-full bg-accent-green px-2.5 py-1 text-xs font-bold text-white"
-              >
-                Завершён
-              </div>
-            </div>
-            <div class="p-4">
-              <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ course.title }}</h3>
-              <p v-if="course.description" class="mt-1 line-clamp-2 text-sm text-gray-500">{{ course.description }}</p>
-              <div class="mt-3">
-                <div class="flex items-center justify-between text-xs text-gray-500">
-                  <span>Прогресс</span>
-                  <span class="font-semibold text-gray-700">{{ course.progress_percent ?? 0 }}%</span>
-                </div>
-                <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-100">
-                  <div
-                    class="h-full rounded-full bg-rosatom-500 transition-all duration-300"
-                    :style="{ width: `${course.progress_percent ?? 0}%` }"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          />
         </div>
         <div v-else class="rounded-xl border border-dashed border-gray-200 bg-white py-12 text-center">
           <BookOpenIcon class="mx-auto h-10 w-10 text-gray-300" />
@@ -142,10 +120,10 @@
         <section>
           <h2 class="mb-4 text-lg font-bold text-gray-900">Ближайшие дедлайны</h2>
           <div class="space-y-3">
-            <div
+            <RCard
               v-for="a in (upcomingAssignments || []).slice(0, 5)"
               :key="a.id"
-              class="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+              elevation="raised"
             >
               <div class="min-w-0 flex-1">
                 <p class="font-medium text-gray-900">{{ a.title }}</p>
@@ -157,7 +135,7 @@
               >
                 Открыть
               </Link>
-            </div>
+            </RCard>
             <div v-if="!upcomingAssignments?.length" class="rounded-xl border border-dashed border-gray-200 bg-white py-10 text-center">
               <p class="text-sm text-gray-400">Нет предстоящих дедлайнов</p>
             </div>
@@ -168,10 +146,10 @@
         <section>
           <h2 class="mb-4 text-lg font-bold text-gray-900">Последняя активность</h2>
           <div class="space-y-3">
-            <div
+            <RCard
               v-for="p in (recentPoints || []).slice(0, 5)"
               :key="p.id"
-              class="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+              elevation="raised"
             >
               <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-green/10">
                 <PlusIcon class="h-5 w-5 text-accent-green" />
@@ -181,7 +159,7 @@
                 <p class="text-sm text-gray-500">{{ formatDate(p.created_at) }}</p>
               </div>
               <span class="shrink-0 text-sm font-bold text-accent-green">+{{ p.points ?? p.amount ?? 0 }}</span>
-            </div>
+            </RCard>
             <div v-if="!recentPoints?.length" class="rounded-xl border border-dashed border-gray-200 bg-white py-10 text-center">
               <p class="text-sm text-gray-400">Пока нет активности</p>
             </div>

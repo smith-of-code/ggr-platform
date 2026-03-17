@@ -15,13 +15,15 @@
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div
+        <RCard
           v-for="video in (videos?.data || videos || [])"
           :key="video.id"
-          class="group cursor-pointer overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
+          elevation="raised"
+          hoverable
+          class="group"
           @click="router.visit(route('lms.videos.show', { event: event?.slug, video: video.id }))"
         >
-          <!-- Thumbnail -->
+          <template #cover>
           <div class="relative aspect-video overflow-hidden bg-gray-900">
             <img
               v-if="getThumbnail(video)"
@@ -38,21 +40,18 @@
                 <PlayIcon class="h-7 w-7 text-rosatom-700" />
               </div>
             </div>
-            <div
-              v-if="video.is_recording"
-              class="absolute right-2 top-2 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white"
-            >
+            <RBadge v-if="video.is_recording" variant="error" size="sm" class="absolute right-2 top-2">
               Запись
-            </div>
+            </RBadge>
           </div>
+          </template>
 
-          <!-- Info -->
-          <div class="p-4">
+          <div>
             <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ video.title }}</h3>
             <p v-if="video.description" class="mt-1 line-clamp-2 text-sm text-gray-500">{{ video.description }}</p>
             <p v-if="getSourceLabel(video)" class="mt-2 text-xs text-gray-400">{{ getSourceLabel(video) }}</p>
           </div>
-        </div>
+        </RCard>
       </div>
 
       <div v-if="!(videos?.data?.length || videos?.length)" class="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">

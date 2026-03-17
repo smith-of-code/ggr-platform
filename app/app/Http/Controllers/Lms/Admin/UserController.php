@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsCourse;
 use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
+use App\Models\Lms\LmsInvitation;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsRole;
 use App\Models\User;
@@ -50,6 +51,11 @@ class UserController extends Controller
         $groups = $event->groups()->orderBy('title')->get(['id', 'title']);
         $courses = LmsCourse::where('lms_event_id', $event->id)->orderBy('title')->get(['id', 'title']);
 
+        $invitations = LmsInvitation::where('lms_event_id', $event->id)
+            ->with(['role:id,name', 'creator:id,name'])
+            ->orderByDesc('created_at')
+            ->get();
+
         return Inertia::render('Lms/Admin/Users/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
             'profiles' => $profiles,
@@ -57,6 +63,7 @@ class UserController extends Controller
             'groups' => $groups,
             'courses' => $courses,
             'filters' => $request->only(['role_id', 'group', 'search']),
+            'invitations' => $invitations,
         ]);
     }
 

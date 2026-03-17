@@ -3,16 +3,13 @@
     <Head :title="`${course?.title} – ${event?.title}`" />
     <div class="mx-auto max-w-4xl space-y-6">
       <!-- Back -->
-      <button
-        @click="router.visit(route('lms.courses.index', { event: event?.slug }))"
-        class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-rosatom-600"
-      >
-        <ArrowLeftIcon class="h-4 w-4" />
+      <RButton variant="ghost" size="sm" @click="router.visit(route('lms.courses.index', { event: event?.slug }))">
+        <template #icon><ArrowLeftIcon class="h-4 w-4" /></template>
         Все курсы
-      </button>
+      </RButton>
 
       <!-- Course header -->
-      <div class="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+      <RCard elevation="raised" flush>
         <div v-if="course?.image" class="h-48 overflow-hidden bg-gray-100">
           <img :src="course.image" :alt="course.title" class="h-full w-full object-cover" />
         </div>
@@ -28,36 +25,45 @@
             <span v-if="course.ends_at">{{ formatDateFull(course.ends_at) }}</span>
           </div>
 
-          <!-- Enroll button -->
+          <!-- Enroll status -->
           <div class="mt-6">
-            <template v-if="isEnrolled">
+            <template v-if="enrollmentStatus === 'enrolled' || enrollmentStatus === 'in_progress' || enrollmentStatus === 'completed'">
               <div class="flex items-center gap-2 text-sm font-medium text-green-600">
                 <CheckCircleIcon class="h-5 w-5" />
                 Вы записаны на курс
               </div>
-              <div class="mt-3">
-                <div class="flex items-center justify-between text-sm">
-                  <span class="text-gray-500">Прогресс</span>
-                  <span class="font-bold text-rosatom-600">{{ overallProgress }}%</span>
-                </div>
-                <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
-                  <div class="h-full rounded-full bg-rosatom-500 transition-all" :style="{ width: overallProgress + '%' }" />
+              <RProgress :percentage="overallProgress" label="Прогресс" show-label size="sm" class="mt-3" />
+            </template>
+            <template v-else-if="enrollmentStatus === 'pending'">
+              <div class="flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3">
+                <ClockIcon class="h-5 w-5 shrink-0 text-amber-500" />
+                <div>
+                  <p class="text-sm font-medium text-amber-800">Заявка отправлена</p>
+                  <p class="text-xs text-amber-600">Ожидает одобрения администратором</p>
                 </div>
               </div>
             </template>
-            <button
-              v-else
-              @click="enroll"
-              class="rounded-xl bg-rosatom-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700"
-            >
+            <template v-else-if="enrollmentStatus === 'rejected'">
+              <div class="flex items-center gap-3 rounded-xl bg-red-50 px-4 py-3">
+                <XCircleIcon class="h-5 w-5 shrink-0 text-red-500" />
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-red-800">Заявка отклонена</p>
+                  <p class="text-xs text-red-600">Вы можете подать заявку повторно</p>
+                </div>
+                <RButton variant="outline" size="sm" @click="enroll">
+                  Подать повторно
+                </RButton>
+              </div>
+            </template>
+            <RButton v-else variant="primary" @click="enroll">
               Записаться на курс
-            </button>
+            </RButton>
           </div>
         </div>
-      </div>
+      </RCard>
 
       <!-- Program / Schedule -->
-      <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
+      <RCard elevation="raised">
         <h2 class="font-brand text-xl font-bold text-gray-900">Программа курса</h2>
         <p class="mt-1 text-sm text-gray-500">Расписание модулей и уроков</p>
 
@@ -89,12 +95,12 @@
                       {{ formatDateFull(mod.module.available_from) }}
                     </span>
                   </template>
-                  <span v-if="!mod.is_available" class="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">
+                  <RBadge v-if="!mod.is_available" variant="warning" size="sm">
                     Откроется {{ formatDateFull(mod.module.available_from) }}
-                  </span>
-                  <span v-else-if="moduleProgress(mod) === 100" class="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">
+                  </RBadge>
+                  <RBadge v-else-if="moduleProgress(mod) === 100" variant="success" size="sm">
                     Завершён
-                  </span>
+                  </RBadge>
                 </div>
               </div>
               <ChevronDownIcon class="h-5 w-5 shrink-0 text-gray-400 transition" :class="{ 'rotate-180': expandedModules[mi] }" />
@@ -174,7 +180,7 @@
         <div v-if="!modules?.length && !orphanStages?.length" class="mt-8 text-center text-sm text-gray-400">
           Программа курса пока не заполнена
         </div>
-      </div>
+      </RCard>
     </div>
   </LmsLayout>
 </template>
@@ -194,6 +200,8 @@ import {
   ClipboardDocumentListIcon,
   PencilSquareIcon,
   DocumentTextIcon,
+  ClockIcon,
+  XCircleIcon,
 } from '@heroicons/vue/24/outline'
 import { CheckIcon, CheckCircleIcon } from '@heroicons/vue/24/solid'
 
@@ -206,7 +214,8 @@ const props = defineProps({
   stages: Array,
 })
 
-const isEnrolled = computed(() => !!props.enrollment)
+const enrollmentStatus = computed(() => props.enrollment?.status ?? null)
+const isEnrolled = computed(() => ['enrolled', 'in_progress', 'completed'].includes(enrollmentStatus.value))
 
 const expandedModules = reactive(
   (props.modules || []).reduce((acc, mod, i) => {

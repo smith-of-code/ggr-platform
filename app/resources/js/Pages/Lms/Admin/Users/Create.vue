@@ -2,70 +2,36 @@
   <LmsAdminLayout :event="event">
     <div class="mx-auto max-w-3xl">
       <div class="mb-8">
-        <button
-          @click="router.visit(route('lms.admin.users.index', event.slug))"
-          class="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-rosatom-600"
-        >
-          <ArrowLeftIcon class="h-4 w-4" />
+        <RButton variant="ghost" size="sm" @click="router.visit(route('lms.admin.users.index', event.slug))" class="mb-4">
+          <template #icon><ArrowLeftIcon class="h-4 w-4" /></template>
           Назад к участникам
-        </button>
+        </RButton>
         <h1 class="text-2xl font-bold text-gray-900">Добавить участника</h1>
         <p class="mt-1 text-sm text-gray-500">Создайте нового пользователя и назначьте ему роль и курсы</p>
       </div>
 
       <form @submit.prevent="submit" class="space-y-8">
         <!-- Personal info -->
-        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <RCard elevation="raised">
           <h2 class="mb-5 text-lg font-bold text-gray-900">Личные данные</h2>
           <div class="grid gap-5 sm:grid-cols-3">
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-700">Фамилия <span class="text-red-400">*</span></label>
-              <input v-model="form.last_name" type="text" required placeholder="Иванов"
-                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-                :class="{ 'border-red-400': form.errors.last_name }"
-              />
-              <p v-if="form.errors.last_name" class="mt-1 text-sm text-red-600">{{ form.errors.last_name }}</p>
-            </div>
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-700">Имя <span class="text-red-400">*</span></label>
-              <input v-model="form.first_name" type="text" required placeholder="Иван"
-                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-                :class="{ 'border-red-400': form.errors.first_name }"
-              />
-              <p v-if="form.errors.first_name" class="mt-1 text-sm text-red-600">{{ form.errors.first_name }}</p>
-            </div>
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-700">Отчество</label>
-              <input v-model="form.patronymic" type="text" placeholder="Иванович"
-                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-              />
-            </div>
+            <RInput v-model="form.last_name" label="Фамилия" placeholder="Иванов" :error="form.errors.last_name" required />
+            <RInput v-model="form.first_name" label="Имя" placeholder="Иван" :error="form.errors.first_name" required />
+            <RInput v-model="form.patronymic" label="Отчество" placeholder="Иванович" />
           </div>
-        </div>
+        </RCard>
 
         <!-- Contact info -->
-        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <RCard elevation="raised">
           <h2 class="mb-5 text-lg font-bold text-gray-900">Контактные данные</h2>
           <div class="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-700">Email <span class="text-red-400">*</span></label>
-              <input v-model="form.email" type="email" required placeholder="ivanov@example.com"
-                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-                :class="{ 'border-red-400': form.errors.email }"
-              />
-              <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
-            </div>
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-700">Телефон</label>
-              <input v-model="form.phone" type="tel" placeholder="+7 (900) 123-45-67"
-                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-              />
-            </div>
+            <RInput v-model="form.email" type="email" label="Email" placeholder="ivanov@example.com" :error="form.errors.email" required />
+            <RInput v-model="form.phone" type="tel" label="Телефон" placeholder="+7 (900) 123-45-67" />
           </div>
-        </div>
+        </RCard>
 
         <!-- Role & position -->
-        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <RCard elevation="raised">
           <h2 class="mb-5 text-lg font-bold text-gray-900">Роль и должность</h2>
           <div class="grid gap-5 sm:grid-cols-2">
             <SearchSelect
@@ -77,17 +43,12 @@
               placeholder="Выберите роль"
               :error="form.errors.role_id"
             />
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-700">Должность</label>
-              <input v-model="form.position" type="text" placeholder="Менеджер проектов"
-                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-              />
-            </div>
+            <RInput v-model="form.position" label="Должность" placeholder="Менеджер проектов" />
           </div>
-        </div>
+        </RCard>
 
         <!-- Course assignment -->
-        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <RCard elevation="raised">
           <h2 class="mb-5 text-lg font-bold text-gray-900">Назначение курсов</h2>
           <MultiSelect
             v-model="form.course_ids"
@@ -97,35 +58,23 @@
             label="Курсы"
             placeholder="Выберите курсы для назначения"
           />
-        </div>
+        </RCard>
 
         <!-- Password -->
-        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <RCard elevation="raised">
           <h2 class="mb-5 text-lg font-bold text-gray-900">Пароль</h2>
           <div class="max-w-md">
-            <label class="mb-1.5 block text-sm font-medium text-gray-700">Пароль (оставьте пустым для автогенерации)</label>
-            <input v-model="form.password" type="text" placeholder="Сгенерируется автоматически"
-              class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-            />
-            <p class="mt-1.5 text-xs text-gray-400">Минимум 6 символов. Пароль будет показан после создания.</p>
+            <RInput v-model="form.password" label="Пароль (оставьте пустым для автогенерации)" placeholder="Сгенерируется автоматически" hint="Минимум 6 символов. Пароль будет показан после создания." />
           </div>
-        </div>
+        </RCard>
 
         <div class="flex items-center gap-3 pb-8">
-          <button
-            type="submit"
-            :disabled="form.processing"
-            class="rounded-xl bg-rosatom-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700 disabled:opacity-50"
-          >
+          <RButton type="submit" variant="primary" :loading="form.processing" :disabled="form.processing">
             {{ form.processing ? 'Сохранение...' : 'Создать участника' }}
-          </button>
-          <button
-            type="button"
-            @click="router.visit(route('lms.admin.users.index', event.slug))"
-            class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-          >
+          </RButton>
+          <RButton variant="outline" @click="router.visit(route('lms.admin.users.index', event.slug))">
             Отмена
-          </button>
+          </RButton>
         </div>
       </form>
     </div>

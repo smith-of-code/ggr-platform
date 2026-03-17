@@ -5,7 +5,7 @@
     <!-- Left panel: branding -->
     <div class="hidden w-1/2 flex-col justify-between bg-rosatom-800 p-12 lg:flex">
       <div>
-        <img src="/images/logo-horizontal.png" alt="ГГР" class="h-24 w-auto brightness-0 invert" />
+        <img src="/images/logo-horizontal.png" alt="ГГР" class="h-20 w-auto" />
       </div>
       <div>
         <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">

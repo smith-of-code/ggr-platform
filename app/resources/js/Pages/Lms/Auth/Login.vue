@@ -5,7 +5,7 @@
     <!-- Left panel: branding -->
     <div class="hidden w-1/2 flex-col justify-between bg-rosatom-800 p-12 lg:flex">
       <div>
-        <img src="/images/logo-horizontal.png" alt="ГГР" class="w-full max-w-md brightness-0 invert" />
+        <img src="/images/logo-horizontal.png" alt="ГГР" class="h-20 w-auto" />
       </div>
       <div>
         <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
@@ -35,50 +35,15 @@
         </div>
 
         <form @submit.prevent="submit" class="mt-8 space-y-5">
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              id="email"
-              v-model="form.email"
-              type="email"
-              placeholder="your@email.com"
-              required
-              class="mt-1.5 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-              :class="{ 'border-red-400': form.errors.email }"
-            />
-            <p v-if="form.errors.email" class="mt-1.5 text-sm text-red-600">{{ form.errors.email }}</p>
-          </div>
+          <RInput v-model="form.email" type="email" label="Email" placeholder="your@email.com" :error="form.errors.email" required id="email" />
 
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">Пароль</label>
-            <input
-              id="password"
-              v-model="form.password"
-              type="password"
-              placeholder="••••••••"
-              required
-              class="mt-1.5 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
-              :class="{ 'border-red-400': form.errors.password }"
-            />
-            <p v-if="form.errors.password" class="mt-1.5 text-sm text-red-600">{{ form.errors.password }}</p>
-          </div>
+          <RInput v-model="form.password" type="password" label="Пароль" placeholder="••••••••" :error="form.errors.password" required id="password" />
 
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input
-              v-model="form.remember"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-rosatom-600 focus:ring-rosatom-500"
-            />
-            <span class="text-sm text-gray-600">Запомнить меня</span>
-          </label>
+          <RCheckbox v-model="form.remember" label="Запомнить меня" />
 
-          <button
-            type="submit"
-            :disabled="form.processing"
-            class="w-full rounded-xl bg-rosatom-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700 disabled:opacity-50"
-          >
-            {{ form.processing ? 'Вход...' : 'Войти' }}
-          </button>
+          <RButton variant="primary" size="lg" block :loading="form.processing" :disabled="form.processing">
+            Войти
+          </RButton>
         </form>
 
         <p class="mt-8 text-center text-sm text-gray-400">

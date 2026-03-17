@@ -59,6 +59,7 @@
   --space-1: 0.25rem;
   --space-1\.5: 0.375rem;
   --space-2: 0.5rem;
+  --space-2\.5: 0.625rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
   --space-5: 1.25rem;
@@ -109,6 +110,14 @@
   --font-family-brand: 'Tilda Sans', 'Inter', system-ui, -apple-system, sans-serif;
   --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
+
+/* ── UI-kit icon-only button fix ── */
+.r-btn--icon-only .r-btn__label:empty {
+  display: none;
+}
+
+/* ── Allow dropdowns inside RCard to overflow ── */
+.r-card { overflow: visible !important; }
 
 /* ── Scroll reveal animations ── */
 .reveal {

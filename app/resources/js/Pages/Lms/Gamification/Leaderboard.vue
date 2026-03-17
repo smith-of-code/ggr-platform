@@ -31,24 +31,11 @@
       />
 
       <!-- Group leaderboard (if present) -->
-      <div v-if="(groupLeaderboard || []).length > 0">
-        <h2 class="font-brand mb-4 text-lg font-semibold text-gray-900">Рейтинг групп</h2>
-        <div class="space-y-2">
-          <RCard
-            v-for="(entry, idx) in groupLeaderboard"
-            :key="entry.group?.id || idx"
-            class="flex items-center justify-between px-6 py-4"
-          >
-            <template #default>
-              <div class="flex items-center gap-3">
-                <span class="font-bold text-gray-500">#{{ idx + 1 }}</span>
-                <span class="font-medium text-gray-900">{{ entry.group?.title || '–' }}</span>
-              </div>
-              <span class="font-semibold text-rosatom-600">{{ entry.total_points ?? 0 }} баллов</span>
-            </template>
-          </RCard>
-        </div>
-      </div>
+      <Leaderboard
+        v-if="(groupLeaderboard || []).length > 0"
+        title="Рейтинг групп"
+        :entries="groupLeaderboardEntries"
+      />
 
       <RCard
         v-if="!(leaderboardWithRank?.length)"
@@ -87,6 +74,14 @@ const currentUserEntry = computed(() => {
   return { ...list[idx], rank: idx + 1 }
 })
 
+const groupLeaderboardEntries = computed(() =>
+  (props.groupLeaderboard || []).map((entry, idx) => ({
+    id: entry.group?.id ?? idx,
+    name: entry.group?.title || '–',
+    points: entry.total_points ?? 0,
+  }))
+)
+
 const leaderboardEntries = computed(() => {
   return (leaderboardWithRank.value || []).map((entry, idx) => ({
     id: entry.user?.id ?? idx,
@@ -97,8 +92,4 @@ const leaderboardEntries = computed(() => {
     highlight: entry.user?.id === authUserId.value,
   }))
 })
-
-function isCurrentUser(entry) {
-  return entry.user?.id === authUserId.value
-}
 </script>

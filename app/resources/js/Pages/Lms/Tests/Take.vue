@@ -16,10 +16,10 @@
       </div>
 
       <form @submit.prevent="submit" class="space-y-6">
-        <div
+        <RCard
           v-for="(q, qi) in (questions || [])"
           :key="q.id"
-          class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
+          elevation="raised"
         >
           <p class="text-base font-semibold text-gray-900">
             {{ qi + 1 }}. {{ q.text }}
@@ -76,7 +76,7 @@
               class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
             />
           </div>
-        </div>
+        </RCard>
 
         <div v-if="!questions?.length" class="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">
           <p class="text-sm text-gray-400">В этом тесте нет вопросов</p>

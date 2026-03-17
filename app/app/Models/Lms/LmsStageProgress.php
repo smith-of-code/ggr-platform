@@ -16,11 +16,13 @@ class LmsStageProgress extends Model
         'status',
         'scorm_data',
         'score',
+        'watched_seconds',
         'completed_at',
     ];
 
     protected $casts = [
         'scorm_data' => 'array',
+        'watched_seconds' => 'integer',
         'completed_at' => 'datetime',
     ];
 

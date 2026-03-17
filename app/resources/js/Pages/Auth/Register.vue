@@ -34,77 +34,17 @@
           <p class="mt-2 text-gray-500">Заполните данные для создания аккаунта</p>
 
           <form @submit.prevent="submit" class="mt-8 space-y-5">
-            <div>
-              <label for="name" class="block text-sm font-medium text-gray-700">Имя</label>
-              <input
-                id="name"
-                type="text"
-                v-model="form.name"
-                required
-                autofocus
-                autocomplete="name"
-                placeholder="Ваше имя"
-                class="mt-2 block w-full rounded-xl border border-gray-300 px-4 py-3.5 text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/20"
-              />
-              <p v-if="form.errors.name" class="mt-1.5 text-sm text-red-600">{{ form.errors.name }}</p>
-            </div>
+            <RInput v-model="form.name" label="Имя" placeholder="Ваше имя" :error="form.errors.name" required id="name" />
 
-            <div>
-              <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-              <input
-                id="email"
-                type="email"
-                v-model="form.email"
-                required
-                autocomplete="username"
-                placeholder="your@email.com"
-                class="mt-2 block w-full rounded-xl border border-gray-300 px-4 py-3.5 text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/20"
-              />
-              <p v-if="form.errors.email" class="mt-1.5 text-sm text-red-600">{{ form.errors.email }}</p>
-            </div>
+            <RInput v-model="form.email" type="email" label="Email" placeholder="your@email.com" :error="form.errors.email" required id="email" />
 
-            <div>
-              <label for="password" class="block text-sm font-medium text-gray-700">Пароль</label>
-              <input
-                id="password"
-                type="password"
-                v-model="form.password"
-                required
-                autocomplete="new-password"
-                placeholder="Минимум 8 символов"
-                class="mt-2 block w-full rounded-xl border border-gray-300 px-4 py-3.5 text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/20"
-              />
-              <p v-if="form.errors.password" class="mt-1.5 text-sm text-red-600">{{ form.errors.password }}</p>
-            </div>
+            <RInput v-model="form.password" type="password" label="Пароль" placeholder="Минимум 8 символов" :error="form.errors.password" required id="password" />
 
-            <div>
-              <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Подтвердите пароль</label>
-              <input
-                id="password_confirmation"
-                type="password"
-                v-model="form.password_confirmation"
-                required
-                autocomplete="new-password"
-                placeholder="Повторите пароль"
-                class="mt-2 block w-full rounded-xl border border-gray-300 px-4 py-3.5 text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/20"
-              />
-              <p v-if="form.errors.password_confirmation" class="mt-1.5 text-sm text-red-600">{{ form.errors.password_confirmation }}</p>
-            </div>
+            <RInput v-model="form.password_confirmation" type="password" label="Подтвердите пароль" placeholder="Повторите пароль" :error="form.errors.password_confirmation" required id="password_confirmation" />
 
-            <button
-              type="submit"
-              :disabled="form.processing"
-              class="w-full rounded-xl bg-[#003274] px-6 py-3.5 text-base font-semibold text-white shadow-lg transition duration-200 hover:bg-[#025ea1] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#003274] focus:ring-offset-2 active:scale-[0.98] disabled:opacity-50"
-            >
-              <span v-if="form.processing" class="inline-flex items-center gap-2">
-                <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Регистрация...
-              </span>
-              <span v-else>Зарегистрироваться</span>
-            </button>
+            <RButton variant="primary" size="lg" block :loading="form.processing" :disabled="form.processing">
+              Зарегистрироваться
+            </RButton>
           </form>
 
           <p class="mt-8 text-center text-sm text-gray-500">

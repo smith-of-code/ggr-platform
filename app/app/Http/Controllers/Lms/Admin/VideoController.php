@@ -43,9 +43,7 @@ class VideoController extends Controller
         $validated['is_recording'] = $request->boolean('is_recording', false);
         $validated['is_active'] = $request->boolean('is_active', true);
 
-        if (empty($validated['thumbnail']) && !empty($validated['url'])) {
-            $validated['thumbnail'] = $this->fetchThumbnail($validated['url']);
-        }
+        $validated['thumbnail'] = $this->resolveThumbnail($request, $validated['url'] ?? null);
 
         $video = LmsVideo::create($validated);
 
@@ -79,9 +77,7 @@ class VideoController extends Controller
         $validated['is_recording'] = $request->boolean('is_recording', false);
         $validated['is_active'] = $request->boolean('is_active', true);
 
-        if (empty($validated['thumbnail']) && !empty($validated['url']) && empty($video->thumbnail)) {
-            $validated['thumbnail'] = $this->fetchThumbnail($validated['url']);
-        }
+        $validated['thumbnail'] = $this->resolveThumbnail($request, $validated['url'] ?? null, $video->thumbnail);
 
         $video->update($validated);
 
@@ -107,7 +103,32 @@ class VideoController extends Controller
             'source' => ['nullable', 'string'],
             'url' => ['nullable', 'string', 'url'],
             'file_path' => ['nullable', 'string'],
+            'duration_seconds' => ['nullable', 'integer', 'min:1'],
+            'thumbnail_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_thumbnail' => ['nullable', 'boolean'],
         ]);
+    }
+
+    private function resolveThumbnail(Request $request, ?string $url, ?string $existing = null): ?string
+    {
+        if ($request->boolean('remove_thumbnail')) {
+            return null;
+        }
+
+        if ($request->hasFile('thumbnail_file')) {
+            $path = $request->file('thumbnail_file')->store('thumbnails/videos', 'public');
+            return '/storage/' . $path;
+        }
+
+        if ($existing) {
+            return $existing;
+        }
+
+        if ($url) {
+            return $this->fetchThumbnail($url);
+        }
+
+        return null;
     }
 
     private function fetchThumbnail(string $url): ?string

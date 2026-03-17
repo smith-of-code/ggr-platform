@@ -11,31 +11,21 @@
     <form @submit.prevent="submit" class="space-y-8">
       <div class="grid gap-8 lg:grid-cols-3">
         <!-- Left column -->
-        <div class="space-y-6 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm lg:col-span-2">
+        <RCard elevation="raised" class="lg:col-span-2">
+          <div class="space-y-6">
           <h2 class="text-base font-bold text-gray-900">Основная информация</h2>
 
           <div class="grid gap-5 sm:grid-cols-2">
             <div class="sm:col-span-2">
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Название *</label>
-              <input v-model="form.title" type="text" required class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
-              <p v-if="form.errors.title" class="mt-1 text-xs text-red-500">{{ form.errors.title }}</p>
+              <RInput v-model="form.title" label="Название *" :error="form.errors.title" required />
             </div>
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Slug</label>
-              <input v-model="form.slug" type="text" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm font-mono transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
-            </div>
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Город старта</label>
-              <input v-model="form.start_city" type="text" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
-            </div>
+            <RInput v-model="form.slug" label="Slug" />
+            <RInput v-model="form.start_city" label="Город старта" />
             <div class="sm:col-span-2">
               <label class="mb-2 block text-sm font-semibold text-gray-700">Описание</label>
               <textarea v-model="form.description" rows="4" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
             </div>
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Продолжительность</label>
-              <input v-model="form.duration" type="text" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" placeholder="2 дня, 1 ночь" />
-            </div>
+            <RInput v-model="form.duration" label="Продолжительность" placeholder="2 дня, 1 ночь" />
             <div>
               <label class="mb-2 block text-sm font-semibold text-gray-700">Цена от (₽)</label>
               <input v-model.number="form.price_from" type="number" min="0" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
@@ -75,17 +65,15 @@
 
           <!-- Checkboxes -->
           <div class="flex flex-wrap gap-3 border-t border-gray-100 pt-5">
-            <label v-for="opt in checkboxOptions" :key="opt.key" class="group flex cursor-pointer items-center gap-2.5 rounded-xl border border-gray-200 px-4 py-2.5 transition hover:bg-gray-50" :class="form[opt.key] ? 'border-[#003274]/30 bg-[#003274]/5' : ''">
-              <input v-model="form[opt.key]" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]/20" />
-              <span class="text-sm font-medium text-gray-700">{{ opt.label }}</span>
-            </label>
+            <RCheckbox v-for="opt in checkboxOptions" :key="opt.key" v-model="form[opt.key]" :label="opt.label" />
           </div>
-        </div>
+          </div>
+        </RCard>
 
         <!-- Right column -->
         <div class="space-y-6">
           <!-- Cities -->
-          <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <RCard elevation="raised">
             <h2 class="mb-4 text-base font-bold text-gray-900">Города</h2>
             <div class="space-y-2">
               <label v-for="c in cities" :key="c.id" class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 transition hover:bg-gray-50" :class="form.city_ids.includes(c.id) ? 'bg-[#003274]/5' : ''">
@@ -93,10 +81,10 @@
                 <span class="text-sm font-medium text-gray-700">{{ c.name }}</span>
               </label>
             </div>
-          </div>
+          </RCard>
 
           <!-- Departures -->
-          <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <RCard elevation="raised">
             <h2 class="mb-4 text-base font-bold text-gray-900">Даты заездов</h2>
             <div class="space-y-3">
               <div v-for="(dep, i) in form.departures" :key="i" class="rounded-xl border border-gray-200 bg-gray-50 p-3">
@@ -105,27 +93,30 @@
                   <input v-model="dep.end_date" type="date" class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm" />
                   <div class="flex gap-2">
                     <input v-model.number="dep.price_per_person" type="number" placeholder="Цена ₽" class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm" />
-                    <button v-if="form.departures.length > 1" type="button" @click="form.departures.splice(i, 1)" class="shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-500">
-                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                    </button>
+                    <RButton v-if="form.departures.length > 1" variant="danger" size="sm" icon-only @click="form.departures.splice(i, 1)">
+                      <template #icon>
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                      </template>
+                    </RButton>
                   </div>
                 </div>
               </div>
             </div>
-            <button type="button" @click="form.departures.push({ start_date: '', end_date: '', price_per_person: '' })" class="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-gray-200 py-2.5 text-sm font-medium text-gray-500 transition hover:border-[#003274]/30 hover:text-[#003274]">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            <RButton variant="outline" block class="mt-3" @click="form.departures.push({ start_date: '', end_date: '', price_per_person: '' })">
+              <template #icon>
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              </template>
               Добавить дату
-            </button>
-          </div>
+            </RButton>
+          </RCard>
         </div>
       </div>
 
       <!-- Actions -->
       <div class="flex gap-3">
-        <button type="submit" :disabled="form.processing" class="flex items-center gap-2 rounded-xl bg-[#003274] px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-[#003274]/20 transition hover:bg-[#025ea1] disabled:opacity-50">
-          <svg v-if="form.processing" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+        <RButton variant="primary" :loading="form.processing" :disabled="form.processing">
           Сохранить
-        </button>
+        </RButton>
         <Link :href="route('admin.tours.index')" class="rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50">Отмена</Link>
       </div>
     </form>

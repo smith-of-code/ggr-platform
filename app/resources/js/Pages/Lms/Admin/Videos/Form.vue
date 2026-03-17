@@ -26,6 +26,100 @@
           type="url"
           placeholder="https://..."
         />
+
+        <!-- Длительность видео -->
+        <div>
+          <label class="mb-2 block text-sm font-medium text-gray-700">Длительность видео</label>
+          <p class="mb-2 text-xs text-gray-400">Используется для контроля просмотра в курсах</p>
+          <div class="flex items-center gap-2">
+            <div class="w-24">
+              <RInput
+                v-model="durationMinutes"
+                type="number"
+                placeholder="мин"
+                :min="0"
+              />
+            </div>
+            <span class="text-sm text-gray-500">мин</span>
+            <div class="w-24">
+              <RInput
+                v-model="durationSecs"
+                type="number"
+                placeholder="сек"
+                :min="0"
+                :max="59"
+              />
+            </div>
+            <span class="text-sm text-gray-500">сек</span>
+          </div>
+          <div v-if="form.errors.duration_seconds" class="mt-1 text-sm text-red-600">{{ form.errors.duration_seconds }}</div>
+        </div>
+
+        <!-- Обложка -->
+        <div>
+          <label class="mb-2 block text-sm font-medium text-gray-700">Обложка</label>
+
+          <div v-if="thumbnailPreview || currentThumbnail" class="mb-3">
+            <div class="relative inline-block">
+              <img
+                :src="thumbnailPreview || currentThumbnail"
+                alt="Обложка"
+                class="h-40 w-auto rounded-xl border border-gray-200 object-cover shadow-sm"
+              />
+              <button
+                type="button"
+                class="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition hover:bg-red-600"
+                @click="removeThumbnail"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <div
+            v-if="!thumbnailPreview && !currentThumbnail"
+            class="relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-8 text-center transition hover:border-rosatom-400 hover:bg-gray-50"
+            :class="{ 'border-rosatom-500 bg-rosatom-50': isDragging }"
+            @dragover.prevent="isDragging = true"
+            @dragleave.prevent="isDragging = false"
+            @drop.prevent="handleDrop"
+          >
+            <svg class="mx-auto mb-3 h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+            </svg>
+            <p class="text-sm font-medium text-gray-700">Перетащите изображение или нажмите для выбора</p>
+            <p class="mt-1 text-xs text-gray-400">JPG, PNG, WebP — до 5 МБ</p>
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="absolute inset-0 cursor-pointer opacity-0"
+              @change="handleFileSelect"
+            />
+          </div>
+
+          <div v-if="!thumbnailPreview && !currentThumbnail" class="mt-2">
+            <button
+              type="button"
+              class="text-xs font-medium text-rosatom-600 hover:underline"
+              @click="showUrlInput = !showUrlInput"
+            >
+              {{ showUrlInput ? 'Скрыть' : 'Или вставить URL изображения' }}
+            </button>
+            <div v-if="showUrlInput" class="mt-2">
+              <RInput
+                v-model="thumbnailUrl"
+                placeholder="https://example.com/image.jpg"
+                type="url"
+                @blur="applyThumbnailUrl"
+                @keydown.enter.prevent="applyThumbnailUrl"
+              />
+            </div>
+          </div>
+
+          <div v-if="form.errors.thumbnail_file" class="mt-1 text-sm text-red-600">{{ form.errors.thumbnail_file }}</div>
+        </div>
+
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700">Группы</label>
           <div class="space-y-2">
@@ -51,10 +145,21 @@
 </template>
 
 <script setup>
-import { Link, useForm } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { Link, useForm, router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
 const props = defineProps({ event: Object, video: Object, groups: Array })
+
+const isDragging = ref(false)
+const showUrlInput = ref(false)
+const thumbnailUrl = ref('')
+const thumbnailPreview = ref(null)
+const currentThumbnail = ref(props.video?.thumbnail ?? null)
+
+const initialDuration = props.video?.duration_seconds ?? 0
+const durationMinutes = ref(Math.floor(initialDuration / 60))
+const durationSecs = ref(initialDuration % 60)
 
 const form = useForm({
   title: props.video?.title ?? '',
@@ -63,13 +168,61 @@ const form = useForm({
   url: props.video?.url ?? '',
   group_ids: props.video?.groups?.map(g => g.id) ?? [],
   is_active: props.video?.is_active ?? true,
+  duration_seconds: props.video?.duration_seconds ?? null,
+  thumbnail_file: null,
+  remove_thumbnail: false,
 })
 
+function handleFileSelect(e) {
+  const file = e.target.files?.[0]
+  if (file) applyFile(file)
+}
+
+function handleDrop(e) {
+  isDragging.value = false
+  const file = e.dataTransfer.files?.[0]
+  if (file && file.type.startsWith('image/')) applyFile(file)
+}
+
+function applyFile(file) {
+  form.thumbnail_file = file
+  form.remove_thumbnail = false
+  thumbnailPreview.value = URL.createObjectURL(file)
+  currentThumbnail.value = null
+}
+
+function applyThumbnailUrl() {
+  if (!thumbnailUrl.value) return
+  currentThumbnail.value = thumbnailUrl.value
+  thumbnailPreview.value = null
+  form.thumbnail_file = null
+  form.remove_thumbnail = false
+  showUrlInput.value = false
+}
+
+function removeThumbnail() {
+  thumbnailPreview.value = null
+  currentThumbnail.value = null
+  form.thumbnail_file = null
+  form.remove_thumbnail = true
+  thumbnailUrl.value = ''
+}
+
 function submit() {
+  const totalSeconds = (parseInt(durationMinutes.value) || 0) * 60 + (parseInt(durationSecs.value) || 0)
+  form.duration_seconds = totalSeconds > 0 ? totalSeconds : null
+
+  const options = {
+    forceFormData: true,
+  }
+
   if (props.video) {
-    form.put(route('lms.admin.videos.update', [props.event.slug, props.video.id]))
+    router.post(route('lms.admin.videos.update', [props.event.slug, props.video.id]), {
+      ...form.data(),
+      _method: 'PUT',
+    }, options)
   } else {
-    form.post(route('lms.admin.videos.store', props.event.slug))
+    form.post(route('lms.admin.videos.store', props.event.slug), options)
   }
 }
 </script>
