@@ -11,33 +11,28 @@
           {{ course?.title }}
         </Link>
         <div class="flex gap-3">
-          <Link
+          <button
             v-if="prevStage"
-            :href="route('lms.courses.stage', { event: event?.slug, course: course?.id, stage: prevStage.id })"
-            class="inline-flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            @click="router.visit(route('lms.stages.show', { event: event?.slug, course: course?.id, stage: prevStage.id }))"
           >
             <ChevronLeftIcon class="h-4 w-4" />
             Назад
-          </Link>
-          <Link
+          </button>
+          <button
             v-if="nextStage"
-            :href="route('lms.courses.stage', { event: event?.slug, course: course?.id, stage: nextStage.id })"
-            class="inline-flex items-center gap-2 rounded-xl bg-rosatom-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rosatom-700"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-rosatom-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rosatom-700"
+            @click="router.visit(route('lms.stages.show', { event: event?.slug, course: course?.id, stage: nextStage.id }))"
           >
             Далее
             <ChevronRightIcon class="h-4 w-4" />
-          </Link>
+          </button>
         </div>
       </div>
 
-      <div class="rounded-xl border border-gray-200 bg-white shadow-sm p-6 lg:p-8">
+      <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
         <h1 class="font-brand text-xl font-bold text-gray-900">{{ stage?.title }}</h1>
-        <span
-          :class="[
-            'mt-2 inline-block rounded px-2 py-0.5 text-xs font-medium',
-            typeBadgeClass(stage?.type),
-          ]"
-        >
+        <span :class="['mt-2 inline-block rounded-md px-2 py-0.5 text-xs font-medium', typeBadgeClass(stage?.type)]">
           {{ typeLabel(stage?.type) }}
         </span>
 
@@ -50,10 +45,11 @@
             v-html="stage.content"
           />
 
-          <!-- scorm: iframe -->
-          <div v-else-if="stage?.type === 'scorm' && stage?.scorm_url" class="aspect-video w-full overflow-hidden rounded-lg">
+          <!-- scorm: iframe with API adapter -->
+          <div v-else-if="stage?.type === 'scorm' && stage?.scorm_package" class="aspect-video w-full overflow-hidden rounded-lg border border-gray-200">
             <iframe
-              :src="stage.scorm_url"
+              ref="scormFrame"
+              :src="stage.scorm_package"
               class="h-full w-full"
               title="SCORM content"
               allowfullscreen
@@ -61,35 +57,35 @@
           </div>
 
           <!-- test: redirect -->
-          <div v-else-if="stage?.type === 'test' && stage?.test_id">
-            <Link
-              :href="route('lms.tests.take', { event: event?.slug, test: stage.test_id })"
-              class="inline-flex items-center gap-2 rounded-xl bg-accent-yellow/10 px-4 py-3 font-medium text-accent-yellow hover:bg-accent-yellow/20"
+          <div v-else-if="stage?.type === 'test' && stage?.lms_test_id">
+            <button
+              class="inline-flex items-center gap-2 rounded-xl bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
+              @click="router.visit(route('lms.tests.show', { event: event?.slug, test: stage.lms_test_id }))"
             >
               <ClipboardDocumentListIcon class="h-5 w-5" />
               Перейти к тесту
-            </Link>
+            </button>
           </div>
 
           <!-- assignment: redirect -->
-          <div v-else-if="stage?.type === 'assignment' && stage?.assignment_id">
-            <Link
-              :href="route('lms.assignments.show', { event: event?.slug, assignment: stage.assignment_id })"
-              class="inline-flex items-center gap-2 rounded-xl bg-accent-magenta/10 px-4 py-3 font-medium text-accent-magenta hover:bg-accent-magenta/20"
+          <div v-else-if="stage?.type === 'assignment' && stage?.lms_assignment_id">
+            <button
+              class="inline-flex items-center gap-2 rounded-xl bg-purple-50 px-6 py-3 text-sm font-semibold text-purple-700 transition hover:bg-purple-100"
+              @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: stage.lms_assignment_id }))"
             >
               <PencilSquareIcon class="h-5 w-5" />
               Перейти к заданию
-            </Link>
+            </button>
           </div>
 
           <!-- video: embed -->
           <div v-else-if="stage?.type === 'video'" class="mt-4">
-            <div v-if="stage?.video_url" class="aspect-video w-full overflow-hidden rounded-lg">
+            <div v-if="videoEmbedUrl" class="aspect-video w-full overflow-hidden rounded-lg">
               <iframe
-                :src="embedVideoUrl(stage.video_url)"
+                :src="videoEmbedUrl"
                 class="h-full w-full"
                 title="Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowfullscreen
               />
             </div>
@@ -102,19 +98,17 @@
         </div>
 
         <!-- Mark as Complete -->
-        <div v-if="stage?.type !== 'test' && stage?.type !== 'assignment' && !progress?.is_completed" class="mt-8">
-          <Link
-            :href="route('lms.courses.stage.complete', { event: event?.slug, course: course?.id, stage: stage?.id })"
-            method="post"
-            as="button"
-            class="rounded-xl bg-rosatom-600 px-6 py-2.5 font-semibold text-white transition hover:bg-rosatom-700"
+        <div v-if="stage?.type !== 'test' && stage?.type !== 'assignment' && !isCompleted" class="mt-8">
+          <button
+            class="rounded-xl bg-rosatom-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700"
+            @click="markComplete"
           >
             Отметить как пройденное
-          </Link>
+          </button>
         </div>
-        <div v-else-if="progress?.is_completed" class="mt-8 flex items-center gap-2 text-rosatom-600">
+        <div v-else-if="isCompleted" class="mt-8 flex items-center gap-2 text-accent-green">
           <CheckCircleIcon class="h-5 w-5" />
-          <span>Пройдено</span>
+          <span class="font-medium">Этап пройден</span>
         </div>
       </div>
     </div>
@@ -122,8 +116,9 @@
 </template>
 
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { Head, Link, router } from '@inertiajs/vue3'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import axios from 'axios'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import {
   ArrowLeftIcon,
@@ -131,8 +126,8 @@ import {
   ChevronRightIcon,
   ClipboardDocumentListIcon,
   PencilSquareIcon,
-  CheckCircleIcon,
 } from '@heroicons/vue/24/outline'
+import { CheckCircleIcon } from '@heroicons/vue/24/solid'
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -140,46 +135,134 @@ const props = defineProps({
   profile: { type: Object, default: () => ({}) },
   course: { type: Object, required: true },
   stage: { type: Object, required: true },
-  progress: { type: Object, default: () => ({}) },
+  linkedTest: { type: Object, default: null },
+  linkedAssignment: { type: Object, default: null },
+  linkedVideo: { type: Object, default: null },
+  progress: { type: Object, default: null },
+  stages: { type: Array, default: () => [] },
 })
 
-const stages = computed(() => props.course?.stages || [])
-const currentIdx = computed(() => stages.value.findIndex((s) => s.id === props.stage?.id))
+const scormFrame = ref(null)
+
+const allStages = computed(() => {
+  if (props.stages?.length) return props.stages
+  return props.course?.stages || []
+})
+
+const currentIdx = computed(() => {
+  return allStages.value.findIndex((s) => {
+    const id = s.stage?.id ?? s.id
+    return id === props.stage?.id
+  })
+})
 
 const prevStage = computed(() => {
   const i = currentIdx.value
-  return i > 0 ? stages.value[i - 1] : null
+  if (i <= 0) return null
+  const s = allStages.value[i - 1]
+  return s.stage || s
 })
 
 const nextStage = computed(() => {
   const i = currentIdx.value
-  return i >= 0 && i < stages.value.length - 1 ? stages.value[i + 1] : null
+  if (i < 0 || i >= allStages.value.length - 1) return null
+  const s = allStages.value[i + 1]
+  return s.stage || s
+})
+
+const isCompleted = computed(() => {
+  return props.progress?.status === 'completed' || props.progress?.is_completed
+})
+
+const videoEmbedUrl = computed(() => {
+  const url = props.linkedVideo?.url || props.stage?.content
+  if (!url) return ''
+  const rutube = url.match(/rutube\.ru\/video\/([a-zA-Z0-9]+)/)
+  if (rutube) return `https://rutube.ru/play/embed/${rutube[1]}`
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\s]+)/)
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`
+  if (url.startsWith('http')) return url
+  return ''
+})
+
+// ── SCORM API Adapter ──
+let scormData = {}
+
+function createScormApi() {
+  // SCORM 1.2 API
+  const API = {
+    LMSInitialize: () => { return 'true' },
+    LMSFinish: () => { saveScormData(); return 'true' },
+    LMSGetValue: (key) => { return scormData[key] ?? '' },
+    LMSSetValue: (key, value) => { scormData[key] = value; return 'true' },
+    LMSCommit: () => { saveScormData(); return 'true' },
+    LMSGetLastError: () => '0',
+    LMSGetErrorString: () => 'No error',
+    LMSGetDiagnostic: () => 'No diagnostic',
+  }
+
+  // SCORM 2004 API
+  const API_1484_11 = {
+    Initialize: () => 'true',
+    Terminate: () => { saveScormData(); return 'true' },
+    GetValue: (key) => scormData[key] ?? '',
+    SetValue: (key, value) => { scormData[key] = value; return 'true' },
+    Commit: () => { saveScormData(); return 'true' },
+    GetLastError: () => '0',
+    GetErrorString: () => 'No error',
+    GetDiagnostic: () => 'No diagnostic',
+  }
+
+  window.API = API
+  window.API_1484_11 = API_1484_11
+}
+
+function saveScormData() {
+  const scormEndpoint = route('lms.stages.scorm', {
+    event: props.event?.slug,
+    course: props.course?.id,
+    stage: props.stage?.id,
+  })
+  axios.post(scormEndpoint, { scorm_data: scormData }).catch(() => {})
+}
+
+onMounted(() => {
+  if (props.stage?.type === 'scorm') {
+    if (props.progress?.scorm_data) {
+      scormData = { ...props.progress.scorm_data }
+    }
+    createScormApi()
+  }
+})
+
+onUnmounted(() => {
+  if (props.stage?.type === 'scorm') {
+    if (window.API) delete window.API
+    if (window.API_1484_11) delete window.API_1484_11
+  }
 })
 
 function typeLabel(type) {
   const map = { content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео' }
-  return map[type] || type
+  return map[type] || type || 'Контент'
 }
 
 function typeBadgeClass(type) {
   const map = {
-    content: 'bg-gray-200 text-gray-700',
-    scorm: 'bg-rosatom-50 text-rosatom-500',
-    test: 'bg-accent-yellow/10 text-accent-yellow',
-    assignment: 'bg-accent-magenta/10 text-accent-magenta',
-    video: 'bg-rose-100 text-rose-500',
+    content: 'bg-gray-100 text-gray-600',
+    scorm: 'bg-rosatom-50 text-rosatom-600',
+    test: 'bg-amber-50 text-amber-600',
+    assignment: 'bg-purple-50 text-purple-600',
+    video: 'bg-rose-50 text-rose-600',
   }
-  return map[type] || 'bg-gray-200 text-gray-700'
+  return map[type] || 'bg-gray-100 text-gray-600'
 }
 
-function embedVideoUrl(url) {
-  if (!url) return ''
-  // YouTube
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\s]+)/)
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}`
-  // Vimeo
-  const vimeo = url.match(/vimeo\.com\/(\d+)/)
-  if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}`
-  return url
+function markComplete() {
+  router.post(route('lms.stages.complete', {
+    event: props.event?.slug,
+    course: props.course?.id,
+    stage: props.stage?.id,
+  }))
 }
 </script>

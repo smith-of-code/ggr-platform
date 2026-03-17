@@ -1,17 +1,61 @@
+# Dependencies
 /vendor
 /node_modules
-/.env
+app/vendor/
+app/node_modules/
+
+# Environment
+.env
 .env.backup
+.env.local
+.env.*.local
+
+# Laravel
 /storage/*.key
 /public/hot
 /public/storage
 /bootstrap/cache/*
 !bootstrap/cache/.gitkeep
 .phpunit.result.cache
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
+
+# Build artifacts
+app/public/build/
+
+# IDE
 .DS_Store
-.idea
-.vscode
+.idea/
+.vscode/
+*.code-workspace
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Temp/lock files
+~$*
+*.tmp
+
+# Presentations, proposals, specs (business docs)
+*.pptx
+*.pdf
+*.docx
+
+# Python generators (not part of platform)
+generate_*.py
+
+# Text specs
+tz.txt
+
+# Business docs folders
+design-references/
+кейсы/
+
+# SCORM examples (large binaries)
+scorm-examples/
+
+# Misc
+КП_*.md
+Ответ_*.docx
+Ответы_*.docx
+Карточка_*.docx

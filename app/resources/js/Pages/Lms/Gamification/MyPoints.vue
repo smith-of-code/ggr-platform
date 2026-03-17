@@ -5,41 +5,43 @@
       <h1 class="font-brand text-2xl font-bold text-gray-900">Мои баллы</h1>
 
       <!-- Total at top -->
-      <div class="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-        <p class="text-sm font-medium text-gray-500">Всего баллов</p>
-        <p class="mt-1 text-3xl font-bold text-rosatom-600">{{ totalPoints ?? 0 }}</p>
-      </div>
+      <RCard>
+        <template #default>
+          <p class="text-sm font-medium text-gray-500">Всего баллов</p>
+          <p class="mt-1 text-3xl font-bold text-rosatom-600">{{ totalPoints ?? 0 }}</p>
+        </template>
+      </RCard>
 
       <!-- History -->
       <div>
         <h2 class="font-brand mb-4 text-lg font-semibold text-gray-900">История начислений</h2>
         <div class="space-y-2">
-          <div
+          <RCard
             v-for="p in (points || [])"
             :key="p.id"
-            class="flex items-center justify-between rounded-xl border border-gray-200 bg-white shadow-sm px-6 py-4"
+            class="flex items-center justify-between px-6 py-4"
           >
-            <div class="min-w-0 flex-1">
-              <p class="font-medium text-gray-900">{{ reasonLabel(p) }}</p>
-              <p class="mt-0.5 text-sm text-gray-400">{{ formatDate(p.created_at) }}</p>
-            </div>
-            <span
-              :class="[
-                'shrink-0 font-bold',
-                (p.points ?? 0) >= 0 ? 'text-accent-green' : 'text-red-600',
-              ]"
-            >
-              {{ (p.points ?? 0) >= 0 ? '+' : '' }}{{ p.points ?? 0 }}
-            </span>
-          </div>
+            <template #default>
+              <div class="min-w-0 flex-1">
+                <p class="font-medium text-gray-900">{{ reasonLabel(p) }}</p>
+                <p class="mt-0.5 text-sm text-gray-400">{{ formatDate(p.created_at) }}</p>
+              </div>
+              <RBadge
+                :variant="(p.points ?? 0) >= 0 ? 'success' : 'error'"
+                class="shrink-0 font-bold"
+              >
+                {{ (p.points ?? 0) >= 0 ? '+' : '' }}{{ p.points ?? 0 }}
+              </RBadge>
+            </template>
+          </RCard>
         </div>
 
-        <div
+        <RCard
           v-if="!(points?.length)"
-          class="rounded-xl border border-gray-200 bg-white py-12 text-center text-gray-400 shadow-sm"
+          class="py-12 text-center text-gray-400"
         >
           Пока нет начислений
-        </div>
+        </RCard>
       </div>
     </div>
   </LmsLayout>

@@ -6,28 +6,34 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsVideo;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class VideoController extends Controller
 {
-    public function index(LmsEvent $event): Response
+    public function index(Request $request, LmsEvent $event): Response
     {
         $user = auth()->user();
         $groupIds = DB::table('lms_group_members')
             ->where('user_id', $user->id)
             ->pluck('lms_group_id');
 
-        $videos = LmsVideo::where('lms_event_id', $event->id)
+        $videosQuery = LmsVideo::where('lms_event_id', $event->id)
             ->where('is_active', true)
             ->where(function ($query) use ($groupIds) {
                 $query->whereDoesntHave('groups');
                 if ($groupIds->isNotEmpty()) {
                     $query->orWhereHas('groups', fn($q) => $q->whereIn('lms_groups.id', $groupIds));
                 }
-            })
-            ->get(['id', 'title', 'description', 'source', 'url', 'thumbnail', 'is_recording']);
+            });
+
+        if ($search = $request->get('search')) {
+            $videosQuery->where('title', 'ilike', '%' . $search . '%');
+        }
+
+        $videos = $videosQuery->paginate(12)->withQueryString();
 
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
@@ -36,6 +42,7 @@ class VideoController extends Controller
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'videos' => $videos,
+            'filters' => $request->only(['search']),
         ]);
     }
 

@@ -14,6 +14,7 @@ class LmsTestAttempt extends Model
     protected $fillable = [
         'lms_test_id',
         'user_id',
+        'status',
         'score',
         'max_score',
         'percentage',

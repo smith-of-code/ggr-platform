@@ -8,54 +8,64 @@
         <div
           v-for="t in (trajectories || [])"
           :key="t.trajectory?.id"
-          class="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+          class="flex flex-col overflow-hidden"
         >
-          <Link
-            :href="route('lms.trajectories.show', { event: event?.slug, trajectory: t.trajectory?.id })"
-            class="flex-1 p-6"
-          >
-            <h3 class="font-semibold text-gray-900 hover:text-rosatom-600">{{ t.trajectory?.title }}</h3>
-            <p class="mt-2 line-clamp-2 text-sm text-gray-500">{{ t.trajectory?.description || '–' }}</p>
-            <div class="mt-4">
-              <div class="flex justify-between text-sm text-gray-500">
-                <span>Шагов: {{ stepsCount(t) }}</span>
-                <span>{{ progressPercent(t) }}%</span>
+          <RCard class="flex flex-1 flex-col">
+            <template #default>
+              <Link
+                :href="route('lms.trajectories.show', { event: event?.slug, trajectory: t.trajectory?.id })"
+                class="flex-1 block"
+              >
+                <h3 class="font-semibold text-gray-900 hover:text-rosatom-600">{{ t.trajectory?.title }}</h3>
+                <p class="mt-2 line-clamp-2 text-sm text-gray-500">{{ t.trajectory?.description || '–' }}</p>
+                <div class="mt-4">
+                  <div class="flex justify-between text-sm text-gray-500">
+                    <span>Шагов: {{ stepsCount(t) }}</span>
+                    <span>{{ progressPercent(t) }}%</span>
+                  </div>
+                  <RProgress
+                    :percentage="progressPercent(t)"
+                    :show-label="false"
+                    class="mt-1.5"
+                  />
+                </div>
+              </Link>
+            </template>
+            <template #footer>
+              <div class="border-t border-gray-200 p-4">
+                <Link
+                  v-if="!t.enrolled"
+                  :href="route('lms.trajectories.enroll', { event: event?.slug, trajectory: t.trajectory?.id })"
+                  method="post"
+                  as="div"
+                  class="block"
+                >
+                  <RButton block>
+                    Записаться
+                  </RButton>
+                </Link>
+                <Link
+                  v-else
+                  :href="route('lms.trajectories.show', { event: event?.slug, trajectory: t.trajectory?.id })"
+                  as="div"
+                  class="block"
+                >
+                  <RButton variant="outline" block>
+                    Подробнее
+                  </RButton>
+                </Link>
               </div>
-              <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  class="h-full rounded-full bg-rosatom-500 transition-all"
-                  :style="{ width: `${progressPercent(t)}%` }"
-                />
-              </div>
-            </div>
-          </Link>
-          <div class="border-t border-gray-200 p-4">
-            <Link
-              v-if="!t.enrolled"
-              :href="route('lms.trajectories.enroll', { event: event?.slug, trajectory: t.trajectory?.id })"
-              method="post"
-              as="button"
-              class="w-full rounded-xl bg-rosatom-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rosatom-700"
-            >
-              Записаться
-            </Link>
-            <Link
-              v-else
-              :href="route('lms.trajectories.show', { event: event?.slug, trajectory: t.trajectory?.id })"
-              class="block w-full rounded-xl border border-gray-300 px-4 py-2.5 text-center text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-            >
-              Подробнее
-            </Link>
-          </div>
+            </template>
+          </RCard>
         </div>
       </div>
 
-      <div
+      <RCard
         v-if="!(trajectories?.length)"
-        class="rounded-xl border border-gray-200 bg-white py-16 text-center text-gray-400 shadow-sm"
+        class="py-16 text-center text-gray-400"
       >
         Траектории не найдены
-      </div>
+      </RCard>
     </div>
   </LmsLayout>
 </template>

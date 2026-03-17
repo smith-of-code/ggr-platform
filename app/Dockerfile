@@ -42,8 +42,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
 # Copy application (needed for vite build)
 COPY . .
 
-# Install npm deps and build
-RUN npm install --legacy-peer-deps && npm run build
+# Configure private npm registry and install deps
+RUN npm config set @rosatom-ggr:registry https://nexus.wizandr.ru/repository/npm-private/ \
+    && npm install --legacy-peer-deps && npm run build
 
 # Run composer scripts (post-install)
 RUN composer dump-autoload --optimize

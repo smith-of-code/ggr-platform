@@ -125,7 +125,8 @@ class AssignmentController extends Controller
             'decision' => $validated['decision'],
         ]);
 
-        $submission->update(['status' => $validated['decision']]);
+        $statusMap = ['approve' => 'approved', 'reject' => 'rejected', 'revision' => 'revision'];
+        $submission->update(['status' => $statusMap[$validated['decision']] ?? $validated['decision']]);
 
         return redirect()->back()->with('success', 'Решение сохранено');
     }

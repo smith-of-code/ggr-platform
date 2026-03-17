@@ -6,7 +6,19 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
+import {
+    RButton, RInput, RCheckbox, RAvatar, RBadge, RCard,
+    RModal, RTabs, RProgress, RSidebar,
+    CourseCard, ProfileCard, Leaderboard, AssignmentCard,
+} from 'rosatom-ggr-ui-kit';
+
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+const uiKitComponents = {
+    RButton, RInput, RCheckbox, RAvatar, RBadge, RCard,
+    RModal, RTabs, RProgress, RSidebar,
+    CourseCard, ProfileCard, Leaderboard, AssignmentCard,
+};
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -16,12 +28,17 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        return createApp({ render: () => h(App, props) })
+        const app = createApp({ render: () => h(App, props) })
             .use(plugin)
-            .use(ZiggyVue)
-            .mount(el);
+            .use(ZiggyVue);
+
+        Object.entries(uiKitComponents).forEach(([name, component]) => {
+            app.component(name, component);
+        });
+
+        return app.mount(el);
     },
     progress: {
-        color: '#4B5563',
+        color: '#025EA1',
     },
 });

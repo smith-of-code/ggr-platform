@@ -14,12 +14,11 @@
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
       ]"
     >
-      <!-- Logo & branding -->
-      <div class="flex h-20 items-center gap-4 px-6">
-        <img src="/images/logo-compact.png" alt="ГГР" class="h-12 w-auto brightness-0 invert" />
-        <div class="min-w-0 flex-1">
-          <p class="font-brand text-sm font-bold tracking-wide text-white">ВШГР</p>
-          <p class="truncate text-xs text-rosatom-300">Образовательная платформа</p>
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-5">
+        <div>
+          <p class="font-brand text-base font-bold tracking-wide text-white">ВШГР</p>
+          <p class="text-xs text-rosatom-300">Образовательная платформа</p>
         </div>
         <button
           type="button"
@@ -33,11 +32,7 @@
       <!-- User card -->
       <div class="mx-4 rounded-xl bg-white/10 p-3">
         <div class="flex items-center gap-3">
-          <div
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-yellow font-brand text-sm font-bold text-rosatom-900"
-          >
-            {{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}
-          </div>
+          <RAvatar :name="user?.name || 'U'" size="sm" />
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-semibold text-white">{{ user?.name }}</p>
             <p class="truncate text-xs text-rosatom-300">{{ roleName }}</p>
@@ -49,91 +44,95 @@
       <nav class="lms-scrollbar mt-4 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
         <p class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-widest text-rosatom-400">Обучение</p>
 
-        <Link
+        <button
           v-for="item in mainNav"
-          :key="item.route"
-          :href="navHref(item.route)"
+          :key="item.id"
           :class="[
-            'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
-            isActive(item.route)
+            'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-150',
+            activeItemId === item.id
               ? 'bg-white/15 text-white shadow-sm'
               : 'text-rosatom-200 hover:bg-white/8 hover:text-white',
           ]"
+          @click="onNavigate(item.id)"
         >
           <component
             :is="item.icon"
             :class="[
               'h-5 w-5 shrink-0 transition-colors',
-              isActive(item.route) ? 'text-accent-yellow' : 'text-rosatom-400 group-hover:text-rosatom-300',
+              activeItemId === item.id ? 'text-accent-yellow' : 'text-rosatom-400 group-hover:text-rosatom-300',
             ]"
           />
           {{ item.label }}
-        </Link>
+        </button>
 
         <p class="mb-2 mt-6 px-3 text-[11px] font-semibold uppercase tracking-widest text-rosatom-400">Ресурсы</p>
 
-        <Link
+        <button
           v-for="item in resourceNav"
-          :key="item.route"
-          :href="navHref(item.route)"
+          :key="item.id"
           :class="[
-            'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
-            isActive(item.route)
+            'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-150',
+            activeItemId === item.id
               ? 'bg-white/15 text-white shadow-sm'
               : 'text-rosatom-200 hover:bg-white/8 hover:text-white',
           ]"
+          @click="onNavigate(item.id)"
         >
           <component
             :is="item.icon"
             :class="[
               'h-5 w-5 shrink-0 transition-colors',
-              isActive(item.route) ? 'text-accent-yellow' : 'text-rosatom-400 group-hover:text-rosatom-300',
+              activeItemId === item.id ? 'text-accent-yellow' : 'text-rosatom-400 group-hover:text-rosatom-300',
             ]"
           />
           {{ item.label }}
-        </Link>
+        </button>
 
-        <!-- Leader cabinet -->
-        <template v-if="showLeaderCabinet">
+        <!-- Leader & Admin -->
+        <template v-if="showLeaderCabinet || profile?.role === 'admin'">
           <p class="mb-2 mt-6 px-3 text-[11px] font-semibold uppercase tracking-widest text-rosatom-400">Управление</p>
-          <Link
-            :href="route('lms.leader.dashboard', { event: event?.slug })"
+
+          <button
+            v-if="showLeaderCabinet"
             :class="[
-              'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
-              isActive('lms.leader')
+              'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-150',
+              activeItemId === 'lms.leader.dashboard'
                 ? 'bg-accent-orange/20 text-accent-orange'
                 : 'text-rosatom-200 hover:bg-white/8 hover:text-white',
             ]"
+            @click="onNavigate('lms.leader.dashboard')"
           >
-            <Cog6ToothIcon
-              :class="[
-                'h-5 w-5 shrink-0',
-                isActive('lms.leader') ? 'text-accent-orange' : 'text-rosatom-400',
-              ]"
-            />
+            <Cog6ToothIcon class="h-5 w-5 shrink-0 text-rosatom-400" />
             Кабинет лидера
-          </Link>
+          </button>
+
+          <button
+            v-if="profile?.role === 'admin'"
+            class="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-rosatom-200 transition-all duration-150 hover:bg-accent-yellow/20 hover:text-accent-yellow"
+            @click="onNavigate('lms.admin')"
+          >
+            <WrenchScrewdriverIcon class="h-5 w-5 shrink-0 text-rosatom-400 group-hover:text-accent-yellow" />
+            Админ-панель LMS
+          </button>
         </template>
       </nav>
 
       <!-- Bottom actions -->
-      <div class="border-t border-white/10 p-3">
-        <Link
-          :href="route('lms.profile.edit', { event: event?.slug })"
-          class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-rosatom-300 transition hover:bg-white/8 hover:text-white"
+      <div class="border-t border-white/10 p-3 space-y-1">
+        <button
+          class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-rosatom-300 transition hover:bg-white/8 hover:text-white"
+          @click="navigateTo('lms.profile.edit', { event: event?.slug })"
         >
           <UserCircleIcon class="h-5 w-5 shrink-0" />
           Мой профиль
-        </Link>
-        <Link
-          :href="route('lms.logout', { event: event?.slug })"
-          method="post"
-          as="button"
+        </button>
+        <button
           class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-rosatom-300 transition hover:bg-white/8 hover:text-white"
+          @click="logout"
         >
           <ArrowRightOnRectangleIcon class="h-5 w-5 shrink-0" />
           Выйти
-        </Link>
+        </button>
       </div>
     </aside>
 
@@ -155,7 +154,6 @@
           </h1>
         </div>
 
-        <!-- Flash messages -->
         <Transition
           enter-active-class="transition duration-300 ease-out"
           enter-from-class="translate-y-[-8px] opacity-0"
@@ -173,15 +171,12 @@
           </div>
         </Transition>
 
-        <!-- User avatar (desktop) -->
-        <Link
-          :href="route('lms.profile.edit', { event: event?.slug })"
+        <button
           class="hidden items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-gray-100 lg:flex"
+          @click="navigateTo('lms.profile.edit', { event: event?.slug })"
         >
-          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-rosatom-600 text-xs font-bold text-white">
-            {{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}
-          </div>
-        </Link>
+          <RAvatar :name="user?.name || 'U'" size="sm" />
+        </button>
       </header>
 
       <main class="flex-1 p-4 lg:p-8">
@@ -192,7 +187,7 @@
 </template>
 
 <script setup>
-import { Link, usePage } from '@inertiajs/vue3'
+import { Link, usePage, router } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import {
   HomeIcon,
@@ -210,6 +205,7 @@ import {
   CheckCircleIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -231,51 +227,66 @@ const showLeaderCabinet = computed(() => {
 })
 
 const mainNav = [
-  { route: 'lms.dashboard', label: 'Главная', icon: HomeIcon },
-  { route: 'lms.courses', label: 'Курсы', icon: BookOpenIcon },
-  { route: 'lms.trajectories', label: 'Траектории', icon: MapIcon },
-  { route: 'lms.tests', label: 'Тестирование', icon: ClipboardDocumentListIcon },
-  { route: 'lms.assignments', label: 'Задания', icon: PencilSquareIcon },
-  { route: 'lms.gamification.leaderboard', label: 'Рейтинг', icon: TrophyIcon },
+  { id: 'lms.dashboard', label: 'Главная', icon: HomeIcon },
+  { id: 'lms.courses', label: 'Курсы', icon: BookOpenIcon },
+  { id: 'lms.trajectories', label: 'Траектории', icon: MapIcon },
+  { id: 'lms.tests', label: 'Тестирование', icon: ClipboardDocumentListIcon },
+  { id: 'lms.assignments', label: 'Задания', icon: PencilSquareIcon },
+  { id: 'lms.gamification.leaderboard', label: 'Рейтинг', icon: TrophyIcon },
 ]
 
 const resourceNav = [
-  { route: 'lms.videos', label: 'Видеоматериалы', icon: PlayIcon },
-  { route: 'lms.kb', label: 'База знаний', icon: CircleStackIcon },
-  { route: 'lms.materials', label: 'Материалы', icon: FolderIcon },
+  { id: 'lms.videos', label: 'Видеоматериалы', icon: PlayIcon },
+  { id: 'lms.kb', label: 'База знаний', icon: CircleStackIcon },
+  { id: 'lms.materials', label: 'Материалы', icon: FolderIcon },
 ]
 
-function navHref(routePrefix) {
-  const slug = props.event?.slug
-  const routeMap = {
-    'lms.dashboard': 'lms.dashboard',
-    'lms.courses': 'lms.courses.index',
-    'lms.trajectories': 'lms.trajectories.index',
-    'lms.tests': 'lms.tests.index',
-    'lms.assignments': 'lms.assignments.index',
-    'lms.videos': 'lms.videos.index',
-    'lms.kb': 'lms.kb.index',
-    'lms.materials': 'lms.materials.index',
-    'lms.gamification.leaderboard': 'lms.gamification.leaderboard',
-  }
-  return route(routeMap[routePrefix] || routePrefix, { event: slug })
-}
-
-function isActive(routePrefix) {
+const activeItemId = computed(() => {
   const url = usePage().url
   const slug = props.event?.slug
-  if (!slug) return false
+  if (!slug) return ''
   const base = `/lms/${slug}`
-  if (routePrefix === 'lms.dashboard') return url === base || url === `${base}/`
-  if (routePrefix === 'lms.courses') return url.startsWith(`${base}/courses`)
-  if (routePrefix === 'lms.trajectories') return url.startsWith(`${base}/trajectories`)
-  if (routePrefix === 'lms.tests') return url.startsWith(`${base}/tests`)
-  if (routePrefix === 'lms.assignments') return url.startsWith(`${base}/assignments`)
-  if (routePrefix === 'lms.videos') return url.startsWith(`${base}/videos`)
-  if (routePrefix === 'lms.kb') return url.startsWith(`${base}/knowledge`)
-  if (routePrefix === 'lms.materials') return url.startsWith(`${base}/materials`)
-  if (routePrefix === 'lms.gamification.leaderboard') return url.startsWith(`${base}/leaderboard`)
-  if (routePrefix === 'lms.leader') return url.startsWith(`${base}/leader`)
-  return false
+
+  if (url === base || url === `${base}/`) return 'lms.dashboard'
+  if (url.startsWith(`${base}/courses`)) return 'lms.courses'
+  if (url.startsWith(`${base}/trajectories`)) return 'lms.trajectories'
+  if (url.startsWith(`${base}/tests`)) return 'lms.tests'
+  if (url.startsWith(`${base}/assignments`)) return 'lms.assignments'
+  if (url.startsWith(`${base}/videos`)) return 'lms.videos'
+  if (url.startsWith(`${base}/knowledge`)) return 'lms.kb'
+  if (url.startsWith(`${base}/materials`)) return 'lms.materials'
+  if (url.startsWith(`${base}/leaderboard`)) return 'lms.gamification.leaderboard'
+  if (url.startsWith(`${base}/leader`)) return 'lms.leader.dashboard'
+  return ''
+})
+
+const routeMap = {
+  'lms.dashboard': 'lms.dashboard',
+  'lms.courses': 'lms.courses.index',
+  'lms.trajectories': 'lms.trajectories.index',
+  'lms.tests': 'lms.tests.index',
+  'lms.assignments': 'lms.assignments.index',
+  'lms.videos': 'lms.videos.index',
+  'lms.kb': 'lms.kb.index',
+  'lms.materials': 'lms.materials.index',
+  'lms.gamification.leaderboard': 'lms.gamification.leaderboard',
+  'lms.leader.dashboard': 'lms.leader.dashboard',
+  'lms.admin': 'lms.admin.courses.index',
+}
+
+function onNavigate(itemId) {
+  const routeName = routeMap[itemId]
+  if (routeName) {
+    router.visit(route(routeName, { event: props.event?.slug }))
+    sidebarOpen.value = false
+  }
+}
+
+function navigateTo(routeName, params = {}) {
+  router.visit(route(routeName, params))
+}
+
+function logout() {
+  router.post(route('lms.logout', { event: props.event?.slug }))
 }
 </script>

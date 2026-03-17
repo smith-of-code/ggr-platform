@@ -10,15 +10,17 @@
         Назад к материалам
       </Link>
 
-      <div class="rounded-xl border border-gray-200 bg-white shadow-sm p-6 lg:p-8">
-        <h1 class="font-brand text-2xl font-bold text-gray-900">{{ section?.title }}</h1>
-        <div
-          v-if="section?.content"
-          class="material-content prose mt-6 max-w-none text-gray-700 prose-headings:text-gray-900 prose-a:text-rosatom-600 prose-a:no-underline hover:prose-a:underline"
-          v-html="section.content"
-        />
-        <p v-else class="mt-6 text-gray-400">Контент отсутствует</p>
-      </div>
+      <RCard>
+        <template #default>
+          <h1 class="font-brand text-2xl font-bold text-gray-900">{{ section?.title }}</h1>
+          <div
+            v-if="section?.content"
+            class="material-content prose mt-6 max-w-none text-gray-700 prose-headings:text-gray-900 prose-a:text-rosatom-600 prose-a:no-underline hover:prose-a:underline"
+            v-html="section.content"
+          />
+          <p v-else class="mt-6 text-gray-400">Контент отсутствует</p>
+        </template>
+      </RCard>
     </div>
   </LmsLayout>
 </template>

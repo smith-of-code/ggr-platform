@@ -51,19 +51,19 @@ class GamificationController extends Controller
         return redirect()->route('lms.admin.gamification.index', $event)->with('success', 'Правило создано');
     }
 
-    public function edit(LmsEvent $event, LmsGamificationRule $rule): Response
+    public function edit(LmsEvent $event, LmsGamificationRule $gamification): Response
     {
-        $this->ensureRuleBelongsToEvent($rule, $event);
+        $this->ensureRuleBelongsToEvent($gamification, $event);
 
         return Inertia::render('Lms/Admin/Gamification/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
-            'rule' => $rule,
+            'rule' => $gamification,
         ]);
     }
 
-    public function update(Request $request, LmsEvent $event, LmsGamificationRule $rule): RedirectResponse
+    public function update(Request $request, LmsEvent $event, LmsGamificationRule $gamification): RedirectResponse
     {
-        $this->ensureRuleBelongsToEvent($rule, $event);
+        $this->ensureRuleBelongsToEvent($gamification, $event);
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -75,16 +75,16 @@ class GamificationController extends Controller
         $validated['is_auto'] = $request->boolean('is_auto', true);
         $validated['is_active'] = $request->boolean('is_active', true);
 
-        $rule->update($validated);
+        $gamification->update($validated);
 
         return redirect()->route('lms.admin.gamification.index', $event)->with('success', 'Правило обновлено');
     }
 
-    public function destroy(LmsEvent $event, LmsGamificationRule $rule): RedirectResponse
+    public function destroy(LmsEvent $event, LmsGamificationRule $gamification): RedirectResponse
     {
-        $this->ensureRuleBelongsToEvent($rule, $event);
+        $this->ensureRuleBelongsToEvent($gamification, $event);
 
-        $rule->delete();
+        $gamification->delete();
 
         return redirect()->route('lms.admin.gamification.index', $event)->with('success', 'Правило удалено');
     }

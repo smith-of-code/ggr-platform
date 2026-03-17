@@ -57,6 +57,7 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/tests/{test}', [TestController::class, 'show'])->name('tests.show');
     Route::post('/tests/{test}/start', [TestController::class, 'start'])->name('tests.start');
     Route::post('/tests/{test}/attempts/{attempt}/submit', [TestController::class, 'submit'])->name('tests.submit');
+    Route::get('/tests/{test}/attempts/{attempt}', [TestController::class, 'take'])->name('tests.take');
     Route::get('/tests/{test}/attempts/{attempt}/result', [TestController::class, 'result'])->name('tests.result');
 
     // Assignments
@@ -102,6 +103,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
 
     Route::prefix('{event}')->group(function () {
         Route::resource('courses', AdminCourseController::class);
+        Route::post('scorm-upload', [AdminCourseController::class, 'uploadScorm'])->name('scorm.upload');
         Route::resource('tests', AdminTestController::class);
         Route::resource('assignments', AdminAssignmentController::class);
         Route::post('assignments/{assignment}/submissions/{submission}/review', [AdminAssignmentController::class, 'review'])->name('assignments.review');
@@ -110,7 +112,9 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::resource('kb', AdminKbController::class);
         Route::resource('materials', AdminMaterialController::class);
         Route::resource('groups', AdminGroupController::class);
-        Route::resource('users', AdminUserController::class)->only(['index', 'show', 'update', 'destroy']);
+        Route::resource('users', AdminUserController::class)->only(['index', 'create', 'store', 'show', 'update', 'destroy']);
+        Route::post('users-import', [AdminUserController::class, 'import'])->name('users.import');
+        Route::get('users-template', [AdminUserController::class, 'downloadTemplate'])->name('users.template');
         Route::resource('gamification', AdminGamificationController::class);
         Route::post('gamification/manual-points', [AdminGamificationController::class, 'manualPoints'])->name('gamification.manual-points');
     });

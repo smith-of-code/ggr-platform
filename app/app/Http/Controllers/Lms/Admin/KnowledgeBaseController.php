@@ -73,25 +73,25 @@ class KnowledgeBaseController extends Controller
         return redirect()->route('lms.admin.kb.index', $event)->with('success', 'Раздел создан');
     }
 
-    public function edit(LmsEvent $event, LmsKbSection $section): Response
+    public function edit(LmsEvent $event, LmsKbSection $kb): Response
     {
-        $this->ensureSectionBelongsToEvent($section, $event);
+        $this->ensureSectionBelongsToEvent($kb, $event);
 
-        $section->load(['items', 'groups']);
-        $parentSections = $event->kbSections()->whereNull('parent_id')->where('id', '!=', $section->id)->orderBy('position')->get(['id', 'title']);
+        $kb->load(['items', 'groups']);
+        $parentSections = $event->kbSections()->whereNull('parent_id')->where('id', '!=', $kb->id)->orderBy('position')->get(['id', 'title']);
         $groups = $event->groups()->orderBy('title')->get(['id', 'title']);
 
         return Inertia::render('Lms/Admin/KnowledgeBase/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
-            'section' => $section,
+            'section' => $kb,
             'parentSections' => $parentSections,
             'groups' => $groups,
         ]);
     }
 
-    public function update(Request $request, LmsEvent $event, LmsKbSection $section): RedirectResponse
+    public function update(Request $request, LmsEvent $event, LmsKbSection $kb): RedirectResponse
     {
-        $this->ensureSectionBelongsToEvent($section, $event);
+        $this->ensureSectionBelongsToEvent($kb, $event);
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -111,20 +111,20 @@ class KnowledgeBaseController extends Controller
         $validated['in_menu'] = $request->boolean('in_menu', false);
         $validated['position'] = $validated['position'] ?? 0;
 
-        $section->update($validated);
+        $kb->update($validated);
 
-        $section->groups()->sync($request->group_ids ?? []);
+        $kb->groups()->sync($request->group_ids ?? []);
 
-        $this->syncItems($section, $validated['items'] ?? []);
+        $this->syncItems($kb, $validated['items'] ?? []);
 
         return redirect()->route('lms.admin.kb.index', $event)->with('success', 'Раздел обновлён');
     }
 
-    public function destroy(LmsEvent $event, LmsKbSection $section): RedirectResponse
+    public function destroy(LmsEvent $event, LmsKbSection $kb): RedirectResponse
     {
-        $this->ensureSectionBelongsToEvent($section, $event);
+        $this->ensureSectionBelongsToEvent($kb, $event);
 
-        $section->delete();
+        $kb->delete();
 
         return redirect()->route('lms.admin.kb.index', $event)->with('success', 'Раздел удалён');
     }

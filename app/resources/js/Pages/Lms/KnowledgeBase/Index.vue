@@ -9,24 +9,27 @@
           v-for="section in (sections || [])"
           :key="section.id"
           :href="route('lms.kb.show', { event: event?.slug, section: section.id })"
-          class="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:border-gray-300"
+          as="div"
+          class="block cursor-pointer"
         >
-          <div class="p-6">
-            <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ section.title }}</h3>
-            <p class="mt-2 line-clamp-2 text-sm text-gray-500">{{ section.description || '–' }}</p>
-            <p class="mt-3 text-xs text-gray-400">
-              {{ childrenCount(section) }} материалов
-            </p>
-          </div>
+          <RCard hoverable>
+            <template #default>
+              <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ section.title }}</h3>
+              <p class="mt-2 line-clamp-2 text-sm text-gray-500">{{ section.description || '–' }}</p>
+              <p class="mt-3 text-xs text-gray-400">
+                {{ childrenCount(section) }} материалов
+              </p>
+            </template>
+          </RCard>
         </Link>
       </div>
 
-      <div
+      <RCard
         v-if="!(sections?.length)"
-        class="rounded-xl border border-gray-200 bg-white py-16 text-center text-gray-400 shadow-sm"
+        class="py-16 text-center text-gray-400"
       >
         Разделы не найдены
-      </div>
+      </RCard>
     </div>
   </LmsLayout>
 </template>

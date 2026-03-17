@@ -20,10 +20,12 @@
         v-if="!enrollment"
         :href="route('lms.trajectories.enroll', { event: event?.slug, trajectory: trajectory?.id })"
         method="post"
-        as="button"
-        class="inline-flex items-center gap-2 rounded-xl bg-rosatom-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700"
+        as="div"
+        class="inline-block"
       >
-        Записаться на траекторию
+        <RButton>
+          Записаться на траекторию
+        </RButton>
       </Link>
 
       <!-- Timeline of steps -->
@@ -54,51 +56,53 @@
               <Link
                 v-if="canAccessStep(s)"
                 :href="route('lms.courses.show', { event: event?.slug, course: s.course?.id })"
-                class="block rounded-xl border border-gray-200 bg-white shadow-sm p-4 transition hover:border-gray-300"
+                as="div"
+                class="block"
               >
-                <div class="flex items-center justify-between">
-                  <h3 class="font-medium text-gray-900">{{ s.course?.title }}</h3>
-                  <ChevronRightIcon class="h-5 w-5 text-gray-400" />
-                </div>
-                <p v-if="s.step?.opens_at" class="mt-1 text-sm text-gray-400">
-                  Открывается: {{ formatDate(s.step.opens_at) }}
-                </p>
-                <div class="mt-3">
-                  <div class="flex justify-between text-xs text-gray-500">
-                    <span>Прогресс</span>
-                    <span>{{ s.progress ?? 0 }}%</span>
-                  </div>
-                  <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      class="h-full rounded-full bg-rosatom-500"
-                      :style="{ width: `${s.progress ?? 0}%` }"
-                    />
-                  </div>
-                </div>
+                <RCard hoverable>
+                  <template #default>
+                    <div class="flex items-center justify-between">
+                      <h3 class="font-medium text-gray-900">{{ s.course?.title }}</h3>
+                      <ChevronRightIcon class="h-5 w-5 text-gray-400" />
+                    </div>
+                    <p v-if="s.step?.opens_at" class="mt-1 text-sm text-gray-400">
+                      Открывается: {{ formatDate(s.step.opens_at) }}
+                    </p>
+                    <div class="mt-3">
+                      <RProgress
+                        :percentage="s.progress ?? 0"
+                        :show-label="true"
+                        size="sm"
+                      />
+                    </div>
+                  </template>
+                </RCard>
               </Link>
-              <div
+              <RCard
                 v-else
-                class="block rounded-xl border border-gray-200 bg-white p-4 opacity-75"
+                class="opacity-75"
               >
-                <div class="flex items-center justify-between">
-                  <h3 class="font-medium text-gray-400">{{ s.course?.title }}</h3>
-                  <LockClosedIcon class="h-5 w-5 text-gray-400" />
-                </div>
-                <p v-if="s.step?.opens_at" class="mt-1 text-sm text-gray-400">
-                  Открывается: {{ formatDate(s.step.opens_at) }}
-                </p>
-              </div>
+                <template #default>
+                  <div class="flex items-center justify-between">
+                    <h3 class="font-medium text-gray-400">{{ s.course?.title }}</h3>
+                    <LockClosedIcon class="h-5 w-5 text-gray-400" />
+                  </div>
+                  <p v-if="s.step?.opens_at" class="mt-1 text-sm text-gray-400">
+                    Открывается: {{ formatDate(s.step.opens_at) }}
+                  </p>
+                </template>
+              </RCard>
             </div>
           </div>
         </div>
       </div>
 
-      <div
+      <RCard
         v-if="!(steps?.length) && enrollment"
-        class="rounded-xl border border-gray-200 bg-white py-12 text-center text-gray-400 shadow-sm"
+        class="py-12 text-center text-gray-400"
       >
         В траектории пока нет этапов
-      </div>
+      </RCard>
     </div>
   </LmsLayout>
 </template>

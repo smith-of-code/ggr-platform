@@ -9,24 +9,29 @@
           v-for="section in (sections || [])"
           :key="section.id"
           :href="route('lms.materials.show', { event: event?.slug, section: section.id })"
-          class="group flex items-center justify-between rounded-xl border border-gray-200 bg-white shadow-sm p-5 transition hover:border-gray-300"
+          as="div"
+          class="block cursor-pointer"
         >
-          <div class="min-w-0 flex-1">
-            <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ section.title }}</h3>
-            <p v-if="contentSnippet(section)" class="mt-1 line-clamp-2 text-sm text-gray-500">
-              {{ contentSnippet(section) }}
-            </p>
-          </div>
-          <ChevronRightIcon class="ml-4 h-5 w-5 shrink-0 text-gray-400" />
+          <RCard hoverable class="flex items-center justify-between p-5">
+            <template #default>
+              <div class="min-w-0 flex-1">
+                <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ section.title }}</h3>
+                <p v-if="contentSnippet(section)" class="mt-1 line-clamp-2 text-sm text-gray-500">
+                  {{ contentSnippet(section) }}
+                </p>
+              </div>
+              <ChevronRightIcon class="ml-4 h-5 w-5 shrink-0 text-gray-400" />
+            </template>
+          </RCard>
         </Link>
       </div>
 
-      <div
+      <RCard
         v-if="!(sections?.length)"
-        class="rounded-xl border border-gray-200 bg-white py-16 text-center text-gray-400 shadow-sm"
+        class="py-16 text-center text-gray-400"
       >
         Материалы не найдены
-      </div>
+      </RCard>
     </div>
   </LmsLayout>
 </template>

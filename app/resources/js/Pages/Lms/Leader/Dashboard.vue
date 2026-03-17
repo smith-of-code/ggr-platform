@@ -6,7 +6,7 @@
 
       <!-- Stats cards -->
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+        <RCard elevation="raised">
           <div class="flex items-center gap-3">
             <div class="rounded-lg bg-rosatom-50 p-3">
               <UsersIcon class="h-6 w-6 text-rosatom-600" />
@@ -16,8 +16,8 @@
               <p class="text-2xl font-bold text-gray-900">{{ stats?.total_participants ?? totalParticipants ?? 0 }}</p>
             </div>
           </div>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+        </RCard>
+        <RCard elevation="raised">
           <div class="flex items-center gap-3">
             <div class="rounded-lg bg-rosatom-50 p-3">
               <ChartBarIcon class="h-6 w-6 text-rosatom-500" />
@@ -27,8 +27,8 @@
               <p class="text-2xl font-bold text-gray-900">{{ stats?.avg_progress ?? avgProgress ?? 0 }}%</p>
             </div>
           </div>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+        </RCard>
+        <RCard elevation="raised">
           <div class="flex items-center gap-3">
             <div class="rounded-lg bg-accent-yellow/10 p-3">
               <BookOpenIcon class="h-6 w-6 text-accent-yellow" />
@@ -38,8 +38,8 @@
               <p class="text-2xl font-bold text-gray-900">{{ stats?.active_courses ?? activeCourses ?? 0 }}</p>
             </div>
           </div>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+        </RCard>
+        <RCard elevation="raised">
           <div class="flex items-center gap-3">
             <div class="rounded-lg bg-accent-magenta/10 p-3">
               <UserGroupIcon class="h-6 w-6 text-accent-magenta" />
@@ -49,21 +49,23 @@
               <p class="text-2xl font-bold text-gray-900">{{ stats?.total_groups ?? totalGroups ?? 0 }}</p>
             </div>
           </div>
-        </div>
+        </RCard>
       </div>
 
       <!-- Quick links -->
       <div class="grid gap-4 sm:grid-cols-2">
         <Link
           :href="route('lms.leader.groups', { event: event?.slug })"
-          class="flex items-center gap-4 rounded-xl border border-gray-200 bg-white shadow-sm p-6 transition hover:border-gray-300"
+          class="block"
         >
-          <UserGroupIcon class="h-10 w-10 text-rosatom-600" />
-          <div>
-            <h3 class="font-semibold text-gray-900">Группы</h3>
-            <p class="text-sm text-gray-500">Управление группами и просмотр прогресса</p>
-          </div>
-          <ChevronRightIcon class="ml-auto h-5 w-5 text-gray-400" />
+          <RCard hoverable class="flex items-center gap-4 p-6">
+            <UserGroupIcon class="h-10 w-10 text-rosatom-600" />
+            <div>
+              <h3 class="font-semibold text-gray-900">Группы</h3>
+              <p class="text-sm text-gray-500">Управление группами и просмотр прогресса</p>
+            </div>
+            <ChevronRightIcon class="ml-auto h-5 w-5 text-gray-400" />
+          </RCard>
         </Link>
       </div>
     </div>

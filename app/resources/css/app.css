@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'rosatom-ggr-ui-kit/style.css';
 
 @source '../**/*.blade.php';
 @source '../**/*.vue';
@@ -12,7 +13,81 @@
   font-display: swap;
 }
 
-/* ── Rosatom Brand Theme ── */
+/* ── UI-kit CSS variable bridge ── */
+:root {
+  --color-primary: #025EA1;
+  --color-primary-50: #f0f6fd;
+  --color-primary-100: #deedfb;
+  --color-primary-200: #bddaf4;
+  --color-primary-400: #6CACE4;
+  --color-primary-500: #0073c4;
+  --color-primary-dark: #003274;
+  --color-primary-light: #6CACE4;
+  --color-white: #ffffff;
+  --color-gray-25: #fcfcfd;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-success: #56C02B;
+  --color-success-light: #dcfce7;
+  --color-warning: #FCC30B;
+  --color-warning-light: #fef9c3;
+  --color-error: #ef4444;
+  --color-error-light: #fee2e2;
+  --color-info-light: #dbeafe;
+  --font-primary: 'Tilda Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --text-2xs: 0.625rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-xl: 1.25rem;
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --tracking-normal: 0;
+  --tracking-tight: -0.025em;
+  --space-1: 0.25rem;
+  --space-1\.5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-full: 9999px;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --ring-primary: 0 0 0 3px rgba(2, 94, 161, 0.3);
+  --ring-error: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  --z-modal: 1000;
+}
+
+/* ── Rosatom Brand Theme (Tailwind) ── */
 @theme {
   --color-rosatom-900: #001a3f;
   --color-rosatom-800: #003274;

@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between">
         <h1 class="font-brand text-xl font-bold text-gray-900">{{ test?.title }}</h1>
         <div
-          v-if="test?.time_limit"
+          v-if="test?.time_limit_minutes"
           :class="[
             'rounded-lg px-4 py-2 font-mono text-lg font-semibold',
             timeLeft < 300 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-700',
@@ -15,69 +15,80 @@
         </div>
       </div>
 
-      <form @submit.prevent="submit" class="space-y-8">
+      <form @submit.prevent="submit" class="space-y-6">
         <div
           v-for="(q, qi) in (questions || [])"
           :key="q.id"
-          class="rounded-xl border border-gray-200 bg-white shadow-sm p-6"
+          class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
         >
-          <p class="font-medium text-gray-900">
-            {{ qi + 1 }}. {{ q.question_text || q.text }}
+          <p class="text-base font-semibold text-gray-900">
+            {{ qi + 1 }}. {{ q.text }}
           </p>
-          <div class="mt-4 space-y-3">
-            <!-- Single choice -->
+
+          <!-- Single choice -->
+          <div v-if="q.type === 'single'" class="mt-4 space-y-2">
             <label
               v-for="a in (q.answers || [])"
-              v-show="q.type === 'single'"
               :key="a.id"
-              class="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50"
-              :class="{ 'border-rosatom-500/50 bg-rosatom-50': responses[q.id] === a.id }"
+              class="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition"
+              :class="responses[q.id] === a.id
+                ? 'border-rosatom-500 bg-rosatom-50'
+                : 'border-gray-200 hover:bg-gray-50'"
             >
               <input
                 type="radio"
-                :name="`q-${q.id}`"
+                :name="`q_${q.id}`"
                 :value="a.id"
                 v-model="responses[q.id]"
-                class="h-4 w-4 border-gray-300 text-rosatom-500 focus:ring-rosatom-500/20"
+                class="h-4 w-4 text-rosatom-600 focus:ring-rosatom-500"
               />
-              <span class="text-gray-700">{{ a.answer_text || a.text }}</span>
+              <span class="text-sm text-gray-700">{{ a.text }}</span>
             </label>
-            <!-- Multiple choice -->
+          </div>
+
+          <!-- Multiple choice -->
+          <div v-else-if="q.type === 'multiple'" class="mt-4 space-y-2">
             <label
               v-for="a in (q.answers || [])"
-              v-show="q.type === 'multiple'"
               :key="a.id"
-              class="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-4 transition hover:bg-gray-50"
-              :class="{ 'border-rosatom-500/50 bg-rosatom-50': (responses[q.id] || []).includes(a.id) }"
+              class="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition"
+              :class="(responses[q.id] || []).includes(a.id)
+                ? 'border-rosatom-500 bg-rosatom-50'
+                : 'border-gray-200 hover:bg-gray-50'"
             >
               <input
                 type="checkbox"
                 :value="a.id"
-                v-model="responses[q.id]"
-                class="h-4 w-4 rounded border-gray-300 text-rosatom-500 focus:ring-rosatom-500/20"
+                :checked="(responses[q.id] || []).includes(a.id)"
+                @change="toggleMultipleAnswer(q.id, a.id, $event.target.checked)"
+                class="h-4 w-4 rounded text-rosatom-600 focus:ring-rosatom-500"
               />
-              <span class="text-gray-700">{{ a.answer_text || a.text }}</span>
+              <span class="text-sm text-gray-700">{{ a.text }}</span>
             </label>
-            <!-- Text -->
-            <div v-if="q.type === 'text'" class="mt-2">
-              <textarea
-                v-model="responses[q.id]"
-                rows="4"
-                class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
-                :placeholder="'Введите ответ'"
-              />
-            </div>
           </div>
+
+          <!-- Text answer -->
+          <div v-else-if="q.type === 'text'" class="mt-4">
+            <textarea
+              v-model="responses[q.id]"
+              rows="3"
+              placeholder="Введите ваш ответ..."
+              class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+            />
+          </div>
+        </div>
+
+        <div v-if="!questions?.length" class="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">
+          <p class="text-sm text-gray-400">В этом тесте нет вопросов</p>
         </div>
 
         <div class="flex justify-end">
           <button
             type="submit"
             :disabled="processing"
-            class="rounded-xl bg-rosatom-600 px-8 py-3 font-semibold text-white transition hover:bg-rosatom-700 disabled:opacity-50"
+            class="rounded-xl bg-rosatom-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700 disabled:opacity-50"
           >
-            <span v-if="processing">Отправка...</span>
-            <span v-else>Завершить тест</span>
+            {{ processing ? 'Отправка...' : 'Завершить тест' }}
           </button>
         </div>
       </form>
@@ -102,15 +113,16 @@ const props = defineProps({
 const responses = reactive({})
 props.questions?.forEach((q) => {
   if (q.type === 'multiple') responses[q.id] = []
-  else responses[q.id] = q.type === 'text' ? '' : null
+  else if (q.type === 'text') responses[q.id] = ''
+  else responses[q.id] = null
 })
 
-const timeLimit = computed(() => (props.test?.time_limit || 0) * 60)
+const timeLimit = computed(() => (props.test?.time_limit_minutes || 0) * 60)
 const timeLeft = ref(timeLimit.value)
 let timer = null
 
 onMounted(() => {
-  if (props.test?.time_limit) {
+  if (props.test?.time_limit_minutes) {
     timer = setInterval(() => {
       timeLeft.value = Math.max(0, timeLeft.value - 1)
       if (timeLeft.value <= 0 && timer) {
@@ -124,6 +136,16 @@ onMounted(() => {
 onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
+
+function toggleMultipleAnswer(qId, aId, checked) {
+  if (!responses[qId]) responses[qId] = []
+  if (checked) {
+    if (!responses[qId].includes(aId)) responses[qId].push(aId)
+  } else {
+    const idx = responses[qId].indexOf(aId)
+    if (idx >= 0) responses[qId].splice(idx, 1)
+  }
+}
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60)

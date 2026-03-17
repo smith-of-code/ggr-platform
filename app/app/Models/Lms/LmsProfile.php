@@ -14,20 +14,25 @@ class LmsProfile extends Model
         'user_id',
         'lms_event_id',
         'role',
+        'lms_role_id',
         'position',
+        'phone',
         'city',
         'avatar',
     ];
 
-    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /** @return BelongsTo<LmsEvent, $this> */
     public function event(): BelongsTo
     {
         return $this->belongsTo(LmsEvent::class, 'lms_event_id');
+    }
+
+    public function lmsRole(): BelongsTo
+    {
+        return $this->belongsTo(LmsRole::class, 'lms_role_id');
     }
 }

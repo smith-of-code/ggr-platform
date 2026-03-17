@@ -4,6 +4,7 @@ namespace App\Models\Lms;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LmsCourse extends Model
@@ -19,14 +20,17 @@ class LmsCourse extends Model
         'sequential',
         'is_active',
         'position',
+        'starts_at',
+        'ends_at',
     ];
 
     protected $casts = [
         'sequential' => 'boolean',
         'is_active' => 'boolean',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
     ];
 
-    /** @return BelongsTo<LmsEvent, $this> */
     public function event(): BelongsTo
     {
         return $this->belongsTo(LmsEvent::class, 'lms_event_id');
@@ -42,5 +46,15 @@ class LmsCourse extends Model
     public function enrollments(): HasMany
     {
         return $this->hasMany(LmsCourseEnrollment::class, 'lms_course_id');
+    }
+
+    public function modules(): HasMany
+    {
+        return $this->hasMany(LmsCourseModule::class, 'lms_course_id')->orderBy('position');
+    }
+
+    public function roleAccess(): BelongsToMany
+    {
+        return $this->belongsToMany(LmsRole::class, 'lms_course_role_access', 'lms_course_id', 'lms_role_id');
     }
 }

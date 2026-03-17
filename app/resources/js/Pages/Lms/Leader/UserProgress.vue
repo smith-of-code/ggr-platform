@@ -26,19 +26,15 @@
             v-for="cp in (courseProgress || [])"
             :key="cp.course?.id"
             :href="route('lms.courses.show', { event: event?.slug, course: cp.course?.id })"
-            class="flex items-center justify-between rounded-xl border border-gray-200 bg-white shadow-sm p-4 transition hover:border-gray-300"
+            class="block"
           >
-            <span class="font-medium text-gray-900">{{ cp.course?.title }}</span>
-            <div class="flex items-center gap-3">
-              <div class="h-2 w-24 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  class="h-full rounded-full bg-rosatom-500"
-                  :style="{ width: `${cp.progress ?? 0}%` }"
-                />
+            <RCard hoverable class="flex items-center justify-between p-4">
+              <span class="font-medium text-gray-900">{{ cp.course?.title }}</span>
+              <div class="flex items-center gap-3">
+                <RProgress :percentage="cp.progress ?? 0" show-label size="sm" />
+                <ChevronRightIcon class="h-5 w-5 text-gray-400" />
               </div>
-              <span class="w-12 text-right text-sm text-gray-500">{{ cp.progress ?? 0 }}%</span>
-              <ChevronRightIcon class="h-5 w-5 text-gray-400" />
-            </div>
+            </RCard>
           </Link>
         </div>
         <p v-if="!(courseProgress?.length)" class="py-8 text-center text-gray-400">
@@ -50,16 +46,16 @@
       <div v-if="(testResults || []).length > 0">
         <h2 class="font-brand mb-4 text-lg font-semibold text-gray-900">Результаты тестов</h2>
         <div class="space-y-2">
-          <div
+          <RCard
             v-for="t in testResults"
             :key="t.id || t.test?.id"
-            class="flex items-center justify-between rounded-xl border border-gray-200 bg-white shadow-sm px-6 py-4"
+            class="flex items-center justify-between px-6 py-4"
           >
             <span class="font-medium text-gray-900">{{ t.title ?? t.test?.title }}</span>
-            <span class="rounded px-2 py-0.5 text-sm font-medium text-rosatom-600">
+            <RBadge variant="primary">
               {{ t.best_score ?? t.score ?? 0 }}%
-            </span>
-          </div>
+            </RBadge>
+          </RCard>
         </div>
       </div>
 
@@ -67,16 +63,13 @@
       <div v-if="(assignmentStatuses || []).length > 0">
         <h2 class="font-brand mb-4 text-lg font-semibold text-gray-900">Задания</h2>
         <div class="flex flex-wrap gap-2">
-          <span
+          <RBadge
             v-for="a in assignmentStatuses"
             :key="a.id"
-            :class="[
-              'rounded-lg px-3 py-1.5 text-sm font-medium',
-              assignmentBadgeClass(a.status),
-            ]"
+            :variant="assignmentBadgeVariant(a.status)"
           >
             {{ a.title }}: {{ statusLabel(a.status) }}
-          </span>
+          </RBadge>
         </div>
       </div>
 
@@ -84,21 +77,16 @@
       <div v-if="(trajectoryEnrollments || []).length > 0">
         <h2 class="font-brand mb-4 text-lg font-semibold text-gray-900">Траектории</h2>
         <div class="space-y-2">
-          <div
+          <RCard
             v-for="te in trajectoryEnrollments"
             :key="te.trajectory?.id"
-            class="flex items-center justify-between rounded-xl border border-gray-200 bg-white shadow-sm px-6 py-4"
+            class="flex items-center justify-between px-6 py-4"
           >
             <span class="font-medium text-gray-900">{{ te.trajectory?.title }}</span>
-            <span
-              :class="[
-                'rounded px-2 py-0.5 text-xs font-medium',
-                te.enrollment?.status === 'completed' ? 'bg-accent-green/10 text-accent-green' : 'bg-gray-200 text-gray-700',
-              ]"
-            >
+            <RBadge :variant="te.enrollment?.status === 'completed' ? 'success' : 'neutral'">
               {{ te.enrollment?.status === 'completed' ? 'Завершено' : 'В процессе' }}
-            </span>
-          </div>
+            </RBadge>
+          </RCard>
         </div>
       </div>
     </div>
@@ -136,14 +124,14 @@ function statusLabel(status) {
   return map[status] || status
 }
 
-function assignmentBadgeClass(status) {
+function assignmentBadgeVariant(status) {
   const map = {
-    not_submitted: 'bg-gray-200 text-gray-700',
-    submitted: 'bg-rosatom-50 text-rosatom-500',
-    revision: 'bg-accent-yellow/10 text-accent-yellow',
-    approved: 'bg-accent-green/10 text-accent-green',
-    rejected: 'bg-red-100 text-red-600',
+    not_submitted: 'neutral',
+    submitted: 'info',
+    revision: 'warning',
+    approved: 'success',
+    rejected: 'error',
   }
-  return map[status] || 'bg-gray-200 text-gray-700'
+  return map[status] || 'neutral'
 }
 </script>

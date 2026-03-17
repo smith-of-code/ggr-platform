@@ -1,99 +1,178 @@
 <template>
-  <LmsLayout :event="event" :user="user" :profile="profile">
-    <Head :title="`${course?.title} – ${event?.name}`" />
-    <div class="space-y-6">
-      <Link
-        :href="route('lms.courses.index', { event: event?.slug })"
-        class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-rosatom-700"
+  <LmsLayout :event="event" :user="$page.props.user" :profile="$page.props.profile">
+    <Head :title="`${course?.title} – ${event?.title}`" />
+    <div class="mx-auto max-w-4xl space-y-6">
+      <!-- Back -->
+      <button
+        @click="router.visit(route('lms.courses.index', { event: event?.slug }))"
+        class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-rosatom-600"
       >
         <ArrowLeftIcon class="h-4 w-4" />
-        Назад к курсам
-      </Link>
+        Все курсы
+      </button>
 
-      <div class="grid gap-8 lg:grid-cols-3">
-        <!-- Left: course info -->
-        <div class="lg:col-span-1">
-          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div class="aspect-video bg-gray-100">
-              <img
-                v-if="course?.image"
-                :src="course.image"
-                :alt="course.title"
-                class="h-full w-full object-cover"
-              />
-              <div v-else class="flex h-full items-center justify-center">
-                <BookOpenIcon class="h-20 w-20 text-gray-400" />
+      <!-- Course header -->
+      <div class="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+        <div v-if="course?.image" class="h-48 overflow-hidden bg-gray-100">
+          <img :src="course.image" :alt="course.title" class="h-full w-full object-cover" />
+        </div>
+        <div class="p-6 lg:p-8">
+          <h1 class="font-brand text-2xl font-bold text-gray-900">{{ course?.title }}</h1>
+          <p v-if="course?.description" class="mt-2 text-gray-600">{{ course.description }}</p>
+
+          <!-- Dates -->
+          <div v-if="course?.starts_at || course?.ends_at" class="mt-4 flex items-center gap-2 text-sm text-gray-500">
+            <CalendarIcon class="h-4 w-4" />
+            <span v-if="course.starts_at">{{ formatDateFull(course.starts_at) }}</span>
+            <span v-if="course.starts_at && course.ends_at">—</span>
+            <span v-if="course.ends_at">{{ formatDateFull(course.ends_at) }}</span>
+          </div>
+
+          <!-- Enroll button -->
+          <div class="mt-6">
+            <template v-if="isEnrolled">
+              <div class="flex items-center gap-2 text-sm font-medium text-green-600">
+                <CheckCircleIcon class="h-5 w-5" />
+                Вы записаны на курс
               </div>
-            </div>
-            <div class="p-6">
-              <h1 class="font-brand text-xl font-bold text-gray-900">{{ course?.title }}</h1>
-              <p class="mt-3 text-sm text-gray-500">{{ course?.description }}</p>
-              <div v-if="course?.is_enrolled && overallProgress != null" class="mt-4">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-500">Общий прогресс</span>
-                  <span class="font-medium text-gray-900">{{ overallProgress }}%</span>
+              <div class="mt-3">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-500">Прогресс</span>
+                  <span class="font-bold text-rosatom-600">{{ overallProgress }}%</span>
                 </div>
-                <div class="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
-                  <div
-                    class="h-full rounded-full bg-rosatom-500"
-                    :style="{ width: `${overallProgress}%` }"
-                  />
+                <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-gray-100">
+                  <div class="h-full rounded-full bg-rosatom-500 transition-all" :style="{ width: overallProgress + '%' }" />
                 </div>
               </div>
-              <Link
-                v-if="!course?.is_enrolled"
-                :href="route('lms.courses.enroll', { event: event?.slug, course: course?.id })"
-                method="post"
-                as="button"
-                class="mt-6 w-full rounded-xl bg-rosatom-600 py-3 font-semibold text-white transition hover:bg-rosatom-700"
+            </template>
+            <button
+              v-else
+              @click="enroll"
+              class="rounded-xl bg-rosatom-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700"
+            >
+              Записаться на курс
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Program / Schedule -->
+      <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
+        <h2 class="font-brand text-xl font-bold text-gray-900">Программа курса</h2>
+        <p class="mt-1 text-sm text-gray-500">Расписание модулей и уроков</p>
+
+        <!-- Modules -->
+        <div v-if="modules?.length" class="mt-6 space-y-6">
+          <div
+            v-for="(mod, mi) in modules"
+            :key="mod.module.id"
+            class="rounded-xl border border-gray-100 overflow-hidden"
+          >
+            <!-- Module header -->
+            <button
+              @click="toggleModule(mi)"
+              class="flex w-full items-center gap-4 bg-gray-50 px-5 py-4 text-left transition hover:bg-gray-100"
+            >
+              <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold"
+                :class="mod.is_available ? 'bg-rosatom-100 text-rosatom-600' : 'bg-gray-200 text-gray-400'"
               >
-                Записаться на курс
-              </Link>
+                {{ mi + 1 }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold text-gray-900">{{ mod.module.title }}</p>
+                <div class="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+                  <span>{{ mod.stages.length }} {{ stageWord(mod.stages.length) }}</span>
+                  <template v-if="mod.module.available_from">
+                    <span class="flex items-center gap-1">
+                      <CalendarIcon class="h-3 w-3" />
+                      {{ formatDateFull(mod.module.available_from) }}
+                    </span>
+                  </template>
+                  <span v-if="!mod.is_available" class="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">
+                    Откроется {{ formatDateFull(mod.module.available_from) }}
+                  </span>
+                  <span v-else-if="moduleProgress(mod) === 100" class="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">
+                    Завершён
+                  </span>
+                </div>
+              </div>
+              <ChevronDownIcon class="h-5 w-5 shrink-0 text-gray-400 transition" :class="{ 'rotate-180': expandedModules[mi] }" />
+            </button>
+
+            <!-- Module description -->
+            <p v-if="mod.module.description && expandedModules[mi]" class="border-t border-gray-100 bg-gray-50/50 px-5 py-3 text-sm text-gray-500">
+              {{ mod.module.description }}
+            </p>
+
+            <!-- Stages list -->
+            <div v-if="expandedModules[mi]" class="divide-y divide-gray-50">
+              <div
+                v-for="item in mod.stages"
+                :key="item.stage.id"
+                class="flex items-center gap-4 px-5 py-3 transition"
+                :class="item.is_available && isEnrolled ? 'cursor-pointer hover:bg-rosatom-50' : 'opacity-60'"
+                @click="item.is_available && isEnrolled && goToStage(item.stage.id)"
+              >
+                <!-- Status icon -->
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" :class="stageStatusClass(item)">
+                  <CheckIcon v-if="item.progress?.status === 'completed'" class="h-4 w-4" />
+                  <LockClosedIcon v-else-if="!item.is_available" class="h-4 w-4" />
+                  <component :is="stageTypeIcon(item.stage.type)" v-else class="h-4 w-4" />
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-medium text-gray-900">{{ item.stage.title }}</p>
+                  <div class="flex items-center gap-3 text-xs text-gray-400">
+                    <span>{{ stageTypeLabel(item.stage.type) }}</span>
+                    <span v-if="item.stage.duration_minutes">~{{ item.stage.duration_minutes }} мин</span>
+                    <span v-if="item.stage.available_from && !item.is_available">
+                      Откроется {{ formatDateFull(item.stage.available_from) }}
+                    </span>
+                  </div>
+                </div>
+
+                <span
+                  v-if="item.progress?.status === 'completed'"
+                  class="shrink-0 text-xs font-medium text-green-600"
+                >
+                  Пройден
+                </span>
+                <ChevronRightIcon v-else-if="item.is_available && isEnrolled" class="h-4 w-4 shrink-0 text-gray-300" />
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Right: stages -->
-        <div class="lg:col-span-2">
-          <h2 class="font-brand mb-4 text-lg font-semibold text-gray-900">Программа курса</h2>
-          <div class="space-y-0 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <Link
-              v-for="(stage, idx) in (course?.stages || [])"
-              :key="stage.id"
-              :href="canAccessStage(stage) ? route('lms.courses.stage', { event: event?.slug, course: course?.id, stage: stage.id }) : '#'"
-              :class="[
-                'flex items-center gap-4 border-gray-200 p-4 transition',
-                canAccessStage(stage)
-                  ? 'hover:bg-gray-50 cursor-pointer'
-                  : 'cursor-not-allowed opacity-75',
-                idx > 0 ? 'border-t' : '',
-              ]"
+        <!-- Orphan stages (no module) -->
+        <div v-if="orphanStages?.length" class="mt-6">
+          <p v-if="modules?.length" class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Другие уроки</p>
+          <div class="divide-y divide-gray-50 rounded-xl border border-gray-100">
+            <div
+              v-for="item in orphanStages"
+              :key="item.stage.id"
+              class="flex items-center gap-4 px-5 py-3 transition"
+              :class="item.is_available && isEnrolled ? 'cursor-pointer hover:bg-rosatom-50' : 'opacity-60'"
+              @click="item.is_available && isEnrolled && goToStage(item.stage.id)"
             >
-              <div
-                :class="[
-                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold',
-                  statusClass(stage),
-                ]"
-              >
-                {{ idx + 1 }}
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" :class="stageStatusClass(item)">
+                <CheckIcon v-if="item.progress?.status === 'completed'" class="h-4 w-4" />
+                <component :is="stageTypeIcon(item.stage.type)" v-else class="h-4 w-4" />
               </div>
               <div class="min-w-0 flex-1">
-                <p class="font-medium text-gray-900">{{ stage.title }}</p>
-                <span
-                  :class="[
-                    'mt-1 inline-block rounded px-2 py-0.5 text-xs font-medium',
-                    typeBadgeClass(stage.type),
-                  ]"
-                >
-                  {{ typeLabel(stage.type) }}
-                </span>
+                <p class="text-sm font-medium text-gray-900">{{ item.stage.title }}</p>
+                <div class="flex items-center gap-3 text-xs text-gray-400">
+                  <span>{{ stageTypeLabel(item.stage.type) }}</span>
+                  <span v-if="item.stage.duration_minutes">~{{ item.stage.duration_minutes }} мин</span>
+                </div>
               </div>
-              <LockClosedIcon v-if="stageStatus(stage) === 'locked'" class="h-5 w-5 shrink-0 text-gray-400" />
-              <MinusCircleIcon v-else-if="stageStatus(stage) === 'not_started'" class="h-5 w-5 shrink-0 text-gray-500" />
-              <PlayIcon v-else-if="stageStatus(stage) === 'in_progress'" class="h-5 w-5 shrink-0 text-rosatom-500" />
-              <CheckCircleIcon v-else class="h-5 w-5 shrink-0 text-rosatom-600" />
-            </Link>
+              <span v-if="item.progress?.status === 'completed'" class="text-xs font-medium text-green-600">Пройден</span>
+            </div>
           </div>
+        </div>
+
+        <div v-if="!modules?.length && !orphanStages?.length" class="mt-8 text-center text-sm text-gray-400">
+          Программа курса пока не заполнена
         </div>
       </div>
     </div>
@@ -101,65 +180,91 @@
 </template>
 
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
+import { Head, router, usePage } from '@inertiajs/vue3'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
-import { ArrowLeftIcon, BookOpenIcon } from '@heroicons/vue/24/outline'
-import { LockClosedIcon, PlayIcon, CheckCircleIcon, MinusCircleIcon } from '@heroicons/vue/24/solid'
+import {
+  ArrowLeftIcon,
+  CalendarIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  LockClosedIcon,
+  BookOpenIcon,
+  PlayIcon,
+  ClipboardDocumentListIcon,
+  PencilSquareIcon,
+  DocumentTextIcon,
+} from '@heroicons/vue/24/outline'
+import { CheckIcon, CheckCircleIcon } from '@heroicons/vue/24/solid'
 
 const props = defineProps({
-  event: { type: Object, required: true },
-  user: { type: Object, default: () => ({}) },
-  profile: { type: Object, default: () => ({}) },
-  course: { type: Object, required: true },
+  event: Object,
+  course: Object,
+  enrollment: Object,
+  modules: Array,
+  orphanStages: Array,
+  stages: Array,
 })
 
-const progressByStage = computed(() => {
-  const p = props.course?.user_progress_by_stage || {}
-  return p
+const isEnrolled = computed(() => !!props.enrollment)
+
+const expandedModules = reactive(
+  (props.modules || []).reduce((acc, mod, i) => {
+    acc[i] = mod.is_available
+    return acc
+  }, {})
+)
+
+function toggleModule(i) {
+  expandedModules[i] = !expandedModules[i]
+}
+
+const overallProgress = computed(() => {
+  const allStages = [
+    ...(props.modules || []).flatMap(m => m.stages),
+    ...(props.orphanStages || []),
+  ]
+  if (!allStages.length) return 0
+  const completed = allStages.filter(s => s.progress?.status === 'completed').length
+  return Math.round((completed / allStages.length) * 100)
 })
 
-const overallProgress = computed(() => props.course?.progress_percent ?? null)
-
-function stageStatus(stage) {
-  const progress = progressByStage.value[stage?.id]
-  if (progress?.is_completed) return 'completed'
-  if (progress?.is_started) return 'in_progress'
-  if (canAccessStage(stage)) return 'not_started'
-  return 'locked'
+function moduleProgress(mod) {
+  if (!mod.stages.length) return 0
+  const completed = mod.stages.filter(s => s.progress?.status === 'completed').length
+  return Math.round((completed / mod.stages.length) * 100)
 }
 
-function canAccessStage(stage) {
-  const stages = props.course?.stages || []
-  const idx = stages.findIndex((s) => s.id === stage?.id)
-  if (idx <= 0) return true
-  const prev = stages[idx - 1]
-  const prevProgress = progressByStage.value[prev?.id]
-  return prevProgress?.is_completed || prevProgress?.is_started
+function enroll() {
+  router.post(route('lms.courses.enroll', { event: props.event?.slug, course: props.course?.id }))
 }
 
-function statusClass(stage) {
-  const s = stageStatus(stage)
-  if (s === 'completed') return 'bg-rosatom-50 text-rosatom-600'
-  if (s === 'in_progress') return 'bg-rosatom-50 text-rosatom-500'
-  if (s === 'not_started') return 'bg-gray-200 text-gray-700'
-  return 'bg-gray-100 text-gray-400'
+function goToStage(stageId) {
+  router.visit(route('lms.stages.show', { event: props.event?.slug, course: props.course?.id, stage: stageId }))
 }
 
-function typeLabel(type) {
-  const map = { content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео' }
-  return map[type] || type
+function stageStatusClass(item) {
+  if (item.progress?.status === 'completed') return 'bg-green-100 text-green-600'
+  if (!item.is_available) return 'bg-gray-100 text-gray-400'
+  return 'bg-rosatom-50 text-rosatom-500'
 }
 
-function typeBadgeClass(type) {
-  const map = {
-    content: 'bg-gray-200 text-gray-700',
-    scorm: 'bg-rosatom-50 text-rosatom-500',
-    test: 'bg-accent-yellow/10 text-accent-yellow',
-    assignment: 'bg-accent-magenta/10 text-accent-magenta',
-    video: 'bg-rose-100 text-rose-500',
-  }
-  return map[type] || 'bg-gray-200 text-gray-700'
+function stageTypeIcon(type) {
+  return { content: DocumentTextIcon, video: PlayIcon, test: ClipboardDocumentListIcon, assignment: PencilSquareIcon, scorm: BookOpenIcon }[type] || DocumentTextIcon
 }
 
+function stageTypeLabel(type) {
+  return { content: 'Теория', video: 'Видео', test: 'Тест', assignment: 'Задание', scorm: 'SCORM' }[type] || 'Урок'
+}
+
+function stageWord(n) {
+  if (n === 1) return 'урок'
+  if (n >= 2 && n <= 4) return 'урока'
+  return 'уроков'
+}
+
+function formatDateFull(d) {
+  if (!d) return ''
+  return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+}
 </script>

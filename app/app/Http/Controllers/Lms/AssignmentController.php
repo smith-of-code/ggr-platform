@@ -13,19 +13,25 @@ use Inertia\Response;
 
 class AssignmentController extends Controller
 {
-    public function index(LmsEvent $event): Response
+    public function index(Request $request, LmsEvent $event): Response
     {
         $user = auth()->user();
-        $assignments = LmsAssignment::where('lms_event_id', $event->id)
-            ->where('is_active', true)
-            ->get();
+        $assignmentsQuery = LmsAssignment::where('lms_event_id', $event->id)
+            ->where('is_active', true);
 
-        $submissions = LmsAssignmentSubmission::whereIn('lms_assignment_id', $assignments->pluck('id'))
+        if ($search = $request->get('search')) {
+            $assignmentsQuery->where('title', 'ilike', '%' . $search . '%');
+        }
+
+        $assignmentsPaginator = $assignmentsQuery->paginate(12)->withQueryString();
+        $assignmentIds = collect($assignmentsPaginator->items())->pluck('id');
+
+        $submissions = LmsAssignmentSubmission::whereIn('lms_assignment_id', $assignmentIds)
             ->where('user_id', $user->id)
             ->get()
             ->keyBy('lms_assignment_id');
 
-        $assignmentsWithStatus = $assignments->map(function ($assignment) use ($submissions) {
+        $assignmentsWithStatus = collect($assignmentsPaginator->items())->map(function ($assignment) use ($submissions) {
             $submission = $submissions->get($assignment->id);
             return [
                 'assignment' => $assignment->only(['id', 'title', 'description', 'deadline']),
@@ -33,9 +39,12 @@ class AssignmentController extends Controller
             ];
         });
 
+        $assignmentsPaginator->setCollection($assignmentsWithStatus);
+
         return Inertia::render('Lms/Assignments/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
-            'assignments' => $assignmentsWithStatus,
+            'assignments' => $assignmentsPaginator,
+            'filters' => $request->only(['search']),
         ]);
     }
 

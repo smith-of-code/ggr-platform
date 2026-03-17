@@ -8,48 +8,51 @@
       <h1 class="text-2xl font-bold text-gray-900">Новое событие</h1>
     </div>
 
-    <form @submit.prevent="submit" class="max-w-2xl space-y-6 rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-      <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700">Название *</label>
-        <input v-model="form.title" type="text" required class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" placeholder="Название события" @blur="generateSlug" />
-        <p v-if="form.errors.title" class="mt-1.5 text-xs text-red-600">{{ form.errors.title }}</p>
-      </div>
-      <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700">Slug</label>
-        <input v-model="form.slug" type="text" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-mono text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" placeholder="Автоматически из названия" />
-        <p v-if="form.errors.slug" class="mt-1.5 text-xs text-red-600">{{ form.errors.slug }}</p>
-      </div>
-      <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700">Описание</label>
-        <textarea v-model="form.description" rows="4" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" placeholder="Описание события" />
-      </div>
-      <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700">Способ авторизации</label>
-        <select v-model="form.auth_method" class="w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-          <option value="email">Email</option>
-          <option value="sso">SSO</option>
-        </select>
-      </div>
-      <div v-if="form.auth_method === 'sso'">
-        <label class="mb-2 block text-sm font-medium text-gray-700">URL SSO провайдера</label>
-        <input v-model="form.sso_provider_url" type="url" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" placeholder="https://..." />
-        <p v-if="form.errors.sso_provider_url" class="mt-1.5 text-xs text-red-600">{{ form.errors.sso_provider_url }}</p>
-      </div>
-      <div>
-        <label class="group flex cursor-pointer items-center gap-3 rounded-xl border border-gray-300 px-4 py-3 transition hover:bg-gray-50">
-          <input v-model="form.is_active" type="checkbox" class="h-5 w-5 rounded-md border-2 border-gray-300 bg-white text-rosatom-600 transition focus:ring-rosatom-500/20" />
-          <span class="text-sm font-medium text-gray-700">Активно</span>
-        </label>
-      </div>
+    <RCard class="max-w-2xl">
+      <form @submit.prevent="submit" class="space-y-6">
+        <RInput
+          v-model="form.title"
+          label="Название *"
+          placeholder="Название события"
+          required
+          :error="form.errors.title"
+          @blur="generateSlug"
+        />
+        <RInput
+          v-model="form.slug"
+          label="Slug"
+          placeholder="Автоматически из названия"
+          :error="form.errors.slug"
+        />
+        <div>
+          <label class="mb-2 block text-sm font-medium text-gray-700">Описание</label>
+          <textarea v-model="form.description" rows="4" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" placeholder="Описание события" />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium text-gray-700">Способ авторизации</label>
+          <select v-model="form.auth_method" class="w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
+            <option value="email">Email</option>
+            <option value="sso">SSO</option>
+          </select>
+        </div>
+        <RInput
+          v-if="form.auth_method === 'sso'"
+          v-model="form.sso_provider_url"
+          label="URL SSO провайдера"
+          type="url"
+          placeholder="https://..."
+          :error="form.errors.sso_provider_url"
+        />
+        <RCheckbox v-model="form.is_active" label="Активно" />
 
-      <div class="flex gap-3 border-t border-gray-200 pt-6">
-        <button type="submit" :disabled="form.processing" class="flex items-center gap-2 rounded-xl bg-rosatom-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rosatom-700 disabled:opacity-50">
-          <svg v-if="form.processing" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-          Создать
-        </button>
-        <Link :href="route('lms.admin.events.index')" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Отмена</Link>
-      </div>
-    </form>
+        <div class="flex gap-3 border-t border-gray-200 pt-6">
+          <RButton type="submit" variant="primary" :loading="form.processing" :disabled="form.processing">
+            Создать
+          </RButton>
+          <Link :href="route('lms.admin.events.index')" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Отмена</Link>
+        </div>
+      </form>
+    </RCard>
   </LmsAdminLayout>
 </template>
 

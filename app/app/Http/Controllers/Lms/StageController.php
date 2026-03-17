@@ -27,6 +27,8 @@ class StageController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
+        $allStages = $course->stages()->orderBy('position')->get(['id', 'title', 'type', 'position']);
+
         return Inertia::render('Lms/Courses/Stage', [
             'event' => $event->only(['id', 'slug', 'title']),
             'course' => $course->only(['id', 'slug', 'title']),
@@ -34,6 +36,7 @@ class StageController extends Controller
                 'id', 'title', 'description', 'type', 'content',
                 'scorm_package', 'lms_test_id', 'lms_assignment_id', 'lms_video_id',
             ]),
+            'stages' => $allStages,
             'linkedTest' => $stage->test?->only(['id', 'title']),
             'linkedAssignment' => $stage->assignment?->only(['id', 'title']),
             'linkedVideo' => $stage->video?->only(['id', 'title', 'url', 'source']),

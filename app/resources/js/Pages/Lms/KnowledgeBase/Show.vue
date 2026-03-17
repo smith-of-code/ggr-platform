@@ -27,14 +27,19 @@
             v-for="child in section.children"
             :key="child.id"
             :href="route('lms.kb.show', { event: event?.slug, section: child.id })"
-            class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white shadow-sm p-4 transition hover:border-gray-300"
+            as="div"
+            class="block cursor-pointer"
           >
-            <FolderIcon class="h-6 w-6 shrink-0 text-rosatom-500" />
-            <div class="min-w-0 flex-1">
-              <p class="font-medium text-gray-900">{{ child.title }}</p>
-              <p v-if="child.description" class="mt-0.5 truncate text-sm text-gray-400">{{ child.description }}</p>
-            </div>
-            <ChevronRightIcon class="h-5 w-5 shrink-0 text-gray-400" />
+            <RCard hoverable class="flex items-center gap-3 p-4">
+              <template #default>
+                <FolderIcon class="h-6 w-6 shrink-0 text-rosatom-500" />
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium text-gray-900">{{ child.title }}</p>
+                  <p v-if="child.description" class="mt-0.5 truncate text-sm text-gray-400">{{ child.description }}</p>
+                </div>
+                <ChevronRightIcon class="h-5 w-5 shrink-0 text-gray-400" />
+              </template>
+            </RCard>
           </Link>
         </div>
       </div>
@@ -43,68 +48,67 @@
       <div v-if="(section?.items || []).length > 0">
         <h2 class="font-brand mb-4 text-lg font-semibold text-gray-900">Материалы</h2>
         <div class="space-y-2">
-          <div
-            v-for="item in section.items"
-            :key="item.id"
-            class="rounded-xl border border-gray-200 bg-white shadow-sm"
-          >
-            <button
-              v-if="item.type === 'text'"
-              type="button"
-              class="flex w-full items-center gap-3 p-4 text-left transition hover:bg-gray-50"
-              @click="expandedItemId = expandedItemId === item.id ? null : item.id"
-            >
-              <DocumentTextIcon class="h-5 w-5 shrink-0 text-rosatom-500" />
-              <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
-              <ChevronDownIcon
-                :class="['h-5 w-5 shrink-0 transition', expandedItemId === item.id ? 'rotate-180' : '']"
-              />
-            </button>
-            <a
-              v-else-if="item.type === 'url' && item.url"
-              :href="item.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex items-center gap-3 p-4 transition hover:bg-gray-50"
-            >
-              <LinkIcon class="h-5 w-5 shrink-0 text-rosatom-600" />
-              <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
-              <ArrowTopRightOnSquareIcon class="h-5 w-5 shrink-0 text-gray-400" />
-            </a>
-            <a
-              v-else-if="(item.type === 'file' || item.file_path) && item.file_path"
-              :href="item.file_path"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex items-center gap-3 p-4 transition hover:bg-gray-50"
-            >
-              <DocumentIcon class="h-5 w-5 shrink-0 text-accent-yellow" />
-              <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
-              <ArrowDownTrayIcon class="h-5 w-5 shrink-0 text-gray-400" />
-            </a>
-            <div v-else class="flex items-center gap-3 p-4">
-              <DocumentTextIcon class="h-5 w-5 shrink-0 text-gray-400" />
-              <span class="font-medium text-gray-500">{{ item.title }}</span>
-            </div>
-            <div
-              v-if="item.type === 'text' && expandedItemId === item.id && item.content"
-              class="border-t border-gray-200 p-4"
-            >
+          <RCard v-for="item in section.items" :key="item.id" flush>
+            <template #default>
+              <RButton
+                v-if="item.type === 'text'"
+                variant="ghost"
+                block
+                class="flex w-full items-center gap-3 justify-start p-4 text-left"
+                @click="expandedItemId = expandedItemId === item.id ? null : item.id"
+              >
+                <DocumentTextIcon class="h-5 w-5 shrink-0 text-rosatom-500" />
+                <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
+                <ChevronDownIcon
+                  :class="['h-5 w-5 shrink-0 transition', expandedItemId === item.id ? 'rotate-180' : '']"
+                />
+              </RButton>
+              <a
+                v-else-if="item.type === 'url' && item.url"
+                :href="item.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center gap-3 p-4 transition hover:bg-gray-50"
+              >
+                <LinkIcon class="h-5 w-5 shrink-0 text-rosatom-600" />
+                <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
+                <ArrowTopRightOnSquareIcon class="h-5 w-5 shrink-0 text-gray-400" />
+              </a>
+              <a
+                v-else-if="(item.type === 'file' || item.file_path) && item.file_path"
+                :href="item.file_path"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center gap-3 p-4 transition hover:bg-gray-50"
+              >
+                <DocumentIcon class="h-5 w-5 shrink-0 text-accent-yellow" />
+                <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
+                <ArrowDownTrayIcon class="h-5 w-5 shrink-0 text-gray-400" />
+              </a>
+              <div v-else class="flex items-center gap-3 p-4">
+                <DocumentTextIcon class="h-5 w-5 shrink-0 text-gray-400" />
+                <span class="font-medium text-gray-500">{{ item.title }}</span>
+              </div>
               <div
-                class="prose max-w-none text-sm text-gray-700"
-                v-html="item.content"
-              />
-            </div>
-          </div>
+                v-if="item.type === 'text' && expandedItemId === item.id && item.content"
+                class="border-t border-gray-200 p-4"
+              >
+                <div
+                  class="prose max-w-none text-sm text-gray-700"
+                  v-html="item.content"
+                />
+              </div>
+            </template>
+          </RCard>
         </div>
       </div>
 
-      <div
+      <RCard
         v-if="!(section?.children?.length) && !(section?.items?.length)"
-        class="rounded-xl border border-gray-200 bg-white py-12 text-center text-gray-400 shadow-sm"
+        class="py-12 text-center text-gray-400"
       >
         В этом разделе пока нет материалов
-      </div>
+      </RCard>
     </div>
   </LmsLayout>
 </template>

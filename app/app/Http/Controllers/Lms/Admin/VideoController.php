@@ -8,6 +8,7 @@ use App\Models\Lms\LmsGroup;
 use App\Models\Lms\LmsVideo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -42,6 +43,10 @@ class VideoController extends Controller
         $validated['is_recording'] = $request->boolean('is_recording', false);
         $validated['is_active'] = $request->boolean('is_active', true);
 
+        if (empty($validated['thumbnail']) && !empty($validated['url'])) {
+            $validated['thumbnail'] = $this->fetchThumbnail($validated['url']);
+        }
+
         $video = LmsVideo::create($validated);
 
         if ($request->filled('group_ids')) {
@@ -74,6 +79,10 @@ class VideoController extends Controller
         $validated['is_recording'] = $request->boolean('is_recording', false);
         $validated['is_active'] = $request->boolean('is_active', true);
 
+        if (empty($validated['thumbnail']) && !empty($validated['url']) && empty($video->thumbnail)) {
+            $validated['thumbnail'] = $this->fetchThumbnail($validated['url']);
+        }
+
         $video->update($validated);
 
         $video->groups()->sync($request->group_ids ?? []);
@@ -99,6 +108,26 @@ class VideoController extends Controller
             'url' => ['nullable', 'string', 'url'],
             'file_path' => ['nullable', 'string'],
         ]);
+    }
+
+    private function fetchThumbnail(string $url): ?string
+    {
+        // Rutube
+        if (preg_match('/rutube\.ru\/video\/([a-zA-Z0-9]+)/', $url, $m)) {
+            try {
+                $resp = Http::timeout(5)->get("https://rutube.ru/api/video/{$m[1]}/");
+                if ($resp->ok()) {
+                    return $resp->json('thumbnail_url');
+                }
+            } catch (\Throwable) {}
+        }
+
+        // YouTube
+        if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/', $url, $m)) {
+            return "https://img.youtube.com/vi/{$m[1]}/hqdefault.jpg";
+        }
+
+        return null;
     }
 
     private function ensureVideoBelongsToEvent(LmsVideo $video, LmsEvent $event): void
