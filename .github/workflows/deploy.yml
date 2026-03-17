@@ -57,5 +57,5 @@ jobs:
           fi
 
           cd "$DOCKER_COMPOSE_DIR"
-          bash run.sh local
+          bash run.sh prod
           EOF
