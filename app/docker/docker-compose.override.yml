@@ -1,0 +1,57 @@
+services:
+
+
+  nginx:
+    image: nginx:alpine
+    container_name: ${APP_NAME}_nginx
+    restart: unless-stopped
+    environment:
+      - APP_NAME=${APP_NAME}_fpm
+    ports:
+      - "40101:80"
+      - "40102:443"
+    volumes:
+      - ../:/var/www
+      - ./nginx/local/templates:/etc/nginx/templates
+    networks:
+      - service_bridge
+      - proxy
+
+  fpm:
+    container_name: ${APP_NAME}_fpm
+    environment:
+      XDEBUG_CONFIG: "remote_host=${XDEBUG_CONFIG_REMOTE_HOST} remote_enable=1"
+      PHP_IDE_CONFIG: "serverName=${APP_NAME}_docker"
+    ports:
+        - ${VITE_DEV_SERVER_PORT} #vite port
+  postgres:
+      image: postgres:16
+      container_name: ${APP_NAME}_postgres
+      restart: unless-stopped
+      ports:
+          - "40005:5432"
+      environment:
+          POSTGRES_USER: ${DB_USERNAME}
+          POSTGRES_PASSWORD: ${DB_PASSWORD}
+          POSTGRES_DB: ${DB_DATABASE}
+      volumes:
+          - ../../${APP_NAME}-data/dbdata:/var/lib/postgres
+      networks:
+          - service_bridge
+  redis:
+      image: "redis:alpine"
+      container_name: ${APP_NAME}_redis
+      restart: unless-stopped
+      ports:
+          - "40004:6379"
+      volumes:
+          - ../../${APP_NAME}-data/redis_data:/var/lib/postgres
+      networks:
+          - service_bridge
+networks:
+  service_bridge:
+    name: ${DOCKER_NETWORK_NAME}_bridge
+    external: true
+  proxy:
+    external: true
+    name: proxy

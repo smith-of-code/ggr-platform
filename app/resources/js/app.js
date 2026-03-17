@@ -10,7 +10,7 @@ import {
     RButton, RInput, RCheckbox, RAvatar, RBadge, RCard,
     RModal, RTabs, RProgress, RSidebar,
     CourseCard, ProfileCard, Leaderboard, AssignmentCard,
-} from 'rosatom-ggr-ui-kit';
+} from '@rosatom-ggr/ui-kit';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

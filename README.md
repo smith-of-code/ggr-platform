@@ -4,11 +4,13 @@
 
 ## Стек технологий
 
-- **Backend:** Laravel 11, PHP 8.3
-- **Frontend:** Vue 3, Inertia.js, Tailwind CSS
+- **Backend:** Laravel 12, PHP 8.3
+- **Frontend:** Vue 3, Inertia.js, Tailwind CSS, Vite
 - **UI Kit:** rosatom-ggr-ui-kit
 - **Database:** PostgreSQL 16
-- **Cache:** Redis
+- **Cache / Queues / Sessions:** Redis
+- **Queue Worker:** Laravel Horizon (Supervisor)
+- **Web Server:** Nginx
 - **Containerization:** Docker, Docker Compose
 
 ## Быстрый старт
@@ -25,60 +27,49 @@ git clone git@github.com:smith-of-code/ggr-platform.git
 cd ggr-platform
 ```
 
-### 2. Настройка окружения
+### 2. Запуск
 
 ```bash
-cp .env.docker.example app/.env
+cd app/docker
+
+# Локальная разработка
+./run.sh local
+
+# Production
+./run.sh prod
 ```
 
-Отредактируйте `app/.env` при необходимости. Значения по умолчанию:
+Скрипт автоматически выполнит:
+- Создание Docker-сетей
+- Сборку контейнеров
+- Копирование env-файла в `app/.env`
+- `composer update`, `npm update`, `npm run build`
+- `php artisan key:generate`, `migrate`, `storage:link`
 
-| Параметр | Значение |
-|----------|----------|
-| `DB_HOST` | `db` |
-| `DB_DATABASE` | `rosatom` |
-| `DB_USERNAME` | `rosatom` |
-| `DB_PASSWORD` | `secret` |
-| `REDIS_HOST` | `redis` |
+Первый запуск занимает ~5-7 минут.
 
-### 3. Запуск
+### 3. Сидирование БД
 
 ```bash
-docker compose up -d
+cd app/docker
+./seed.sh local
 ```
 
-Дождитесь сборки контейнеров (первый запуск ~3-5 минут).
-
-### 4. Инициализация приложения
+### 4. Остановка
 
 ```bash
-# Установка зависимостей PHP
-docker compose exec app composer install
-
-# Генерация ключа приложения
-docker compose exec app php artisan key:generate
-
-# Миграции и начальные данные
-docker compose exec app php artisan migrate --seed
-
-# Установка JS-зависимостей и сборка фронтенда
-docker compose exec app npm install
-docker compose exec app npm run build
-
-# Линк storage
-docker compose exec app php artisan storage:link
-
-# Права на директории
-docker compose exec app chmod -R 777 storage bootstrap/cache
+cd app/docker
+./stop.sh
 ```
 
-### 5. Доступ
+### 5. Доступ (local)
 
 | URL | Описание |
 |-----|----------|
-| `http://localhost:8081` | Главная страница |
-| `http://localhost:8081/lms/vshgr-2026/login` | Вход в LMS |
-| `http://localhost:8081/lms-admin/vshgr-2026/users` | Админ-панель |
+| http://localhost:40101 | Главная страница |
+| http://localhost:40101/lms/vshgr-2026/login | Вход в LMS |
+| http://localhost:40101/lms-admin/vshgr-2026/users | Админ-панель |
+| http://localhost:8027 | Mailpit — перехват email |
 
 ### Учётные записи по умолчанию
 
@@ -90,20 +81,27 @@ docker compose exec app chmod -R 777 storage bootstrap/cache
 ## Структура проекта
 
 ```
-├── app/                          # Laravel-приложение
+├── app/                              # Laravel-приложение
 │   ├── app/
-│   │   ├── Http/Controllers/Lms/ # Контроллеры LMS
-│   │   ├── Models/Lms/           # Модели LMS
-│   │   └── Http/Middleware/      # Middleware
+│   │   ├── Http/Controllers/Lms/     # Контроллеры LMS
+│   │   ├── Models/Lms/               # Модели LMS
+│   │   └── Http/Middleware/           # Middleware
 │   ├── resources/js/
-│   │   ├── Components/           # Переиспользуемые компоненты
-│   │   ├── Layouts/              # Макеты (LmsLayout, LmsAdminLayout)
-│   │   └── Pages/Lms/            # Страницы LMS
-│   ├── routes/lms.php            # Маршруты LMS
-│   └── public/                   # Статика
-├── docker/                       # Docker-конфигурации
-├── docker-compose.yml            # Docker Compose
-└── .env.docker.example           # Шаблон переменных окружения
+│   │   ├── Components/               # Переиспользуемые компоненты
+│   │   ├── Layouts/                   # Макеты (LmsLayout, LmsAdminLayout)
+│   │   └── Pages/Lms/                # Страницы LMS
+│   ├── routes/lms.php                # Маршруты LMS
+│   ├── docker/                       # Docker-инфраструктура
+│   │   ├── docker-compose.yml        # Базовая конфигурация
+│   │   ├── docker-compose.override.yml # Override для local
+│   │   ├── docker-compose.prod.yml   # Override для production
+│   │   ├── Fpm.Dockerfile            # PHP-FPM образ
+│   │   ├── run.sh / stop.sh / seed.sh # Скрипты управления
+│   │   ├── .env.local / .env.prod    # Переменные окружения
+│   │   └── nginx/ supervisor/ ssl/   # Конфигурации сервисов
+│   └── public/                       # Статика
+├── .github/workflows/                # CI/CD (lint, tests, deploy)
+└── design-references/                # Дизайн-референсы
 ```
 
 ## Функциональность
@@ -132,24 +130,30 @@ docker compose exec app chmod -R 777 storage bootstrap/cache
 
 ## Разработка
 
-### Фронтенд (hot reload)
+### Вход в контейнер
 
 ```bash
-docker compose exec app npm run dev
+docker exec -it vshgr-platform_fpm bash
 ```
 
 ### Artisan-команды
 
 ```bash
-docker compose exec app php artisan tinker
-docker compose exec app php artisan migrate
-docker compose exec app php artisan cache:clear
+docker exec vshgr-platform_fpm php artisan tinker
+docker exec vshgr-platform_fpm php artisan migrate
+docker exec vshgr-platform_fpm php artisan cache:clear
+```
+
+### Фронтенд (hot reload)
+
+```bash
+docker exec vshgr-platform_fpm npm run dev
 ```
 
 ### Пересборка фронтенда
 
 ```bash
-docker compose exec app npm run build
+docker exec vshgr-platform_fpm npm run build
 ```
 
 ## UI Kit
@@ -160,6 +164,10 @@ docker compose exec app npm run build
 # В файле app/.npmrc указан реестр:
 @rosatom-ggr:registry=https://nexus.wizandr.ru/repository/npm-private/
 ```
+
+## Документация
+
+- [Docker-инфраструктура](app/docker/DOCKER.md) — подробное описание контейнеров, сетей, томов, переменных окружения
 
 ## Лицензия
 

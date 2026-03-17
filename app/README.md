@@ -1,12 +1,51 @@
-# Гостеприимные города Росатома — rosatom-travel.ru
+# Гостеприимные города Росатома — Платформа ВШГР
 
-MVP информационной платформы на Laravel + Vue (Inertia.js).
+Информационная платформа на Laravel + Vue (Inertia.js).
 
 ## Стек
 
 - **Backend:** Laravel 12, PHP 8.3
 - **Frontend:** Vue 3, Inertia.js, Tailwind CSS, Vite
-- **База данных:** SQLite (по умолчанию) / PostgreSQL
+- **База данных:** PostgreSQL 16
+- **Кеш / Очереди / Сессии:** Redis
+- **Очереди:** Laravel Horizon (Supervisor)
+- **Web-сервер:** Nginx
+
+## Быстрый старт (Docker)
+
+```bash
+cd app/docker
+
+# Локальная разработка
+./run.sh local
+
+# Production
+./run.sh prod
+```
+
+Скрипт автоматически выполнит: создание Docker-сетей, сборку контейнеров, установку зависимостей (Composer + npm), миграции, сборку фронтенда.
+
+**Остановка:**
+
+```bash
+cd app/docker
+./stop.sh
+```
+
+**Сидирование БД:**
+
+```bash
+cd app/docker
+./seed.sh local
+```
+
+## Доступы (local)
+
+| Ресурс | URL |
+|--------|-----|
+| Сайт | http://localhost:40101 |
+| Админ-панель | http://localhost:40101/admin |
+| Mailpit (почта) | http://localhost:8027 |
 
 ## Админ-панель
 
@@ -16,10 +55,9 @@ MVP информационной платформы на Laravel + Vue (Inertia.
 
 После входа доступны: дашборд, CRUD городов, CRUD туров, заявки, экспорт в CSV.
 
-## Установка
+## Установка без Docker
 
 ```bash
-# Клонирование и переход в директорию
 cd app
 
 # Установка зависимостей
@@ -37,32 +75,28 @@ php artisan migrate --seed
 npm run build
 ```
 
-## Запуск
-
-### Локально (без Docker)
+### Запуск dev-сервера
 
 ```bash
 # Терминал 1 — Laravel
 php artisan serve
 
-# Терминал 2 — Vite (для разработки)
+# Терминал 2 — Vite HMR
 npm run dev
 ```
 
-Сайт: http://localhost:8000  
-Админ-панель: http://localhost:8000/admin
-
-### Docker
+## Частые команды (Docker)
 
 ```bash
-# Из корня проекта
-docker-compose up -d
+# Вход в контейнер
+docker exec -it vshgr-platform_fpm bash
 
-# Миграции внутри контейнера
-docker-compose exec app php artisan migrate --seed
+# Artisan-команды
+docker exec vshgr-platform_fpm php artisan <command>
+
+# Логи Horizon
+docker exec vshgr-platform_fpm cat /var/www/storage/logs/horizon.log
 ```
-
-Сайт: http://localhost:8080
 
 ## Структура MVP
 
@@ -72,6 +106,6 @@ docker-compose exec app php artisan migrate --seed
 - **Заявки** — форма на тур (без ЛК)
 - **Админ** — дашборд, список заявок
 
-## Дальнейшее развитие
+## Docker-инфраструктура
 
-См. КП_rosatom-travel_План_разработки.md в корне проекта.
+Подробная документация по Docker: [app/docker/DOCKER.md](docker/DOCKER.md)

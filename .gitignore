@@ -59,3 +59,5 @@ scorm-examples/
 Ответ_*.docx
 Ответы_*.docx
 Карточка_*.docx
+vshgr-platform-nginx_log/
+vshgr-platform-data/

@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import 'rosatom-ggr-ui-kit/style.css';
+@import '@rosatom-ggr/ui-kit/style.css';
 
 @source '../**/*.blade.php';
 @source '../**/*.vue';
