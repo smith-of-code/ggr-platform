@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\CityController;
@@ -33,6 +34,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::patch('/cities/{city}/toggle-active', [AdminCityController::class, 'toggleActive'])->name('cities.toggleActive');
     Route::resource('tours', AdminTourController::class)->except(['show']);
     Route::patch('/tours/{tour}/toggle-active', [AdminTourController::class, 'toggleActive'])->name('tours.toggleActive');
+
+    Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+    Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');
+    Route::put('/settings/mail', [AdminSettingsController::class, 'updateMail'])->name('settings.mail.update');
+    Route::post('/settings/mail/test', [AdminSettingsController::class, 'testMail'])->name('settings.mail.test');
 });
 
 require __DIR__.'/auth.php';
