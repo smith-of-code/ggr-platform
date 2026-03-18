@@ -12,7 +12,7 @@
     <div class="grid gap-8 lg:grid-cols-3">
       <div class="lg:col-span-2">
         <RCard elevation="raised">
-          <form @submit.prevent="submitSettings" class="space-y-6">
+          <form @submit.prevent="submitSettings" class="space-y-6" autocomplete="off">
             <div>
               <label class="mb-2 block text-sm font-semibold text-gray-700">Транспорт</label>
               <select
@@ -27,13 +27,13 @@
 
             <template v-if="form.mailer === 'smtp'">
               <div class="grid gap-4 sm:grid-cols-2">
-                <RInput v-model="form.host" label="SMTP хост *" placeholder="smtp.example.com" :error="form.errors.host" />
-                <RInput v-model="form.port" label="Порт *" placeholder="587" type="number" :error="form.errors.port" />
+                <RInput v-model="form.host" label="SMTP хост *" placeholder="smtp.example.com" :error="form.errors.host" autocomplete="off" />
+                <RInput v-model="form.port" label="Порт *" placeholder="587" type="number" :error="form.errors.port" autocomplete="off" />
               </div>
 
               <div class="grid gap-4 sm:grid-cols-2">
-                <RInput v-model="form.username" label="Имя пользователя" placeholder="user@example.com" :error="form.errors.username" />
-                <RInput v-model="form.password" label="Пароль" type="password" placeholder="••••••••" :error="form.errors.password" />
+                <RInput v-model="form.username" label="Имя пользователя" placeholder="user@example.com" :error="form.errors.username" autocomplete="off" />
+                <RInput v-model="form.password" label="Пароль" type="password" placeholder="••••••••" :error="form.errors.password" autocomplete="new-password" />
               </div>
 
               <div>
@@ -52,8 +52,8 @@
             <div class="border-t border-gray-100 pt-6">
               <p class="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Отправитель</p>
               <div class="grid gap-4 sm:grid-cols-2">
-                <RInput v-model="form.from_address" label="Email отправителя *" placeholder="noreply@example.com" :error="form.errors.from_address" />
-                <RInput v-model="form.from_name" label="Имя отправителя *" placeholder="My App" :error="form.errors.from_name" />
+                <RInput v-model="form.from_address" label="Email отправителя *" placeholder="noreply@example.com" :error="form.errors.from_address" autocomplete="off" />
+                <RInput v-model="form.from_name" label="Имя отправителя *" placeholder="My App" :error="form.errors.from_name" autocomplete="off" />
               </div>
             </div>
 
@@ -72,7 +72,7 @@
           <p class="mb-4 text-xs text-gray-500">Отправьте тестовое письмо для проверки настроек</p>
 
           <form @submit.prevent="submitTest" class="space-y-4">
-            <RInput v-model="testForm.email" label="Email получателя" placeholder="test@example.com" :error="testForm.errors.email" />
+            <RInput v-model="testForm.email" label="Email получателя" placeholder="test@example.com" :error="testForm.errors.email" autocomplete="off" />
             <RInput v-model="testForm.count" label="Количество писем" type="number" min="1" max="50" :error="testForm.errors.count" />
             <RButton variant="primary" :loading="testForm.processing" :disabled="testForm.processing" class="w-full">
               Отправить тест
