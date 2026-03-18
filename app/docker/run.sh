@@ -38,6 +38,7 @@ docker exec ${APP_NAME}_fpm composer update
 docker exec ${APP_NAME}_fpm php artisan storage:link
 docker exec ${APP_NAME}_fpm php artisan key:generate
 docker exec ${APP_NAME}_fpm php artisan migrate:fresh --seed
+docker exec ${APP_NAME}_fpm php artisan vendor:publish --tag=horizon-assets --force
 docker exec ${APP_NAME}_fpm npm update
 docker exec ${APP_NAME}_fpm npm run build
 

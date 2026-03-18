@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendMailJob;
 use App\Services\SettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,21 +48,45 @@ class SettingsController extends Controller
 
     public function testMail(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'email' => 'required|email',
+            'count' => 'required|integer|min:1|max:50',
         ]);
 
-        try {
-            $this->settings->applyMailConfig();
+        $appName = config('app.name');
+        $count = (int) $validated['count'];
 
-            Mail::raw('Тестовое письмо от ' . config('app.name'), function ($message) use ($request) {
-                $message->to($request->email)
-                    ->subject('Тестовое письмо');
-            });
+        for ($i = 1; $i <= $count; $i++) {
+            $label = $count > 1 ? " #{$i}/{$count}" : '';
 
-            return redirect()->back()->with('success', 'Тестовое письмо отправлено на ' . $request->email);
-        } catch (\Throwable $e) {
-            return redirect()->back()->with('error', 'Ошибка отправки: ' . $e->getMessage());
+            SendMailJob::dispatch(
+                to: $validated['email'],
+                rawBody: "Тестовое письмо{$label} от {$appName}",
+                subject: "Тестовое письмо{$label}",
+            );
         }
+
+        $word = $this->pluralizeEmails($count);
+
+        return redirect()->back()->with(
+            'success',
+            "{$count} {$word} добавлено в очередь на отправку ({$validated['email']})"
+        );
+    }
+
+    private function pluralizeEmails(int $count): string
+    {
+        $mod10 = $count % 10;
+        $mod100 = $count % 100;
+
+        if ($mod100 >= 11 && $mod100 <= 19) {
+            return 'писем';
+        }
+
+        return match ($mod10) {
+            1 => 'письмо',
+            2, 3, 4 => 'письма',
+            default => 'писем',
+        };
     }
 }

@@ -73,6 +73,7 @@
 
           <form @submit.prevent="submitTest" class="space-y-4">
             <RInput v-model="testForm.email" label="Email получателя" placeholder="test@example.com" :error="testForm.errors.email" />
+            <RInput v-model="testForm.count" label="Количество писем" type="number" min="1" max="50" :error="testForm.errors.count" />
             <RButton variant="primary" :loading="testForm.processing" :disabled="testForm.processing" class="w-full">
               Отправить тест
             </RButton>
@@ -124,6 +125,7 @@ const form = useForm({
 
 const testForm = useForm({
   email: '',
+  count: 1,
 })
 
 function submitSettings() {
