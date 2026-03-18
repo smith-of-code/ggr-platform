@@ -392,7 +392,7 @@ function getInviteUrl(inv) {
 }
 
 function copyLink(inv) {
-  const url = window.location.origin + getInviteUrl(inv)
+  const url = getInviteUrl(inv)
   navigator.clipboard.writeText(url).then(() => {
     copiedId.value = inv.id
     setTimeout(() => { copiedId.value = null }, 2000)

@@ -75,9 +75,21 @@
 
           <!-- video: embed -->
           <div v-else-if="stage?.type === 'video'" class="mt-4">
-            <div v-if="videoEmbedUrl" class="aspect-video w-full overflow-hidden rounded-lg">
+            <div v-if="videoEmbedUrl" class="relative aspect-video w-full overflow-hidden rounded-lg">
+              <!-- Play overlay — shown until user clicks to start watching -->
+              <div
+                v-if="!videoStarted && videoDuration && !isCompleted"
+                class="absolute inset-0 z-10 flex cursor-pointer flex-col items-center justify-center bg-gray-900/70 transition hover:bg-gray-900/60"
+                @click="startWatching"
+              >
+                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-white/90 shadow-xl transition hover:scale-110">
+                  <PlayCircleIcon class="h-12 w-12 text-rosatom-700" />
+                </div>
+                <p class="mt-4 text-lg font-semibold text-white">Начать просмотр</p>
+                <p class="mt-1 text-sm text-white/60">Длительность: {{ formatTime(videoDuration) }}</p>
+              </div>
               <iframe
-                :src="videoEmbedUrl"
+                :src="videoStarted || !videoDuration || isCompleted ? videoEmbedUrl : ''"
                 class="h-full w-full"
                 title="Video"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
@@ -87,7 +99,7 @@
             <p v-else class="text-gray-400">Видео недоступно</p>
 
             <!-- Video watch progress -->
-            <div v-if="videoDuration && !isCompleted" class="mt-4">
+            <div v-if="videoDuration && !isCompleted && videoStarted" class="mt-4">
               <div class="flex items-center justify-between text-sm text-gray-600">
                 <div class="flex items-center gap-2">
                   <PlayCircleIcon class="h-5 w-5" />
@@ -170,6 +182,7 @@ const scormFrame = ref(null)
 // ── Video watch tracking ──
 const watchedSeconds = ref(0)
 const isVideoTimerRunning = ref(false)
+const videoStarted = ref(false)
 let videoTimerInterval = null
 let heartbeatInterval = null
 
@@ -231,10 +244,18 @@ function sendHeartbeat() {
   axios.post(url, { watched_seconds: watchedSeconds.value }).catch(() => {})
 }
 
+function startWatching() {
+  videoStarted.value = true
+  if (!videoWatchComplete.value) {
+    startVideoTimer()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  }
+}
+
 function handleVisibilityChange() {
   if (document.hidden) {
     stopVideoTimer()
-  } else if (props.stage?.type === 'video' && videoDuration.value && !videoWatchComplete.value) {
+  } else if (videoStarted.value && videoDuration.value && !videoWatchComplete.value) {
     startVideoTimer()
   }
 }
@@ -331,9 +352,12 @@ onMounted(() => {
 
   if (props.stage?.type === 'video' && videoDuration.value) {
     watchedSeconds.value = props.progress?.watched_seconds ?? 0
-    if (!videoWatchComplete.value) {
-      startVideoTimer()
-      document.addEventListener('visibilitychange', handleVisibilityChange)
+    if (watchedSeconds.value > 0) {
+      videoStarted.value = true
+      if (!videoWatchComplete.value) {
+        startVideoTimer()
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+      }
     }
   }
 })

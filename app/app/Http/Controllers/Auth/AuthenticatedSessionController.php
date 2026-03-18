@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Lms\LmsProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,17 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        $user = $request->user();
+
+        $lmsProfile = LmsProfile::where('user_id', $user->id)->first();
+
+        if ($lmsProfile && $lmsProfile->role !== 'admin') {
+            $event = $lmsProfile->event;
+            if ($event) {
+                return redirect()->intended(route('lms.dashboard', $event->slug, false));
+            }
+        }
 
         return redirect()->intended(route('admin.dashboard', absolute: false));
     }

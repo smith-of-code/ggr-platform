@@ -42,6 +42,7 @@ class VideoController extends Controller
         $validated['lms_event_id'] = $event->id;
         $validated['is_recording'] = $request->boolean('is_recording', false);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['source'] = $validated['source'] ?? $this->detectSource($validated['url'] ?? null);
 
         $validated['thumbnail'] = $this->resolveThumbnail($request, $validated['url'] ?? null);
 
@@ -76,6 +77,7 @@ class VideoController extends Controller
 
         $validated['is_recording'] = $request->boolean('is_recording', false);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['source'] = $validated['source'] ?? $this->detectSource($validated['url'] ?? null);
 
         $validated['thumbnail'] = $this->resolveThumbnail($request, $validated['url'] ?? null, $video->thumbnail);
 
@@ -149,6 +151,17 @@ class VideoController extends Controller
         }
 
         return null;
+    }
+
+    private function detectSource(?string $url): string
+    {
+        if (!$url) {
+            return 'upload';
+        }
+        if (preg_match('/rutube\.ru/', $url)) {
+            return 'rutube';
+        }
+        return 'link';
     }
 
     private function ensureVideoBelongsToEvent(LmsVideo $video, LmsEvent $event): void
