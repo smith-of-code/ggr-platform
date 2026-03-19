@@ -3,7 +3,7 @@ You MUST follow .cursor/rules/spec-continuation.mdc (alwaysApply).
 Input:
 slug: <feature-slug>
 (optional) mode: normal|fast (default: normal)
-(optional) max_steps: 3 (applies only in fast mode)
+(optional) max_steps: 99 (applies only in fast mode)
 
 Read ONLY:
 - /spec/features/<slug>/progress.md

@@ -18,6 +18,7 @@ class LmsCourseModule extends Model
         'available_from',
         'available_to',
         'unlock_type',
+        'source_module_id',
     ];
 
     protected $casts = [
@@ -33,6 +34,11 @@ class LmsCourseModule extends Model
     public function stages(): HasMany
     {
         return $this->hasMany(LmsCourseStage::class, 'lms_course_module_id')->orderBy('position');
+    }
+
+    public function sourceModule(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'source_module_id');
     }
 
     public function isAvailable(): bool

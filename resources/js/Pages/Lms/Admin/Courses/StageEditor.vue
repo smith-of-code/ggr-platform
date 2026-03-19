@@ -22,6 +22,15 @@
     </div>
     <div class="space-y-3">
       <div>
+        <button
+          v-if="!stage.title"
+          type="button"
+          class="mb-1.5 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-rosatom-600 transition hover:bg-rosatom-50 hover:text-rosatom-700"
+          @click="$emit('search')"
+        >
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+          Найти этап из другого курса
+        </button>
         <RInput v-model="stage.title" placeholder="Название этапа" required />
       </div>
       <div>
@@ -132,7 +141,7 @@ const props = defineProps({
   eventSlug: String,
 })
 
-defineEmits(['move', 'remove'])
+defineEmits(['move', 'remove', 'search'])
 
 async function handleScormUpload(event) {
   const file = event.target.files?.[0]

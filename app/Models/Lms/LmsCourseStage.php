@@ -25,6 +25,7 @@ class LmsCourseStage extends Model
         'position',
         'available_from',
         'duration_minutes',
+        'source_stage_id',
     ];
 
     protected $casts = [
@@ -61,6 +62,11 @@ class LmsCourseStage extends Model
     public function video(): BelongsTo
     {
         return $this->belongsTo(LmsVideo::class, 'lms_video_id');
+    }
+
+    public function sourceStage(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'source_stage_id');
     }
 
     /** @return HasMany<LmsStageProgress> */

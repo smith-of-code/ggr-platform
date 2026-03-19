@@ -23,7 +23,7 @@ services:
       XDEBUG_CONFIG: "remote_host=${XDEBUG_CONFIG_REMOTE_HOST} remote_enable=1"
       PHP_IDE_CONFIG: "serverName=${APP_NAME}_docker"
     ports:
-        - ${VITE_DEV_SERVER_PORT} #vite port
+        - ${VITE_DEV_SERVER_PORT}:${VITE_DEV_SERVER_PORT} #vite port
   postgres:
       image: postgres:16
       container_name: ${APP_NAME}_postgres

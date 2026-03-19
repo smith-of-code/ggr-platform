@@ -109,6 +109,36 @@ class CourseController extends Controller
         return redirect()->route('lms.admin.courses.index', $event)->with('success', 'Курс удалён');
     }
 
+    public function searchModules(Request $request, LmsEvent $event): JsonResponse
+    {
+        $q = $request->query('q', '');
+        $courseIds = $event->courses()->pluck('id');
+
+        $modules = LmsCourseModule::whereIn('lms_course_id', $courseIds)
+            ->when($q, fn ($query) => $query->where('title', 'ilike', "%{$q}%"))
+            ->with(['course:id,title', 'stages'])
+            ->orderBy('title')
+            ->limit(20)
+            ->get(['id', 'lms_course_id', 'title', 'description', 'position', 'available_from', 'available_to', 'unlock_type']);
+
+        return response()->json($modules);
+    }
+
+    public function searchStages(Request $request, LmsEvent $event): JsonResponse
+    {
+        $q = $request->query('q', '');
+        $courseIds = $event->courses()->pluck('id');
+
+        $stages = LmsCourseStage::whereIn('lms_course_id', $courseIds)
+            ->when($q, fn ($query) => $query->where('title', 'ilike', "%{$q}%"))
+            ->with(['course:id,title', 'module:id,title'])
+            ->orderBy('title')
+            ->limit(20)
+            ->get();
+
+        return response()->json($stages);
+    }
+
     public function uploadScorm(Request $request, LmsEvent $event): JsonResponse
     {
         $request->validate([
@@ -229,9 +259,12 @@ class CourseController extends Controller
             'modules.*.position' => ['nullable', 'integer'],
             'modules.*.available_from' => ['nullable', 'date'],
             'modules.*.available_to' => ['nullable', 'date'],
+            'modules.*.source_module_id' => ['nullable', 'integer', 'exists:lms_course_modules,id'],
             'modules.*.stages' => ['nullable', 'array'],
             'stages' => ['nullable', 'array'],
         ];
+
+        $stageRules['source_stage_id'] = ['nullable', 'integer', 'exists:lms_course_stages,id'];
 
         foreach ($stageRules as $field => $fieldRules) {
             $rules["modules.*.stages.*.{$field}"] = $fieldRules;
@@ -255,6 +288,7 @@ class CourseController extends Controller
                 'available_from' => $module['available_from'] ?? null,
                 'available_to' => $module['available_to'] ?? null,
                 'unlock_type' => 'date',
+                'source_module_id' => $module['source_module_id'] ?? null,
             ]);
 
             foreach ($module['stages'] ?? [] as $sIndex => $stage) {
@@ -279,6 +313,7 @@ class CourseController extends Controller
             'is_locked' => $stage['is_locked'] ?? false,
             'available_from' => $stage['available_from'] ?? null,
             'duration_minutes' => $stage['duration_minutes'] ?? null,
+            'source_stage_id' => $stage['source_stage_id'] ?? null,
         ];
 
         $type = $stage['type'] ?? null;

@@ -98,10 +98,20 @@
           <div
             v-for="(mod, mIdx) in form.modules"
             :key="mIdx"
+            :ref="el => { if (el) moduleRefs[mIdx] = el }"
             class="rounded-2xl border border-rosatom-200 bg-rosatom-50/30 p-5"
           >
             <div class="mb-4 flex items-start justify-between gap-3">
               <div class="flex-1 space-y-3">
+                <button
+                  v-if="!mod.title"
+                  type="button"
+                  class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-rosatom-600 transition hover:bg-rosatom-50 hover:text-rosatom-700"
+                  @click="openModuleSearch(mIdx)"
+                >
+                  <MagnifyingGlassIcon class="h-3.5 w-3.5" />
+                  Найти модуль из другого курса
+                </button>
                 <div class="flex items-center gap-2">
                   <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-rosatom-500 text-xs font-bold text-white">{{ mIdx + 1 }}</span>
                   <RInput v-model="mod.title" placeholder="Название модуля *" required class="flex-1" />
@@ -141,6 +151,7 @@
                   :event-slug="event.slug"
                   @move="(delta) => moveModuleStage(mIdx, sIdx, delta)"
                   @remove="removeModuleStage(mIdx, sIdx)"
+                  @search="openStageSearch(mIdx, sIdx)"
                 />
               </div>
               <RButton variant="ghost" size="sm" type="button" class="mt-3" @click="addModuleStage(mIdx)">
@@ -170,6 +181,7 @@
             :event-slug="event.slug"
             @move="(delta) => moveStage(idx, delta)"
             @remove="form.stages.splice(idx, 1)"
+            @search="openStageSearch(null, idx)"
           />
         </div>
         <RButton variant="outline" block type="button" class="mt-4" @click="addStage">
@@ -185,16 +197,33 @@
         <Link :href="route('lms.admin.courses.index', event.slug)" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Отмена</Link>
       </div>
     </form>
+
+    <SearchRefModal
+      :show="showModuleSearch"
+      type="module"
+      :event-slug="event.slug"
+      @close="showModuleSearch = false"
+      @select="handleModuleSelect"
+    />
+
+    <SearchRefModal
+      :show="showStageSearch"
+      type="stage"
+      :event-slug="event.slug"
+      @close="showStageSearch = false"
+      @select="handleStageSelect"
+    />
   </LmsAdminLayout>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import StageEditor from './StageEditor.vue'
+import SearchRefModal from './SearchRefModal.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
-import { PlusIcon, XMarkIcon, ChevronUpIcon, ChevronDownIcon, ArrowUpTrayIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, XMarkIcon, ChevronUpIcon, ChevronDownIcon, ArrowUpTrayIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import axios from 'axios'
 
 const props = defineProps({ event: Object, course: Object, tests: Array, assignments: Array, videos: Array })
@@ -202,6 +231,51 @@ const props = defineProps({ event: Object, course: Object, tests: Array, assignm
 const tests = props.tests ?? []
 const assignments = props.assignments ?? []
 const videos = props.videos ?? []
+
+const showModuleSearch = ref(false)
+const showStageSearch = ref(false)
+const moduleSearchIdx = ref(null)
+const stageSearchCtx = ref({ moduleIdx: null, stageIdx: 0 })
+
+function openModuleSearch(mIdx) {
+  moduleSearchIdx.value = mIdx
+  showModuleSearch.value = true
+}
+
+function handleModuleSelect(mod) {
+  const idx = moduleSearchIdx.value
+  if (idx === null) return
+  const target = form.modules[idx]
+  target.title = mod.title ?? ''
+  target.description = mod.description ?? ''
+  target.available_from = mod.available_from ? mod.available_from.slice(0, 16) : ''
+  target.available_to = mod.available_to ? mod.available_to.slice(0, 16) : ''
+  target.source_module_id = mod.id
+  target.stages = (mod.stages || []).map(s => ({
+    title: s.title,
+    type: s.type || 'content',
+    content: s.content ?? '',
+    position: s.position ?? 0,
+    source_stage_id: s.id,
+  }))
+}
+
+function openStageSearch(moduleIdx, stageIdx) {
+  stageSearchCtx.value = { moduleIdx, stageIdx }
+  showStageSearch.value = true
+}
+
+function handleStageSelect(stage) {
+  const { moduleIdx, stageIdx } = stageSearchCtx.value
+  const target = moduleIdx !== null
+    ? form.modules[moduleIdx].stages[stageIdx]
+    : form.stages[stageIdx]
+  if (!target) return
+  target.title = stage.title
+  target.type = stage.type || 'content'
+  target.content = stage.content ?? ''
+  target.source_stage_id = stage.id
+}
 
 function emptyStage() {
   return { title: '', type: 'content', content: '', position: 0 }
@@ -218,11 +292,13 @@ function buildModules() {
       description: m.description ?? '',
       available_from: m.available_from ? m.available_from.slice(0, 16) : '',
       available_to: m.available_to ? m.available_to.slice(0, 16) : '',
+      source_module_id: m.source_module_id ?? null,
       stages: (m.stages || []).map(s => ({
         title: s.title,
         type: s.type || 'content',
         content: s.content ?? '',
         position: s.position ?? 0,
+        source_stage_id: s.source_stage_id ?? null,
       })),
     }))
   }
@@ -238,6 +314,7 @@ function buildOrphanStages() {
         type: s.type || 'content',
         content: s.content ?? '',
         position: s.position ?? 0,
+        source_stage_id: s.source_stage_id ?? null,
       }))
   }
   return [emptyStage()]
@@ -281,8 +358,14 @@ function removeImage() {
   form.image = ''
 }
 
+const moduleRefs = ref({})
+
 function addModule() {
   form.modules.push(emptyModule())
+  nextTick(() => {
+    const idx = form.modules.length - 1
+    moduleRefs.value[idx]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
 }
 function removeModule(idx) {
   form.modules.splice(idx, 1)
@@ -320,12 +403,18 @@ function moveStage(idx, delta) {
 }
 
 function submit() {
-  const modules = form.modules.map((m, mi) => ({
-    ...m,
-    position: mi,
-    stages: m.stages.map((s, si) => ({ ...s, position: si })),
-  }))
-  const stages = form.stages.map((s, i) => ({ ...s, position: i }))
+  const filterStages = (arr) => arr
+    .filter(s => s.title?.trim())
+    .map((s, i) => ({ ...s, position: i }))
+
+  const modules = form.modules
+    .filter(m => m.title?.trim())
+    .map((m, mi) => ({
+      ...m,
+      position: mi,
+      stages: filterStages(m.stages),
+    }))
+  const stages = filterStages(form.stages)
 
   if (props.course) {
     form.transform(data => ({ ...data, modules, stages })).put(route('lms.admin.courses.update', [props.event.slug, props.course.id]))

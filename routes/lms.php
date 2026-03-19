@@ -112,6 +112,8 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
 
     Route::prefix('{event}')->group(function () {
         Route::resource('courses', AdminCourseController::class);
+        Route::get('search-modules', [AdminCourseController::class, 'searchModules'])->name('search.modules');
+        Route::get('search-stages', [AdminCourseController::class, 'searchStages'])->name('search.stages');
         Route::post('scorm-upload', [AdminCourseController::class, 'uploadScorm'])->name('scorm.upload');
         Route::resource('tests', AdminTestController::class);
         Route::resource('assignments', AdminAssignmentController::class);
