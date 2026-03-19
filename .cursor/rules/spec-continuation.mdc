@@ -1,0 +1,163 @@
+---
+alwaysApply: true
+description: Spec-first continuity + Docker-only execution
+name: spec-continuation
+---
+
+# Core
+
+## Source of truth (priority)
+
+1) Current code
+2) /spec/*
+3) Historical markdown (context only)
+
+Chat history is NOT a source of truth.
+
+## No guessing
+
+If info is missing/unclear:
+- record gap in /spec/90-open-questions.md
+- STOP
+
+## Working order
+
+1) Read relevant /spec
+2) Define scope
+3) Update /spec if behavior/interfaces change
+4) Implement
+5) Update /spec to final state
+
+## Contradictions
+
+- spec vs code -> code wins, update /spec
+- old markdown vs /spec -> treat as historical, do NOT copy verbatim
+
+## Context reset
+
+If chat restarted / near limit / decisions missing:
+- STOP
+- re-read relevant /spec
+- resume from repo state only
+
+# Docker-only execution
+
+## Rule
+
+All project commands MUST run in Docker.
+- No host commands
+- No host dependency installs
+
+## Docker SSoT (priority)
+
+1) docker/run.sh
+2) docker/docker-compose*.yml
+3) docker/.env.*
+4) Dockerfile(s)
+5) README (local run)
+
+If service/entrypoint/paths unclear -> record gap + STOP.
+
+## Env + container naming
+
+- Load env first: `source docker/.env.<env>`
+- Container pattern: `${APP_NAME}_<service>`
+- PHP + Node service key: `fpm` -> container `${APP_NAME}_fpm`
+- There is NO separate node container. Node.js is installed in fpm image.
+
+If cannot resolve deterministically -> gap + STOP.
+
+## Command patterns
+
+### PHP commands (artisan, composer, php, pest)
+
+``` bash
+source docker/.env.local && docker exec ${APP_NAME}_fpm <cmd>
+```
+
+### Frontend commands (npm, npx, vite)
+
+Same container, same pattern:
+
+``` bash
+source docker/.env.local && docker exec ${APP_NAME}_fpm npm run <script>
+source docker/.env.local && docker exec ${APP_NAME}_fpm npx <cmd>
+```
+
+### One-off (if containers not running)
+
+``` bash
+export USER_ID=$(id -u) && export GROUP_ID=$(id -g) && \
+source docker/.env.local && \
+docker compose -f docker/docker-compose.yml \
+  --env-file=docker/.env.local \
+  --project-name=${APP_NAME} \
+  run --rm fpm <cmd>
+```
+
+### Prohibited
+
+- `docker compose exec`
+- commands without `source docker/.env.*`
+- hardcoded container names
+- host npm/pnpm/yarn/composer/php/artisan/node/npx
+
+## Output for verify steps
+
+Always include `source docker/.env.*` + the pattern above.
+
+## Verify failure handling
+
+If Docker verify fails:
+1) Read error output carefully.
+2) If fix is obvious (typo, missing import) -> fix and re-verify (max 2 retries).
+3) If unclear -> record in /spec/90-open-questions.md + add Open issue in progress.md, STOP.
+4) Do NOT silently skip failed verification.
+
+# Change scope limits
+
+- Max files changed per step: 5. If more needed -> split into sub-steps.
+- If diff exceeds ~150 lines in one step -> split into smaller changes.
+- Each step should be independently verifiable.
+
+# Reuse before create
+
+Before writing new code, check for existing reusable assets:
+- Composables: /resources/js/composables/ (useToast, useConfirm, usePagination, useLoading, useFileUpload, etc.)
+- Shared components: /resources/js/components/shared/ (Pagination, FileUpload, ConfirmDialog, Toast, LoadingButton, etc.)
+- UI kit: /resources/js/components/ui/ (Button, Dialog, Table, Select, Badge, Sheet, etc.)
+- Services/helpers in app/Services/, app/Helpers/
+
+If a composable or shared component covers the need -> use it, do NOT rewrite.
+
+# Feature execution continuity
+
+Maintain: `/spec/features/<slug>/progress.md`
+- use it to resume
+- update every meaningful iteration
+
+## Sequential mode
+
+- Only ONE task may be in "Partially completed"
+- Do not start next until current is completed
+- Record completion in "Completed tasks"
+- After completion: pick next from "Not started" (top-down)
+
+# Startup enforcement
+
+At start of ANY task:
+1) If /spec exists -> read relevant /spec first.
+2) If feature progress.md exists -> use as execution state.
+3) If neither done -> STOP, re-read, restart task.
+
+# Response language
+
+All narrative output MUST be Russian. Do NOT translate code/paths/commands/identifiers.
+
+# Spec language
+
+All spec documents (/spec/**/*.md, progress.md) MUST be written in Russian where possible.
+Exceptions — leave in English:
+- code identifiers (class/method/route names, DB columns, etc.)
+- CLI commands and paths
+- technical terms without устоявшегося русского эквивалента (middleware, enum, payload, etc.)
