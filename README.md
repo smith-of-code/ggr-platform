@@ -167,6 +167,7 @@ docker exec vshgr-platform_fpm npm run build
 ## Документация
 
 - [Docker-инфраструктура](docker/DOCKER.md) — подробное описание контейнеров, сетей, томов, переменных окружения
+- [Cursor-команды](.cursor/commands/README.md) — инструкция по AI-командам для разработки (`/feature`, `/feature-work`, `/feature-fix`, `/spec-sync`, `/repo-analyze`, `/refactor`, `/e2e-cases`)
 
 ## Лицензия
 
