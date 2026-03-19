@@ -28,6 +28,7 @@ ADD ./php.ini /usr/local/etc/php/php.ini
 # Add supervisor configuration
 COPY ./supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY ./supervisor/horizon.conf /etc/supervisor/conf.d/horizon.conf
+COPY ./supervisor/php-fpm.conf /etc/supervisor/conf.d/php-fpm.conf
 
 
 # Создаём пользователя внутри контейнера с UID/GID как у хост-системы
@@ -62,12 +63,6 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 # Create system user to run Composer and Artisan Commands
 
-# Create supervisor startup script
-RUN echo '#!/bin/bash' > /usr/local/bin/start-container.sh && \
-    echo 'php-fpm -D' >> /usr/local/bin/start-container.sh && \
-    echo 'supervisord -c /etc/supervisor/supervisord.conf' >> /usr/local/bin/start-container.sh && \
-    chmod +x /usr/local/bin/start-container.sh
-
 # Create supervisor log directory
 RUN mkdir -p /var/log/supervisor && chown laravel:laravel /var/log/supervisor
 
@@ -75,4 +70,4 @@ USER laravel
 # Set working directory
 WORKDIR /var/www
 
-CMD php-fpm -F -R | supervisord -n
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
