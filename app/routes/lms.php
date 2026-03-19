@@ -39,6 +39,8 @@ Route::prefix('lms/{event:slug}')->name('lms.')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/invite/{token}', [AuthController::class, 'showInvite'])->name('invite');
     Route::post('/invite/{token}', [AuthController::class, 'registerByInvite'])->name('invite.register');
+    Route::get('/activate/{token}', [AuthController::class, 'showActivate'])->name('activate');
+    Route::post('/activate/{token}', [AuthController::class, 'activate'])->name('activate.submit');
 });
 
 // ── LMS Participant & Leader (auth required) ──
@@ -121,6 +123,8 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::resource('groups', AdminGroupController::class);
         Route::resource('users', AdminUserController::class)->only(['index', 'create', 'store', 'show', 'update', 'destroy']);
         Route::post('users-import', [AdminUserController::class, 'import'])->name('users.import');
+        Route::post('users-send-invitations', [AdminUserController::class, 'sendInvitations'])->name('users.send-invitations');
+        Route::post('users-bulk-enroll', [AdminUserController::class, 'bulkEnroll'])->name('users.bulk-enroll');
         Route::get('users-template', [AdminUserController::class, 'downloadTemplate'])->name('users.template');
         Route::post('invitations', [AdminInvitationController::class, 'store'])->name('invitations.store');
         Route::post('invitations/{invitation}/toggle', [AdminInvitationController::class, 'toggle'])->name('invitations.toggle');

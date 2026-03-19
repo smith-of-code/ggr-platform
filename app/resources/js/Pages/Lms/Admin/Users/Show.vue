@@ -16,8 +16,9 @@
         <RCard elevation="raised" class="lg:col-span-1">
           <div class="flex flex-col items-center text-center">
             <RAvatar :name="profile.user?.name" size="xl" />
-            <h2 class="mt-4 text-lg font-bold text-gray-900">{{ profile.user?.name }}</h2>
+            <h2 class="mt-4 text-lg font-bold text-gray-900">{{ profile.user?.last_name }} {{ profile.user?.first_name }}</h2>
             <p v-if="profile.user?.patronymic" class="text-sm text-gray-500">{{ profile.user.patronymic }}</p>
+            <p v-if="profile.city" class="text-xs text-gray-400">{{ profile.city }}</p>
             <p class="mt-1 text-sm text-gray-500">{{ profile.user?.email }}</p>
             <p v-if="profile.user?.phone || profile.phone" class="text-sm text-gray-400">{{ profile.user?.phone || profile.phone }}</p>
             <RBadge v-if="profile.lms_role" :variant="roleBadgeVariant(profile.lms_role.slug)" class="mt-3">
@@ -33,10 +34,12 @@
             <RCard elevation="raised">
               <h3 class="mb-4 text-lg font-bold text-gray-900">Редактировать профиль</h3>
               <div class="grid gap-4 sm:grid-cols-2">
-                <RInput v-model="editForm.name" label="ФИО" />
+                <RInput v-model="editForm.last_name" label="Фамилия" />
+                <RInput v-model="editForm.first_name" label="Имя" />
                 <RInput v-model="editForm.patronymic" label="Отчество" />
                 <RInput v-model="editForm.phone" type="tel" label="Телефон" />
                 <RInput v-model="editForm.position" label="Должность" />
+                <RInput v-model="editForm.city" label="Город" />
                 <div class="sm:col-span-2">
                   <SearchSelect
                     v-model="editForm.role_id"
@@ -109,10 +112,12 @@ const props = defineProps({
 
 
 const editForm = useForm({
-  name: props.profile?.user?.name || '',
+  last_name: props.profile?.user?.last_name || '',
+  first_name: props.profile?.user?.first_name || '',
   patronymic: props.profile?.user?.patronymic || '',
   phone: props.profile?.user?.phone || props.profile?.phone || '',
   position: props.profile?.position || '',
+  city: props.profile?.city || '',
   role_id: props.profile?.lms_role_id || null,
 })
 

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Lms\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendMailJob;
+use App\Mail\InvitationMail;
 use App\Models\Lms\LmsCourse;
 use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
@@ -22,7 +24,7 @@ class UserController extends Controller
 {
     public function index(Request $request, LmsEvent $event): Response
     {
-        $query = $event->profiles()->with(['user:id,name,patronymic,email,phone', 'lmsRole:id,name,slug']);
+        $query = $event->profiles()->with(['user:id,name,last_name,first_name,patronymic,email,phone', 'lmsRole:id,name,slug']);
 
         if ($request->filled('role_id')) {
             $query->where('lms_role_id', $request->role_id);
@@ -35,6 +37,14 @@ class UserController extends Controller
                   ->orWhere('email', 'ilike', "%{$search}%")
                   ->orWhere('phone', 'ilike', "%{$search}%");
             });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('city')) {
+            $query->where('city', 'ilike', "%{$request->city}%");
         }
 
         if ($request->filled('group')) {
@@ -56,13 +66,21 @@ class UserController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $cities = LmsProfile::where('lms_event_id', $event->id)
+            ->whereNotNull('city')
+            ->where('city', '!=', '')
+            ->distinct()
+            ->orderBy('city')
+            ->pluck('city');
+
         return Inertia::render('Lms/Admin/Users/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
             'profiles' => $profiles,
             'roles' => $roles,
             'groups' => $groups,
             'courses' => $courses,
-            'filters' => $request->only(['role_id', 'group', 'search']),
+            'cities' => $cities,
+            'filters' => $request->only(['role_id', 'group', 'search', 'status', 'city']),
             'invitations' => $invitations,
         ]);
     }
@@ -100,17 +118,21 @@ class UserController extends Controller
         $user = User::where('email', $validated['email'])->first();
         if (!$user) {
             $user = User::create([
-                'name' => $fullName,
+                'name'       => $fullName,
+                'last_name'  => $validated['last_name'],
+                'first_name' => $validated['first_name'],
                 'patronymic' => $validated['patronymic'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'],
-                'password' => $password,
+                'email'      => $validated['email'],
+                'phone'      => $validated['phone'],
+                'password'   => $password,
             ]);
         } else {
             $user->update([
-                'name' => $fullName,
+                'name'       => $fullName,
+                'last_name'  => $validated['last_name'],
+                'first_name' => $validated['first_name'],
                 'patronymic' => $validated['patronymic'],
-                'phone' => $validated['phone'] ?? $user->phone,
+                'phone'      => $validated['phone'] ?? $user->phone,
             ]);
         }
 
@@ -152,7 +174,7 @@ class UserController extends Controller
             ->with('lmsRole:id,name,slug')
             ->firstOrFail();
 
-        $profile->load('user:id,name,patronymic,email,phone,created_at');
+        $profile->load('user:id,name,last_name,first_name,patronymic,email,phone,created_at');
 
         $enrollments = LmsCourseEnrollment::where('user_id', $user->id)
             ->whereHas('course', fn($q) => $q->where('lms_event_id', $event->id))
@@ -178,7 +200,8 @@ class UserController extends Controller
             ->firstOrFail();
 
         $validated = $request->validate([
-            'name'       => ['nullable', 'string', 'max:255'],
+            'last_name'  => ['nullable', 'string', 'max:255'],
+            'first_name' => ['nullable', 'string', 'max:255'],
             'patronymic' => ['nullable', 'string', 'max:255'],
             'phone'      => ['nullable', 'string', 'max:50'],
             'position'   => ['nullable', 'string', 'max:255'],
@@ -189,13 +212,17 @@ class UserController extends Controller
             'course_ids.*' => ['exists:lms_courses,id'],
         ]);
 
-        if (!empty($validated['name'])) {
-            $user->update([
-                'name' => $validated['name'],
-                'patronymic' => $validated['patronymic'] ?? $user->patronymic,
-                'phone' => $validated['phone'] ?? $user->phone,
-            ]);
-        }
+        $lastName = $validated['last_name'] ?? $user->last_name;
+        $firstName = $validated['first_name'] ?? $user->first_name;
+        $fullName = trim("{$lastName} {$firstName}");
+
+        $user->update([
+            'name'       => $fullName ?: $user->name,
+            'last_name'  => $lastName,
+            'first_name' => $firstName,
+            'patronymic' => $validated['patronymic'] ?? $user->patronymic,
+            'phone'      => $validated['phone'] ?? $user->phone,
+        ]);
 
         $profile->update([
             'role' => $validated['role'] ?? $profile->role,
@@ -232,6 +259,69 @@ class UserController extends Controller
         return redirect()->route('lms.admin.users.index', $event)->with('success', 'Участник удалён из события');
     }
 
+    public function sendInvitations(Request $request, LmsEvent $event): RedirectResponse
+    {
+        $request->validate([
+            'profile_ids' => ['required', 'array', 'min:1'],
+            'profile_ids.*' => ['integer'],
+        ]);
+
+        $profiles = LmsProfile::where('lms_event_id', $event->id)
+            ->whereIn('id', $request->profile_ids)
+            ->whereIn('status', ['imported', 'invited'])
+            ->with('user')
+            ->get();
+
+        $sent = 0;
+        foreach ($profiles as $profile) {
+            $token = $profile->generateInviteToken();
+            $activateUrl = url(route('lms.activate', [
+                'event' => $event->slug,
+                'token' => $token,
+            ]));
+
+            $profile->update([
+                'status' => 'invited',
+                'invited_at' => now(),
+            ]);
+
+            $mailable = new InvitationMail($profile->user, $event, $activateUrl);
+            SendMailJob::dispatch($profile->user->email, $mailable);
+            $sent++;
+        }
+
+        return redirect()->back()->with('success', "Приглашения отправлены: {$sent}");
+    }
+
+    public function bulkEnroll(Request $request, LmsEvent $event): RedirectResponse
+    {
+        $request->validate([
+            'profile_ids' => ['required', 'array', 'min:1'],
+            'profile_ids.*' => ['integer'],
+            'course_ids' => ['required', 'array', 'min:1'],
+            'course_ids.*' => ['exists:lms_courses,id'],
+        ]);
+
+        $userIds = LmsProfile::where('lms_event_id', $event->id)
+            ->whereIn('id', $request->profile_ids)
+            ->pluck('user_id');
+
+        $enrolled = 0;
+        foreach ($userIds as $userId) {
+            foreach ($request->course_ids as $courseId) {
+                $created = LmsCourseEnrollment::firstOrCreate(
+                    ['lms_course_id' => $courseId, 'user_id' => $userId],
+                    ['status' => 'enrolled']
+                );
+                if ($created->wasRecentlyCreated) {
+                    $enrolled++;
+                }
+            }
+        }
+
+        return redirect()->back()->with('success', "Записано на курсы: {$enrolled} записей");
+    }
+
     public function import(Request $request, LmsEvent $event): RedirectResponse
     {
         $request->validate([
@@ -248,48 +338,82 @@ class UserController extends Controller
             $rows = $this->parseExcel($file->getRealPath());
         }
 
+        $rolesMap = LmsRole::where('lms_event_id', $event->id)
+            ->pluck('id', 'name')
+            ->mapWithKeys(fn($id, $name) => [mb_strtolower($name) => $id])
+            ->toArray();
+
         $imported = 0;
         $errors = [];
 
         foreach ($rows as $i => $row) {
-            $email = trim($row['email'] ?? $row['Email'] ?? $row['E-mail'] ?? $row['Электронная почта'] ?? '');
-            $lastName = trim($row['last_name'] ?? $row['Фамилия'] ?? $row['фамилия'] ?? '');
-            $firstName = trim($row['first_name'] ?? $row['Имя'] ?? $row['имя'] ?? '');
-            $patronymic = trim($row['patronymic'] ?? $row['Отчество'] ?? $row['отчество'] ?? '');
-            $phone = trim($row['phone'] ?? $row['Телефон'] ?? $row['телефон'] ?? '');
-            $position = trim($row['position'] ?? $row['Должность'] ?? $row['должность'] ?? '');
+            $rowNum = $i + 2;
+            $email     = trim($row['Email'] ?? $row['email'] ?? $row['E-mail'] ?? $row['Электронная почта'] ?? '');
+            $lastName  = trim($row['Фамилия'] ?? $row['фамилия'] ?? $row['last_name'] ?? '');
+            $firstName = trim($row['Имя'] ?? $row['имя'] ?? $row['first_name'] ?? '');
+            $patronymic = trim($row['Отчество'] ?? $row['отчество'] ?? $row['patronymic'] ?? '');
+            $phone     = trim($row['Телефон'] ?? $row['телефон'] ?? $row['phone'] ?? '');
+            $position  = trim($row['Должность'] ?? $row['должность'] ?? $row['position'] ?? '');
+            $roleName  = trim($row['Роль'] ?? $row['роль'] ?? $row['role'] ?? '');
+            $city      = trim($row['Город'] ?? $row['город'] ?? $row['city'] ?? '');
 
             if (!$email) {
-                $errors[] = "Строка " . ($i + 2) . ": отсутствует email";
+                $errors[] = "Строка {$rowNum}: отсутствует email";
                 continue;
             }
 
             $fullName = trim("{$lastName} {$firstName}");
-            if (!$fullName || $fullName === '') {
+            if (!$fullName) {
                 $fullName = explode('@', $email)[0];
             }
+
+            $roleId = null;
+            if ($roleName) {
+                $roleId = $rolesMap[mb_strtolower($roleName)] ?? null;
+                if (!$roleId) {
+                    $errors[] = "Строка {$rowNum}: роль «{$roleName}» не найдена";
+                }
+            }
+            $roleId = $roleId ?: ($request->default_role_id ?: null);
 
             $password = Str::random(10);
             $user = User::where('email', $email)->first();
             if (!$user) {
                 $user = User::create([
-                    'name' => $fullName,
+                    'name'       => $fullName,
+                    'last_name'  => $lastName ?: null,
+                    'first_name' => $firstName ?: null,
                     'patronymic' => $patronymic ?: null,
-                    'email' => $email,
-                    'phone' => $phone ?: null,
-                    'password' => $password,
+                    'email'      => $email,
+                    'phone'      => $phone ?: null,
+                    'password'   => $password,
                 ]);
+            } else {
+                $user->update(array_filter([
+                    'name'       => $fullName ?: null,
+                    'last_name'  => $lastName ?: null,
+                    'first_name' => $firstName ?: null,
+                    'patronymic' => $patronymic ?: null,
+                    'phone'      => $phone ?: null,
+                ]));
             }
 
-            LmsProfile::firstOrCreate(
+            $profile = LmsProfile::firstOrCreate(
                 ['user_id' => $user->id, 'lms_event_id' => $event->id],
                 [
-                    'role' => 'participant',
-                    'lms_role_id' => $request->default_role_id,
-                    'position' => $position ?: null,
-                    'phone' => $phone ?: null,
+                    'role'       => 'participant',
+                    'lms_role_id' => $roleId,
+                    'position'   => $position ?: null,
+                    'city'       => $city ?: null,
+                    'phone'      => $phone ?: null,
                 ]
             );
+
+            $profile->update(array_filter([
+                'lms_role_id' => $roleId,
+                'position'    => $position ?: null,
+                'city'        => $city ?: null,
+            ]));
 
             $imported++;
         }
@@ -374,16 +498,102 @@ class UserController extends Controller
         return $rows;
     }
 
-    public function downloadTemplate()
+    public function downloadTemplate(LmsEvent $event)
     {
-        $csv = "\xEF\xBB\xBF"; // UTF-8 BOM
-        $csv .= "Фамилия;Имя;Отчество;Электронная почта;Телефон;Должность\n";
-        $csv .= "Иванов;Иван;Иванович;ivanov@example.com;+79001234567;Менеджер\n";
-        $csv .= "Петрова;Мария;Сергеевна;petrova@example.com;+79007654321;Специалист\n";
+        $roles = LmsRole::where('lms_event_id', $event->id)->pluck('name');
 
-        return response($csv, 200, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="import_template.csv"',
+        $headers = ['Фамилия', 'Имя', 'Отчество', 'Email', 'Телефон', 'Должность', 'Роль', 'Город'];
+        $examples = [
+            ['Иванов', 'Иван', 'Иванович', 'ivanov@example.com', '+79001234567', 'Менеджер', $roles->first() ?? 'Специалист', 'Москва'],
+            ['Петрова', 'Мария', 'Сергеевна', 'petrova@example.com', '+79007654321', 'Инженер', $roles->skip(1)->first() ?? 'Предприниматель', 'Санкт-Петербург'],
+        ];
+
+        $xlsx = $this->buildXlsx($headers, $examples);
+
+        return response($xlsx, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="import_template.xlsx"',
         ]);
+    }
+
+    private function buildXlsx(array $headers, array $rows): string
+    {
+        $escXml = fn(string $s) => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+
+        $allStrings = array_merge($headers, ...array_map('array_values', $rows));
+        $sharedStrings = [];
+        $idx = 0;
+        foreach ($allStrings as $s) {
+            if (!isset($sharedStrings[$s])) {
+                $sharedStrings[$s] = $idx++;
+            }
+        }
+
+        $ssXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $ssXml .= '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="' . count($allStrings) . '" uniqueCount="' . count($sharedStrings) . '">';
+        foreach (array_keys($sharedStrings) as $str) {
+            $ssXml .= '<si><t>' . $escXml($str) . '</t></si>';
+        }
+        $ssXml .= '</sst>';
+
+        $sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $sheetXml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+        $sheetXml .= '<cols>';
+        for ($c = 0; $c < count($headers); $c++) {
+            $sheetXml .= '<col min="' . ($c + 1) . '" max="' . ($c + 1) . '" width="20" bestFit="1" customWidth="1"/>';
+        }
+        $sheetXml .= '</cols>';
+        $sheetXml .= '<sheetData>';
+
+        $letters = range('A', 'Z');
+
+        $sheetXml .= '<row r="1">';
+        foreach ($headers as $ci => $h) {
+            $sheetXml .= '<c r="' . $letters[$ci] . '1" t="s" s="1"><v>' . $sharedStrings[$h] . '</v></c>';
+        }
+        $sheetXml .= '</row>';
+
+        foreach ($rows as $ri => $row) {
+            $rowNum = $ri + 2;
+            $sheetXml .= '<row r="' . $rowNum . '">';
+            foreach (array_values($row) as $ci => $val) {
+                $sheetXml .= '<c r="' . $letters[$ci] . $rowNum . '" t="s"><v>' . $sharedStrings[$val] . '</v></c>';
+            }
+            $sheetXml .= '</row>';
+        }
+        $sheetXml .= '</sheetData></worksheet>';
+
+        $stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $stylesXml .= '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+        $stylesXml .= '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>';
+        $stylesXml .= '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9E2F3"/></patternFill></fill></fills>';
+        $stylesXml .= '<borders count="1"><border/></borders>';
+        $stylesXml .= '<cellStyleXfs count="1"><xf/></cellStyleXfs>';
+        $stylesXml .= '<cellXfs count="2"><xf/><xf fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"/></cellXfs>';
+        $stylesXml .= '</styleSheet>';
+
+        $workbookXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Участники" sheetId="1" r:id="rId1"/></sheets></workbook>';
+
+        $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>';
+
+        $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+
+        $xlRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>';
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'xlsx');
+        $zip = new \ZipArchive();
+        $zip->open($tmpFile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip->addFromString('[Content_Types].xml', $contentTypes);
+        $zip->addFromString('_rels/.rels', $rels);
+        $zip->addFromString('xl/_rels/workbook.xml.rels', $xlRels);
+        $zip->addFromString('xl/workbook.xml', $workbookXml);
+        $zip->addFromString('xl/styles.xml', $stylesXml);
+        $zip->addFromString('xl/sharedStrings.xml', $ssXml);
+        $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
+        $zip->close();
+
+        $content = file_get_contents($tmpFile);
+        unlink($tmpFile);
+        return $content;
     }
 }

@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -141,6 +142,69 @@ class AuthController extends Controller
         );
 
         $invitation->increment('uses_count');
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->route('lms.dashboard', $event);
+    }
+
+    public function showActivate(LmsEvent $event, string $token): Response|RedirectResponse
+    {
+        $profile = LmsProfile::where('invite_token', $token)
+            ->where('lms_event_id', $event->id)
+            ->with(['user:id,name,last_name,first_name,patronymic,email,phone', 'lmsRole:id,name'])
+            ->first();
+
+        if (!$profile) {
+            return Inertia::render('Lms/Auth/Activate', [
+                'event' => $event->only(['id', 'slug', 'title']),
+                'profile' => null,
+                'error' => 'Ссылка недействительна или уже была использована.',
+            ]);
+        }
+
+        return Inertia::render('Lms/Auth/Activate', [
+            'event' => $event->only(['id', 'slug', 'title']),
+            'profile' => [
+                'last_name' => $profile->user->last_name,
+                'first_name' => $profile->user->first_name,
+                'patronymic' => $profile->user->patronymic,
+                'email' => $profile->user->email,
+                'phone' => $profile->phone ?? $profile->user->phone,
+                'position' => $profile->position,
+                'city' => $profile->city,
+                'role' => $profile->lmsRole?->name,
+            ],
+            'token' => $token,
+            'error' => null,
+        ]);
+    }
+
+    public function activate(Request $request, LmsEvent $event, string $token): RedirectResponse
+    {
+        $profile = LmsProfile::where('invite_token', $token)
+            ->where('lms_event_id', $event->id)
+            ->first();
+
+        if (!$profile) {
+            return back()->withErrors(['token' => 'Ссылка недействительна или уже была использована.']);
+        }
+
+        $request->validate([
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user = User::findOrFail($profile->user_id);
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        $profile->update([
+            'status' => 'active',
+            'activated_at' => now(),
+            'invite_token' => null,
+        ]);
 
         Auth::login($user);
         $request->session()->regenerate();

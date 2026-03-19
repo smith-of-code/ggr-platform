@@ -28,8 +28,43 @@
           <div class="sm:col-span-2">
             <RichTextEditor v-model="form.description" label="Описание" :upload-url="route('lms.admin.upload.image', event.slug)" />
           </div>
-          <div>
-            <RInput v-model="form.image" label="Изображение (URL)" type="url" placeholder="https://..." />
+          <div class="sm:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-gray-700">Изображение курса</label>
+            <div class="flex items-start gap-4">
+              <div
+                v-if="imagePreview"
+                class="relative h-32 w-48 shrink-0 overflow-hidden rounded-xl border border-gray-200"
+              >
+                <img :src="imagePreview" class="h-full w-full object-cover" alt="Превью" />
+                <button
+                  type="button"
+                  class="absolute right-1.5 top-1.5 rounded-full bg-white/80 p-1 text-gray-500 shadow transition hover:bg-white hover:text-red-500"
+                  @click="removeImage"
+                >
+                  <XMarkIcon class="h-4 w-4" />
+                </button>
+              </div>
+              <div
+                class="relative flex flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 px-4 py-6 text-center transition hover:border-rosatom-400"
+                :class="{ 'border-rosatom-500 bg-rosatom-50': imageUploading }"
+              >
+                <template v-if="imageUploading">
+                  <svg class="mx-auto mb-2 h-8 w-8 animate-spin text-rosatom-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  <p class="text-sm text-rosatom-600">Загрузка...</p>
+                </template>
+                <template v-else>
+                  <ArrowUpTrayIcon class="mx-auto mb-1 h-6 w-6 text-gray-400" />
+                  <p class="text-sm font-medium text-gray-600">Загрузить изображение</p>
+                  <p class="mt-0.5 text-xs text-gray-400">JPG, PNG, WebP до 5 МБ</p>
+                </template>
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="absolute inset-0 cursor-pointer opacity-0"
+                  @change="handleImageUpload"
+                />
+              </div>
+            </div>
           </div>
           <div class="flex items-end">
             <RCheckbox v-model="form.sequential" label="Последовательное прохождение" />
@@ -154,11 +189,13 @@
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import StageEditor from './StageEditor.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
-import { PlusIcon, XMarkIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, XMarkIcon, ChevronUpIcon, ChevronDownIcon, ArrowUpTrayIcon } from '@heroicons/vue/24/outline'
+import axios from 'axios'
 
 const props = defineProps({ event: Object, course: Object, tests: Array, assignments: Array, videos: Array })
 
@@ -217,6 +254,32 @@ const form = useForm({
   modules: buildModules(),
   stages: buildOrphanStages(),
 })
+
+const imageUploading = ref(false)
+const imagePreview = computed(() => form.image || null)
+
+async function handleImageUpload(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  imageUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('image', file)
+    const { data } = await axios.post(route('lms.admin.upload.image', props.event.slug), fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    if (data.url) form.image = data.url
+  } catch (err) {
+    alert(err.response?.data?.message || 'Ошибка загрузки')
+  } finally {
+    imageUploading.value = false
+    e.target.value = ''
+  }
+}
+
+function removeImage() {
+  form.image = ''
+}
 
 function addModule() {
   form.modules.push(emptyModule())
