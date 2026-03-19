@@ -43,6 +43,7 @@
 - При копировании модуля копируются все его этапы (с проставлением `source_stage_id` у каждого)
 - Используются компоненты: `RModal`, `RButton`, `RInput` (глобальный ui-kit `@rosatom-ggr/ui-kit`)
 - Миграции: nullable FK `source_module_id` → `lms_course_modules`, `source_stage_id` → `lms_course_stages` (nullOnDelete)
+- При удалении модуля/этапа-источника — копия остаётся без изменений, `source_*_id` автоматически обнуляется (nullOnDelete). Каскадного удаления копий нет.
 
 ## Затронутые файлы
 
