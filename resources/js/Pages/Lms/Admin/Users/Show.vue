@@ -1,0 +1,151 @@
+<template>
+  <LmsAdminLayout :event="event">
+    <div class="mx-auto max-w-4xl">
+      <RButton variant="ghost" size="sm" @click="router.visit(route('lms.admin.users.index', event.slug))" class="mb-4">
+        <template #icon><ArrowLeftIcon class="h-4 w-4" /></template>
+        Назад к участникам
+      </RButton>
+
+      <!-- Success flash -->
+      <div v-if="$page.props.flash?.success" class="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+        {{ $page.props.flash.success }}
+      </div>
+
+      <div class="grid gap-6 lg:grid-cols-3">
+        <!-- Profile card -->
+        <RCard elevation="raised" class="lg:col-span-1">
+          <div class="flex flex-col items-center text-center">
+            <RAvatar :name="profile.user?.name" size="xl" />
+            <h2 class="mt-4 text-lg font-bold text-gray-900">{{ profile.user?.last_name }} {{ profile.user?.first_name }}</h2>
+            <p v-if="profile.user?.patronymic" class="text-sm text-gray-500">{{ profile.user.patronymic }}</p>
+            <p v-if="profile.city" class="text-xs text-gray-400">{{ profile.city }}</p>
+            <p class="mt-1 text-sm text-gray-500">{{ profile.user?.email }}</p>
+            <p v-if="profile.user?.phone || profile.phone" class="text-sm text-gray-400">{{ profile.user?.phone || profile.phone }}</p>
+            <RBadge v-if="profile.lms_role" :variant="roleBadgeVariant(profile.lms_role.slug)" class="mt-3">
+              {{ profile.lms_role.name }}
+            </RBadge>
+            <p v-if="profile.position" class="mt-2 text-xs text-gray-400">{{ profile.position }}</p>
+          </div>
+        </RCard>
+
+        <!-- Edit form -->
+        <div class="space-y-6 lg:col-span-2">
+          <form @submit.prevent="submitUpdate" class="space-y-6">
+            <RCard elevation="raised">
+              <h3 class="mb-4 text-lg font-bold text-gray-900">Редактировать профиль</h3>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <RInput v-model="editForm.last_name" label="Фамилия" />
+                <RInput v-model="editForm.first_name" label="Имя" />
+                <RInput v-model="editForm.patronymic" label="Отчество" />
+                <RInput v-model="editForm.phone" type="tel" label="Телефон" />
+                <RInput v-model="editForm.position" label="Должность" />
+                <RInput v-model="editForm.city" label="Город" />
+                <div class="sm:col-span-2">
+                  <SearchSelect
+                    v-model="editForm.role_id"
+                    :options="roles"
+                    value-key="id"
+                    label-key="name"
+                    label="Роль"
+                    placeholder="Выберите роль"
+                  />
+                </div>
+              </div>
+              <RButton type="submit" variant="primary" class="mt-5" :loading="editForm.processing" :disabled="editForm.processing">
+                {{ editForm.processing ? 'Сохранение...' : 'Сохранить изменения' }}
+              </RButton>
+            </RCard>
+          </form>
+
+          <!-- Course assignment -->
+          <RCard elevation="raised">
+            <h3 class="mb-4 text-lg font-bold text-gray-900">Назначенные курсы</h3>
+
+            <div v-if="enrollments?.length" class="mb-4 space-y-2">
+              <div v-for="e in enrollments" :key="e.id" class="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+                <div>
+                  <p class="text-sm font-medium text-gray-900">{{ e.course?.title }}</p>
+                  <p class="text-xs text-gray-400">Статус: {{ enrollmentStatus(e.status) }}</p>
+                </div>
+                <RBadge :variant="e.status === 'completed' ? 'success' : 'info'" size="sm">
+                  {{ enrollmentStatus(e.status) }}
+                </RBadge>
+              </div>
+            </div>
+            <div v-else class="mb-4 text-sm text-gray-400">Курсы не назначены</div>
+
+            <form @submit.prevent="assignCourses" class="mt-4 border-t border-gray-100 pt-4">
+              <MultiSelect
+                v-model="courseForm.course_ids"
+                :options="availableCourses"
+                value-key="id"
+                label-key="title"
+                label="Добавить курсы"
+                placeholder="Выберите курсы для назначения"
+              />
+              <RButton type="submit" variant="primary" size="sm" class="mt-3" :loading="courseForm.processing" :disabled="courseForm.processing || courseForm.course_ids.length === 0">
+                Назначить курсы
+              </RButton>
+            </form>
+          </RCard>
+        </div>
+      </div>
+    </div>
+  </LmsAdminLayout>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { router, useForm } from '@inertiajs/vue3'
+import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import SearchSelect from '@/Components/SearchSelect.vue'
+import MultiSelect from '@/Components/MultiSelect.vue'
+import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+
+const props = defineProps({
+  event: Object,
+  profile: Object,
+  enrollments: Array,
+  roles: Array,
+  courses: Array,
+})
+
+
+const editForm = useForm({
+  last_name: props.profile?.user?.last_name || '',
+  first_name: props.profile?.user?.first_name || '',
+  patronymic: props.profile?.user?.patronymic || '',
+  phone: props.profile?.user?.phone || props.profile?.phone || '',
+  position: props.profile?.position || '',
+  city: props.profile?.city || '',
+  role_id: props.profile?.lms_role_id || null,
+})
+
+const courseForm = useForm({
+  course_ids: [],
+})
+
+const enrolledCourseIds = computed(() => (props.enrollments || []).map(e => e.lms_course_id || e.course?.id))
+
+const availableCourses = computed(() =>
+  (props.courses || []).filter(c => !enrolledCourseIds.value.includes(c.id))
+)
+
+function submitUpdate() {
+  editForm.patch(route('lms.admin.users.update', [props.event.slug, props.profile.user_id]))
+}
+
+function assignCourses() {
+  courseForm.patch(route('lms.admin.users.update', [props.event.slug, props.profile.user_id]), {
+    onSuccess: () => courseForm.reset(),
+  })
+}
+
+function enrollmentStatus(status) {
+  return { enrolled: 'Записан', in_progress: 'Проходит', completed: 'Завершён' }[status] || status
+}
+
+function roleBadgeVariant(slug) {
+  return { admin: 'error', curator: 'warning', leader: 'primary', expert: 'info', observer: 'neutral', participant: 'success' }[slug] || 'neutral'
+}
+</script>

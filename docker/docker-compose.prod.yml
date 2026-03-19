@@ -1,0 +1,32 @@
+services:
+
+  nginx:
+    ports:
+      - "80"
+      - "443"
+    volumes:
+      - ../:/var/www
+      - ./nginx/prod/templates:/etc/nginx/templates
+      - ../${APP_NAME}-nginx_log:/var/log/nginx
+      - ./ssl:/etc/ssl/certs
+
+  redis:
+      image: "redis:alpine"
+      container_name: ${APP_NAME}_redis
+      restart: unless-stopped
+      volumes:
+          - ../${APP_NAME}-data/redis_data:/var/lib/postgres
+  postgres:
+    image: postgres:16
+    container_name: ${APP_NAME}_postgres
+    restart: unless-stopped
+    ports:
+      - "5432"
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - ../${APP_NAME}-data/dbdata:/var/lib/postgres
+    networks:
+      - service_bridge

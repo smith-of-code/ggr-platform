@@ -39,7 +39,7 @@ jobs:
           PORT="${PORT:-22}"
 
           PROJECT_DIR="/home/${USER}/projects/${REPO}"
-          DOCKER_COMPOSE_DIR="${PROJECT_DIR}/app/docker"
+          DOCKER_COMPOSE_DIR="${PROJECT_DIR}/docker"
           REPO_URL="https://${TOKEN}@github.com/${REPO}.git"
 
           # Отправляем на сервер готовый скрипт (значения разворачиваются локально)

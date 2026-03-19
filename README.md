@@ -30,7 +30,7 @@ cd ggr-platform
 ### 2. Запуск
 
 ```bash
-cd app/docker
+cd docker
 
 # Локальная разработка
 ./run.sh local
@@ -42,7 +42,7 @@ cd app/docker
 Скрипт автоматически выполнит:
 - Создание Docker-сетей
 - Сборку контейнеров
-- Копирование env-файла в `app/.env`
+- Копирование env-файла в `.env`
 - `composer update`, `npm update`, `npm run build`
 - `php artisan key:generate`, `migrate`, `storage:link`
 
@@ -51,14 +51,14 @@ cd app/docker
 ### 3. Сидирование БД
 
 ```bash
-cd app/docker
+cd docker
 ./seed.sh local
 ```
 
 ### 4. Остановка
 
 ```bash
-cd app/docker
+cd docker
 ./stop.sh
 ```
 
@@ -81,25 +81,24 @@ cd app/docker
 ## Структура проекта
 
 ```
-├── app/                              # Laravel-приложение
-│   ├── app/
-│   │   ├── Http/Controllers/Lms/     # Контроллеры LMS
-│   │   ├── Models/Lms/               # Модели LMS
-│   │   └── Http/Middleware/           # Middleware
-│   ├── resources/js/
-│   │   ├── Components/               # Переиспользуемые компоненты
-│   │   ├── Layouts/                   # Макеты (LmsLayout, LmsAdminLayout)
-│   │   └── Pages/Lms/                # Страницы LMS
-│   ├── routes/lms.php                # Маршруты LMS
-│   ├── docker/                       # Docker-инфраструктура
-│   │   ├── docker-compose.yml        # Базовая конфигурация
-│   │   ├── docker-compose.override.yml # Override для local
-│   │   ├── docker-compose.prod.yml   # Override для production
-│   │   ├── Fpm.Dockerfile            # PHP-FPM образ
-│   │   ├── run.sh / stop.sh / seed.sh # Скрипты управления
-│   │   ├── .env.local / .env.prod    # Переменные окружения
-│   │   └── nginx/ supervisor/ ssl/   # Конфигурации сервисов
-│   └── public/                       # Статика
+├── app/
+│   ├── Http/Controllers/Lms/         # Контроллеры LMS
+│   ├── Models/Lms/                   # Модели LMS
+│   └── Http/Middleware/              # Middleware
+├── resources/js/
+│   ├── Components/                   # Переиспользуемые компоненты
+│   ├── Layouts/                      # Макеты (LmsLayout, LmsAdminLayout)
+│   └── Pages/Lms/                    # Страницы LMS
+├── routes/lms.php                    # Маршруты LMS
+├── docker/                           # Docker-инфраструктура
+│   ├── docker-compose.yml            # Базовая конфигурация
+│   ├── docker-compose.override.yml   # Override для local
+│   ├── docker-compose.prod.yml       # Override для production
+│   ├── Fpm.Dockerfile                # PHP-FPM образ
+│   ├── run.sh / stop.sh / seed.sh    # Скрипты управления
+│   ├── .env.local / .env.prod        # Переменные окружения
+│   └── nginx/ supervisor/ ssl/       # Конфигурации сервисов
+├── public/                           # Статика
 ├── .github/workflows/                # CI/CD (lint, tests, deploy)
 └── design-references/                # Дизайн-референсы
 ```
@@ -161,13 +160,13 @@ docker exec vshgr-platform_fpm npm run build
 Проект использует `rosatom-ggr-ui-kit` из приватного npm-реестра. Для установки:
 
 ```bash
-# В файле app/.npmrc указан реестр:
+# В файле .npmrc указан реестр:
 @rosatom-ggr:registry=https://nexus.wizandr.ru/repository/npm-private/
 ```
 
 ## Документация
 
-- [Docker-инфраструктура](app/docker/DOCKER.md) — подробное описание контейнеров, сетей, томов, переменных окружения
+- [Docker-инфраструктура](docker/DOCKER.md) — подробное описание контейнеров, сетей, томов, переменных окружения
 
 ## Лицензия
 

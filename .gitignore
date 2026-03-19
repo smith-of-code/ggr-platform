@@ -1,32 +1,50 @@
 # Dependencies
 /vendor
 /node_modules
-app/vendor/
-app/node_modules/
 
 # Environment
 .env
 .env.backup
 .env.local
 .env.*.local
+.env.production
 
 # Laravel
 /storage/*.key
+/storage/pail
 /public/hot
 /public/storage
+/public/build
+/public/vendor/horizon/
 /bootstrap/cache/*
 !bootstrap/cache/.gitkeep
 .phpunit.result.cache
+/.phpunit.cache
 
-# Build artifacts
-app/public/build/
-app/public/vendor/horizon/
+# Lock files (generated)
+package-lock.json
+composer.lock
+
+# Logs
+*.log
 
 # IDE
 .DS_Store
+Thumbs.db
 .idea/
 .vscode/
+/.fleet
+/.nova
+/.zed
 *.code-workspace
+.phpactor.json
+
+# Auth
+/auth.json
+
+# Laravel legacy
+Homestead.json
+Homestead.yaml
 
 # Python
 venv/
