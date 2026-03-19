@@ -16,10 +16,7 @@
           required
           :error="form.errors.title"
         />
-        <div>
-          <label class="mb-2 block text-sm font-medium text-gray-700">Контент</label>
-          <textarea v-model="form.content" rows="6" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" />
-        </div>
+        <RichTextEditor v-model="form.content" label="Контент" :upload-url="route('lms.admin.upload.image', event.slug)" />
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700">Группы</label>
           <div class="space-y-2">
@@ -53,6 +50,7 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import RichTextEditor from '@/Components/RichTextEditor.vue'
 
 const props = defineProps({ event: Object, material: Object, groups: Array })
 

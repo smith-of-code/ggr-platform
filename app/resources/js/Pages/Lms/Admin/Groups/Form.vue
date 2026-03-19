@@ -16,25 +16,21 @@
           required
           :error="form.errors.title"
         />
-        <div>
-          <label class="mb-2 block text-sm font-medium text-gray-700">Куратор</label>
-          <select v-model="form.curator_id" class="w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-            <option :value="null">— Не назначен —</option>
-            <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
-          </select>
-        </div>
-        <div>
-          <label class="mb-2 block text-sm font-medium text-gray-700">Участники</label>
-          <div class="max-h-60 space-y-2 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 p-3">
-            <div v-for="u in users" :key="u.id" class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-gray-100" :class="form.user_ids.includes(u.id) ? 'bg-rosatom-50' : ''">
-              <RCheckbox
-                :model-value="form.user_ids.includes(u.id)"
-                @update:model-value="(v) => { if (v) form.user_ids.push(u.id); else form.user_ids = form.user_ids.filter(id => id !== u.id) }"
-                :label="`${u.name} (${u.email})`"
-              />
-            </div>
-          </div>
-        </div>
+
+        <SearchSelect
+          v-model="form.curator_id"
+          :options="userOptions"
+          label="Куратор"
+          placeholder="Выберите куратора"
+          search-placeholder="Поиск по имени или email..."
+        />
+
+        <MultiSelect
+          v-model="form.user_ids"
+          :options="userOptions"
+          label="Участники"
+          placeholder="Выберите участников"
+        />
 
         <div class="flex gap-3 border-t border-gray-200 pt-6">
           <RButton type="submit" :disabled="form.processing" :loading="form.processing" variant="primary">
@@ -48,10 +44,17 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import SearchSelect from '@/Components/SearchSelect.vue'
+import MultiSelect from '@/Components/MultiSelect.vue'
 
 const props = defineProps({ event: Object, group: Object, users: Array })
+
+const userOptions = computed(() =>
+  (props.users ?? []).map(u => ({ id: u.id, name: `${u.name} (${u.email})` }))
+)
 
 const form = useForm({
   title: props.group?.title ?? '',

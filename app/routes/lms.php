@@ -26,6 +26,7 @@ use App\Http\Controllers\Lms\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Lms\Admin\EnrollmentController as AdminEnrollmentController;
 use App\Http\Controllers\Lms\Admin\GamificationController as AdminGamificationController;
 use App\Http\Controllers\Lms\Admin\InvitationController as AdminInvitationController;
+use App\Http\Controllers\Lms\Admin\UploadController as AdminUploadController;
 use Illuminate\Support\Facades\Route;
 
 // ── LMS Auth ──
@@ -129,5 +130,6 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::post('enrollments/{enrollment}/reject', [AdminEnrollmentController::class, 'reject'])->name('enrollments.reject');
         Route::resource('gamification', AdminGamificationController::class);
         Route::post('gamification/manual-points', [AdminGamificationController::class, 'manualPoints'])->name('gamification.manual-points');
+        Route::post('upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
     });
 });

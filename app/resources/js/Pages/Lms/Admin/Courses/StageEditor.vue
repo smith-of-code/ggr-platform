@@ -25,16 +25,19 @@
         <RInput v-model="stage.title" placeholder="Название этапа" required />
       </div>
       <div>
-        <select v-model="stage.type" class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-          <option value="content">Контент</option>
-          <option value="scorm">SCORM</option>
-          <option value="test">Тест</option>
-          <option value="assignment">Задание</option>
-          <option value="video">Видео</option>
-        </select>
+        <SearchSelect
+          :model-value="stage.type"
+          @update:model-value="v => stage.type = v"
+          :options="stageTypes"
+          value-key="value"
+          label-key="label"
+          placeholder="Тип этапа"
+          :clearable="false"
+          :searchable="false"
+        />
       </div>
       <div v-if="stage.type === 'content'">
-        <textarea v-model="stage.content" rows="3" placeholder="Текст контента" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" />
+        <RichTextEditor v-model="stage.content" label="Контент" :upload-url="route('lms.admin.upload.image', eventSlug)" />
       </div>
       <div v-else-if="stage.type === 'scorm'" class="space-y-3">
         <div
@@ -66,26 +69,41 @@
         <div v-if="stage.scormError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{{ stage.scormError }}</div>
         <RInput v-if="stage.content" v-model="stage.content" label="SCORM URL (авто)" disabled />
       </div>
-      <div v-else-if="stage.type === 'test'" class="space-y-2">
-        <label class="block text-xs text-gray-500">Тест</label>
-        <select v-model="stage.content" class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-          <option value="">— Выберите тест —</option>
-          <option v-for="t in tests" :key="t.id" :value="String(t.id)">{{ t.title }}</option>
-        </select>
+      <div v-else-if="stage.type === 'test'">
+        <SearchSelect
+          :model-value="stage.content ? Number(stage.content) : null"
+          @update:model-value="v => stage.content = v != null ? String(v) : ''"
+          :options="tests"
+          value-key="id"
+          label-key="title"
+          label="Тест"
+          placeholder="Выберите тест"
+          search-placeholder="Поиск по названию..."
+        />
       </div>
-      <div v-else-if="stage.type === 'assignment'" class="space-y-2">
-        <label class="block text-xs text-gray-500">Задание</label>
-        <select v-model="stage.content" class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-          <option value="">— Выберите задание —</option>
-          <option v-for="a in assignments" :key="a.id" :value="String(a.id)">{{ a.title }}</option>
-        </select>
+      <div v-else-if="stage.type === 'assignment'">
+        <SearchSelect
+          :model-value="stage.content ? Number(stage.content) : null"
+          @update:model-value="v => stage.content = v != null ? String(v) : ''"
+          :options="assignments"
+          value-key="id"
+          label-key="title"
+          label="Задание"
+          placeholder="Выберите задание"
+          search-placeholder="Поиск по названию..."
+        />
       </div>
-      <div v-else-if="stage.type === 'video'" class="space-y-2">
-        <label class="block text-xs text-gray-500">Видео</label>
-        <select v-model="stage.content" class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-          <option value="">— Выберите видео —</option>
-          <option v-for="v in videos" :key="v.id" :value="String(v.id)">{{ v.title }}</option>
-        </select>
+      <div v-else-if="stage.type === 'video'">
+        <SearchSelect
+          :model-value="stage.content ? Number(stage.content) : null"
+          @update:model-value="v => stage.content = v != null ? String(v) : ''"
+          :options="videos"
+          value-key="id"
+          label-key="title"
+          label="Видео"
+          placeholder="Выберите видео"
+          search-placeholder="Поиск по названию..."
+        />
       </div>
     </div>
   </div>
@@ -93,6 +111,16 @@
 
 <script setup>
 import axios from 'axios'
+import SearchSelect from '@/Components/SearchSelect.vue'
+import RichTextEditor from '@/Components/RichTextEditor.vue'
+
+const stageTypes = [
+  { value: 'content', label: 'Контент' },
+  { value: 'scorm', label: 'SCORM' },
+  { value: 'test', label: 'Тест' },
+  { value: 'assignment', label: 'Задание' },
+  { value: 'video', label: 'Видео' },
+]
 
 const props = defineProps({
   stage: Object,

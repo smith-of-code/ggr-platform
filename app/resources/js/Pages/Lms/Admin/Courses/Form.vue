@@ -26,8 +26,7 @@
             <RInput v-model="form.slug" label="Slug" />
           </div>
           <div class="sm:col-span-2">
-            <label class="mb-2 block text-sm font-medium text-gray-700">Описание</label>
-            <textarea v-model="form.description" rows="4" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" />
+            <RichTextEditor v-model="form.description" label="Описание" :upload-url="route('lms.admin.upload.image', event.slug)" />
           </div>
           <div>
             <RInput v-model="form.image" label="Изображение (URL)" type="url" placeholder="https://..." />
@@ -158,6 +157,7 @@
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import StageEditor from './StageEditor.vue'
+import RichTextEditor from '@/Components/RichTextEditor.vue'
 import { PlusIcon, XMarkIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({ event: Object, course: Object, tests: Array, assignments: Array, videos: Array })
