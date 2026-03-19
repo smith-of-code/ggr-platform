@@ -20,6 +20,7 @@ app/node_modules/
 
 # Build artifacts
 app/public/build/
+app/public/vendor/horizon/
 
 # IDE
 .DS_Store

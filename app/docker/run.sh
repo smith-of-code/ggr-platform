@@ -24,12 +24,12 @@ docker network inspect proxy >/dev/null 2>&1 || \
 export USER_ID=$(id -u)
 export GROUP_ID=$(id -g)
 
-# Определяем конфигурацию
-if [ "$APP_ENV" = "production" ]; then
-  echo "Запуск в ПРОДАКШЕН окружении..."
+# Определяем конфигурацию по имени файла
+if [[ "$env_file" == *prod* ]]; then
+  echo "Запуск с PROD-конфигом (${env_file})..."
   docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file=./${env_file} --project-name=${APP_NAME} up -d --build
 else
-  echo "Запуск в ЛОКАЛЬНОМ окружении..."
+  echo "Запуск с НЕ-PROD конфигом (${env_file})..."
   docker compose --env-file=./${env_file} --project-name=${APP_NAME} up -d --build
 fi
 
@@ -38,7 +38,8 @@ docker exec ${APP_NAME}_fpm composer update
 docker exec ${APP_NAME}_fpm php artisan storage:link
 docker exec ${APP_NAME}_fpm php artisan key:generate
 docker exec ${APP_NAME}_fpm php artisan migrate:fresh --seed
-docker exec ${APP_NAME}_fpm npm update
+docker exec ${APP_NAME}_fpm php artisan vendor:publish --tag=horizon-assets --force
+docker exec ${APP_NAME}_fpm npm update --prefer-online
 docker exec ${APP_NAME}_fpm npm run build
 
 # Удаляем public/hot чтобы Laravel использовал собранные assets

@@ -8,6 +8,7 @@ use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTestAttempt;
 use App\Observers\LmsProgressObserver;
 use App\Services\GamificationService;
+use App\Services\SettingsService;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -16,11 +17,14 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(GamificationService::class);
+        $this->app->singleton(SettingsService::class);
     }
 
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        app(SettingsService::class)->applyMailConfig();
 
         $observer = app(LmsProgressObserver::class);
 
