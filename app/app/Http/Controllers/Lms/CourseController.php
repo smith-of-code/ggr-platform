@@ -27,26 +27,13 @@ class CourseController extends Controller
 
         $query = LmsCourse::where('lms_event_id', $event->id)
             ->where('is_active', true)
+            ->whereIn('id', fn($sub) =>
+                $sub->select('lms_course_id')
+                    ->from('lms_course_enrollments')
+                    ->where('user_id', $user->id)
+            )
             ->orderBy('position')
             ->with('stages');
-
-        $roleId = $profile?->lms_role_id;
-        $hasRoleRestrictions = DB::table('lms_course_role_access')
-            ->whereIn('lms_course_id', LmsCourse::where('lms_event_id', $event->id)->select('id'))
-            ->exists();
-
-        if ($hasRoleRestrictions) {
-            $query->where(function ($q) use ($roleId, $user) {
-                $q->whereDoesntHave('roleAccess')
-                  ->orWhereHas('roleAccess', fn($r) => $r->where('lms_role_id', $roleId));
-                $q->orWhereIn('id', fn($sub) =>
-                    $sub->select('lms_course_id')->from('lms_course_assignments')->where('user_id', $user->id)
-                );
-                $q->orWhereIn('id', fn($sub) =>
-                    $sub->select('lms_course_id')->from('lms_course_enrollments')->where('user_id', $user->id)
-                );
-            });
-        }
 
         if ($request->filled('search')) {
             $s = $request->search;
