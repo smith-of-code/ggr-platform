@@ -9,7 +9,7 @@ services:
       - APP_NAME=${APP_NAME}_fpm
     volumes:
       - ../:/var/www
-      - ../${APP_NAME}-nginx_log:/var/log/nginx
+      - ../../${APP_NAME}-nginx_log:/var/log/nginx
     networks:
       - service_bridge
       - proxy
@@ -40,7 +40,7 @@ services:
       ports:
           - "6379"
       volumes:
-          - ../${APP_NAME}-data/redis_data:/var/lib/postgres
+          - ../../${APP_NAME}-data/redis_data:/var/lib/postgres
       networks:
           - service_bridge
   mailpit:

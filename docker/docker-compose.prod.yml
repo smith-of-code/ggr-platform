@@ -7,7 +7,7 @@ services:
     volumes:
       - ../:/var/www
       - ./nginx/prod/templates:/etc/nginx/templates
-      - ../${APP_NAME}-nginx_log:/var/log/nginx
+      - ../../${APP_NAME}-nginx_log:/var/log/nginx
       - ./ssl:/etc/ssl/certs
 
   redis:
@@ -15,7 +15,7 @@ services:
       container_name: ${APP_NAME}_redis
       restart: unless-stopped
       volumes:
-          - ../${APP_NAME}-data/redis_data:/var/lib/postgres
+          - ../../${APP_NAME}-data/redis_data:/var/lib/postgres
   postgres:
     image: postgres:16
     container_name: ${APP_NAME}_postgres

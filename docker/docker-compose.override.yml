@@ -35,7 +35,7 @@ services:
           POSTGRES_PASSWORD: ${DB_PASSWORD}
           POSTGRES_DB: ${DB_DATABASE}
       volumes:
-          - ../${APP_NAME}-data/dbdata:/var/lib/postgres
+          - ../../${APP_NAME}-data/dbdata:/var/lib/postgres
       networks:
           - service_bridge
   redis:
@@ -45,7 +45,7 @@ services:
       ports:
           - "40004:6379"
       volumes:
-          - ../${APP_NAME}-data/redis_data:/var/lib/postgres
+          - ../../${APP_NAME}-data/redis_data:/var/lib/postgres
       networks:
           - service_bridge
 networks:
