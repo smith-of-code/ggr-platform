@@ -28,11 +28,8 @@
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700">Режим выполнения</label>
           <select v-model="form.completion_mode" class="w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-            <option value="">—</option>
-            <option value="text">Текст</option>
-            <option value="file">Файл</option>
-            <option value="link">Ссылка</option>
-            <option value="any">Любой</option>
+            <option value="on_review">По рецензии</option>
+            <option value="on_submit">При отправке</option>
           </select>
         </div>
         <RInput
@@ -63,7 +60,7 @@ const form = useForm({
   title: props.assignment?.title ?? '',
   description: props.assignment?.description ?? '',
   template_file: props.assignment?.template_file ?? '',
-  completion_mode: props.assignment?.completion_mode ?? '',
+  completion_mode: props.assignment?.completion_mode ?? 'on_review',
   deadline: props.assignment?.deadline ? props.assignment.deadline.slice(0, 16) : '',
   is_active: props.assignment?.is_active ?? true,
 })
