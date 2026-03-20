@@ -33,102 +33,128 @@
 
       <RCard elevation="raised">
         <h1 class="font-brand text-xl font-bold text-gray-900">{{ stage?.title }}</h1>
-        <RBadge :variant="typeBadgeVariant(stage?.type)" size="sm" class="mt-2">
-          {{ typeLabel(stage?.type) }}
-        </RBadge>
+        <div class="mt-2 flex flex-wrap gap-2">
+          <RBadge v-for="(block, bIdx) in displayBlocks" :key="bIdx" :variant="typeBadgeVariant(block.type)" size="sm">
+            {{ typeLabel(block.type) }}
+          </RBadge>
+        </div>
 
-        <!-- Content by type -->
-        <div class="mt-6">
-          <!-- content: render HTML -->
-          <div
-            v-if="stage?.type === 'content' && stage?.content"
-            class="prose max-w-none text-gray-700 prose-headings:text-gray-900 prose-a:text-rosatom-600"
-            v-html="stage.content"
-          />
+        <div class="mt-6 space-y-8">
+          <div v-for="(block, bIdx) in displayBlocks" :key="bIdx">
+            <div v-if="displayBlocks.length > 1" class="mb-3 flex items-center gap-2">
+              <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">{{ bIdx + 1 }}</span>
+              <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">{{ typeLabel(block.type) }}</span>
+            </div>
 
-          <!-- scorm: iframe with API adapter -->
-          <div v-else-if="stage?.type === 'scorm' && stage?.scorm_package" class="aspect-video w-full overflow-hidden rounded-lg border border-gray-200">
-            <iframe
-              ref="scormFrame"
-              :src="stage.scorm_package"
-              class="h-full w-full"
-              title="SCORM content"
-              allowfullscreen
+            <!-- content -->
+            <div
+              v-if="block.type === 'content' && block.content"
+              class="prose max-w-none text-gray-700 prose-headings:text-gray-900 prose-a:text-rosatom-600"
+              v-html="block.content"
             />
-          </div>
 
-          <!-- test: redirect -->
-          <div v-else-if="stage?.type === 'test' && stage?.lms_test_id">
-            <RButton variant="outline" @click="router.visit(route('lms.tests.show', { event: event?.slug, test: stage.lms_test_id }))">
-              <template #icon><ClipboardDocumentListIcon class="h-5 w-5" /></template>
-              Перейти к тесту
-            </RButton>
-          </div>
-
-          <!-- assignment: redirect -->
-          <div v-else-if="stage?.type === 'assignment' && stage?.lms_assignment_id">
-            <RButton variant="outline" @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: stage.lms_assignment_id }))">
-              <template #icon><PencilSquareIcon class="h-5 w-5" /></template>
-              Перейти к заданию
-            </RButton>
-          </div>
-
-          <!-- video: embed -->
-          <div v-else-if="stage?.type === 'video'" class="mt-4">
-            <div v-if="videoEmbedUrl" class="relative aspect-video w-full overflow-hidden rounded-lg">
-              <!-- Play overlay — shown until user clicks to start watching -->
-              <div
-                v-if="!videoStarted && videoDuration && !isCompleted"
-                class="absolute inset-0 z-10 flex cursor-pointer flex-col items-center justify-center bg-gray-900/70 transition hover:bg-gray-900/60"
-                @click="startWatching"
-              >
-                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-white/90 shadow-xl transition hover:scale-110">
-                  <PlayCircleIcon class="h-12 w-12 text-rosatom-700" />
-                </div>
-                <p class="mt-4 text-lg font-semibold text-white">Начать просмотр</p>
-                <p class="mt-1 text-sm text-white/60">Длительность: {{ formatTime(videoDuration) }}</p>
-              </div>
+            <!-- scorm -->
+            <div v-else-if="block.type === 'scorm' && block.scorm_package" class="aspect-video w-full overflow-hidden rounded-lg border border-gray-200">
               <iframe
-                :src="videoStarted || !videoDuration || isCompleted ? videoEmbedUrl : ''"
+                ref="scormFrame"
+                :src="block.scorm_package"
                 class="h-full w-full"
-                title="Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                title="SCORM content"
                 allowfullscreen
               />
             </div>
-            <p v-else class="text-gray-400">Видео недоступно</p>
 
-            <!-- Video watch progress -->
-            <div v-if="videoDuration && !isCompleted && videoStarted" class="mt-4">
-              <div class="flex items-center justify-between text-sm text-gray-600">
-                <div class="flex items-center gap-2">
-                  <PlayCircleIcon class="h-5 w-5" />
-                  <span>Просмотрено: {{ formatTime(watchedSeconds) }} / {{ formatTime(videoDuration) }}</span>
+            <!-- test -->
+            <div v-else-if="block.type === 'test' && block.lms_test_id">
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
+                    <ClipboardDocumentListIcon class="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-900">{{ block.test?.title || 'Тест' }}</p>
+                    <p class="text-xs text-gray-400">Нажмите, чтобы перейти к тестированию</p>
+                  </div>
                 </div>
-                <span v-if="!videoWatchComplete" class="text-xs text-gray-400">
-                  Осталось: {{ formatTime(Math.max(0, videoDuration - watchedSeconds)) }}
-                </span>
+                <RButton variant="outline" class="mt-4" @click="router.visit(route('lms.tests.show', { event: event?.slug, test: block.lms_test_id }))">
+                  Перейти к тесту
+                </RButton>
               </div>
-              <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+            </div>
+
+            <!-- assignment -->
+            <div v-else-if="block.type === 'assignment' && block.lms_assignment_id">
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+                    <PencilSquareIcon class="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-900">{{ block.assignment?.title || 'Задание' }}</p>
+                    <p class="text-xs text-gray-400">Нажмите, чтобы перейти к заданию</p>
+                  </div>
+                </div>
+                <RButton variant="outline" class="mt-4" @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: block.lms_assignment_id }))">
+                  Перейти к заданию
+                </RButton>
+              </div>
+            </div>
+
+            <!-- video -->
+            <div v-else-if="block.type === 'video'">
+              <div v-if="getVideoEmbedUrl(block)" class="relative aspect-video w-full overflow-hidden rounded-lg">
                 <div
-                  class="h-full rounded-full transition-all duration-500"
-                  :class="videoWatchComplete ? 'bg-accent-green' : 'bg-rosatom-500'"
-                  :style="{ width: videoProgressPercent + '%' }"
+                  v-if="!videoStarted && videoDuration && !isCompleted"
+                  class="absolute inset-0 z-10 flex cursor-pointer flex-col items-center justify-center bg-gray-900/70 transition hover:bg-gray-900/60"
+                  @click="startWatching"
+                >
+                  <div class="flex h-20 w-20 items-center justify-center rounded-full bg-white/90 shadow-xl transition hover:scale-110">
+                    <PlayCircleIcon class="h-12 w-12 text-rosatom-700" />
+                  </div>
+                  <p class="mt-4 text-lg font-semibold text-white">Начать просмотр</p>
+                  <p class="mt-1 text-sm text-white/60">Длительность: {{ formatTime(videoDuration) }}</p>
+                </div>
+                <iframe
+                  :src="videoStarted || !videoDuration || isCompleted ? getVideoEmbedUrl(block) : ''"
+                  class="h-full w-full"
+                  title="Video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowfullscreen
                 />
               </div>
-              <p v-if="!videoWatchComplete" class="mt-2 text-xs text-gray-400">
-                Таймер останавливается при переключении на другую вкладку
-              </p>
-            </div>
-          </div>
+              <p v-else class="text-gray-400">Видео недоступно</p>
 
-          <div v-else class="py-12 text-center text-gray-400">
-            Контент не найден
+              <div v-if="videoDuration && !isCompleted && videoStarted" class="mt-4">
+                <div class="flex items-center justify-between text-sm text-gray-600">
+                  <div class="flex items-center gap-2">
+                    <PlayCircleIcon class="h-5 w-5" />
+                    <span>Просмотрено: {{ formatTime(watchedSeconds) }} / {{ formatTime(videoDuration) }}</span>
+                  </div>
+                  <span v-if="!videoWatchComplete" class="text-xs text-gray-400">
+                    Осталось: {{ formatTime(Math.max(0, videoDuration - watchedSeconds)) }}
+                  </span>
+                </div>
+                <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                  <div
+                    class="h-full rounded-full transition-all duration-500"
+                    :class="videoWatchComplete ? 'bg-accent-green' : 'bg-rosatom-500'"
+                    :style="{ width: videoProgressPercent + '%' }"
+                  />
+                </div>
+                <p v-if="!videoWatchComplete" class="mt-2 text-xs text-gray-400">
+                  Таймер останавливается при переключении на другую вкладку
+                </p>
+              </div>
+            </div>
+
+            <div v-else class="py-6 text-center text-gray-400">
+              Контент не найден
+            </div>
           </div>
         </div>
 
         <!-- Mark as Complete -->
-        <div v-if="stage?.type !== 'test' && stage?.type !== 'assignment' && !isCompleted" class="mt-8">
+        <div v-if="!hasAutoCompleteBlock && !isCompleted" class="mt-8">
           <RButton
             v-if="!videoDuration || videoWatchComplete"
             variant="primary"
@@ -170,6 +196,7 @@ const props = defineProps({
   profile: { type: Object, default: () => ({}) },
   course: { type: Object, required: true },
   stage: { type: Object, required: true },
+  blocks: { type: Array, default: () => [] },
   linkedTest: { type: Object, default: null },
   linkedAssignment: { type: Object, default: null },
   linkedVideo: { type: Object, default: null },
@@ -179,6 +206,29 @@ const props = defineProps({
 
 const scormFrame = ref(null)
 
+const displayBlocks = computed(() => {
+  if (props.blocks?.length) return props.blocks
+  return [{
+    type: props.stage?.type || 'content',
+    content: props.stage?.content,
+    scorm_package: props.stage?.scorm_package,
+    lms_test_id: props.stage?.lms_test_id,
+    lms_assignment_id: props.stage?.lms_assignment_id,
+    lms_video_id: props.stage?.lms_video_id,
+    test: props.linkedTest,
+    assignment: props.linkedAssignment,
+    video: props.linkedVideo,
+  }]
+})
+
+const hasAutoCompleteBlock = computed(() => {
+  return displayBlocks.value.some(b => b.type === 'test' || b.type === 'assignment')
+})
+
+const firstVideoBlock = computed(() => {
+  return displayBlocks.value.find(b => b.type === 'video')
+})
+
 // ── Video watch tracking ──
 const watchedSeconds = ref(0)
 const isVideoTimerRunning = ref(false)
@@ -187,8 +237,9 @@ let videoTimerInterval = null
 let heartbeatInterval = null
 
 const videoDuration = computed(() => {
-  if (props.stage?.type !== 'video') return 0
-  return props.linkedVideo?.duration_seconds ?? 0
+  const vb = firstVideoBlock.value
+  if (!vb) return 0
+  return vb.video?.duration_seconds ?? props.linkedVideo?.duration_seconds ?? 0
 })
 
 const videoWatchComplete = computed(() => {
@@ -260,6 +311,17 @@ function handleVisibilityChange() {
   }
 }
 
+function getVideoEmbedUrl(block) {
+  const url = block.video?.url || block.content || props.linkedVideo?.url || props.stage?.content
+  if (!url) return ''
+  const rutube = url.match(/rutube\.ru\/video\/([a-zA-Z0-9]+)/)
+  if (rutube) return `https://rutube.ru/play/embed/${rutube[1]}`
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\s]+)/)
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`
+  if (url.startsWith('http')) return url
+  return ''
+}
+
 const allStages = computed(() => {
   if (props.stages?.length) return props.stages
   return props.course?.stages || []
@@ -290,22 +352,10 @@ const isCompleted = computed(() => {
   return props.progress?.status === 'completed' || props.progress?.is_completed
 })
 
-const videoEmbedUrl = computed(() => {
-  const url = props.linkedVideo?.url || props.stage?.content
-  if (!url) return ''
-  const rutube = url.match(/rutube\.ru\/video\/([a-zA-Z0-9]+)/)
-  if (rutube) return `https://rutube.ru/play/embed/${rutube[1]}`
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\s]+)/)
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}`
-  if (url.startsWith('http')) return url
-  return ''
-})
-
 // ── SCORM API Adapter ──
 let scormData = {}
 
 function createScormApi() {
-  // SCORM 1.2 API
   const API = {
     LMSInitialize: () => { return 'true' },
     LMSFinish: () => { saveScormData(); return 'true' },
@@ -317,7 +367,6 @@ function createScormApi() {
     LMSGetDiagnostic: () => 'No diagnostic',
   }
 
-  // SCORM 2004 API
   const API_1484_11 = {
     Initialize: () => 'true',
     Terminate: () => { saveScormData(); return 'true' },
@@ -342,15 +391,17 @@ function saveScormData() {
   axios.post(scormEndpoint, { scorm_data: scormData }).catch(() => {})
 }
 
+const hasScormBlock = computed(() => displayBlocks.value.some(b => b.type === 'scorm'))
+
 onMounted(() => {
-  if (props.stage?.type === 'scorm') {
+  if (hasScormBlock.value) {
     if (props.progress?.scorm_data) {
       scormData = { ...props.progress.scorm_data }
     }
     createScormApi()
   }
 
-  if (props.stage?.type === 'video' && videoDuration.value) {
+  if (firstVideoBlock.value && videoDuration.value) {
     watchedSeconds.value = props.progress?.watched_seconds ?? 0
     if (watchedSeconds.value > 0) {
       videoStarted.value = true
@@ -363,7 +414,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (props.stage?.type === 'scorm') {
+  if (hasScormBlock.value) {
     if (window.API) delete window.API
     if (window.API_1484_11) delete window.API_1484_11
   }

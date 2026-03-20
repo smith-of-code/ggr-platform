@@ -8,6 +8,7 @@ use App\Models\Lms\LmsCourseModule;
 use App\Models\Lms\LmsCourseStage;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsRole;
+use App\Models\Lms\LmsStageBlock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,7 +67,7 @@ class CourseController extends Controller
     {
         $this->ensureCourseBelongsToEvent($course, $event);
 
-        $course->load(['stages', 'modules.stages', 'roleAccess']);
+        $course->load(['stages.blocks', 'modules.stages.blocks', 'roleAccess']);
 
         return Inertia::render('Lms/Admin/Courses/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -116,7 +117,7 @@ class CourseController extends Controller
 
         $modules = LmsCourseModule::whereIn('lms_course_id', $courseIds)
             ->when($q, fn ($query) => $query->where('title', 'ilike', "%{$q}%"))
-            ->with(['course:id,title', 'stages'])
+            ->with(['course:id,title', 'stages.blocks'])
             ->orderBy('title')
             ->limit(20)
             ->get(['id', 'lms_course_id', 'title', 'description', 'position', 'available_from', 'available_to', 'unlock_type']);
@@ -131,7 +132,7 @@ class CourseController extends Controller
 
         $stages = LmsCourseStage::whereIn('lms_course_id', $courseIds)
             ->when($q, fn ($query) => $query->where('title', 'ilike', "%{$q}%"))
-            ->with(['course:id,title', 'module:id,title'])
+            ->with(['course:id,title', 'module:id,title', 'blocks'])
             ->orderBy('title')
             ->limit(20)
             ->get();
@@ -245,6 +246,12 @@ class CourseController extends Controller
             'duration_minutes' => ['nullable', 'integer', 'min:1'],
         ];
 
+        $blockRules = [
+            'type' => ['required', 'string', 'in:content,scorm,test,assignment,video'],
+            'content' => ['nullable', 'string'],
+            'position' => ['nullable', 'integer'],
+        ];
+
         $rules = [
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255'],
@@ -265,10 +272,16 @@ class CourseController extends Controller
         ];
 
         $stageRules['source_stage_id'] = ['nullable', 'integer', 'exists:lms_course_stages,id'];
+        $stageRules['blocks'] = ['nullable', 'array'];
 
         foreach ($stageRules as $field => $fieldRules) {
             $rules["modules.*.stages.*.{$field}"] = $fieldRules;
             $rules["stages.*.{$field}"] = $fieldRules;
+        }
+
+        foreach ($blockRules as $field => $fieldRules) {
+            $rules["modules.*.stages.*.blocks.*.{$field}"] = $fieldRules;
+            $rules["stages.*.blocks.*.{$field}"] = $fieldRules;
         }
 
         return $rules;
@@ -303,12 +316,24 @@ class CourseController extends Controller
 
     private function createStage(LmsCourse $course, array $stage, int $index, ?int $moduleId): void
     {
+        $blocks = $stage['blocks'] ?? [];
+
+        $primaryType = null;
+        $primaryContent = null;
+        if (!empty($blocks)) {
+            $primaryType = $blocks[0]['type'] ?? 'content';
+            $primaryContent = $blocks[0]['content'] ?? null;
+        } else {
+            $primaryType = $stage['type'] ?? 'content';
+            $primaryContent = $stage['content'] ?? null;
+        }
+
         $data = [
             'lms_course_id' => $course->id,
             'lms_course_module_id' => $moduleId,
             'title' => $stage['title'],
-            'type' => $stage['type'] ?? null,
-            'content' => $stage['content'] ?? null,
+            'type' => $primaryType,
+            'content' => $primaryContent,
             'position' => $stage['position'] ?? $index,
             'is_locked' => $stage['is_locked'] ?? false,
             'available_from' => $stage['available_from'] ?? null,
@@ -316,9 +341,37 @@ class CourseController extends Controller
             'source_stage_id' => $stage['source_stage_id'] ?? null,
         ];
 
-        $type = $stage['type'] ?? null;
-        $content = $stage['content'] ?? null;
+        $this->applyTypeFields($data, $primaryType, $primaryContent);
 
+        $stageModel = LmsCourseStage::create($data);
+
+        if (!empty($blocks)) {
+            foreach ($blocks as $bIndex => $block) {
+                $blockData = [
+                    'lms_course_stage_id' => $stageModel->id,
+                    'type' => $block['type'] ?? 'content',
+                    'content' => $block['content'] ?? null,
+                    'position' => $block['position'] ?? $bIndex,
+                ];
+                $this->applyBlockTypeFields($blockData, $block['type'] ?? 'content', $block['content'] ?? null);
+                LmsStageBlock::create($blockData);
+            }
+        } else {
+            LmsStageBlock::create([
+                'lms_course_stage_id' => $stageModel->id,
+                'type' => $primaryType ?? 'content',
+                'content' => $primaryContent,
+                'position' => 0,
+                'lms_test_id' => $data['lms_test_id'] ?? null,
+                'lms_assignment_id' => $data['lms_assignment_id'] ?? null,
+                'lms_video_id' => $data['lms_video_id'] ?? null,
+                'scorm_package' => $data['scorm_package'] ?? null,
+            ]);
+        }
+    }
+
+    private function applyTypeFields(array &$data, ?string $type, ?string $content): void
+    {
         if ($type === 'test' && $content && is_numeric($content)) {
             $data['lms_test_id'] = (int) $content;
         }
@@ -331,8 +384,22 @@ class CourseController extends Controller
         if ($type === 'scorm' && $content) {
             $data['scorm_package'] = $content;
         }
+    }
 
-        LmsCourseStage::create($data);
+    private function applyBlockTypeFields(array &$data, string $type, ?string $content): void
+    {
+        if ($type === 'test' && $content && is_numeric($content)) {
+            $data['lms_test_id'] = (int) $content;
+        }
+        if ($type === 'assignment' && $content && is_numeric($content)) {
+            $data['lms_assignment_id'] = (int) $content;
+        }
+        if ($type === 'video' && $content && is_numeric($content)) {
+            $data['lms_video_id'] = (int) $content;
+        }
+        if ($type === 'scorm' && $content) {
+            $data['scorm_package'] = $content;
+        }
     }
 
     private function ensureCourseBelongsToEvent(LmsCourse $course, LmsEvent $event): void

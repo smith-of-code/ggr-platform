@@ -22,12 +22,28 @@ class StageController extends Controller
             abort(404);
         }
         $user = auth()->user();
-        $stage->load(['test', 'assignment', 'video']);
+        $stage->load(['test', 'assignment', 'video', 'blocks.test', 'blocks.assignment', 'blocks.video']);
         $progress = LmsStageProgress::where('lms_course_stage_id', $stage->id)
             ->where('user_id', $user->id)
             ->first();
 
         $allStages = $course->stages()->orderBy('position')->get(['id', 'title', 'type', 'position']);
+
+        $blocks = $stage->blocks->map(function ($block) {
+            return [
+                'id' => $block->id,
+                'type' => $block->type,
+                'content' => $block->content,
+                'scorm_package' => $block->scorm_package,
+                'lms_test_id' => $block->lms_test_id,
+                'lms_assignment_id' => $block->lms_assignment_id,
+                'lms_video_id' => $block->lms_video_id,
+                'position' => $block->position,
+                'test' => $block->test?->only(['id', 'title']),
+                'assignment' => $block->assignment?->only(['id', 'title']),
+                'video' => $block->video?->only(['id', 'title', 'url', 'source', 'duration_seconds']),
+            ];
+        });
 
         return Inertia::render('Lms/Courses/Stage', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
@@ -36,6 +52,7 @@ class StageController extends Controller
                 'id', 'title', 'description', 'type', 'content',
                 'scorm_package', 'lms_test_id', 'lms_assignment_id', 'lms_video_id',
             ]),
+            'blocks' => $blocks,
             'stages' => $allStages,
             'linkedTest' => $stage->test?->only(['id', 'title']),
             'linkedAssignment' => $stage->assignment?->only(['id', 'title']),

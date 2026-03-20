@@ -257,6 +257,7 @@ function handleModuleSelect(mod) {
     content: s.content ?? '',
     position: s.position ?? 0,
     source_stage_id: s.id,
+    blocks: stageBlocksFromServer(s),
   }))
 }
 
@@ -275,14 +276,30 @@ function handleStageSelect(stage) {
   target.type = stage.type || 'content'
   target.content = stage.content ?? ''
   target.source_stage_id = stage.id
+  target.blocks = stageBlocksFromServer(stage)
+}
+
+function emptyBlock() {
+  return { type: 'content', content: '', position: 0 }
 }
 
 function emptyStage() {
-  return { title: '', type: 'content', content: '', position: 0 }
+  return { title: '', type: 'content', content: '', position: 0, blocks: [emptyBlock()] }
 }
 
 function emptyModule() {
   return { title: '', description: '', available_from: '', available_to: '', stages: [emptyStage()] }
+}
+
+function stageBlocksFromServer(s) {
+  if (s.blocks?.length) {
+    return s.blocks.map(b => ({
+      type: b.type || 'content',
+      content: b.content ?? '',
+      position: b.position ?? 0,
+    }))
+  }
+  return [{ type: s.type || 'content', content: s.content ?? '', position: 0 }]
 }
 
 function buildModules() {
@@ -299,6 +316,7 @@ function buildModules() {
         content: s.content ?? '',
         position: s.position ?? 0,
         source_stage_id: s.source_stage_id ?? null,
+        blocks: stageBlocksFromServer(s),
       })),
     }))
   }
@@ -315,6 +333,7 @@ function buildOrphanStages() {
         content: s.content ?? '',
         position: s.position ?? 0,
         source_stage_id: s.source_stage_id ?? null,
+        blocks: stageBlocksFromServer(s),
       }))
   }
   return [emptyStage()]
@@ -405,7 +424,11 @@ function moveStage(idx, delta) {
 function submit() {
   const filterStages = (arr) => arr
     .filter(s => s.title?.trim())
-    .map((s, i) => ({ ...s, position: i }))
+    .map((s, i) => ({
+      ...s,
+      position: i,
+      blocks: (s.blocks || []).map((b, bi) => ({ ...b, position: bi })),
+    }))
 
   const modules = form.modules
     .filter(m => m.title?.trim())

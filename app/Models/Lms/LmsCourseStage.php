@@ -69,6 +69,12 @@ class LmsCourseStage extends Model
         return $this->belongsTo(self::class, 'source_stage_id');
     }
 
+    /** @return HasMany<LmsStageBlock> */
+    public function blocks(): HasMany
+    {
+        return $this->hasMany(LmsStageBlock::class, 'lms_course_stage_id')->orderBy('position');
+    }
+
     /** @return HasMany<LmsStageProgress> */
     public function progress(): HasMany
     {
