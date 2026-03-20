@@ -205,6 +205,7 @@ const routeMap = {
   'lms.gamification.leaderboard': 'lms.gamification.leaderboard',
   'lms.leader.dashboard': 'lms.leader.dashboard',
   'lms.admin': 'lms.admin.courses.index',
+  'lms.profile.edit': 'lms.profile.edit',
 }
 
 function onSelect(itemId) {
