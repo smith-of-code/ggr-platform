@@ -39,12 +39,13 @@ class AssignmentController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'template_file' => ['nullable', 'string', 'max:500'],
-            'completion_mode' => ['nullable', 'string'],
+            'completion_mode' => ['sometimes', 'string', 'in:on_submit,on_review'],
             'deadline' => ['nullable', 'date'],
         ]);
 
         $validated['lms_event_id'] = $event->id;
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['completion_mode'] ??= 'on_review';
 
         LmsAssignment::create($validated);
 
@@ -85,11 +86,12 @@ class AssignmentController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'template_file' => ['nullable', 'string', 'max:500'],
-            'completion_mode' => ['nullable', 'string'],
+            'completion_mode' => ['sometimes', 'string', 'in:on_submit,on_review'],
             'deadline' => ['nullable', 'date'],
         ]);
 
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['completion_mode'] ??= $assignment->completion_mode;
 
         $assignment->update($validated);
 
