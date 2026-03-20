@@ -67,7 +67,7 @@ class CourseController extends Controller
         });
 
         return Inertia::render('Lms/Courses/Index', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'courses' => $coursesData,
             'filters' => $request->only(['search']),
         ]);
@@ -125,7 +125,7 @@ class CourseController extends Controller
         })->values();
 
         return Inertia::render('Lms/Courses/Show', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'starts_at', 'ends_at']),
             'enrollment' => $enrollment?->only(['id', 'status', 'completed_at']),
             'modules' => $modules,

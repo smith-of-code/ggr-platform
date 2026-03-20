@@ -21,11 +21,29 @@ class LmsEvent extends Model
         'auth_method',
         'sso_provider_url',
         'is_active',
+        'menu_config',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'menu_config' => 'array',
     ];
+
+    public const DEFAULT_MENU_CONFIG = [
+        'courses' => true,
+        'trajectories' => true,
+        'tests' => true,
+        'assignments' => true,
+        'leaderboard' => true,
+        'videos' => true,
+        'kb' => true,
+        'materials' => true,
+    ];
+
+    public function getMenuConfigAttribute($value): array
+    {
+        return array_merge(self::DEFAULT_MENU_CONFIG, $value ? json_decode($value, true) : []);
+    }
 
     /** @return HasMany<LmsProfile> */
     public function profiles(): HasMany

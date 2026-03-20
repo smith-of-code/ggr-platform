@@ -38,7 +38,7 @@ class VideoController extends Controller
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
         return Inertia::render('Lms/Videos/Index', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'videos' => $videos,
@@ -66,7 +66,7 @@ class VideoController extends Controller
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
         return Inertia::render('Lms/Videos/Show', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'video' => $video->only(['id', 'title', 'description', 'source', 'url', 'file_path', 'thumbnail']),

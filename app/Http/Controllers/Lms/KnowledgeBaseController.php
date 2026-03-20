@@ -43,7 +43,7 @@ class KnowledgeBaseController extends Controller
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
         return Inertia::render('Lms/KnowledgeBase/Index', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'sections' => $sectionsData,
@@ -71,7 +71,7 @@ class KnowledgeBaseController extends Controller
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
         return Inertia::render('Lms/KnowledgeBase/Show', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'section' => [

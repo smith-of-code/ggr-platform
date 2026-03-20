@@ -63,7 +63,7 @@ class DashboardController extends Controller
             ->get(['id', 'points', 'reason', 'created_at']);
 
         return Inertia::render('Lms/Dashboard', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'profile' => $profile,
             'courseProgress' => $courseProgress,
             'activeTrajectories' => $activeTrajectories,

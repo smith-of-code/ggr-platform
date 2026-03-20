@@ -23,7 +23,7 @@ class ProfileController extends Controller
             );
 
         return Inertia::render('Lms/Profile/Edit', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'profile' => $profile,
             'user' => $user->only(['name', 'email']),
         ]);

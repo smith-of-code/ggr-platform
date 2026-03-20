@@ -48,7 +48,7 @@ class LeaderController extends Controller
         $user = auth()->user();
 
         return Inertia::render('Lms/Leader/Dashboard', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'totalParticipants' => $totalParticipants,
@@ -92,7 +92,7 @@ class LeaderController extends Controller
         $user = auth()->user();
 
         return Inertia::render('Lms/Leader/Groups', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'groups' => $stats,
@@ -132,7 +132,7 @@ class LeaderController extends Controller
         $user = auth()->user();
 
         return Inertia::render('Lms/Leader/GroupDetail', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'group' => $group->only(['id', 'title']),
@@ -175,7 +175,7 @@ class LeaderController extends Controller
             ->get();
 
         return Inertia::render('Lms/Leader/UserProgress', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'courseProgress' => $courseProgress,

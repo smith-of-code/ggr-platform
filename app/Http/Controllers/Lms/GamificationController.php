@@ -68,7 +68,7 @@ class GamificationController extends Controller
         }
 
         return Inertia::render('Lms/Gamification/Leaderboard', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'userLeaderboard' => $userLeaderboardData,
@@ -91,7 +91,7 @@ class GamificationController extends Controller
         $profile = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
         return Inertia::render('Lms/Gamification/MyPoints', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'points' => $points,

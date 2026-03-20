@@ -151,18 +151,25 @@ const icons = {
   admin: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.049.58.025 1.193-.14 1.743" /></svg>',
 }
 
+const menuConfig = computed(() => {
+  const defaults = { courses: true, trajectories: true, tests: true, assignments: true, leaderboard: true, videos: true, kb: true, materials: true }
+  return { ...defaults, ...(props.event?.menu_config || {}) }
+})
+
 const sidebarItems = computed(() => {
+  const mc = menuConfig.value
   const items = [
     { id: 'lms.dashboard', label: 'Главная', icon: icons.home },
-    { id: 'lms.courses', label: 'Курсы', icon: icons.courses },
-    { id: 'lms.trajectories', label: 'Траектории', icon: icons.trajectories },
-    { id: 'lms.tests', label: 'Тестирование', icon: icons.tests },
-    { id: 'lms.assignments', label: 'Задания', icon: icons.assignments },
-    { id: 'lms.gamification.leaderboard', label: 'Рейтинг', icon: icons.leaderboard },
-    { id: 'lms.videos', label: 'Видеоматериалы', icon: icons.videos },
-    { id: 'lms.kb', label: 'База знаний', icon: icons.kb },
-    { id: 'lms.materials', label: 'Материалы', icon: icons.materials },
   ]
+
+  if (mc.courses) items.push({ id: 'lms.courses', label: 'Курсы', icon: icons.courses })
+  if (mc.trajectories) items.push({ id: 'lms.trajectories', label: 'Траектории', icon: icons.trajectories })
+  if (mc.tests) items.push({ id: 'lms.tests', label: 'Тестирование', icon: icons.tests })
+  if (mc.assignments) items.push({ id: 'lms.assignments', label: 'Задания', icon: icons.assignments })
+  if (mc.leaderboard) items.push({ id: 'lms.gamification.leaderboard', label: 'Рейтинг', icon: icons.leaderboard })
+  if (mc.videos) items.push({ id: 'lms.videos', label: 'Видеоматериалы', icon: icons.videos })
+  if (mc.kb) items.push({ id: 'lms.kb', label: 'База знаний', icon: icons.kb })
+  if (mc.materials) items.push({ id: 'lms.materials', label: 'Материалы', icon: icons.materials })
 
   if (showLeaderCabinet.value) {
     items.push({ id: 'lms.leader.dashboard', label: 'Кабинет лидера', icon: icons.leader })

@@ -32,12 +32,13 @@ class EventController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:lms_events,slug'],
             'description' => ['nullable', 'string'],
-            'auth_method' => ['nullable', 'string'],
-            'sso_provider_url' => ['nullable', 'string', 'url'],
+            'menu_config' => ['nullable', 'array'],
+            'menu_config.*' => ['boolean'],
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['auth_method'] = 'email';
 
         LmsEvent::create($validated);
 
@@ -64,8 +65,8 @@ class EventController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:lms_events,slug,' . $event->id],
             'description' => ['nullable', 'string'],
-            'auth_method' => ['nullable', 'string'],
-            'sso_provider_url' => ['nullable', 'string', 'url'],
+            'menu_config' => ['nullable', 'array'],
+            'menu_config.*' => ['boolean'],
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);

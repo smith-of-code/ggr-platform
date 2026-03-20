@@ -30,7 +30,7 @@ class TestController extends Controller
         $tests = $query->paginate(12)->withQueryString();
 
         return Inertia::render('Lms/Tests/Index', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'tests' => $tests,
             'filters' => $request->only(['search']),
         ]);
@@ -48,7 +48,7 @@ class TestController extends Controller
             ->get(['id', 'score', 'max_score', 'percentage', 'passed', 'started_at', 'finished_at']);
 
         return Inertia::render('Lms/Tests/Show', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'test' => $test->only([
                 'id', 'title', 'description',
                 'time_limit_minutes', 'shuffle_questions', 'shuffle_answers',
@@ -224,7 +224,7 @@ class TestController extends Controller
         }
 
         return Inertia::render('Lms/Tests/Result', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'test' => $test->only(['id', 'title', 'passing_score', 'show_correct_answers']),
             'attempt' => $attempt->only(['id', 'score', 'max_score', 'percentage', 'passed', 'started_at', 'finished_at']),
         ]);

@@ -42,7 +42,7 @@ class AssignmentController extends Controller
         $assignmentsPaginator->setCollection($assignmentsWithStatus);
 
         return Inertia::render('Lms/Assignments/Index', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'assignments' => $assignmentsPaginator,
             'filters' => $request->only(['search']),
         ]);
@@ -62,7 +62,7 @@ class AssignmentController extends Controller
             ->first();
 
         return Inertia::render('Lms/Assignments/Show', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'assignment' => $assignment->only(['id', 'title', 'description', 'template_file', 'deadline']),
             'submission' => $submission?->load('reviews'),
         ]);

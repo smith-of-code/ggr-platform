@@ -30,7 +30,7 @@ class StageController extends Controller
         $allStages = $course->stages()->orderBy('position')->get(['id', 'title', 'type', 'position']);
 
         return Inertia::render('Lms/Courses/Stage', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'course' => $course->only(['id', 'slug', 'title']),
             'stage' => $stage->only([
                 'id', 'title', 'description', 'type', 'content',

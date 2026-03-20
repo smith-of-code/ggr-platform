@@ -60,7 +60,7 @@ class TrajectoryController extends Controller
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
         return Inertia::render('Lms/Trajectories/Index', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'trajectories' => $trajectoriesWithStatus,
@@ -99,7 +99,7 @@ class TrajectoryController extends Controller
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
         return Inertia::render('Lms/Trajectories/Show', [
-            'event' => $event->only(['id', 'slug', 'title']),
+            'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'trajectory' => $trajectory->only(['id', 'title', 'description']),

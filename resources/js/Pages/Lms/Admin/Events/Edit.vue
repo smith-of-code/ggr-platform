@@ -28,22 +28,15 @@
           <label class="mb-2 block text-sm font-medium text-gray-700">Описание</label>
           <textarea v-model="form.description" rows="4" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" placeholder="Описание события" />
         </div>
-        <div>
-          <label class="mb-2 block text-sm font-medium text-gray-700">Способ авторизации</label>
-          <select v-model="form.auth_method" class="w-full cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20">
-            <option value="email">Email</option>
-            <option value="sso">SSO</option>
-          </select>
-        </div>
-        <RInput
-          v-if="form.auth_method === 'sso'"
-          v-model="form.sso_provider_url"
-          label="URL SSO провайдера"
-          type="url"
-          placeholder="https://..."
-          :error="form.errors.sso_provider_url"
-        />
         <RCheckbox v-model="form.is_active" label="Активно" />
+
+        <div>
+          <label class="mb-3 block text-sm font-medium text-gray-700">Разделы меню</label>
+          <p class="mb-4 text-xs text-gray-400">Выберите, какие разделы будут доступны участникам этого события</p>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <RCheckbox v-for="s in menuSections" :key="s.key" v-model="form.menu_config[s.key]" :label="s.label" />
+          </div>
+        </div>
 
         <div class="flex gap-3 border-t border-gray-200 pt-6">
           <RButton type="submit" variant="primary" :loading="form.processing" :disabled="form.processing">
@@ -62,13 +55,25 @@ import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
 const props = defineProps({ event: Object })
 
+const defaultMenu = { courses: true, trajectories: true, tests: true, assignments: true, leaderboard: true, videos: true, kb: true, materials: true }
+
+const menuSections = [
+  { key: 'courses', label: 'Курсы' },
+  { key: 'trajectories', label: 'Траектории' },
+  { key: 'tests', label: 'Тестирование' },
+  { key: 'assignments', label: 'Задания' },
+  { key: 'leaderboard', label: 'Рейтинг' },
+  { key: 'videos', label: 'Видеоматериалы' },
+  { key: 'kb', label: 'База знаний' },
+  { key: 'materials', label: 'Материалы' },
+]
+
 const form = useForm({
   title: props.event?.title ?? '',
   slug: props.event?.slug ?? '',
   description: props.event?.description ?? '',
-  auth_method: props.event?.auth_method ?? 'email',
-  sso_provider_url: props.event?.sso_provider_url ?? '',
   is_active: props.event?.is_active ?? true,
+  menu_config: { ...defaultMenu, ...(props.event?.menu_config || {}) },
 })
 
 function slugify(text) {
