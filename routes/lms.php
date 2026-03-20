@@ -27,8 +27,10 @@ use App\Http\Controllers\Lms\Admin\EnrollmentController as AdminEnrollmentContro
 use App\Http\Controllers\Lms\Admin\GamificationController as AdminGamificationController;
 use App\Http\Controllers\Lms\Admin\InvitationController as AdminInvitationController;
 use App\Http\Controllers\Lms\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Lms\Admin\FormController as AdminFormController;
 use App\Http\Controllers\Lms\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Lms\Admin\UploadController as AdminUploadController;
+use App\Http\Controllers\Lms\FormPublicController;
 use Illuminate\Support\Facades\Route;
 
 // ── LMS Auth ──
@@ -144,5 +146,11 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::post('upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
         Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
         Route::post('reports/send', [AdminReportController::class, 'sendEmail'])->name('reports.send');
+        Route::resource('forms', AdminFormController::class);
+        Route::get('forms/{form}/stats', [AdminFormController::class, 'stats'])->name('forms.stats');
+        Route::post('forms/{form}/create-users', [AdminFormController::class, 'createUsersFromSubmissions'])->name('forms.create-users');
     });
 });
+
+Route::get('/forms/{slug}', [FormPublicController::class, 'show'])->name('forms.public.show');
+Route::post('/forms/{slug}/submit', [FormPublicController::class, 'submit'])->name('forms.public.submit');
