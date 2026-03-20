@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsVideo;
+use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -64,6 +65,8 @@ class VideoController extends Controller
         }
 
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+
+        app(GamificationService::class)->awardPoints($event, $user, 'video_watch', "Видео: {$video->title}");
 
         return Inertia::render('Lms/Videos/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),

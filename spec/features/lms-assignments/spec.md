@@ -4,7 +4,7 @@
 
 ## Описание
 
-Задания с двумя режимами завершения (on_submit / on_review), отправкой работ (текст, ссылки, файлы) и системой рецензирования.
+Задания с двумя режимами завершения (on_submit / on_review), отправкой работ (текст, ссылки, файлы), системой рецензирования и диалогом между участником и преподавателем.
 
 ## Связанные сущности
 
@@ -12,10 +12,11 @@
 - `App\Models\Lms\LmsAssignment`
 - `App\Models\Lms\LmsAssignmentSubmission`
 - `App\Models\Lms\LmsAssignmentReview`
+- `App\Models\Lms\LmsAssignmentComment`
 
 ### Контроллеры
-- `App\Http\Controllers\Lms\AssignmentController` — участник: список, просмотр, отправка, обновление
-- `App\Http\Controllers\Lms\Admin\AssignmentController` — админ: CRUD, рецензирование
+- `App\Http\Controllers\Lms\AssignmentController` — участник: список, просмотр, отправка, обновление, комментарии
+- `App\Http\Controllers\Lms\Admin\AssignmentController` — админ: CRUD, рецензирование, комментарии
 
 ### Страницы
 - `Pages/Lms/Assignments/Index.vue`, `Show.vue`
@@ -55,8 +56,18 @@
 | lms_assignment_submission_id | FK → lms_assignment_submissions | cascade delete |
 | reviewer_id | FK → users | cascade delete |
 | comment | text | nullable |
-| files | json | nullable |
+| files | json | nullable, массив `{name, path}` |
 | decision | enum(approve, revision, reject) | NOT NULL |
+| timestamps | | |
+
+### lms_assignment_comments
+| Колонка | Тип | Ограничения |
+|---|---|---|
+| id | bigint | PK |
+| lms_assignment_submission_id | FK → lms_assignment_submissions | cascade delete |
+| user_id | FK → users | cascade delete |
+| text | text | NOT NULL |
+| files | json | nullable, массив `{name, path}` |
 | timestamps | | |
 
 ## Роуты
@@ -67,13 +78,15 @@
 | GET | `/assignments` | AssignmentController@index |
 | GET | `/assignments/{assignment}` | AssignmentController@show |
 | POST | `/assignments/{assignment}/submit` | AssignmentController@submit |
+| POST | `/assignments/{assignment}/comment` | AssignmentController@comment |
 | PATCH | `/assignments/{assignment}/submissions/{submission}` | AssignmentController@update |
 
-### Админ (prefix: `/lms/{event}/admin`)
+### Админ (prefix: `/lms-admin/{event}`)
 | Метод | URI | Действие |
 |---|---|---|
 | GET/POST/PUT/DELETE | `/assignments` (resource) | Admin\AssignmentController CRUD |
 | POST | `/assignments/{assignment}/submissions/{submission}/review` | Admin\AssignmentController@review |
+| POST | `/assignments/{assignment}/submissions/{submission}/comment` | Admin\AssignmentController@comment |
 
 ## Ключевые workflow
 
@@ -100,12 +113,32 @@
 
 ### Рецензирование (Admin)
 1. Рецензент выносит решение: approve / revision / reject.
-2. Создаётся запись `LmsAssignmentReview`.
-3. Статус submission обновляется: approve→approved, revision→revision, reject→rejected.
+2. Может приложить комментарий и файлы к решению.
+3. Создаётся запись `LmsAssignmentReview` с файлами в формате `[{name, path}]`.
+4. Статус submission обновляется: approve→approved, revision→revision, reject→rejected.
+
+### Диалог по работе (Участник и Преподаватель)
+
+Между участником и преподавателем ведётся свободный диалог в рамках submission:
+
+1. **Комментарий участника**: `POST /assignments/{assignment}/comment` — текст + до 5 файлов (до 20 МБ каждый).
+2. **Комментарий преподавателя**: `POST /lms-admin/{event}/assignments/{assignment}/submissions/{submission}/comment` — текст + до 5 файлов.
+3. Файлы сохраняются в `storage/app/public/assignment-comments/{assignment_id}/` в формате `[{name, path}]`.
+4. Комментарии доступны обеим сторонам: участник видит в `Show.vue`, преподаватель — в `Submissions.vue`.
+
+#### Как отображается диалог
+
+В UI все сообщения (reviews + comments) объединяются в единую хронологическую ленту:
+- **Рецензии** (amber) — с бейджем решения (Принято / На доработку / Отклонено)
+- **Комментарии участника** (blue) — с меткой «участник»
+- **Комментарии преподавателя** (rosatom/фиолетовый) — с меткой «преподаватель»
+
+Каждое сообщение показывает: имя автора, текст, прикреплённые файлы (со ссылками на скачивание), дату.
 
 ### Жизненный цикл статусов submission
 ```
 draft → submitted → [revision ↔ resubmitted → submitted] → approved / rejected
+                     ↕ комментарии в любой момент ↕
 ```
 
 ## Известные проблемы и исправления

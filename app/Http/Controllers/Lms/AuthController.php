@@ -7,6 +7,7 @@ use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsInvitation;
 use App\Models\Lms\LmsProfile;
 use App\Models\User;
+use App\Services\GamificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($validated, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            app(GamificationService::class)->awardPoints($event, Auth::user(), 'login_daily', 'Ежедневный вход');
             return redirect()->route('lms.dashboard', $event);
         }
 

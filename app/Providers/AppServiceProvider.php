@@ -6,6 +6,7 @@ use App\Models\Lms\LmsAssignmentReview;
 use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTestAttempt;
+use App\Models\Lms\LmsTrajectoryEnrollment;
 use App\Observers\LmsProgressObserver;
 use App\Services\GamificationService;
 use App\Services\SettingsService;
@@ -32,5 +33,6 @@ class AppServiceProvider extends ServiceProvider
         LmsCourseEnrollment::updated(fn ($model) => $observer->courseCompleted($model));
         LmsTestAttempt::created(fn ($model) => $observer->testPassed($model));
         LmsAssignmentReview::created(fn ($model) => $observer->assignmentApproved($model));
+        LmsTrajectoryEnrollment::updated(fn ($model) => $observer->trajectoryCompleted($model));
     }
 }

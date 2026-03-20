@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Lms\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsAssignment;
+use App\Models\Lms\LmsAssignmentComment;
 use App\Models\Lms\LmsAssignmentReview;
 use App\Models\Lms\LmsAssignmentSubmission;
 use App\Models\Lms\LmsEvent;
@@ -57,7 +58,7 @@ class AssignmentController extends Controller
         $this->ensureAssignmentBelongsToEvent($assignment, $event);
 
         $submissions = $assignment->submissions()
-            ->with('user:id,name,email')
+            ->with(['user:id,name,email', 'reviews.reviewer:id,name', 'comments.user:id,name'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -118,12 +119,23 @@ class AssignmentController extends Controller
         $validated = $request->validate([
             'decision' => ['required', 'string', 'in:approve,revision,reject'],
             'comment' => ['nullable', 'string'],
+            'files' => ['nullable', 'array', 'max:5'],
+            'files.*' => ['file', 'max:20480'],
         ]);
+
+        $files = [];
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store('assignment-reviews/' . $assignment->id, 'public');
+                $files[] = ['name' => $file->getClientOriginalName(), 'path' => $path];
+            }
+        }
 
         LmsAssignmentReview::create([
             'lms_assignment_submission_id' => $submission->id,
             'reviewer_id' => Auth::id(),
             'comment' => $validated['comment'] ?? null,
+            'files' => $files ?: null,
             'decision' => $validated['decision'],
         ]);
 
@@ -131,6 +143,38 @@ class AssignmentController extends Controller
         $submission->update(['status' => $statusMap[$validated['decision']] ?? $validated['decision']]);
 
         return redirect()->back()->with('success', 'Решение сохранено');
+    }
+
+    public function comment(Request $request, LmsEvent $event, LmsAssignment $assignment, LmsAssignmentSubmission $submission): RedirectResponse
+    {
+        $this->ensureAssignmentBelongsToEvent($assignment, $event);
+
+        if ($submission->lms_assignment_id !== $assignment->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'text' => ['required', 'string', 'max:5000'],
+            'files' => ['nullable', 'array', 'max:5'],
+            'files.*' => ['file', 'max:20480'],
+        ]);
+
+        $files = [];
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store('assignment-comments/' . $assignment->id, 'public');
+                $files[] = ['name' => $file->getClientOriginalName(), 'path' => $path];
+            }
+        }
+
+        LmsAssignmentComment::create([
+            'lms_assignment_submission_id' => $submission->id,
+            'user_id' => Auth::id(),
+            'text' => $validated['text'],
+            'files' => $files ?: null,
+        ]);
+
+        return redirect()->back()->with('success', 'Комментарий добавлен');
     }
 
     private function ensureAssignmentBelongsToEvent(LmsAssignment $assignment, LmsEvent $event): void

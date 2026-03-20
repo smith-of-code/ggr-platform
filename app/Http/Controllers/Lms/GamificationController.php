@@ -38,12 +38,13 @@ class GamificationController extends Controller
 
         $groupIds = $groupPoints->pluck('lms_group_id')->unique()->filter();
         $groups = $groupIds->isNotEmpty()
-            ? \App\Models\Lms\LmsGroup::whereIn('id', $groupIds)->get()->keyBy('id')
+            ? \App\Models\Lms\LmsGroup::whereIn('id', $groupIds)->withCount('members')->get()->keyBy('id')
             : collect();
 
         $groupLeaderboard = $groupPoints->map(function ($row) use ($groups) {
+            $group = $groups->get($row->lms_group_id);
             return [
-                'group' => $groups->get($row->lms_group_id)?->only(['id', 'title']),
+                'group' => $group ? ['id' => $group->id, 'title' => $group->title, 'members_count' => $group->members_count] : null,
                 'total_points' => $row->total_points,
             ];
         });

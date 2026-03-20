@@ -63,28 +63,92 @@
       Создать правило
     </Link>
 
-    <RModal v-model="showManualDialog" title="Начислить баллы" size="md" @update:model-value="(v) => { if (!v) { manualForm.user_ids = []; manualForm.points = 0; manualForm.reason = '' } }">
-      <form @submit.prevent="submitManual" class="space-y-4">
+    <!-- Manual points dialog -->
+    <RModal v-model="showManualDialog" title="Начислить баллы" size="lg" @update:model-value="onDialogClose">
+      <form @submit.prevent="submitManual" class="space-y-5">
+        <!-- Search & filter -->
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700">Участники</label>
-          <div class="max-h-40 space-y-2 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 p-3">
-            <div v-for="u in users" :key="u.id" class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-gray-100">
-              <RCheckbox
-                :model-value="manualForm.user_ids.includes(u.id)"
-                @update:model-value="(v) => { if (v) manualForm.user_ids.push(u.id); else manualForm.user_ids = manualForm.user_ids.filter(id => id !== u.id) }"
-                :label="`${u.name} (${u.email})`"
+          <div class="mb-3 flex gap-2">
+            <div class="relative flex-1">
+              <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+              <input
+                v-model="searchQuery"
+                type="text"
+                class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+                placeholder="Поиск по ФИО или email..."
               />
             </div>
+            <select
+              v-model="roleFilter"
+              class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+            >
+              <option value="">Все роли</option>
+              <option v-for="r in availableRoles" :key="r" :value="r">{{ r }}</option>
+            </select>
           </div>
-          <p v-if="users?.length === 0" class="text-sm text-gray-500">Нет участников в событии</p>
+
+          <!-- Select all / count -->
+          <div class="mb-2 flex items-center justify-between">
+            <label class="flex cursor-pointer items-center gap-2">
+              <RCheckbox
+                :model-value="allFilteredSelected"
+                @update:model-value="toggleAllFiltered"
+              />
+              <span class="text-xs text-gray-500">
+                Выбрать всех{{ filteredUsers.length !== users.length ? ` (${filteredUsers.length} из ${users.length})` : ` (${users.length})` }}
+              </span>
+            </label>
+            <span v-if="manualForm.user_ids.length > 0" class="text-xs font-medium text-rosatom-600">
+              Выбрано: {{ manualForm.user_ids.length }}
+            </span>
+          </div>
+
+          <!-- User list -->
+          <div class="max-h-56 space-y-0.5 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 p-2">
+            <div
+              v-for="u in filteredUsers"
+              :key="u.id"
+              :class="[
+                'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition',
+                manualForm.user_ids.includes(u.id) ? 'bg-rosatom-50 ring-1 ring-rosatom-200' : 'hover:bg-gray-100',
+              ]"
+              @click="toggleUser(u.id)"
+            >
+              <RCheckbox
+                :model-value="manualForm.user_ids.includes(u.id)"
+                @update:model-value="toggleUser(u.id)"
+                @click.stop
+              />
+              <RAvatar :name="u.name" size="sm" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium text-gray-900">{{ u.name }}</p>
+                <p class="truncate text-xs text-gray-400">{{ u.email }}</p>
+              </div>
+              <RBadge variant="neutral" size="sm">{{ u.role }}</RBadge>
+            </div>
+            <div v-if="filteredUsers.length === 0" class="px-3 py-6 text-center text-sm text-gray-400">
+              {{ searchQuery || roleFilter ? 'Никого не найдено' : 'Нет участников в событии' }}
+            </div>
+          </div>
         </div>
-        <RInput v-model.number="manualForm.points" label="Баллы" type="number" required />
+
+        <div class="grid grid-cols-2 gap-4">
+          <RInput v-model.number="manualForm.points" label="Баллы" type="number" required />
+          <div />
+        </div>
         <RInput v-model="manualForm.reason" label="Причина" required placeholder="За что начислены баллы" />
       </form>
       <template #footer>
-        <RButton variant="outline" @click="showManualDialog.value = false">Отмена</RButton>
-        <RButton variant="primary" :disabled="manualForm.user_ids.length === 0 || !manualForm.points || !manualForm.reason?.trim()" @click="submitManual">
-          Начислить
+        <RButton variant="outline" @click="showManualDialog = false">Отмена</RButton>
+        <RButton
+          variant="primary"
+          :disabled="manualForm.user_ids.length === 0 || !manualForm.points || !manualForm.reason?.trim()"
+          @click="submitManual"
+        >
+          Начислить ({{ manualForm.user_ids.length }})
         </RButton>
       </template>
     </RModal>
@@ -93,21 +157,80 @@
 
 <script setup>
 import { Link, router } from '@inertiajs/vue3'
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
 const props = defineProps({ event: Object, rules: Object, users: Array })
 
 const showManualDialog = ref(false)
+const searchQuery = ref('')
+const roleFilter = ref('')
 const manualForm = reactive({ user_ids: [], points: 0, reason: '' })
+
+const availableRoles = computed(() => {
+  const roles = new Set((props.users || []).map(u => u.role).filter(Boolean))
+  return [...roles].sort()
+})
+
+const filteredUsers = computed(() => {
+  let list = props.users || []
+  const q = searchQuery.value.toLowerCase().trim()
+
+  if (q) {
+    list = list.filter(u =>
+      u.name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q)
+    )
+  }
+
+  if (roleFilter.value) {
+    list = list.filter(u => u.role === roleFilter.value)
+  }
+
+  return list
+})
+
+const allFilteredSelected = computed(() => {
+  if (filteredUsers.value.length === 0) return false
+  return filteredUsers.value.every(u => manualForm.user_ids.includes(u.id))
+})
+
+function toggleAllFiltered(v) {
+  const ids = filteredUsers.value.map(u => u.id)
+  if (v) {
+    const set = new Set([...manualForm.user_ids, ...ids])
+    manualForm.user_ids = [...set]
+  } else {
+    manualForm.user_ids = manualForm.user_ids.filter(id => !ids.includes(id))
+  }
+}
+
+function toggleUser(id) {
+  const idx = manualForm.user_ids.indexOf(id)
+  if (idx >= 0) {
+    manualForm.user_ids.splice(idx, 1)
+  } else {
+    manualForm.user_ids.push(id)
+  }
+}
+
+function onDialogClose(v) {
+  if (!v) resetForm()
+}
+
+function resetForm() {
+  manualForm.user_ids = []
+  manualForm.points = 0
+  manualForm.reason = ''
+  searchQuery.value = ''
+  roleFilter.value = ''
+}
 
 function submitManual() {
   router.post(route('lms.admin.gamification.manual-points', props.event.slug), manualForm, {
     onSuccess: () => {
       showManualDialog.value = false
-      manualForm.user_ids = []
-      manualForm.points = 0
-      manualForm.reason = ''
+      resetForm()
     },
   })
 }

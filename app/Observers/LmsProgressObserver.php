@@ -7,6 +7,7 @@ use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTestAttempt;
 use App\Models\Lms\LmsAssignmentReview;
+use App\Models\Lms\LmsTrajectoryEnrollment;
 use App\Models\User;
 use App\Services\GamificationService;
 
@@ -92,6 +93,30 @@ class LmsProgressObserver
             User::find($submission->user_id),
             'assignment_approved',
             "Задание: {$submission->assignment->title}"
+        );
+    }
+
+    public function trajectoryCompleted(LmsTrajectoryEnrollment $enrollment): void
+    {
+        if ($enrollment->status !== 'completed') {
+            return;
+        }
+
+        $trajectory = $enrollment->trajectory()->first();
+        if (!$trajectory) {
+            return;
+        }
+
+        $event = LmsEvent::find($trajectory->lms_event_id);
+        if (!$event) {
+            return;
+        }
+
+        $this->gamification->awardPoints(
+            $event,
+            User::find($enrollment->user_id),
+            'trajectory_complete',
+            "Траектория: {$trajectory->title}"
         );
     }
 }

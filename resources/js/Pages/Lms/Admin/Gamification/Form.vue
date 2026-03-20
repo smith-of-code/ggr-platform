@@ -16,11 +16,21 @@
           required
           :error="form.errors.title"
         />
-        <RInput
-          v-model="form.action"
-          label="Действие (код)"
-          placeholder="course_completed, test_passed, ..."
-        />
+
+        <div>
+          <label class="mb-2 block text-sm font-medium text-gray-700">Действие (триггер)</label>
+          <select
+            v-model="form.action"
+            class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+          >
+            <option value="">— Без автоматического триггера —</option>
+            <option v-for="(label, key) in actions" :key="key" :value="key">
+              {{ label }} ({{ key }})
+            </option>
+          </select>
+          <p class="mt-1.5 text-xs text-gray-400">Выберите действие для автоматического начисления баллов</p>
+        </div>
+
         <RInput
           v-model.number="form.points"
           label="Баллы *"
@@ -30,7 +40,7 @@
         />
         <RInput
           v-model.number="form.max_times"
-          label="Макс. раз (0 = без ограничений)"
+          label="Макс. раз (пусто = без ограничений)"
           type="number"
         />
         <div class="flex flex-wrap gap-3">
@@ -53,7 +63,7 @@
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
-const props = defineProps({ event: Object, rule: Object })
+const props = defineProps({ event: Object, rule: Object, actions: { type: Object, default: () => ({}) } })
 
 const form = useForm({
   title: props.rule?.title ?? '',

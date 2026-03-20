@@ -73,6 +73,7 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
     Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
     Route::post('/assignments/{assignment}/submit', [AssignmentController::class, 'submit'])->name('assignments.submit');
+    Route::post('/assignments/{assignment}/comment', [AssignmentController::class, 'comment'])->name('assignments.comment');
     Route::patch('/assignments/{assignment}/submissions/{submission}', [AssignmentController::class, 'update'])->name('assignments.update');
 
     // Trajectories
@@ -118,6 +119,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::resource('tests', AdminTestController::class);
         Route::resource('assignments', AdminAssignmentController::class);
         Route::post('assignments/{assignment}/submissions/{submission}/review', [AdminAssignmentController::class, 'review'])->name('assignments.review');
+        Route::post('assignments/{assignment}/submissions/{submission}/comment', [AdminAssignmentController::class, 'comment'])->name('assignments.comment');
         Route::resource('trajectories', AdminTrajectoryController::class);
         Route::resource('videos', AdminVideoController::class);
         Route::resource('kb', AdminKbController::class);

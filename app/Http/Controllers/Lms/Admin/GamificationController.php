@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGamificationPoint;
 use App\Models\Lms\LmsGamificationRule;
+use App\Services\GamificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,7 +17,18 @@ class GamificationController extends Controller
     public function index(LmsEvent $event): Response
     {
         $rules = $event->gamificationRules()->orderBy('created_at', 'desc')->paginate(15);
-        $users = $event->profiles()->with('user:id,name,email')->get()->pluck('user')->filter()->unique('id')->values();
+
+        $profiles = $event->profiles()->with(['user:id,name,email', 'lmsRole:id,name'])->get();
+        $users = $profiles->map(function ($profile) {
+            $user = $profile->user;
+            if (!$user) return null;
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $profile->lmsRole?->name ?? $profile->role ?? '—',
+            ];
+        })->filter()->unique('id')->values();
 
         return Inertia::render('Lms/Admin/Gamification/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -30,6 +42,7 @@ class GamificationController extends Controller
         return Inertia::render('Lms/Admin/Gamification/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'rule' => null,
+            'actions' => GamificationService::$defaultActions,
         ]);
     }
 
@@ -58,6 +71,7 @@ class GamificationController extends Controller
         return Inertia::render('Lms/Admin/Gamification/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'rule' => $gamification,
+            'actions' => GamificationService::$defaultActions,
         ]);
     }
 

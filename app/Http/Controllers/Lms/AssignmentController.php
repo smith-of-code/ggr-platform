@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Lms;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsAssignment;
+use App\Models\Lms\LmsAssignmentComment;
 use App\Models\Lms\LmsAssignmentSubmission;
 use App\Models\Lms\LmsEvent;
 use Illuminate\Http\RedirectResponse;
@@ -58,13 +59,13 @@ class AssignmentController extends Controller
 
         $submission = LmsAssignmentSubmission::where('lms_assignment_id', $assignment->id)
             ->where('user_id', $user->id)
-            ->with('reviews')
+            ->with(['reviews.reviewer:id,name', 'comments.user:id,name'])
             ->first();
 
         return Inertia::render('Lms/Assignments/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'assignment' => $assignment->only(['id', 'title', 'description', 'template_file', 'deadline']),
-            'submission' => $submission?->load('reviews'),
+            'submission' => $submission,
         ]);
     }
 
@@ -101,6 +102,41 @@ class AssignmentController extends Controller
                 'status' => 'submitted',
             ]
         );
+
+        return redirect()->back();
+    }
+
+    public function comment(Request $request, LmsEvent $event, LmsAssignment $assignment): RedirectResponse
+    {
+        if ($assignment->lms_event_id !== $event->id) {
+            abort(404);
+        }
+
+        $user = auth()->user();
+        $submission = LmsAssignmentSubmission::where('lms_assignment_id', $assignment->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'text' => ['required', 'string', 'max:5000'],
+            'files' => ['nullable', 'array', 'max:5'],
+            'files.*' => ['file', 'max:20480'],
+        ]);
+
+        $files = [];
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store('assignment-comments/' . $assignment->id, 'public');
+                $files[] = ['name' => $file->getClientOriginalName(), 'path' => $path];
+            }
+        }
+
+        LmsAssignmentComment::create([
+            'lms_assignment_submission_id' => $submission->id,
+            'user_id' => $user->id,
+            'text' => $validated['text'],
+            'files' => $files ?: null,
+        ]);
 
         return redirect()->back();
     }

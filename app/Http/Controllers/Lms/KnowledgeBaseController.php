@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsKbSection;
 use App\Models\Lms\LmsProfile;
+use App\Services\GamificationService;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -69,6 +70,8 @@ class KnowledgeBaseController extends Controller
 
         $section->load(['children.items', 'items']);
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+
+        app(GamificationService::class)->awardPoints($event, $user, 'kb_view', "БЗ: {$section->title}");
 
         return Inertia::render('Lms/KnowledgeBase/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),

@@ -79,5 +79,8 @@ class GamificationService
         'assignment_approved' => 'Одобрение задания',
         'trajectory_complete' => 'Завершение траектории',
         'login_daily' => 'Ежедневный вход',
+        'video_watch' => 'Просмотр видео',
+        'kb_view' => 'Просмотр базы знаний',
+        'material_view' => 'Просмотр материала',
     ];
 }

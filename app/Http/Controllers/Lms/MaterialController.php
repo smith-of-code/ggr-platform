@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsMaterialSection;
 use App\Models\Lms\LmsProfile;
+use App\Services\GamificationService;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -59,6 +60,8 @@ class MaterialController extends Controller
         }
 
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+
+        app(GamificationService::class)->awardPoints($event, $user, 'material_view', "Материал: {$section->title}");
 
         return Inertia::render('Lms/Materials/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
