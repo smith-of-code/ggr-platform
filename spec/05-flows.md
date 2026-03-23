@@ -87,6 +87,24 @@
 | GET | `/lms/{event:slug}/activate/{token}` | Lms\AuthController@showActivate | lms.activate | — |
 | POST | `/lms/{event:slug}/activate/{token}` | Lms\AuthController@activate | lms.activate.submit | — |
 
+## 5a. Social Auth SSO (`routes/lms.php` + `routes/web.php`)
+
+### Инициация (per-event, без middleware для login; middleware auth для link)
+
+| Метод | URI | Controller@action | Name | Middleware |
+|-------|-----|-------------------|------|------------|
+| GET | `/lms/{event:slug}/social/{provider}/login` | Lms\SocialAuthController@redirectToLogin | lms.social.login | — |
+| GET | `/lms/{event:slug}/social/{provider}/link` | Lms\SocialAuthController@redirectToLink | lms.social.link | auth |
+| DELETE | `/lms/{event:slug}/social/{provider}/unlink` | Lms\SocialAuthController@unlink | lms.social.unlink | auth |
+
+### Глобальный callback (`routes/web.php`)
+
+| Метод | URI | Controller@action | Name | Middleware |
+|-------|-----|-------------------|------|------------|
+| GET | `/auth/social/{provider}/callback` | Lms\SocialAuthController@callback | social.callback | — |
+
+Поддерживаемые провайдеры: `vkontakte`, `yandex`. Event slug и тип операции (login/link) сохраняются в сессии перед redirect к провайдеру.
+
 ## 6. LMS Участник (`routes/lms.php`, prefix: `/lms/{event:slug}`, middleware: auth)
 
 ### Dashboard & Profile

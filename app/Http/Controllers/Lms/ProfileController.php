@@ -22,10 +22,15 @@ class ProfileController extends Controller
                 []
             );
 
+        $socialAccounts = $user->socialAccounts()
+            ->get(['provider', 'created_at'])
+            ->keyBy('provider');
+
         return Inertia::render('Lms/Profile/Edit', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'profile' => $profile,
             'user' => $user->only(['name', 'email']),
+            'socialAccounts' => $socialAccounts,
         ]);
     }
 

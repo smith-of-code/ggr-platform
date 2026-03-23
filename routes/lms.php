@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Lms\AuthController;
+use App\Http\Controllers\Lms\SocialAuthController;
 use App\Http\Controllers\Lms\DashboardController;
 use App\Http\Controllers\Lms\CourseController;
 use App\Http\Controllers\Lms\StageController;
@@ -44,6 +45,9 @@ Route::prefix('lms/{event:slug}')->name('lms.')->group(function () {
     Route::post('/invite/{token}', [AuthController::class, 'registerByInvite'])->name('invite.register');
     Route::get('/activate/{token}', [AuthController::class, 'showActivate'])->name('activate');
     Route::post('/activate/{token}', [AuthController::class, 'activate'])->name('activate.submit');
+
+    // Social SSO — login initiation (guest)
+    Route::get('/social/{provider}/login', [SocialAuthController::class, 'redirectToLogin'])->name('social.login');
 });
 
 // ── LMS Participant & Leader (auth required) ──
@@ -52,6 +56,10 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    // Social SSO — link/unlink (auth required)
+    Route::get('/social/{provider}/link', [SocialAuthController::class, 'redirectToLink'])->name('social.link');
+    Route::delete('/social/{provider}/unlink', [SocialAuthController::class, 'unlink'])->name('social.unlink');
 
     // Courses
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
