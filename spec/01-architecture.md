@@ -25,6 +25,9 @@
 - `inertiajs/inertia-laravel` ^2.0
 - `laravel/horizon` *
 - `laravel/sanctum` ^4.0
+- `laravel/socialite` ^5.25
+- `socialiteproviders/vkontakte` ^5.1
+- `socialiteproviders/yandex` ^4.1
 - `tightenco/ziggy` ^2.0
 
 ### JavaScript (package.json dependencies)
@@ -109,7 +112,10 @@ docker/
   - Email-регистрации
   - Инвайт-токенов (LmsInvitation)
   - Активации профиля (invite_token в LmsProfile)
-  - SSO (auth_method в LmsEvent: `email` | `sso`)
+  - OAuth SSO через ВКонтакте и Яндекс (`Lms\SocialAuthController`, `laravel/socialite` + `socialiteproviders/vkontakte` + `socialiteproviders/yandex`)
+    - Регистрация через SSO невозможна — только привязка существующего аккаунта из профиля
+    - Глобальный callback: `/auth/social/{provider}/callback`
+    - Данные привязок: таблица `social_accounts`
 - Guard: стандартный `web` (session)
 
 ## Docker

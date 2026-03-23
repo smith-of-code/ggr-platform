@@ -41,4 +41,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::post('/settings/mail/test', [AdminSettingsController::class, 'testMail'])->name('settings.mail.test');
 });
 
+// Social OAuth (global)
+Route::get('/auth/social/{provider}/login', [\App\Http\Controllers\Lms\SocialAuthController::class, 'redirectToGlobalLogin'])
+    ->name('social.login');
+Route::get('/auth/social/{provider}/callback', [\App\Http\Controllers\Lms\SocialAuthController::class, 'callback'])
+    ->name('social.callback');
+
 require __DIR__.'/auth.php';

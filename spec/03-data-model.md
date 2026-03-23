@@ -18,7 +18,26 @@
 | remember_token | string | |
 | timestamps | | |
 
-**Связи**: нет явных (LmsProfile привязан через user_id)
+**Связи**: `socialAccounts()` HasMany SocialAccount (LmsProfile привязан через user_id)
+
+---
+
+### SocialAccount
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| user_id | FK → users | cascade |
+| provider | string(30) | `vkontakte`, `yandex` |
+| provider_id | string | ID пользователя у провайдера |
+| token | text | nullable, cast: encrypted |
+| refresh_token | text | nullable, cast: encrypted |
+| expires_at | timestamp | nullable |
+| timestamps | | |
+| **unique** | (provider, provider_id) | |
+| **unique** | (user_id, provider) | |
+
+**Связи**: `user()` BelongsTo User
 
 ---
 
