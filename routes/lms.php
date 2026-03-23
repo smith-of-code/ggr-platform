@@ -157,6 +157,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::post('gamification/manual-points', [AdminGamificationController::class, 'manualPoints'])->name('gamification.manual-points');
         Route::resource('roles', AdminRoleController::class)->except(['show']);
         Route::post('upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
+        Route::post('upload/file', [AdminUploadController::class, 'file'])->name('upload.file');
         Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
         Route::post('reports/send', [AdminReportController::class, 'sendEmail'])->name('reports.send');
         Route::resource('forms', AdminFormController::class);

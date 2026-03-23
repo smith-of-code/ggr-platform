@@ -20,4 +20,19 @@ class UploadController extends Controller
             'url' => '/storage/' . $path,
         ]);
     }
+
+    public function file(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|max:51200',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('uploads/kb', 'public');
+
+        return response()->json([
+            'url'  => '/storage/' . $path,
+            'name' => $file->getClientOriginalName(),
+        ]);
+    }
 }

@@ -50,21 +50,37 @@
         <div class="space-y-2">
           <RCard v-for="item in section.items" :key="item.id" flush>
             <template #default>
-              <RButton
+              <!-- Text -->
+              <button
                 v-if="item.type === 'text'"
-                variant="ghost"
-                block
-                class="flex w-full items-center gap-3 justify-start p-4 text-left"
+                type="button"
+                class="flex w-full items-center gap-3 p-4 text-left transition hover:bg-gray-50"
                 @click="expandedItemId = expandedItemId === item.id ? null : item.id"
               >
                 <DocumentTextIcon class="h-5 w-5 shrink-0 text-rosatom-500" />
                 <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
                 <ChevronDownIcon
-                  :class="['h-5 w-5 shrink-0 transition', expandedItemId === item.id ? 'rotate-180' : '']"
+                  :class="['h-5 w-5 shrink-0 text-gray-400 transition', expandedItemId === item.id ? 'rotate-180' : '']"
                 />
-              </RButton>
+              </button>
+
+              <!-- Video -->
+              <button
+                v-else-if="item.type === 'video'"
+                type="button"
+                class="flex w-full items-center gap-3 p-4 text-left transition hover:bg-gray-50"
+                @click="expandedItemId = expandedItemId === item.id ? null : item.id"
+              >
+                <PlayCircleIcon class="h-5 w-5 shrink-0 text-rosatom-500" />
+                <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
+                <ChevronDownIcon
+                  :class="['h-5 w-5 shrink-0 text-gray-400 transition', expandedItemId === item.id ? 'rotate-180' : '']"
+                />
+              </button>
+
+              <!-- Link -->
               <a
-                v-else-if="item.type === 'url' && item.url"
+                v-else-if="(item.type === 'link' || item.type === 'url') && item.url"
                 :href="item.url"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -74,9 +90,11 @@
                 <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
                 <ArrowTopRightOnSquareIcon class="h-5 w-5 shrink-0 text-gray-400" />
               </a>
+
+              <!-- File -->
               <a
-                v-else-if="(item.type === 'file' || item.file_path) && item.file_path"
-                :href="item.file_path"
+                v-else-if="item.type === 'file' && (item.file_path || item.url)"
+                :href="item.file_path || item.url"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex items-center gap-3 p-4 transition hover:bg-gray-50"
@@ -85,18 +103,36 @@
                 <span class="flex-1 font-medium text-gray-900">{{ item.title }}</span>
                 <ArrowDownTrayIcon class="h-5 w-5 shrink-0 text-gray-400" />
               </a>
+
+              <!-- Fallback -->
               <div v-else class="flex items-center gap-3 p-4">
                 <DocumentTextIcon class="h-5 w-5 shrink-0 text-gray-400" />
                 <span class="font-medium text-gray-500">{{ item.title }}</span>
               </div>
+
+              <!-- Expanded: text content -->
               <div
                 v-if="item.type === 'text' && expandedItemId === item.id && item.content"
                 class="border-t border-gray-200 p-4"
               >
-                <div
-                  class="prose max-w-none text-sm text-gray-700"
-                  v-html="item.content"
+                <div class="prose max-w-none text-sm text-gray-700" v-html="item.content" />
+              </div>
+
+              <!-- Expanded: video player -->
+              <div
+                v-if="item.type === 'video' && expandedItemId === item.id"
+                class="border-t border-gray-200 p-4"
+              >
+                <div v-if="embedUrl(item)" class="aspect-video overflow-hidden rounded-lg">
+                  <iframe :src="embedUrl(item)" class="h-full w-full" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen />
+                </div>
+                <video
+                  v-else-if="item.file_path || item.url"
+                  :src="item.file_path || item.url"
+                  controls
+                  class="w-full rounded-lg"
                 />
+                <p v-else class="text-sm text-gray-400">Видео не найдено</p>
               </div>
             </template>
           </RCard>
@@ -126,6 +162,7 @@ import {
   DocumentIcon,
   ArrowTopRightOnSquareIcon,
   ArrowDownTrayIcon,
+  PlayCircleIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -137,4 +174,16 @@ const props = defineProps({
 
 const user = computed(() => props.user || props.event?.user || usePage().props.auth?.user || {})
 const expandedItemId = ref(null)
+
+function embedUrl(item) {
+  const src = item.url || item.file_path || ''
+  let m
+  m = src.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/)
+  if (m) return `https://www.youtube.com/embed/${m[1]}`
+  m = src.match(/rutube\.ru\/video\/([a-f0-9]+)/)
+  if (m) return `https://rutube.ru/play/embed/${m[1]}`
+  m = src.match(/vimeo\.com\/(\d+)/)
+  if (m) return `https://player.vimeo.com/video/${m[1]}`
+  return null
+}
 </script>

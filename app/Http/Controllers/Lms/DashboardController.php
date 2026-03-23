@@ -24,10 +24,11 @@ class DashboardController extends Controller
 
         $courseEnrollments = LmsCourseEnrollment::whereHas('course', fn($q) => $q->where('lms_event_id', $event->id))
             ->where('user_id', $user->id)
+            ->whereNotIn('status', ['pending', 'rejected'])
             ->with(['course.stages'])
             ->get();
 
-        $courseProgress = $courseEnrollments->map(function ($enrollment) use ($user) {
+        $courses = $courseEnrollments->map(function ($enrollment) use ($user) {
             $stages = $enrollment->course->stages;
             $completedCount = LmsStageProgress::whereIn('lms_course_stage_id', $stages->pluck('id'))
                 ->where('user_id', $user->id)
@@ -36,11 +37,16 @@ class DashboardController extends Controller
             $total = $stages->count();
             $progress = $total > 0 ? round(($completedCount / $total) * 100) : 0;
             return [
-                'course' => $enrollment->course->only(['id', 'slug', 'title', 'image']),
-                'enrollment' => $enrollment->only(['id', 'status', 'completed_at']),
-                'progress' => $progress,
+                'id' => $enrollment->course->id,
+                'slug' => $enrollment->course->slug,
+                'title' => $enrollment->course->title,
+                'image' => $enrollment->course->image,
+                'description' => $enrollment->course->description,
+                'progress_percent' => $progress,
+                'status' => $enrollment->status,
+                'completed_at' => $enrollment->completed_at,
             ];
-        });
+        })->values();
 
         $activeTrajectories = LmsTrajectoryEnrollment::whereHas('trajectory', fn($q) => $q->where('lms_event_id', $event->id))
             ->where('user_id', $user->id)
@@ -62,13 +68,19 @@ class DashboardController extends Controller
             ->limit(10)
             ->get(['id', 'points', 'reason', 'created_at']);
 
+        $totalPoints = LmsGamificationPoint::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->sum('points');
+
         return Inertia::render('Lms/Dashboard', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
+            'user' => $user->only(['id', 'name', 'last_name', 'first_name', 'patronymic', 'email']),
             'profile' => $profile,
-            'courseProgress' => $courseProgress,
-            'activeTrajectories' => $activeTrajectories,
+            'courses' => $courses,
+            'trajectories' => $activeTrajectories,
             'upcomingAssignments' => $upcomingAssignments,
             'recentPoints' => $recentPoints,
+            'totalPoints' => (int) $totalPoints,
         ]);
     }
 }

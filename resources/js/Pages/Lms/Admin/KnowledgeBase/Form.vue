@@ -63,20 +63,73 @@
               <RInput v-model="item.title" placeholder="Название" required size="sm" class="flex-1" />
               <select v-model="item.type" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
                 <option value="text">Текст</option>
-                <option value="url">Ссылка</option>
+                <option value="link">Ссылка</option>
+                <option value="video">Видео</option>
                 <option value="file">Файл</option>
               </select>
               <RButton variant="ghost" size="sm" iconOnly @click="form.items.splice(idx, 1)" class="text-red-600 hover:bg-red-50">
                 <template #icon>×</template>
               </RButton>
             </div>
-            <RInput v-if="item.type === 'url'" v-model="item.url" type="url" placeholder="URL" size="sm" class="mt-2" />
-            <textarea v-else-if="item.type === 'text'" v-model="item.content" rows="2" placeholder="Контент" class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400" />
-            <RInput v-else v-model="item.file_path" placeholder="Путь к файлу" size="sm" class="mt-2" />
+
+            <!-- Текст -->
+            <textarea v-if="item.type === 'text'" v-model="item.content" rows="2" placeholder="Контент" class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400" />
+
+            <!-- Ссылка -->
+            <RInput v-else-if="item.type === 'link'" v-model="item.url" type="url" placeholder="URL" size="sm" class="mt-2" />
+
+            <!-- Видео / Файл -->
+            <div v-else class="mt-3 space-y-3">
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  :class="['rounded-lg px-3 py-1.5 text-xs font-medium transition', item._mode === 'url' ? 'bg-rosatom-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300']"
+                  @click="item._mode = 'url'"
+                >
+                  По ссылке
+                </button>
+                <button
+                  type="button"
+                  :class="['rounded-lg px-3 py-1.5 text-xs font-medium transition', item._mode === 'upload' ? 'bg-rosatom-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300']"
+                  @click="item._mode = 'upload'"
+                >
+                  Загрузить
+                </button>
+              </div>
+
+              <RInput
+                v-if="item._mode === 'url'"
+                v-model="item.url"
+                type="url"
+                :placeholder="item.type === 'video' ? 'Ссылка на видео (YouTube, Rutube, прямая ссылка)' : 'Прямая ссылка на файл'"
+                size="sm"
+              />
+
+              <div v-else>
+                <div v-if="item.file_path && !item._uploading" class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                  <svg class="h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                  <span class="flex-1 truncate text-sm text-gray-700">{{ item._fileName || item.file_path }}</span>
+                  <button type="button" class="text-gray-400 hover:text-red-500" @click="item.file_path = ''; item._fileName = ''">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+
+                <div v-else-if="item._uploading" class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                  <svg class="h-4 w-4 animate-spin text-rosatom-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  <span class="text-sm text-gray-500">Загрузка…</span>
+                </div>
+
+                <label v-else class="group flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-3 transition hover:border-rosatom-400 hover:bg-rosatom-50/30">
+                  <svg class="h-5 w-5 text-gray-400 group-hover:text-rosatom-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                  <span class="text-sm text-gray-500 group-hover:text-gray-700">Выберите файл</span>
+                  <input type="file" class="hidden" :accept="item.type === 'video' ? 'video/*' : '*'" @change="e => uploadFile(e, idx)" />
+                </label>
+              </div>
+            </div>
           </div>
         </div>
         <template #footer>
-          <RButton variant="outline" block @click="form.items.push({ title: '', type: 'text', content: '', url: '', file_path: '', position: form.items.length })" class="mt-3">
+          <RButton variant="outline" block class="mt-3" @click="addItem">
             + Добавить элемент
           </RButton>
         </template>
@@ -94,22 +147,33 @@
 
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
+import axios from 'axios'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
 const props = defineProps({ event: Object, section: Object, parentSections: Array, groups: Array })
 
+function makeItem(overrides = {}) {
+  return {
+    title: '', type: 'text', content: '', url: '', file_path: '', position: 0,
+    _mode: 'url', _fileName: '', _uploading: false,
+    ...overrides,
+  }
+}
+
 const buildItems = () => {
   if (props.section?.items?.length) {
-    return props.section.items.map(i => ({
+    return props.section.items.map(i => makeItem({
       title: i.title,
-      type: i.type ?? 'text',
+      type: i.type === 'url' ? 'link' : (i.type ?? 'text'),
       content: i.content ?? '',
       url: i.url ?? '',
       file_path: i.file_path ?? '',
       position: i.position ?? 0,
+      _mode: i.file_path ? 'upload' : 'url',
+      _fileName: '',
     }))
   }
-  return [{ title: '', type: 'text', content: '', url: '', file_path: '', position: 0 }]
+  return [makeItem()]
 }
 
 const form = useForm({
@@ -122,8 +186,36 @@ const form = useForm({
   items: buildItems(),
 })
 
+function addItem() {
+  form.items.push(makeItem({ position: form.items.length }))
+}
+
+async function uploadFile(e, idx) {
+  const file = e.target.files[0]
+  if (!file) return
+
+  const item = form.items[idx]
+  item._uploading = true
+
+  const fd = new FormData()
+  fd.append('file', file)
+
+  try {
+    const { data } = await axios.post(route('lms.admin.upload.file', props.event.slug), fd)
+    item.file_path = data.url
+    item._fileName = data.name
+  } catch (err) {
+    alert('Ошибка загрузки: ' + (err.response?.data?.message ?? err.message))
+  } finally {
+    item._uploading = false
+  }
+}
+
 function submit() {
-  const items = form.items.filter(i => i.title).map((i, idx) => ({ ...i, position: idx }))
+  const items = form.items.filter(i => i.title).map((i, idx) => ({
+    title: i.title, type: i.type, content: i.content,
+    url: i.url, file_path: i.file_path, position: idx,
+  }))
   if (props.section) {
     form.transform(d => ({ ...d, items })).put(route('lms.admin.kb.update', [props.event.slug, props.section.id]))
   } else {
