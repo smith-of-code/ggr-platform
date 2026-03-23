@@ -29,7 +29,7 @@ class ProfileController extends Controller
         return Inertia::render('Lms/Profile/Edit', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'profile' => $profile,
-            'user' => $user->only(['name', 'email']),
+            'user' => $user->only(['name', 'last_name', 'first_name', 'patronymic', 'email', 'phone']),
             'socialAccounts' => $socialAccounts,
         ]);
     }
@@ -40,6 +40,7 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'position' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
             'avatar' => ['nullable', 'image', 'max:2048'],
         ]);
 

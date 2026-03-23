@@ -6,11 +6,11 @@
 
       <!-- Display section with ProfileCard -->
       <ProfileCard
-        :full-name="user?.name"
+        :full-name="fullName"
         :avatar="avatarDisplayUrl"
         :position="profile?.position"
         :workplace="profile?.city"
-        :phone="profile?.phone"
+        :phone="form.phone || profile?.phone"
         :email="user?.email"
         :points="profile?.points"
         :rank="profile?.rank"
@@ -21,8 +21,8 @@
         <template #default>
           <form @submit.prevent="submit" class="space-y-6">
             <RInput
-              :model-value="user?.name"
-              label="Имя"
+              :model-value="fullName"
+              label="ФИО"
               type="text"
               disabled
             />
@@ -33,6 +33,13 @@
               disabled
             />
             <RInput
+              v-model="form.phone"
+              label="Телефон"
+              type="tel"
+              placeholder="+7 (___) ___-__-__"
+              :error="form.errors.phone"
+            />
+            <RInput
               v-model="form.position"
               label="Должность"
               placeholder="Ваша должность"
@@ -40,8 +47,8 @@
             />
             <RInput
               v-model="form.city"
-              label="Город"
-              placeholder="Город"
+              label="Место работы"
+              placeholder="Организация / город"
               :error="form.errors.city"
             />
             <div>
@@ -191,6 +198,12 @@ const props = defineProps({
 
 const user = computed(() => props.user || usePage().props.auth?.user || {})
 
+const fullName = computed(() => {
+  const u = user.value
+  const parts = [u.last_name, u.first_name, u.patronymic].filter(Boolean)
+  return parts.length > 0 ? parts.join(' ') : u.name || ''
+})
+
 const socialAccounts = computed(() => props.socialAccounts || {})
 
 const providers = [
@@ -245,6 +258,7 @@ function executeConfirmedAction() {
 }
 
 const form = useForm({
+  phone: props.profile?.phone ?? '',
   position: props.profile?.position ?? '',
   city: props.profile?.city ?? '',
   avatar: null,

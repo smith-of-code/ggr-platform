@@ -16,11 +16,37 @@ use Inertia\Response;
 
 class StageController extends Controller
 {
+    private function ensureSequentialAccess(LmsCourse $course, LmsCourseStage $stage): void
+    {
+        if (!$course->sequential) {
+            return;
+        }
+
+        $previousStage = $course->stages()
+            ->where('position', '<', $stage->position)
+            ->orderByDesc('position')
+            ->first();
+
+        if (!$previousStage) {
+            return;
+        }
+
+        $previousCompleted = LmsStageProgress::where('lms_course_stage_id', $previousStage->id)
+            ->where('user_id', auth()->id())
+            ->where('status', 'completed')
+            ->exists();
+
+        if (!$previousCompleted) {
+            abort(403, 'Необходимо сначала завершить предыдущий этап.');
+        }
+    }
+
     public function show(LmsEvent $event, LmsCourse $course, LmsCourseStage $stage): Response
     {
         if ($course->lms_event_id !== $event->id || $stage->lms_course_id !== $course->id) {
             abort(404);
         }
+        $this->ensureSequentialAccess($course, $stage);
         $user = auth()->user();
         $stage->load(['test', 'assignment', 'video', 'blocks.test', 'blocks.assignment', 'blocks.video']);
         $progress = LmsStageProgress::where('lms_course_stage_id', $stage->id)
@@ -70,6 +96,7 @@ class StageController extends Controller
         if ($course->lms_event_id !== $event->id || $stage->lms_course_id !== $course->id) {
             abort(404);
         }
+        $this->ensureSequentialAccess($course, $stage);
         $user = auth()->user();
 
         if ($stage->type === 'video' && $stage->video?->duration_seconds) {

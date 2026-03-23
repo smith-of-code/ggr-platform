@@ -80,3 +80,4 @@ scorm-examples/
 Карточка_*.docx
 vshgr-platform-nginx_log/
 vshgr-platform-data/
+/app/node_modules/

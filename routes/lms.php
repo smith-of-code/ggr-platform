@@ -14,6 +14,7 @@ use App\Http\Controllers\Lms\MaterialController;
 use App\Http\Controllers\Lms\LeaderController;
 use App\Http\Controllers\Lms\GamificationController;
 use App\Http\Controllers\Lms\ProfileController;
+use App\Http\Controllers\Lms\ReportController;
 use App\Http\Controllers\Lms\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Lms\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Lms\Admin\TestController as AdminTestController;
@@ -107,6 +108,10 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     // Gamification
     Route::get('/leaderboard', [GamificationController::class, 'leaderboard'])->name('gamification.leaderboard');
     Route::get('/my-points', [GamificationController::class, 'myPoints'])->name('gamification.my-points');
+
+    // Reports (curator & admin only)
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::post('/reports/send', [ReportController::class, 'sendEmail'])->name('reports.send');
 
     // Leader Cabinet
     Route::prefix('leader')->name('leader.')->group(function () {

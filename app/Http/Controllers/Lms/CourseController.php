@@ -90,17 +90,31 @@ class CourseController extends Controller
             ->get()
             ->keyBy('lms_course_stage_id');
 
-        $modules = $course->modules->map(function ($module) use ($stageProgress, $user) {
-            $moduleStages = $module->stages->sortBy('position')->map(function ($stage) use ($stageProgress) {
+        $isSequential = (bool) $course->sequential;
+
+        // Глобальный расчёт доступности по всем этапам курса (по position)
+        $stageAvailability = [];
+        $prevCompleted = true;
+        foreach ($course->stages->sortBy('position') as $stage) {
+            $progress = $stageProgress->get($stage->id);
+            $isAvailable = true;
+            if ($stage->available_from && now()->lt($stage->available_from)) {
+                $isAvailable = false;
+            }
+            if ($isSequential && !$prevCompleted) {
+                $isAvailable = false;
+            }
+            $stageAvailability[$stage->id] = $isAvailable;
+            $prevCompleted = $progress?->status === 'completed';
+        }
+
+        $modules = $course->modules->map(function ($module) use ($stageProgress, $stageAvailability) {
+            $moduleStages = $module->stages->sortBy('position')->map(function ($stage) use ($stageProgress, $stageAvailability) {
                 $progress = $stageProgress->get($stage->id);
-                $isAvailable = true;
-                if ($stage->available_from && now()->lt($stage->available_from)) {
-                    $isAvailable = false;
-                }
                 return [
                     'stage' => $stage->only(['id', 'title', 'description', 'type', 'position', 'is_locked', 'available_from', 'duration_minutes']),
                     'progress' => $progress?->only(['status', 'completed_at', 'score']),
-                    'is_available' => $isAvailable,
+                    'is_available' => $stageAvailability[$stage->id] ?? true,
                 ];
             })->values();
 
@@ -111,22 +125,18 @@ class CourseController extends Controller
             ];
         });
 
-        $orphanStages = $course->stages->whereNull('lms_course_module_id')->sortBy('position')->map(function ($stage) use ($stageProgress) {
+        $orphanStages = $course->stages->whereNull('lms_course_module_id')->sortBy('position')->map(function ($stage) use ($stageProgress, $stageAvailability) {
             $progress = $stageProgress->get($stage->id);
-            $isAvailable = true;
-            if ($stage->available_from && now()->lt($stage->available_from)) {
-                $isAvailable = false;
-            }
             return [
                 'stage' => $stage->only(['id', 'title', 'description', 'type', 'position', 'is_locked', 'available_from', 'duration_minutes']),
                 'progress' => $progress?->only(['status', 'completed_at', 'score']),
-                'is_available' => $isAvailable,
+                'is_available' => $stageAvailability[$stage->id] ?? true,
             ];
         })->values();
 
         return Inertia::render('Lms/Courses/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
-            'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'starts_at', 'ends_at']),
+            'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'sequential', 'starts_at', 'ends_at']),
             'enrollment' => $enrollment?->only(['id', 'status', 'completed_at']),
             'modules' => $modules,
             'orphanStages' => $orphanStages,
