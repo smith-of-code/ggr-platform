@@ -30,7 +30,7 @@
             <RInput v-model.number="form.time_limit_minutes" label="Лимит времени (мин)" type="number" />
           </div>
           <div>
-            <RInput v-model.number="form.passing_score" label="Проходной балл (%)" type="number" />
+            <RInput v-model.number="form.passing_score" label="Проходной балл (%)" type="number" placeholder="60" />
           </div>
           <div>
             <RInput v-model.number="form.max_attempts" label="Макс. попыток" type="number" placeholder="0 = без ограничений" />
@@ -137,7 +137,7 @@ const form = useForm({
   shuffle_questions: props.test?.shuffle_questions ?? false,
   shuffle_answers: props.test?.shuffle_answers ?? false,
   show_correct_answers: props.test?.show_correct_answers ?? true,
-  passing_score: props.test?.passing_score ?? null,
+  passing_score: props.test?.passing_score ?? 60,
   max_attempts: props.test?.max_attempts ?? null,
   questions: buildQuestions(),
 })

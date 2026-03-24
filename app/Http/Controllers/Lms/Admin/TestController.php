@@ -44,6 +44,7 @@ class TestController extends Controller
         $validated['shuffle_answers'] = $request->boolean('shuffle_answers', false);
         $validated['show_correct_answers'] = $request->boolean('show_correct_answers', true);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['passing_score'] ??= 60;
 
         $test = LmsTest::create($validated);
 
@@ -74,6 +75,7 @@ class TestController extends Controller
         $validated['shuffle_answers'] = $request->boolean('shuffle_answers', false);
         $validated['show_correct_answers'] = $request->boolean('show_correct_answers', true);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['passing_score'] ??= 60;
 
         $test->update($validated);
 
