@@ -133,11 +133,6 @@ class EnrollmentController extends Controller
             })
             ->delete();
 
-        DB::table('lms_course_assignments')
-            ->where('user_id', $userId)
-            ->where('lms_course_id', $courseId)
-            ->delete();
-
         $enrollment->delete();
 
         return $this->safeRedirect($request, $event, 'Участник отписан от курса');
