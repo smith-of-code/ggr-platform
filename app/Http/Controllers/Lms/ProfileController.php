@@ -7,6 +7,7 @@ use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -49,7 +50,9 @@ class ProfileController extends Controller
             ->firstOrFail();
 
         if ($request->hasFile('avatar')) {
-            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+            $disk = config('filesystems.upload_disk');
+            $path = $request->file('avatar')->store('avatars', $disk);
+            $validated['avatar'] = Storage::disk($disk)->url($path);
         }
 
         $profile->update(array_filter($validated));

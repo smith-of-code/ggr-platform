@@ -87,7 +87,7 @@
             <a
               v-for="(file, idx) in submission.files"
               :key="idx"
-              :href="`/storage/${file}`"
+              :href="fileUrl(file)"
               target="_blank"
               class="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
             >
@@ -202,7 +202,7 @@
               <a
                 v-for="(f, i) in msg.files"
                 :key="i"
-                :href="`/storage/${typeof f === 'string' ? f : f.path}`"
+                :href="fileUrl(typeof f === 'string' ? f : f.path)"
                 target="_blank"
                 class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
               >
@@ -276,6 +276,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
+import { fileUrl } from '@/lib/fileUrl'
 import {
   ArrowLeftIcon,
   ArrowDownTrayIcon,

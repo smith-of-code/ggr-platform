@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lms\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class UploadController extends Controller
 {
@@ -14,10 +15,11 @@ class UploadController extends Controller
             'image' => 'required|image|mimes:jpeg,jpg,png,gif,webp,svg|max:5120',
         ]);
 
-        $path = $request->file('image')->store('uploads/images', 'public');
+        $disk = config('filesystems.upload_disk');
+        $path = $request->file('image')->store('uploads/images', $disk);
 
         return response()->json([
-            'url' => '/storage/' . $path,
+            'url' => Storage::disk($disk)->url($path),
         ]);
     }
 
@@ -27,11 +29,12 @@ class UploadController extends Controller
             'file' => 'required|file|max:51200',
         ]);
 
+        $disk = config('filesystems.upload_disk');
         $file = $request->file('file');
-        $path = $file->store('uploads/kb', 'public');
+        $path = $file->store('uploads/kb', $disk);
 
         return response()->json([
-            'url'  => '/storage/' . $path,
+            'url'  => Storage::disk($disk)->url($path),
             'name' => $file->getClientOriginalName(),
         ]);
     }

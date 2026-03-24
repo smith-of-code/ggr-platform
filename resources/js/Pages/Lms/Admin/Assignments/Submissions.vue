@@ -55,7 +55,7 @@
               <a
                 v-for="(f, i) in sub.files"
                 :key="i"
-                :href="`/storage/${typeof f === 'string' ? f : f.path}`"
+                :href="fileUrl(typeof f === 'string' ? f : f.path)"
                 target="_blank"
                 class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
               >
@@ -100,7 +100,7 @@
                 <a
                   v-for="(f, i) in msg.files"
                   :key="i"
-                  :href="`/storage/${typeof f === 'string' ? f : f.path}`"
+                  :href="fileUrl(typeof f === 'string' ? f : f.path)"
                   target="_blank"
                   class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 shadow-sm hover:bg-gray-50"
                 >
@@ -210,6 +210,7 @@
 import { Link, router } from '@inertiajs/vue3'
 import { ref, reactive } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import { fileUrl } from '@/lib/fileUrl'
 
 const props = defineProps({ event: Object, assignment: Object, submissions: Object })
 
