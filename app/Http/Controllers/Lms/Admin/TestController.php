@@ -43,6 +43,7 @@ class TestController extends Controller
         $validated['shuffle_questions'] = $request->boolean('shuffle_questions', false);
         $validated['shuffle_answers'] = $request->boolean('shuffle_answers', false);
         $validated['show_correct_answers'] = $request->boolean('show_correct_answers', true);
+        $validated['in_menu'] = $request->boolean('in_menu', false);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['passing_score'] ??= 60;
 
@@ -74,6 +75,7 @@ class TestController extends Controller
         $validated['shuffle_questions'] = $request->boolean('shuffle_questions', false);
         $validated['shuffle_answers'] = $request->boolean('shuffle_answers', false);
         $validated['show_correct_answers'] = $request->boolean('show_correct_answers', true);
+        $validated['in_menu'] = $request->boolean('in_menu', false);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['passing_score'] ??= 60;
 
@@ -102,6 +104,7 @@ class TestController extends Controller
             'shuffle_questions' => ['boolean'],
             'shuffle_answers' => ['boolean'],
             'show_correct_answers' => ['boolean'],
+            'in_menu' => ['boolean'],
             'passing_score' => ['nullable', 'integer', 'min:0', 'max:100'],
             'max_attempts' => ['nullable', 'integer', 'min:0'],
             'questions' => ['nullable', 'array'],

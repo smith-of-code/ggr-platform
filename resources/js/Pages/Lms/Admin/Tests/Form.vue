@@ -37,6 +37,7 @@
           </div>
         </div>
         <div class="flex flex-wrap gap-3 border-t border-gray-200 pt-5">
+          <RCheckbox v-model="form.in_menu" label="Показывать в меню «Тестирование»" />
           <RCheckbox v-model="form.shuffle_questions" label="Перемешивать вопросы" />
           <RCheckbox v-model="form.shuffle_answers" label="Перемешивать ответы" />
           <RCheckbox v-model="form.show_correct_answers" label="Показывать правильные ответы" />
@@ -137,6 +138,7 @@ const form = useForm({
   shuffle_questions: props.test?.shuffle_questions ?? false,
   shuffle_answers: props.test?.shuffle_answers ?? false,
   show_correct_answers: props.test?.show_correct_answers ?? true,
+  in_menu: props.test?.in_menu ?? false,
   passing_score: props.test?.passing_score ?? 60,
   max_attempts: props.test?.max_attempts ?? null,
   questions: buildQuestions(),
