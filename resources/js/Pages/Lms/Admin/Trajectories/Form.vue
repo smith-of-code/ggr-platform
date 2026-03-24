@@ -40,7 +40,7 @@
             </select>
             <RCheckbox v-model="step.is_locked" label="Закрыт" class="shrink-0" />
             <RInput v-model="step.opens_at" type="datetime-local" size="sm" />
-            <RButton variant="ghost" size="sm" iconOnly @click="form.steps.splice(idx, 1)" class="text-red-600 hover:bg-red-50">
+            <RButton type="button" variant="ghost" size="sm" iconOnly @click="form.steps.splice(idx, 1)" class="text-red-600 hover:bg-red-50">
               <template #icon>
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" /></svg>
               </template>
@@ -48,7 +48,7 @@
           </div>
         </div>
         <template #footer>
-          <RButton variant="outline" block @click="addStep" class="mt-3">
+          <RButton type="button" variant="outline" block @click="addStep" class="mt-3">
             + Добавить этап
           </RButton>
         </template>
