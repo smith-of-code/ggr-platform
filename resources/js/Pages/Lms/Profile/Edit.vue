@@ -102,7 +102,7 @@
         <template #default>
           <h2 class="mb-4 text-lg font-semibold text-gray-900">Привязанные аккаунты</h2>
           <p class="mb-4 text-sm text-gray-500">
-            Привяжите аккаунт Яндекс, чтобы входить в систему через него.
+            Привяжите аккаунт ВКонтакте или Яндекс, чтобы входить в систему через них.
           </p>
           <p v-if="$page.props.errors?.social" class="mb-4 text-sm text-red-600">
             {{ $page.props.errors.social }}
@@ -208,6 +208,12 @@ const fullName = computed(() => {
 const socialAccounts = computed(() => props.socialAccounts || {})
 
 const providers = [
+  {
+    key: 'vkontakte',
+    label: 'VK ID',
+    bgClass: 'bg-[#0077FF]',
+    icon: '<svg width="20" height="20" viewBox="0 0 28 28" fill="none"><path d="M4.54 1.66h18.92c1.59 0 2.88 1.29 2.88 2.88v18.92c0 1.59-1.29 2.88-2.88 2.88H4.54c-1.59 0-2.88-1.29-2.88-2.88V4.54c0-1.59 1.29-2.88 2.88-2.88z" fill="#0077FF"/><path d="M14.67 19.47c-5.62 0-8.82-3.86-8.95-10.28h2.81c.09 4.71 2.17 6.71 3.81 7.12V9.19h2.65v4.07c1.62-.17 3.33-2.02 3.91-4.07h2.65c-.44 2.53-2.3 4.38-3.62 5.15 1.32.62 3.4 2.25 4.2 5.13h-2.92c-.63-1.95-2.18-3.46-4.22-3.66v3.66h-.32z" fill="white"/></svg>',
+  },
   {
     key: 'yandex',
     label: 'Яндекс ID',
