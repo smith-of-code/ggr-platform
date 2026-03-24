@@ -203,6 +203,7 @@ class TestController extends Controller
         $passed = $percentage >= $test->passing_score;
 
         $attempt->update([
+            'status' => 'completed',
             'score' => $totalScore,
             'max_score' => $maxScore,
             'percentage' => $percentage,

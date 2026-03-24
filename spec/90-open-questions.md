@@ -2,7 +2,7 @@
 
 ## Обнаружено при bootstrap
 
-1. **LmsTestAttempt.status**: в модели `status` есть в fillable, но в миграции `2026_02_16_200000_create_lms_tables.php` колонки `status` нет. Возможно, поле добавляется позже или пропущено в миграции.
+1. ~~**LmsTestAttempt.status**~~: исправлено — добавлена миграция `2026_03_24_100000_add_status_to_lms_test_attempts.php`, исправлен `TestController::submit()` (status → completed), observer переключён на `updated`.
 
 2. **Авторизация ролей**: в маршрутах LMS и LMS Admin middleware ограничен только `auth`. Проверка ролей (admin, leader, participant) скорее всего происходит в контроллерах, но явного middleware для ролей не обнаружено. Уточнить механизм разграничения доступа.
 
