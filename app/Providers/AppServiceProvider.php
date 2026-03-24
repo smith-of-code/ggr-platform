@@ -33,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
 
         LmsStageProgress::updated(fn ($model) => $observer->stageCompleted($model));
         LmsCourseEnrollment::updated(fn ($model) => $observer->courseCompleted($model));
-        LmsTestAttempt::created(fn ($model) => $observer->testPassed($model));
+        LmsTestAttempt::updated(fn ($model) => $observer->testPassed($model));
         LmsAssignmentReview::created(fn ($model) => $observer->assignmentApproved($model));
         LmsTrajectoryEnrollment::updated(fn ($model) => $observer->trajectoryCompleted($model));
 
