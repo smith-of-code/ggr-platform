@@ -140,14 +140,24 @@
         </div>
       </div>
 
-      <button
-        type="button"
-        class="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-medium text-gray-500 transition hover:border-rosatom-400 hover:bg-rosatom-50 hover:text-rosatom-600"
-        @click="addBlock"
-      >
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-        Добавить блок
-      </button>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-medium text-gray-500 transition hover:border-rosatom-400 hover:bg-rosatom-50 hover:text-rosatom-600"
+          @click="addBlock"
+        >
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          Добавить блок
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-blue-300 px-3 py-2 text-xs font-medium text-blue-500 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600"
+          @click="$emit('searchBlock')"
+        >
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+          Скопировать блок
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -176,7 +186,7 @@ const props = defineProps({
   eventSlug: String,
 })
 
-defineEmits(['move', 'remove', 'search'])
+defineEmits(['move', 'remove', 'search', 'searchBlock'])
 
 const blocks = computed(() => {
   if (!props.stage.blocks || props.stage.blocks.length === 0) {
