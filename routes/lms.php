@@ -154,6 +154,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::get('courses/{course}/enrollments', [AdminEnrollmentController::class, 'courseEnrollments'])->name('enrollments.course');
         Route::post('enrollments/{enrollment}/approve', [AdminEnrollmentController::class, 'approve'])->name('enrollments.approve');
         Route::post('enrollments/{enrollment}/reject', [AdminEnrollmentController::class, 'reject'])->name('enrollments.reject');
+        Route::delete('enrollments/{enrollment}', [AdminEnrollmentController::class, 'destroy'])->name('enrollments.destroy');
         Route::resource('gamification', AdminGamificationController::class);
         Route::post('gamification/manual-points', [AdminGamificationController::class, 'manualPoints'])->name('gamification.manual-points');
         Route::resource('roles', AdminRoleController::class)->except(['show']);
@@ -161,6 +162,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::post('upload/file', [AdminUploadController::class, 'file'])->name('upload.file');
         Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
         Route::post('reports/send', [AdminReportController::class, 'sendEmail'])->name('reports.send');
+        Route::get('forms/check-slug', [AdminFormController::class, 'checkSlug'])->name('forms.check-slug');
         Route::resource('forms', AdminFormController::class);
         Route::get('forms/{form}/stats', [AdminFormController::class, 'stats'])->name('forms.stats');
         Route::post('forms/{form}/create-users', [AdminFormController::class, 'createUsersFromSubmissions'])->name('forms.create-users');

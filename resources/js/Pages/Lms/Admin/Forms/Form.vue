@@ -12,8 +12,20 @@
       <RCard>
         <template #header><h2 class="text-base font-bold text-gray-900">Основные настройки</h2></template>
         <div class="grid gap-5 sm:grid-cols-2">
-          <div class="sm:col-span-2"><RInput v-model="form.title" label="Название *" required :error="form.errors.title" /></div>
-          <div><RInput v-model="form.slug" label="Slug (URL)" placeholder="auto-generated" /></div>
+          <div class="sm:col-span-2"><RInput v-model="form.title" label="Название *" required :error="form.errors.title" @input="onTitleInput" /></div>
+          <div class="sm:col-span-2">
+            <RInput v-model="form.slug" label="Slug (URL)" :error="form.errors.slug" @input="onSlugManualInput" />
+            <div class="mt-1 min-h-[1.25rem]">
+              <span v-if="slugChecking" class="text-xs text-gray-400">Проверка доступности...</span>
+              <span v-else-if="slugAvailable === true" class="text-xs text-green-600">&#10003; Slug свободен</span>
+              <span v-else-if="slugAvailable === false" class="text-xs text-red-600">
+                Slug занят.
+                <template v-if="slugSuggestions.length"> Варианты:
+                  <button v-for="s in slugSuggestions" :key="s" type="button" class="ml-1 font-medium text-rosatom-600 underline hover:text-rosatom-800" @click="form.slug = s; checkSlug()">{{ s }}</button>
+                </template>
+              </span>
+            </div>
+          </div>
           <div class="sm:col-span-2"><RInput v-model="form.description" label="Описание" /></div>
           <div class="sm:col-span-2"><RInput v-model="form.thank_you_message" label="Сообщение после отправки" placeholder="Спасибо за участие!" /></div>
           <RCheckbox v-model="form.is_active" label="Активна" />
@@ -132,10 +144,18 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
+import axios from 'axios'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
 const props = defineProps({ event: Object, form: Object })
+
+const slugChecking = ref(false)
+const slugAvailable = ref(null)
+const slugSuggestions = ref([])
+let slugDebounce = null
+let slugManuallyEdited = false
 
 const fieldTypes = [
   { value: 'text', label: 'Текст' },
@@ -171,6 +191,54 @@ const form = useForm({
     options: f.options || [],
   })),
 })
+
+function transliterate(str) {
+  const map = {
+    'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i',
+    'й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t',
+    'у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y',
+    'ь':'','э':'e','ю':'yu','я':'ya',' ':'-',
+  }
+  return str.toLowerCase().split('').map(c => map[c] ?? c).join('').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '')
+}
+
+function onTitleInput() {
+  if (slugManuallyEdited || formData) return
+  form.slug = transliterate(form.title)
+  checkSlugDebounced()
+}
+
+function onSlugManualInput() {
+  slugManuallyEdited = true
+  checkSlugDebounced()
+}
+
+function checkSlugDebounced() {
+  clearTimeout(slugDebounce)
+  slugAvailable.value = null
+  if (!form.slug || form.slug.length < 2) return
+  slugDebounce = setTimeout(() => checkSlug(), 400)
+}
+
+async function checkSlug() {
+  if (!form.slug) return
+  slugChecking.value = true
+  slugAvailable.value = null
+  slugSuggestions.value = []
+  try {
+    const { data } = await axios.get(route('lms.admin.forms.check-slug', props.event.slug), {
+      params: { title: form.slug, exclude_id: formData?.id },
+    })
+    if (data.available) {
+      slugAvailable.value = true
+      slugSuggestions.value = []
+    } else {
+      slugAvailable.value = false
+      slugSuggestions.value = [data.slug, ...(data.suggestions || [])].filter((v, i, a) => a.indexOf(v) === i && v !== form.slug)
+    }
+  } catch { /* ignore */ }
+  finally { slugChecking.value = false }
+}
 
 function addField() {
   const idx = form.fields.length + 1

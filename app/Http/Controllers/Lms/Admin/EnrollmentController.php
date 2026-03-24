@@ -8,6 +8,7 @@ use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -116,6 +117,30 @@ class EnrollmentController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Заявка отклонена');
+    }
+
+    public function destroy(LmsEvent $event, LmsCourseEnrollment $enrollment): RedirectResponse
+    {
+        $this->ensureEnrollmentBelongsToEvent($enrollment, $event);
+
+        $userId = $enrollment->user_id;
+        $courseId = $enrollment->lms_course_id;
+
+        DB::table('lms_stage_progress')
+            ->where('user_id', $userId)
+            ->whereIn('lms_course_stage_id', function ($q) use ($courseId) {
+                $q->select('id')->from('lms_course_stages')->where('lms_course_id', $courseId);
+            })
+            ->delete();
+
+        DB::table('lms_course_assignments')
+            ->where('user_id', $userId)
+            ->where('lms_course_id', $courseId)
+            ->delete();
+
+        $enrollment->delete();
+
+        return redirect()->back()->with('success', 'Участник отписан от курса');
     }
 
     private function ensureEnrollmentBelongsToEvent(LmsCourseEnrollment $enrollment, LmsEvent $event): void
