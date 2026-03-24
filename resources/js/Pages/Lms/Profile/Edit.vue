@@ -56,7 +56,7 @@
               <div class="flex items-center gap-4">
                 <RAvatar
                   v-if="avatarPreview || profile?.avatar"
-                  :src="avatarPreview || (profile?.avatar ? `/storage/${profile.avatar}` : null)"
+                  :src="avatarPreview || fileUrl(profile?.avatar)"
                   :name="user?.name"
                   size="lg"
                 />
@@ -188,6 +188,7 @@
 import { Head, Link, useForm, usePage, router } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
+import { fileUrl } from '@/lib/fileUrl'
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -268,8 +269,7 @@ const avatarPreview = ref(null)
 
 const avatarDisplayUrl = computed(() => {
   if (avatarPreview.value) return avatarPreview.value
-  if (props.profile?.avatar) return `/storage/${props.profile.avatar}`
-  return null
+  return fileUrl(props.profile?.avatar)
 })
 
 function onAvatarChange(e) {

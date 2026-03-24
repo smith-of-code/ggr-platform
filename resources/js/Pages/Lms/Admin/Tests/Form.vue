@@ -30,13 +30,14 @@
             <RInput v-model.number="form.time_limit_minutes" label="Лимит времени (мин)" type="number" />
           </div>
           <div>
-            <RInput v-model.number="form.passing_score" label="Проходной балл (%)" type="number" />
+            <RInput v-model.number="form.passing_score" label="Проходной балл (%)" type="number" placeholder="60" />
           </div>
           <div>
             <RInput v-model.number="form.max_attempts" label="Макс. попыток" type="number" placeholder="0 = без ограничений" />
           </div>
         </div>
         <div class="flex flex-wrap gap-3 border-t border-gray-200 pt-5">
+          <RCheckbox v-model="form.in_menu" label="Показывать в меню «Тестирование»" />
           <RCheckbox v-model="form.shuffle_questions" label="Перемешивать вопросы" />
           <RCheckbox v-model="form.shuffle_answers" label="Перемешивать ответы" />
           <RCheckbox v-model="form.show_correct_answers" label="Показывать правильные ответы" />
@@ -59,7 +60,7 @@
             </div>
             <div class="space-y-3">
               <div>
-                <RInput v-model="q.question" required placeholder="Текст вопроса" />
+                <RInput v-model="q.question" required placeholder="Текст вопроса" :error="form.errors[`questions.${qIdx}.question`]" />
               </div>
               <div class="flex gap-4">
                 <div>
@@ -78,7 +79,7 @@
               <div v-if="q.type === 'single' || q.type === 'multiple'" class="space-y-2">
                 <label class="block text-xs text-gray-500">Варианты ответов</label>
                 <div v-for="(a, aIdx) in q.answers" :key="aIdx" class="flex gap-2">
-                  <RInput v-model="a.answer" placeholder="Текст ответа" class="flex-1" />
+                  <RInput v-model="a.answer" placeholder="Текст ответа" class="flex-1" :error="form.errors[`questions.${qIdx}.answers.${aIdx}.answer`]" />
                   <RCheckbox v-model="a.is_correct" label="Верно" />
                   <RButton v-if="q.answers.length > 1" variant="danger" size="sm" icon-only type="button" @click="q.answers.splice(aIdx, 1)">
                     <template #icon>
@@ -137,7 +138,8 @@ const form = useForm({
   shuffle_questions: props.test?.shuffle_questions ?? false,
   shuffle_answers: props.test?.shuffle_answers ?? false,
   show_correct_answers: props.test?.show_correct_answers ?? true,
-  passing_score: props.test?.passing_score ?? null,
+  in_menu: props.test?.in_menu ?? false,
+  passing_score: props.test?.passing_score ?? 60,
   max_attempts: props.test?.max_attempts ?? null,
   questions: buildQuestions(),
 })
@@ -147,13 +149,17 @@ function addQuestion() {
 }
 
 function submit() {
-  const questions = form.questions.map((q, i) => ({
-    question: q.question,
-    type: q.type,
-    points: q.points,
-    position: i,
-    answers: (q.answers || []).map((a, j) => ({ answer: a.answer, is_correct: a.is_correct ?? false, position: j })),
-  }))
+  const questions = form.questions
+    .filter(q => q.question.trim() !== '')
+    .map((q, i) => ({
+      question: q.question,
+      type: q.type,
+      points: q.points,
+      position: i,
+      answers: (q.answers || [])
+        .filter(a => a.answer.trim() !== '')
+        .map((a, j) => ({ answer: a.answer, is_correct: a.is_correct ?? false, position: j })),
+    }))
   if (props.test) {
     form.transform(data => ({ ...data, questions })).put(route('lms.admin.tests.update', [props.event.slug, props.test.id]))
   } else {

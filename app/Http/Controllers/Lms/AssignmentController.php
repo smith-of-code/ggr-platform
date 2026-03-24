@@ -9,6 +9,7 @@ use App\Models\Lms\LmsAssignmentSubmission;
 use App\Models\Lms\LmsEvent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -82,11 +83,12 @@ class AssignmentController extends Controller
             'files.*' => ['file'],
         ]);
 
+        $disk = config('filesystems.upload_disk');
         $files = [];
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('assignments/' . $assignment->id, 'public');
-                $files[] = $path;
+                $path = $file->store('assignments/' . $assignment->id, $disk);
+                $files[] = Storage::disk($disk)->url($path);
             }
         }
 
@@ -123,11 +125,12 @@ class AssignmentController extends Controller
             'files.*' => ['file', 'max:20480'],
         ]);
 
+        $disk = config('filesystems.upload_disk');
         $files = [];
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('assignment-comments/' . $assignment->id, 'public');
-                $files[] = ['name' => $file->getClientOriginalName(), 'path' => $path];
+                $path = $file->store('assignment-comments/' . $assignment->id, $disk);
+                $files[] = ['name' => $file->getClientOriginalName(), 'path' => Storage::disk($disk)->url($path)];
             }
         }
 
@@ -162,11 +165,12 @@ class AssignmentController extends Controller
             'files.*' => ['file'],
         ]);
 
+        $disk = config('filesystems.upload_disk');
         $files = $submission->files ?? [];
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('assignments/' . $assignment->id, 'public');
-                $files[] = $path;
+                $path = $file->store('assignments/' . $assignment->id, $disk);
+                $files[] = Storage::disk($disk)->url($path);
             }
         }
 

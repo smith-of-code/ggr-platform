@@ -10,6 +10,7 @@ use App\Models\Lms\LmsFormSubmission;
 use App\Models\Lms\LmsInvitation;
 use App\Models\Lms\LmsProfile;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +38,41 @@ class FormController extends Controller
         return Inertia::render('Lms/Admin/Forms/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'form' => null,
+        ]);
+    }
+
+    public function checkSlug(Request $request, LmsEvent $event): JsonResponse
+    {
+        $title = $request->query('title', '');
+        $excludeId = $request->query('exclude_id');
+        $baseSlug = Str::slug($title) ?: 'form';
+
+        $query = LmsForm::where('slug', $baseSlug);
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+        $available = !$query->exists();
+
+        $suggestions = [];
+        if (!$available) {
+            $suffix = 1;
+            while (count($suggestions) < 3) {
+                $candidate = $baseSlug . '-' . $suffix;
+                $exists = LmsForm::where('slug', $candidate)
+                    ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
+                    ->exists();
+                if (!$exists) {
+                    $suggestions[] = $candidate;
+                }
+                $suffix++;
+                if ($suffix > 20) break;
+            }
+        }
+
+        return response()->json([
+            'slug' => $baseSlug,
+            'available' => $available,
+            'suggestions' => $suggestions,
         ]);
     }
 

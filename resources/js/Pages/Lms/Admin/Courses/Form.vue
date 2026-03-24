@@ -152,6 +152,7 @@
                   @move="(delta) => moveModuleStage(mIdx, sIdx, delta)"
                   @remove="removeModuleStage(mIdx, sIdx)"
                   @search="openStageSearch(mIdx, sIdx)"
+                  @search-block="openBlockSearch(mIdx, sIdx)"
                 />
               </div>
               <RButton variant="ghost" size="sm" type="button" class="mt-3" @click="addModuleStage(mIdx)">
@@ -182,6 +183,7 @@
             @move="(delta) => moveStage(idx, delta)"
             @remove="form.stages.splice(idx, 1)"
             @search="openStageSearch(null, idx)"
+            @search-block="openBlockSearch(null, idx)"
           />
         </div>
         <RButton variant="outline" block type="button" class="mt-4" @click="addStage">
@@ -213,6 +215,14 @@
       @close="showStageSearch = false"
       @select="handleStageSelect"
     />
+
+    <SearchRefModal
+      :show="showBlockSearch"
+      type="block"
+      :event-slug="event.slug"
+      @close="showBlockSearch = false"
+      @select="handleBlockSelect"
+    />
   </LmsAdminLayout>
 </template>
 
@@ -234,8 +244,10 @@ const videos = props.videos ?? []
 
 const showModuleSearch = ref(false)
 const showStageSearch = ref(false)
+const showBlockSearch = ref(false)
 const moduleSearchIdx = ref(null)
 const stageSearchCtx = ref({ moduleIdx: null, stageIdx: 0 })
+const blockSearchCtx = ref({ moduleIdx: null, stageIdx: 0 })
 
 function openModuleSearch(mIdx) {
   moduleSearchIdx.value = mIdx
@@ -277,6 +289,27 @@ function handleStageSelect(stage) {
   target.content = stage.content ?? ''
   target.source_stage_id = stage.id
   target.blocks = stageBlocksFromServer(stage)
+}
+
+function openBlockSearch(moduleIdx, stageIdx) {
+  blockSearchCtx.value = { moduleIdx, stageIdx }
+  showBlockSearch.value = true
+}
+
+function handleBlockSelect(block) {
+  const { moduleIdx, stageIdx } = blockSearchCtx.value
+  const target = moduleIdx !== null
+    ? form.modules[moduleIdx]?.stages?.[stageIdx]
+    : form.stages[stageIdx]
+  if (!target) return
+
+  if (!target.blocks) target.blocks = []
+
+  target.blocks.push({
+    type: block.type || 'content',
+    content: block.content ?? '',
+    position: target.blocks.length,
+  })
 }
 
 function emptyBlock() {

@@ -24,7 +24,7 @@ class SocialAuthController extends Controller
             'social_event_slug' => $event->slug,
         ]);
 
-        return Socialite::driver($provider)->redirect();
+        return $this->buildDriver($provider)->redirect();
     }
 
     public function redirectToGlobalLogin(string $provider): RedirectResponse
@@ -36,7 +36,7 @@ class SocialAuthController extends Controller
             'social_event_slug' => null,
         ]);
 
-        return Socialite::driver($provider)->redirect();
+        return $this->buildDriver($provider)->redirect();
     }
 
     public function redirectToLink(LmsEvent $event, string $provider): RedirectResponse
@@ -48,7 +48,18 @@ class SocialAuthController extends Controller
             'social_event_slug' => $event->slug,
         ]);
 
-        return Socialite::driver($provider)->redirect();
+        return $this->buildDriver($provider)->redirect();
+    }
+
+    private function buildDriver(string $provider)
+    {
+        $driver = Socialite::driver($provider);
+
+        if ($provider === 'vkontakte') {
+            $driver->enablePKCE();
+        }
+
+        return $driver;
     }
 
     public function callback(string $provider): RedirectResponse
@@ -65,7 +76,7 @@ class SocialAuthController extends Controller
         $event = $eventSlug ? LmsEvent::where('slug', $eventSlug)->firstOrFail() : null;
 
         try {
-            $socialUser = Socialite::driver($provider)->user();
+            $socialUser = $this->buildDriver($provider)->user();
         } catch (\Exception) {
             if ($flow === 'link') {
                 return redirect()->route('lms.profile.edit', $event)->withErrors(['social' => 'Не удалось получить данные от провайдера.']);

@@ -3,28 +3,44 @@
     <Head title="Вход – ВШГР" />
 
     <!-- Left panel: branding -->
-    <div class="hidden w-1/2 flex-col justify-between bg-rosatom-800 p-12 lg:flex">
-      <div>
-        <img src="/images/logo-horizontal.png" alt="ГГР" class="h-20 w-auto" />
+    <div class="relative hidden w-1/2 overflow-hidden lg:flex lg:flex-col lg:justify-between">
+      <!-- Gradient background -->
+      <div class="absolute inset-0 bg-gradient-to-br from-rosatom-900 via-rosatom-800 to-rosatom-700" />
+
+      <!-- Decorative shapes -->
+      <div class="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-white/[0.04]" />
+      <div class="absolute -bottom-32 -right-32 h-[500px] w-[500px] rounded-full bg-white/[0.03]" />
+      <div class="absolute right-10 top-1/3 h-40 w-40 rounded-full bg-rosatom-500/10 blur-2xl" />
+      <div class="absolute bottom-1/4 left-16 h-24 w-24 rounded-full bg-rosatom-400/10 blur-xl" />
+
+      <!-- Subtle grid pattern -->
+      <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" />
+
+      <div class="relative z-10 flex flex-1 flex-col justify-between p-12">
+        <div>
+          <img src="/images/logo-horizontal.png" alt="ГГР" class="h-20 w-auto" />
+        </div>
+        <div>
+          <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
+            Высшая школа<br />гостеприимного развития
+          </h2>
+          <p class="mt-6 max-w-lg text-lg text-rosatom-300/80">
+            Образовательная платформа для подготовки специалистов в области гостеприимства гостеприимных городов Росатома
+          </p>
+        </div>
+        <p class="text-sm text-white/30">&copy; {{ new Date().getFullYear() }} Росатом</p>
       </div>
-      <div>
-        <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
-          Высшая школа<br />гостеприимного развития
-        </h2>
-        <p class="mt-6 max-w-lg text-lg text-rosatom-300">
-          Образовательная платформа для подготовки специалистов в области гостеприимства гостеприимных городов Росатома
-        </p>
-      </div>
-      <p class="text-sm text-rosatom-500">&copy; {{ new Date().getFullYear() }} Росатом</p>
     </div>
 
     <!-- Right panel: form -->
-    <div class="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12">
-      <div class="w-full max-w-md">
+    <div class="relative flex flex-1 flex-col items-center justify-center px-6 py-12">
+      <!-- Right side gradient overlay -->
+      <div class="absolute inset-0 bg-gradient-to-br from-white via-white to-rosatom-50/60" />
+
+      <div class="relative z-10 w-full max-w-md">
         <!-- Mobile logo -->
         <div class="mb-8 text-center lg:hidden">
-          <img src="/images/logo-compact.png" alt="ГГР" class="mx-auto mb-4 h-24 w-auto rounded-lg" />
-          <p class="font-brand text-lg font-bold text-rosatom-800">ВШГР</p>
+          <img src="/images/logo-compact.png" alt="ГГР" class="mx-auto mb-4 h-20 w-auto" />
         </div>
 
         <h1 class="text-2xl font-bold text-gray-900">Вход в систему</h1>
@@ -61,13 +77,6 @@
           </div>
 
           <div class="mt-4 flex flex-col gap-3">
-            <a
-              :href="route('lms.social.login', { event: event?.slug, provider: 'vkontakte' })"
-              class="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg bg-[#0077FF] px-5 text-sm font-medium text-white transition hover:bg-[#0071F2] active:bg-[#0069E0]"
-            >
-              <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.54 1.66h18.92c1.59 0 2.88 1.29 2.88 2.88v18.92c0 1.59-1.29 2.88-2.88 2.88H4.54c-1.59 0-2.88-1.29-2.88-2.88V4.54c0-1.59 1.29-2.88 2.88-2.88z" fill="#0077FF"/><path d="M14.67 19.47c-5.62 0-8.82-3.86-8.95-10.28h2.81c.09 4.71 2.17 6.71 3.81 7.12V9.19h2.65v4.07c1.62-.17 3.33-2.02 3.91-4.07h2.65c-.44 2.53-2.3 4.38-3.62 5.15 1.32.62 3.4 2.25 4.2 5.13h-2.92c-.63-1.95-2.18-3.46-4.22-3.66v3.66h-.32z" fill="white"/></svg>
-              Войти с VK&nbsp;ID
-            </a>
             <a
               :href="route('lms.social.login', { event: event?.slug, provider: 'yandex' })"
               class="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg bg-black px-5 text-sm font-medium text-white transition hover:bg-[#222] active:bg-[#333]"

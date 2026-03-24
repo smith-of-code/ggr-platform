@@ -9,6 +9,7 @@ use App\Models\Lms\LmsVideo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -118,8 +119,9 @@ class VideoController extends Controller
         }
 
         if ($request->hasFile('thumbnail_file')) {
-            $path = $request->file('thumbnail_file')->store('thumbnails/videos', 'public');
-            return '/storage/' . $path;
+            $disk = config('filesystems.upload_disk');
+            $path = $request->file('thumbnail_file')->store('thumbnails/videos', $disk);
+            return Storage::disk($disk)->url($path);
         }
 
         if ($existing) {

@@ -140,6 +140,38 @@ class CourseController extends Controller
         return response()->json($stages);
     }
 
+    public function searchBlocks(Request $request, LmsEvent $event): JsonResponse
+    {
+        $q = $request->query('q', '');
+        $courseIds = $event->courses()->pluck('id');
+
+        $blocks = LmsStageBlock::whereHas('stage', fn ($query) => $query->whereIn('lms_course_id', $courseIds))
+            ->with(['stage:id,title,lms_course_id,lms_course_module_id', 'stage.course:id,title', 'stage.module:id,title'])
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('content', 'ilike', "%{$q}%")
+                        ->orWhereHas('stage', fn ($s) => $s->where('title', 'ilike', "%{$q}%"));
+                });
+            })
+            ->orderByDesc('id')
+            ->limit(30)
+            ->get()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'type' => $b->type,
+                'content' => $b->content,
+                'scorm_package' => $b->scorm_package,
+                'lms_test_id' => $b->lms_test_id,
+                'lms_assignment_id' => $b->lms_assignment_id,
+                'lms_video_id' => $b->lms_video_id,
+                'stage_title' => $b->stage?->title,
+                'course_title' => $b->stage?->course?->title,
+                'module_title' => $b->stage?->module?->title,
+            ]);
+
+        return response()->json($blocks);
+    }
+
     public function uploadScorm(Request $request, LmsEvent $event): JsonResponse
     {
         $request->validate([
