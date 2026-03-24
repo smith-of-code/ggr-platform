@@ -10,9 +10,11 @@ use App\Models\Lms\LmsTrajectoryEnrollment;
 use App\Observers\LmsProgressObserver;
 use App\Services\GamificationService;
 use App\Services\SettingsService;
+use App\Socialite\VkIdProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Socialite\Facades\Socialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
@@ -37,8 +39,18 @@ class AppServiceProvider extends ServiceProvider
         LmsAssignmentReview::created(fn ($model) => $observer->assignmentApproved($model));
         LmsTrajectoryEnrollment::updated(fn ($model) => $observer->trajectoryCompleted($model));
 
+        Socialite::extend('vkontakte', function ($app) {
+            $config = $app['config']['services.vkontakte'];
+
+            return new VkIdProvider(
+                $app['request'],
+                $config['client_id'],
+                $config['client_secret'] ?? '',
+                $config['redirect'],
+            );
+        });
+
         Event::listen(function (SocialiteWasCalled $event) {
-            $event->extendSocialite('vkontakte', \SocialiteProviders\VKontakte\Provider::class);
             $event->extendSocialite('yandex', \SocialiteProviders\Yandex\Provider::class);
         });
     }
