@@ -3,28 +3,36 @@
     <Head :title="`Регистрация – ${event?.title || 'ВШГР'}`" />
 
     <!-- Left panel: branding -->
-    <div class="hidden w-1/2 flex-col justify-between bg-rosatom-800 p-12 lg:flex">
-      <div>
-        <img src="/images/logo-horizontal.png" alt="ГГР" class="h-20 w-auto" />
+    <div class="relative hidden w-1/2 overflow-hidden lg:flex lg:flex-col lg:justify-between">
+      <div class="absolute inset-0 bg-gradient-to-br from-rosatom-900 via-rosatom-800 to-rosatom-700" />
+      <div class="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-white/[0.04]" />
+      <div class="absolute -bottom-32 -right-32 h-[500px] w-[500px] rounded-full bg-white/[0.03]" />
+      <div class="absolute right-10 top-1/3 h-40 w-40 rounded-full bg-rosatom-500/10 blur-2xl" />
+      <div class="absolute bottom-1/4 left-16 h-24 w-24 rounded-full bg-rosatom-400/10 blur-xl" />
+      <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" />
+      <div class="relative z-10 flex flex-1 flex-col justify-between p-12">
+        <div>
+          <img src="/images/logo-horizontal.png" alt="ГГР" class="h-20 w-auto brightness-0 invert" />
+        </div>
+        <div>
+          <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
+            Высшая школа<br />гостеприимного развития
+          </h2>
+          <p class="mt-6 max-w-lg text-lg text-rosatom-300/80">
+            Образовательная платформа для подготовки специалистов в области гостеприимства гостеприимных городов Росатома
+          </p>
+        </div>
+        <p class="text-sm text-white/30">&copy; {{ new Date().getFullYear() }} Росатом</p>
       </div>
-      <div>
-        <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
-          Высшая школа<br />гостеприимного развития
-        </h2>
-        <p class="mt-6 max-w-lg text-lg text-rosatom-300">
-          Образовательная платформа для подготовки специалистов в области гостеприимства гостеприимных городов Росатома
-        </p>
-      </div>
-      <p class="text-sm text-rosatom-500">&copy; {{ new Date().getFullYear() }} Росатом</p>
     </div>
 
     <!-- Right panel -->
-    <div class="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12">
-      <div class="w-full max-w-md">
+    <div class="relative flex flex-1 flex-col items-center justify-center px-6 py-12">
+      <div class="absolute inset-0 bg-gradient-to-br from-white via-white to-rosatom-50/60" />
+      <div class="relative z-10 w-full max-w-md">
         <!-- Mobile logo -->
         <div class="mb-8 text-center lg:hidden">
-          <img src="/images/logo-compact.png" alt="ГГР" class="mx-auto mb-4 h-24 w-auto" />
-          <p class="font-brand text-lg font-bold text-rosatom-800">ВШГР</p>
+          <img src="/images/logo-compact.png" alt="ГГР" class="mx-auto mb-4 h-20 w-auto" />
         </div>
 
         <!-- Invalid invitation -->
