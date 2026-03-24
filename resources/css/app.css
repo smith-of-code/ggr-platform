@@ -145,6 +145,22 @@
   opacity: 0;
 }
 
+/* ── Sidebar footer buttons — match main nav style ── */
+.r-sidebar__bottom {
+  font-size: var(--text-sm) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+.r-sidebar__bottom .r-btn {
+  color: rgba(255, 255, 255, 0.65) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 500 !important;
+  justify-content: flex-start !important;
+}
+.r-sidebar__bottom .r-btn:hover {
+  color: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
 /* ── Custom scrollbar for sidebar ── */
 .lms-scrollbar::-webkit-scrollbar {
   width: 4px;
