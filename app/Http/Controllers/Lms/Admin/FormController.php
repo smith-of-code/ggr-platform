@@ -107,7 +107,9 @@ class FormController extends Controller
         }
 
         $embedUrl = url("/forms/{$form->slug}");
-        $embedScript = '<iframe src="' . $embedUrl . '" width="100%" height="800" frameborder="0" style="border:none;"></iframe>';
+        $widgetJsUrl = url('/js/form-widget.js');
+        $embedScript = '<script src="' . $widgetJsUrl . '" data-form="' . e($form->slug) . '"></script>';
+        $embedIframe = '<iframe src="' . $embedUrl . '" width="100%" height="800" frameborder="0" style="border:none;"></iframe>';
 
         return Inertia::render('Lms/Admin/Forms/Stats', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -116,6 +118,7 @@ class FormController extends Controller
             'fieldStats' => $fieldStats,
             'embedUrl' => $embedUrl,
             'embedScript' => $embedScript,
+            'embedIframe' => $embedIframe,
         ]);
     }
 

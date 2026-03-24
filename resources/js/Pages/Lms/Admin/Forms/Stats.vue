@@ -30,14 +30,25 @@
         </div>
         <RButton variant="outline" size="sm" @click="copyToClipboard(embedUrl)">Копировать ссылку</RButton>
       </div>
+
       <div class="mt-4">
-        <p class="mb-1 text-xs font-medium text-gray-500">Код для встраивания на другой сайт</p>
+        <div class="mb-2 flex gap-2">
+          <button
+            v-for="m in embedModes"
+            :key="m.key"
+            :class="['rounded-md px-3 py-1.5 text-xs font-medium transition', embedMode === m.key ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200']"
+            @click="embedMode = m.key"
+          >
+            {{ m.label }}
+          </button>
+        </div>
+        <p class="mb-1 text-xs text-gray-400">{{ embedMode === 'script' ? 'Форма отрисуется прямо на странице (рекомендуется)' : 'Форма откроется во фрейме' }}</p>
         <div class="relative">
-          <pre class="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs text-green-400">{{ embedScript }}</pre>
+          <pre class="overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs text-green-400">{{ embedMode === 'script' ? embedScript : embedIframe }}</pre>
           <button
             type="button"
             class="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600"
-            @click="copyToClipboard(embedScript)"
+            @click="copyToClipboard(embedMode === 'script' ? embedScript : embedIframe)"
           >
             Копировать
           </button>
@@ -135,10 +146,16 @@ const props = defineProps({
   fieldStats: Object,
   embedUrl: String,
   embedScript: String,
+  embedIframe: String,
 })
 
 const tabs = ['Ответы', 'Статистика']
 const activeTab = ref('Ответы')
+const embedModes = [
+  { key: 'script', label: 'Script (виджет)' },
+  { key: 'iframe', label: 'iFrame' },
+]
+const embedMode = ref('script')
 const selectedIds = ref([])
 
 const allSelected = computed(() => {

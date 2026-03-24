@@ -10,7 +10,7 @@
 
 1. **Конструктор полей**: визуальный редактор с 10 типами полей
 2. **Публичная ссылка**: уникальный slug для анонимного прохождения
-3. **Embed (iframe)**: скрипт для встраивания на сторонние сайты
+3. **Embed (script / iframe)**: виджет через `<script>` или iframe для встраивания на сторонние сайты
 4. **Статистика**: диаграммы ответов для select/radio/checkbox/rating; таблица всех ответов
 5. **Создание пользователей**: из ответов анкеты (если есть поля ФИО + email) → автоматическое создание User + LmsProfile + LmsInvitation
 
@@ -117,6 +117,15 @@
 | GET | `/forms/{slug}` | FormPublicController@show |
 | POST | `/forms/{slug}/submit` | FormPublicController@submit |
 
+### Widget API (CORS, без CSRF)
+| Метод | URI | Действие |
+|---|---|---|
+| GET | `/api/forms/{slug}` | FormPublicController@apiShow |
+| POST | `/api/forms/{slug}/submit` | FormPublicController@apiSubmit |
+| OPTIONS | `/api/forms/{slug}/submit` | FormPublicController@apiCorsOptions |
+
+Статический виджет: `/js/form-widget.js` (файл в `public/js/`).
+
 ## Ключевые workflow
 
 ### 1. Создание формы
@@ -138,7 +147,9 @@
 3. Вкладка «Статистика»: по каждому select/radio/checkbox/rating полю — полосы с процентами
 
 ### 4. Embed (встраивание)
-1. На странице статистики копируется публичная ссылка или embed-код (iframe)
+1. На странице статистики доступны два варианта встраивания:
+   - **Script (виджет)** — рекомендуемый: `<script src=".../js/form-widget.js" data-form="slug"></script>`. Виджет загружается, запрашивает данные формы через API (`GET /api/forms/{slug}`), рендерит форму прямо на странице, отправляет ответы через `POST /api/forms/{slug}/submit`. Не требует iframe, адаптируется к ширине страницы.
+   - **iFrame** — классический: `<iframe src=".../forms/{slug}" ...></iframe>`.
 2. Код вставляется на внешний сайт
 3. Пользователь проходит форму прямо на стороннем сайте
 

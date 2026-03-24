@@ -168,3 +168,11 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
 
 Route::get('/forms/{slug}', [FormPublicController::class, 'show'])->name('forms.public.show');
 Route::post('/forms/{slug}/submit', [FormPublicController::class, 'submit'])->name('forms.public.submit');
+
+// Widget API (CORS, no CSRF)
+Route::get('/api/forms/{slug}', [FormPublicController::class, 'apiShow'])->name('forms.api.show');
+Route::post('/api/forms/{slug}/submit', [FormPublicController::class, 'apiSubmit'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+    ->name('forms.api.submit');
+Route::options('/api/forms/{slug}/submit', [FormPublicController::class, 'apiCorsOptions'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
