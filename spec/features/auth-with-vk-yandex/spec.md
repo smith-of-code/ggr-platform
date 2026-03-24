@@ -8,7 +8,7 @@
 
 ## In-scope
 
-- Установка и настройка пакета `laravel/socialite` + провайдеры VK и Yandex
+- Установка и настройка пакета `laravel/socialite` + кастомный VK ID провайдер + `socialiteproviders/yandex`
 - Новая таблица `social_accounts` (user_id, provider, provider_id, …) для хранения привязок
 - Раздел «Привязанные аккаунты» на странице профиля участника (`Lms/Profile/Edit.vue`) с кнопками «Привязать ВК» / «Привязать Яндекс» и возможностью отвязать
 - Backend-маршруты привязки: redirect → callback → сохранение в `social_accounts`
@@ -29,7 +29,8 @@
 - Привязка доступна только авторизованному пользователю из личного кабинета LMS
 - Один провайдер — один аккаунт на пользователя (unique: user_id + provider)
 - Один `provider_id` — один пользователь (unique: provider + provider_id) — нельзя привязать один ВК к двум аккаунтам
-- Пакет: `laravel/socialite` + `socialiteproviders/vkontakte` + `socialiteproviders/yandex`
+- Пакет: `laravel/socialite` + `socialiteproviders/yandex`
+- VK ID: кастомный Socialite-провайдер `App\Socialite\VkIdProvider` (endpoint'ы `id.vk.ru`, обязательный PKCE S256, формат callback `payload`)
 - Все команды — только через Docker
 
 ## Технические решения
@@ -66,6 +67,22 @@ OAuth-провайдеры требуют фиксированный callback UR
 | Метод | URI | Action | Name |
 |-------|-----|--------|------|
 | GET | `/auth/social/{provider}/callback` | чтение flow из сессии → обработка login или link | `social.callback` |
+
+### VK ID API (кастомный провайдер)
+
+Пакет `socialiteproviders/vkontakte` использует **старый** VK OAuth API (`oauth.vk.ru`), несовместимый с VK ID (`id.vk.ru`). Поэтому реализован кастомный Socialite-провайдер `App\Socialite\VkIdProvider`.
+
+| Аспект | Старый VK OAuth (`socialiteproviders/vkontakte`) | VK ID (кастомный `VkIdProvider`) |
+|--------|--------------------------------------------------|----------------------------------|
+| Auth URL | `oauth.vk.ru/authorize` | `id.vk.ru/authorize` |
+| Token URL | `oauth.vk.ru/access_token` | `id.vk.ru/oauth2/auth` (POST) |
+| User Info | `api.vk.ru/method/users.get` (GET) | `id.vk.ru/oauth2/user_info` (POST) |
+| PKCE | Не поддерживается | **Обязателен** (S256) |
+| `device_id` | Нет | Обязателен при обмене кода |
+| `client_secret` | Используется | Не используется (PKCE вместо него) |
+| Формат callback | Стандартные query params | JSON в `payload` query param |
+
+Провайдер регистрируется через `Socialite::extend('vkontakte', ...)` в `AppServiceProvider`. Для Yandex используется стандартный `socialiteproviders/yandex`.
 
 ### Контроллер
 

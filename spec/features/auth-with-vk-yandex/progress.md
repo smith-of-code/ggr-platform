@@ -29,6 +29,12 @@
 ### Task 9: Обновление spec и data-model ✓
 - Files: `spec/03-data-model.md`, `spec/05-flows.md`, `spec/01-architecture.md`, `spec/features/auth-with-vk-yandex/spec.md`
 
+### Task 10: Миграция с socialiteproviders/vkontakte на кастомный VkIdProvider ✓
+- Причина: пакет `socialiteproviders/vkontakte` использует **старый** VK OAuth API (`oauth.vk.ru`), несовместимый с VK ID (`id.vk.ru`). VK ID требует PKCE (S256), использует другие endpoint'ы, возвращает callback данные в JSON `payload`, требует `device_id` при обмене кода и не использует `client_secret`.
+- Создан `app/Socialite/VkIdProvider.php` — кастомный Socialite-провайдер для VK ID API
+- Обновлён `app/Providers/AppServiceProvider.php` — регистрация через `Socialite::extend()` вместо `SocialiteWasCalled`
+- Files: `app/Socialite/VkIdProvider.php`, `app/Providers/AppServiceProvider.php`, `app/Http/Controllers/Lms/SocialAuthController.php`
+
 ## Partially completed
 
 (пусто)

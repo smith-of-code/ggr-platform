@@ -105,6 +105,10 @@
 
 Поддерживаемые провайдеры: `vkontakte`, `yandex`. Event slug и тип операции (login/link) сохраняются в сессии перед redirect к провайдеру.
 
+**VK ID** (`vkontakte`): кастомный Socialite-провайдер `App\Socialite\VkIdProvider` использует VK ID API (`id.vk.ru`), обязательный PKCE (S256), формат callback с JSON `payload`, `device_id` при обмене кода. `client_secret` не используется.
+
+**Yandex** (`yandex`): стандартный `socialiteproviders/yandex` через legacy OAuth flow.
+
 ## 6. LMS Участник (`routes/lms.php`, prefix: `/lms/{event:slug}`, middleware: auth)
 
 ### Dashboard & Profile

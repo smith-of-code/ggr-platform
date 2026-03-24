@@ -1,10 +1,10 @@
 # Задачи: auth-with-vk-yandex
 
-## Task 1: Установка пакетов Socialite
+## Task 1: Установка пакетов Socialite + кастомный VK ID провайдер
 
-- **Goal**: Установить `laravel/socialite`, `socialiteproviders/vkontakte`, `socialiteproviders/yandex`
-- **Scope**: `composer.json`, `config/app.php` (если нужен provider registration), `config/services.php`
-- **DoD**: Пакеты установлены. В `AppServiceProvider::boot()` зарегистрированы оба провайдера через `Event::listen(SocialiteWasCalled)` → `extendSocialite()` (паттерн для Laravel 11+). Конфиг `services.php` содержит секции `vkontakte` + `yandex`.
+- **Goal**: Установить `laravel/socialite`, `socialiteproviders/yandex`. Создать кастомный `App\Socialite\VkIdProvider` для VK ID API (`id.vk.ru`).
+- **Scope**: `composer.json`, `config/services.php`, `app/Socialite/VkIdProvider.php`, `app/Providers/AppServiceProvider.php`
+- **DoD**: Пакеты установлены. VK ID зарегистрирован через `Socialite::extend('vkontakte', VkIdProvider)`, Yandex — через `Event::listen(SocialiteWasCalled)` → `extendSocialite()`. Конфиг `services.php` содержит секции `vkontakte` + `yandex`. Кастомный VK ID провайдер использует endpoint'ы `id.vk.ru`, обязательный PKCE (S256), обработку `payload` формата callback, `device_id` при обмене кода.
 - **Verify**: `source docker/.env.local && docker exec ${APP_NAME}_fpm composer show laravel/socialite`
 
 ## Task 2: Конфигурация env-переменных

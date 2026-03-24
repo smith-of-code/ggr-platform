@@ -53,13 +53,7 @@ class SocialAuthController extends Controller
 
     private function buildDriver(string $provider)
     {
-        $driver = Socialite::driver($provider);
-
-        if ($provider === 'vkontakte') {
-            $driver->enablePKCE();
-        }
-
-        return $driver;
+        return Socialite::driver($provider);
     }
 
     public function callback(string $provider): RedirectResponse
