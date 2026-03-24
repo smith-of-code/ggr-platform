@@ -63,13 +63,23 @@
 
             <div v-if="enrollments?.length" class="mb-4 space-y-2">
               <div v-for="e in enrollments" :key="e.id" class="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
-                <div>
+                <div class="min-w-0 flex-1">
                   <p class="text-sm font-medium text-gray-900">{{ e.course?.title }}</p>
                   <p class="text-xs text-gray-400">Статус: {{ enrollmentStatus(e.status) }}</p>
                 </div>
-                <RBadge :variant="e.status === 'completed' ? 'success' : 'info'" size="sm">
-                  {{ enrollmentStatus(e.status) }}
-                </RBadge>
+                <div class="ml-3 flex items-center gap-2">
+                  <RBadge :variant="enrollmentBadgeVariant(e.status)" size="sm">
+                    {{ enrollmentStatus(e.status) }}
+                  </RBadge>
+                  <button
+                    type="button"
+                    class="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500"
+                    title="Отписать от курса"
+                    @click="unenrollFromCourse(e)"
+                  >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
               </div>
             </div>
             <div v-else class="mb-4 text-sm text-gray-400">Курсы не назначены</div>
@@ -142,7 +152,17 @@ function assignCourses() {
 }
 
 function enrollmentStatus(status) {
-  return { enrolled: 'Записан', in_progress: 'Проходит', completed: 'Завершён' }[status] || status
+  return { enrolled: 'Записан', in_progress: 'Проходит', completed: 'Завершён', pending: 'Ожидает', rejected: 'Отклонён' }[status] || status
+}
+
+function enrollmentBadgeVariant(status) {
+  return { enrolled: 'success', in_progress: 'info', completed: 'success', pending: 'warning', rejected: 'error' }[status] || 'neutral'
+}
+
+function unenrollFromCourse(enrollment) {
+  const courseName = enrollment.course?.title || 'курса'
+  if (!confirm(`Отписать участника от «${courseName}»? Прогресс обучения будет удалён.`)) return
+  router.delete(route('lms.admin.enrollments.destroy', [props.event.slug, enrollment.id]))
 }
 
 function roleBadgeVariant(slug) {
