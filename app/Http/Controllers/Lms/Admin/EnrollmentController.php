@@ -93,7 +93,7 @@ class EnrollmentController extends Controller
         ]);
     }
 
-    public function approve(LmsEvent $event, LmsCourseEnrollment $enrollment): RedirectResponse
+    public function approve(Request $request, LmsEvent $event, LmsCourseEnrollment $enrollment): RedirectResponse
     {
         $this->ensureEnrollmentBelongsToEvent($enrollment, $event);
 
@@ -103,10 +103,10 @@ class EnrollmentController extends Controller
             'reviewed_by' => auth()->id(),
         ]);
 
-        return redirect()->back()->with('success', 'Заявка одобрена');
+        return $this->safeRedirect($request, $event, 'Заявка одобрена');
     }
 
-    public function reject(LmsEvent $event, LmsCourseEnrollment $enrollment): RedirectResponse
+    public function reject(Request $request, LmsEvent $event, LmsCourseEnrollment $enrollment): RedirectResponse
     {
         $this->ensureEnrollmentBelongsToEvent($enrollment, $event);
 
@@ -116,10 +116,10 @@ class EnrollmentController extends Controller
             'reviewed_by' => auth()->id(),
         ]);
 
-        return redirect()->back()->with('success', 'Заявка отклонена');
+        return $this->safeRedirect($request, $event, 'Заявка отклонена');
     }
 
-    public function destroy(LmsEvent $event, LmsCourseEnrollment $enrollment): RedirectResponse
+    public function destroy(Request $request, LmsEvent $event, LmsCourseEnrollment $enrollment): RedirectResponse
     {
         $this->ensureEnrollmentBelongsToEvent($enrollment, $event);
 
@@ -140,7 +140,19 @@ class EnrollmentController extends Controller
 
         $enrollment->delete();
 
-        return redirect()->back()->with('success', 'Участник отписан от курса');
+        return $this->safeRedirect($request, $event, 'Участник отписан от курса');
+    }
+
+    private function safeRedirect(Request $request, LmsEvent $event, string $message): RedirectResponse
+    {
+        $referer = $request->headers->get('referer', '');
+        $adminPrefix = '/lms-admin/' . $event->slug;
+
+        if (str_contains($referer, $adminPrefix)) {
+            return redirect()->to($referer)->with('success', $message);
+        }
+
+        return redirect()->route('lms.admin.enrollments.index', $event->slug)->with('success', $message);
     }
 
     private function ensureEnrollmentBelongsToEvent(LmsCourseEnrollment $enrollment, LmsEvent $event): void
