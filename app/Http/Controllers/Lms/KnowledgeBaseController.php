@@ -16,21 +16,26 @@ class KnowledgeBaseController extends Controller
     public function index(LmsEvent $event): Response
     {
         $user = auth()->user();
-        $groupIds = DB::table('lms_group_members')
-            ->where('user_id', $user->id)
-            ->pluck('lms_group_id');
+        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $isPrivileged = $profile && in_array($profile->role, ['admin', 'curator']);
+
+        $groupIds = $isPrivileged
+            ? collect()
+            : DB::table('lms_group_members')->where('user_id', $user->id)->pluck('lms_group_id');
 
         $sections = LmsKbSection::where('lms_event_id', $event->id)
             ->whereNull('parent_id')
             ->with('children')
             ->orderBy('position')
-            ->when($groupIds->isNotEmpty(), function ($query) use ($groupIds) {
-                $query->where(function ($q) use ($groupIds) {
-                    $q->whereDoesntHave('groups')
-                        ->orWhereHas('groups', fn($g) => $g->whereIn('lms_groups.id', $groupIds));
+            ->unless($isPrivileged, function ($query) use ($groupIds) {
+                $query->when($groupIds->isNotEmpty(), function ($q) use ($groupIds) {
+                    $q->where(function ($q2) use ($groupIds) {
+                        $q2->whereDoesntHave('groups')
+                            ->orWhereHas('groups', fn($g) => $g->whereIn('lms_groups.id', $groupIds));
+                    });
+                }, function ($q) {
+                    $q->whereDoesntHave('groups');
                 });
-            }, function ($query) {
-                $query->whereDoesntHave('groups');
             })
             ->get();
 
@@ -40,8 +45,6 @@ class KnowledgeBaseController extends Controller
             'description' => $s->description,
             'children' => $s->children->map(fn($c) => $c->only(['id', 'title', 'description'])),
         ]);
-
-        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
         return Inertia::render('Lms/KnowledgeBase/Index', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
@@ -57,19 +60,23 @@ class KnowledgeBaseController extends Controller
             abort(404);
         }
         $user = auth()->user();
-        $groupIds = DB::table('lms_group_members')
-            ->where('user_id', $user->id)
-            ->pluck('lms_group_id');
+        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $isPrivileged = $profile && in_array($profile->role, ['admin', 'curator']);
 
-        $hasAccess = $section->groups->isEmpty()
-            || $section->groups()->whereIn('lms_groups.id', $groupIds)->exists();
+        if (!$isPrivileged) {
+            $groupIds = DB::table('lms_group_members')
+                ->where('user_id', $user->id)
+                ->pluck('lms_group_id');
 
-        if (!$hasAccess) {
-            abort(403);
+            $hasAccess = $section->groups->isEmpty()
+                || $section->groups()->whereIn('lms_groups.id', $groupIds)->exists();
+
+            if (!$hasAccess) {
+                abort(403);
+            }
         }
 
         $section->load(['children.items', 'items']);
-        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
         app(GamificationService::class)->awardPoints($event, $user, 'kb_view', "БЗ: {$section->title}");
 
