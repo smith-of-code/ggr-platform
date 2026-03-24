@@ -67,7 +67,7 @@
                 <option value="video">Видео</option>
                 <option value="file">Файл</option>
               </select>
-              <RButton variant="ghost" size="sm" iconOnly @click="form.items.splice(idx, 1)" class="text-red-600 hover:bg-red-50">
+              <RButton type="button" variant="ghost" size="sm" iconOnly @click="form.items.splice(idx, 1)" class="text-red-600 hover:bg-red-50">
                 <template #icon>×</template>
               </RButton>
             </div>
@@ -129,7 +129,7 @@
           </div>
         </div>
         <template #footer>
-          <RButton variant="outline" block class="mt-3" @click="addItem">
+          <RButton type="button" variant="outline" block class="mt-3" @click="addItem">
             + Добавить элемент
           </RButton>
         </template>
