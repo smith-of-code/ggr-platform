@@ -218,8 +218,4 @@ function submit() {
     form.post(route('admin.research.store'))
   }
 }
-</think>
-Fixing Research Form submit: avoid double transform — use form.put/post directly; city_id can stay as null in useForm.
-
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-StrReplace
+</script>
