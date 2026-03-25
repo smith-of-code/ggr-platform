@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\City;
+use App\Models\Favorite;
 use App\Models\Tour;
+use App\Models\TourReaction;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,13 +50,96 @@ class TourController extends Controller
 
     public function show(string $slug): Response
     {
-        $tour = Tour::where('slug', $slug)
+        $tour = Tour::query()
+            ->where('slug', $slug)
             ->where('is_active', true)
             ->with(['cities', 'departures', 'media'])
             ->firstOrFail();
 
+        $user = auth()->user();
+        $userReaction = null;
+        $isFavorited = false;
+        if ($user !== null) {
+            $userReaction = TourReaction::query()
+                ->where('tour_id', $tour->id)
+                ->where('user_id', $user->id)
+                ->value('emoji');
+            $isFavorited = Favorite::query()
+                ->where('user_id', $user->id)
+                ->where('favorable_type', Tour::class)
+                ->where('favorable_id', $tour->id)
+                ->exists();
+        }
+
+        $tour->setAttribute('is_favorited', $isFavorited);
+        if ($tour->getAttribute('reactions_count') === null) {
+            $tour->setAttribute('reactions_count', []);
+        }
+
         return Inertia::render('Tours/Show', [
             'tour' => $tour,
+            'userReaction' => $userReaction,
         ]);
+    }
+
+    public function react(Request $request, Tour $tour): RedirectResponse
+    {
+        $validated = $request->validate([
+            'emoji' => 'required|string|in:'.implode(',', array_keys(TourReaction::EMOJIS)),
+        ]);
+
+        $emojiKey = $validated['emoji'];
+
+        DB::transaction(function () use ($request, $tour, $emojiKey): void {
+            if ($request->user()) {
+                $existing = TourReaction::query()
+                    ->where('tour_id', $tour->id)
+                    ->where('user_id', $request->user()->id)
+                    ->first();
+
+                if ($existing !== null && $existing->emoji === $emojiKey) {
+                    $existing->delete();
+                } else {
+                    TourReaction::query()->updateOrCreate(
+                        [
+                            'tour_id' => $tour->id,
+                            'user_id' => $request->user()->id,
+                        ],
+                        [
+                            'ip_address' => $request->ip() ?? '',
+                            'emoji' => $emojiKey,
+                        ]
+                    );
+                }
+            } else {
+                $reaction = TourReaction::query()
+                    ->where('tour_id', $tour->id)
+                    ->whereNull('user_id')
+                    ->where('ip_address', $request->ip() ?? '')
+                    ->first();
+
+                if ($reaction !== null && $reaction->emoji === $emojiKey) {
+                    $reaction->delete();
+                } elseif ($reaction !== null) {
+                    $reaction->update(['emoji' => $emojiKey]);
+                } else {
+                    TourReaction::query()->create([
+                        'tour_id' => $tour->id,
+                        'user_id' => null,
+                        'ip_address' => $request->ip() ?? '',
+                        'emoji' => $emojiKey,
+                    ]);
+                }
+            }
+
+            $counts = [];
+            foreach (array_keys(TourReaction::EMOJIS) as $key) {
+                $counts[$key] = $tour->reactions()->where('emoji', $key)->count();
+            }
+
+            $tour->update(['reactions_count' => $counts]);
+        });
+
+        return back()->with('success', 'Реакция сохранена.');
     }
 }

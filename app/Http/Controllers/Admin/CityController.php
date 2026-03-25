@@ -36,6 +36,20 @@ class CityController extends Controller
             'infrastructure' => 'nullable|array',
             'position' => 'nullable|integer',
             'is_active' => 'boolean',
+            'region' => 'nullable|string|max:255',
+            'population' => 'nullable|integer|min:0',
+            'lat' => 'nullable|numeric|between:-90,90',
+            'lng' => 'nullable|numeric|between:-180,180',
+            'attractions' => 'nullable|array',
+            'attractions.*.title' => 'required|string|max:255',
+            'attractions.*.description' => 'nullable|string',
+            'attractions.*.image' => 'nullable|string|max:2048',
+            'social_objects' => 'nullable|array',
+            'gallery' => 'nullable|array',
+            'gallery.*' => 'string|max:2048',
+            'video_url' => 'nullable|string|max:2048',
+            'facts' => 'nullable|array',
+            'facts.*' => 'string|max:2000',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
@@ -63,6 +77,20 @@ class CityController extends Controller
             'infrastructure' => 'nullable|array',
             'position' => 'nullable|integer',
             'is_active' => 'boolean',
+            'region' => 'nullable|string|max:255',
+            'population' => 'nullable|integer|min:0',
+            'lat' => 'nullable|numeric|between:-90,90',
+            'lng' => 'nullable|numeric|between:-180,180',
+            'attractions' => 'nullable|array',
+            'attractions.*.title' => 'required|string|max:255',
+            'attractions.*.description' => 'nullable|string',
+            'attractions.*.image' => 'nullable|string|max:2048',
+            'social_objects' => 'nullable|array',
+            'gallery' => 'nullable|array',
+            'gallery.*' => 'string|max:2048',
+            'video_url' => 'nullable|string|max:2048',
+            'facts' => 'nullable|array',
+            'facts.*' => 'string|max:2000',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);

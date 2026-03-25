@@ -1,28 +1,54 @@
 <?php
 
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
+use App\Http\Controllers\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ResearchController as AdminResearchController;
+use App\Http\Controllers\Admin\RecipeController as AdminRecipeController;
+use App\Http\Controllers\Admin\EducationProductController as AdminEducationProductController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\EducationController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ResearchController;
 use App\Http\Controllers\TourController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth')->group(function () {
-    Route::get('/', [HomeController::class, 'index'])->name('home');
-    Route::get('/cities', [CityController::class, 'index'])->name('cities.index');
-    Route::get('/cities/{slug}', [CityController::class, 'show'])->name('cities.show');
-    Route::get('/tours', [TourController::class, 'index'])->name('tours.index');
-    Route::get('/tours/{slug}', [TourController::class, 'show'])->name('tours.show');
-    Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
+// ── Public portal (no auth required) ──
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/cities', [CityController::class, 'index'])->name('cities.index');
+Route::get('/cities/{slug}', [CityController::class, 'show'])->name('cities.show');
+Route::get('/tours', [TourController::class, 'index'])->name('tours.index');
+Route::get('/tours/{slug}', [TourController::class, 'show'])->name('tours.show');
+Route::post('/tours/{tour}/react', [TourController::class, 'react'])->name('tours.react');
+Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
+Route::post('/contact', [HomeController::class, 'contactSubmit'])->name('contact.submit');
 
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
+Route::get('/vshgr', [EducationController::class, 'index'])->name('education.index');
+Route::get('/vshgr/{slug}', [EducationController::class, 'show'])->name('education.show');
+
+Route::get('/research', [ResearchController::class, 'index'])->name('research.index');
+Route::get('/research/{slug}', [ResearchController::class, 'show'])->name('research.show');
+Route::get('/recipes', [ResearchController::class, 'recipes'])->name('recipes.index');
+Route::get('/recipes/{slug}', [ResearchController::class, 'recipeShow'])->name('recipes.show');
+
+// ── Auth-required portal features ──
+Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/favorites/{type}/{id}', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
+    Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
@@ -34,6 +60,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::patch('/cities/{city}/toggle-active', [AdminCityController::class, 'toggleActive'])->name('cities.toggleActive');
     Route::resource('tours', AdminTourController::class)->except(['show']);
     Route::patch('/tours/{tour}/toggle-active', [AdminTourController::class, 'toggleActive'])->name('tours.toggleActive');
+
+    Route::resource('blog', AdminBlogController::class)->except(['show']);
+    Route::patch('/blog/{post}/toggle-publish', [AdminBlogController::class, 'togglePublish'])->name('blog.togglePublish');
+
+    Route::resource('research', AdminResearchController::class)->except(['show']);
+    Route::resource('recipes', AdminRecipeController::class)->except(['show']);
+    Route::resource('education-products', AdminEducationProductController::class)->except(['show']);
 
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');

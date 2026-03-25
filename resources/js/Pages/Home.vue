@@ -156,6 +156,181 @@
         </div>
       </section>
 
+      <!-- Geography map -->
+      <section
+        v-if="cities?.length"
+        class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-20 text-white sm:px-6 lg:px-8"
+      >
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(255,255,255,0.12),transparent_55%)]" />
+        <div class="relative mx-auto max-w-7xl">
+          <div class="reveal text-center">
+            <h2 class="text-2xl font-bold sm:text-3xl">География проекта</h2>
+            <p class="mx-auto mt-3 max-w-2xl text-sm text-white/80 sm:text-base">
+              Атомные города на карте России — нажмите на точку, чтобы перейти на страницу города
+            </p>
+          </div>
+          <div ref="mapContainerRef" class="relative mx-auto mt-12 aspect-[5/3] w-full max-w-5xl">
+            <svg
+              class="absolute inset-0 h-full w-full drop-shadow-lg"
+              viewBox="0 0 1000 600"
+              preserveAspectRatio="xMidYMid meet"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="homeMapRussia" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="rgba(255,255,255,0.14)" />
+                  <stop offset="100%" stop-color="rgba(255,255,255,0.05)" />
+                </linearGradient>
+                <filter id="homeMapGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              <path
+                fill="url(#homeMapRussia)"
+                stroke="rgba(255,255,255,0.28)"
+                stroke-width="1.5"
+                filter="url(#homeMapGlow)"
+                d="M 118 118 C 168 78 248 72 338 88 L 468 82 C 558 76 648 92 738 108 L 838 132 C 898 158 928 208 918 268 C 912 318 878 368 818 402 L 698 448 C 588 478 458 488 338 472 L 218 438 C 148 398 98 328 92 248 C 88 188 98 148 118 118 Z"
+              />
+            </svg>
+            <div class="absolute inset-0">
+              <Link
+                v-for="city in mapCityMarkers"
+                :key="city.id"
+                :href="route('cities.show', city.slug)"
+                class="group absolute flex max-w-[140px] flex-col items-center gap-1 sm:max-w-[180px]"
+                :class="[
+                  '-translate-x-1/2 -translate-y-full',
+                  highlightedCityId === city.id ? 'z-20' : 'z-10',
+                ]"
+                :style="{ left: city.pctLeft + '%', top: city.pctTop + '%' }"
+                @mouseenter="highlightedCityId = city.id"
+                @mouseleave="highlightedCityId = null"
+                @focusin="highlightedCityId = city.id"
+                @focusout="highlightedCityId = null"
+              >
+                <span
+                  class="flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-white shadow-md ring-2 ring-[#003274]/40 transition duration-300 group-hover:scale-125 group-hover:bg-[#ffd54f] sm:h-5 sm:w-5"
+                  :class="userFavorites?.cityIds?.includes(city.id) ? 'bg-amber-200 ring-amber-400/60' : ''"
+                >
+                  <span class="h-2 w-2 rounded-full bg-[#003274] group-hover:bg-[#003274]" />
+                </span>
+                <span
+                  class="rounded-md bg-[#003274]/90 px-2 py-0.5 text-center text-[10px] font-semibold leading-tight text-white shadow-md backdrop-blur-sm transition group-hover:bg-white group-hover:text-[#003274] sm:text-xs"
+                >
+                  {{ city.name }}
+                </span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Timeline -->
+      <section class="bg-slate-50 px-4 py-20 sm:px-6 lg:px-8">
+        <div class="relative mx-auto max-w-5xl">
+          <div class="reveal mb-14 text-center">
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Хронология событий</h2>
+            <p class="mx-auto mt-3 max-w-xl text-gray-500">
+              Ключевые новости, события и вехи развития программы
+            </p>
+          </div>
+          <div
+            v-if="sortedTimelineEvents.length"
+            class="relative"
+          >
+            <div
+              class="absolute bottom-0 left-4 top-0 w-px bg-gradient-to-b from-[#003274]/25 via-[#003274]/15 to-transparent md:left-1/2 md:-translate-x-1/2"
+              aria-hidden="true"
+            />
+            <ul class="space-y-0">
+              <li
+                v-for="(event, i) in sortedTimelineEvents"
+                :key="event.id ?? i"
+                class="relative pb-14 md:grid md:grid-cols-2 md:gap-0"
+              >
+                <div
+                  class="absolute left-4 top-2 z-10 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full border-4 border-slate-50 bg-[#003274] shadow md:left-1/2"
+                  aria-hidden="true"
+                />
+                <template v-if="i % 2 === 0">
+                  <div
+                    class="reveal pl-12 md:pr-10 md:text-right"
+                    :class="'reveal-delay-' + ((i % 5) + 1)"
+                  >
+                    <article
+                      class="inline-block max-w-md rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-md shadow-gray-200/60 md:text-right"
+                    >
+                      <time class="text-sm font-semibold text-[#003274]">{{ formatEventDate(event.event_date) }}</time>
+                      <h3 class="mt-2 text-lg font-bold text-gray-900">{{ event.title }}</h3>
+                      <p v-if="event.description" class="mt-2 text-sm leading-relaxed text-gray-600">{{ event.description }}</p>
+                      <div class="mt-3 flex flex-wrap items-center gap-2 md:justify-end">
+                        <span
+                          class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                          :class="timelineTypeClass(event.type)"
+                        >
+                          {{ timelineTypeLabel(event.type) }}
+                        </span>
+                        <a
+                          v-if="event.link"
+                          :href="event.link"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="inline-flex items-center rounded-lg border border-[#003274]/20 bg-white px-3 py-1.5 text-xs font-semibold text-[#003274] transition hover:border-[#003274]/40 hover:bg-[#003274]/5"
+                        >
+                          Подробнее
+                        </a>
+                      </div>
+                    </article>
+                  </div>
+                  <div class="hidden md:block" />
+                </template>
+                <template v-else>
+                  <div class="hidden md:block" />
+                  <div
+                    class="reveal pl-12 md:pl-10"
+                    :class="'reveal-delay-' + ((i % 5) + 1)"
+                  >
+                    <article class="max-w-md rounded-2xl border border-gray-100 bg-white p-5 shadow-md shadow-gray-200/60">
+                      <time class="text-sm font-semibold text-[#003274]">{{ formatEventDate(event.event_date) }}</time>
+                      <h3 class="mt-2 text-lg font-bold text-gray-900">{{ event.title }}</h3>
+                      <p v-if="event.description" class="mt-2 text-sm leading-relaxed text-gray-600">{{ event.description }}</p>
+                      <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <span
+                          class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                          :class="timelineTypeClass(event.type)"
+                        >
+                          {{ timelineTypeLabel(event.type) }}
+                        </span>
+                        <a
+                          v-if="event.link"
+                          :href="event.link"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="inline-flex items-center rounded-lg border border-[#003274]/20 bg-white px-3 py-1.5 text-xs font-semibold text-[#003274] transition hover:border-[#003274]/40 hover:bg-[#003274]/5"
+                        >
+                          Подробнее
+                        </a>
+                      </div>
+                    </article>
+                  </div>
+                </template>
+              </li>
+            </ul>
+          </div>
+          <p
+            v-else
+            class="reveal rounded-2xl border border-dashed border-gray-200 bg-white py-12 text-center text-gray-500"
+          >
+            События появятся в ближайшее время
+          </p>
+        </div>
+      </section>
+
       <!-- CTA -->
       <section class="reveal mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#003274] to-[#025ea1] px-8 py-16 text-center text-white shadow-xl sm:px-16">
@@ -174,13 +349,113 @@
           </div>
         </div>
       </section>
+
+      <!-- Contact -->
+      <section
+        class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#024a85] to-[#025ea1] px-4 py-20 text-white sm:px-6 lg:px-8"
+      >
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_0%,rgba(255,255,255,0.12),transparent_50%)]" />
+        <div class="relative mx-auto max-w-7xl">
+          <div class="reveal mb-12 text-center">
+            <h2 class="text-2xl font-bold sm:text-3xl">Хочу узнать подробнее</h2>
+            <p class="mx-auto mt-3 max-w-2xl text-base text-white/85">
+              Заполните форму — мы ответим на вопросы о турах, городах и возможностях программы
+            </p>
+          </div>
+          <div class="reveal grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <div class="flex flex-col justify-center space-y-6 text-white/90">
+              <p class="text-lg leading-relaxed">
+                Команда проекта поможет подобрать маршрут, расскажет о датах и условиях участия.
+              </p>
+              <ul class="space-y-3 text-sm text-white/80">
+                <li class="flex items-start gap-2">
+                  <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
+                  Ответ в рабочие дни в течение 1–2 дней
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
+                  Консультация без обязательства записи на тур
+                </li>
+              </ul>
+            </div>
+            <div class="rounded-2xl border border-white/15 bg-white/10 p-6 shadow-2xl shadow-black/20 backdrop-blur-md sm:p-8">
+              <div
+                v-if="flashSuccess"
+                role="status"
+                class="mb-6 rounded-xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-3 text-sm text-emerald-50"
+              >
+                {{ flashSuccess }}
+              </div>
+              <form class="space-y-4" @submit.prevent="submitContact">
+                <div>
+                  <label for="contact-name" class="mb-1.5 block text-xs font-medium text-white/80">Имя</label>
+                  <input
+                    id="contact-name"
+                    v-model="contactForm.name"
+                    type="text"
+                    required
+                    autocomplete="name"
+                    class="w-full rounded-xl border border-white/20 bg-white/95 px-4 py-2.5 text-gray-900 shadow-inner outline-none ring-[#003274]/30 transition placeholder:text-gray-400 focus:border-white focus:ring-2"
+                    placeholder="Как к вам обращаться"
+                  />
+                  <p v-if="contactForm.errors.name" class="mt-1 text-xs text-amber-200">{{ contactForm.errors.name }}</p>
+                </div>
+                <div>
+                  <label for="contact-email" class="mb-1.5 block text-xs font-medium text-white/80">E-mail</label>
+                  <input
+                    id="contact-email"
+                    v-model="contactForm.email"
+                    type="email"
+                    required
+                    autocomplete="email"
+                    class="w-full rounded-xl border border-white/20 bg-white/95 px-4 py-2.5 text-gray-900 shadow-inner outline-none ring-[#003274]/30 transition placeholder:text-gray-400 focus:border-white focus:ring-2"
+                    placeholder="name@example.com"
+                  />
+                  <p v-if="contactForm.errors.email" class="mt-1 text-xs text-amber-200">{{ contactForm.errors.email }}</p>
+                </div>
+                <div>
+                  <label for="contact-phone" class="mb-1.5 block text-xs font-medium text-white/80">Телефон</label>
+                  <input
+                    id="contact-phone"
+                    v-model="contactForm.phone"
+                    type="tel"
+                    autocomplete="tel"
+                    class="w-full rounded-xl border border-white/20 bg-white/95 px-4 py-2.5 text-gray-900 shadow-inner outline-none ring-[#003274]/30 transition placeholder:text-gray-400 focus:border-white focus:ring-2"
+                    placeholder="+7 …"
+                  />
+                  <p v-if="contactForm.errors.phone" class="mt-1 text-xs text-amber-200">{{ contactForm.errors.phone }}</p>
+                </div>
+                <div>
+                  <label for="contact-message" class="mb-1.5 block text-xs font-medium text-white/80">Сообщение</label>
+                  <textarea
+                    id="contact-message"
+                    v-model="contactForm.message"
+                    required
+                    rows="4"
+                    class="w-full resize-y rounded-xl border border-white/20 bg-white/95 px-4 py-2.5 text-gray-900 shadow-inner outline-none ring-[#003274]/30 transition placeholder:text-gray-400 focus:border-white focus:ring-2"
+                    placeholder="Ваш вопрос или пожелание"
+                  />
+                  <p v-if="contactForm.errors.message" class="mt-1 text-xs text-amber-200">{{ contactForm.errors.message }}</p>
+                </div>
+                <button
+                  type="submit"
+                  :disabled="contactForm.processing"
+                  class="w-full rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-[#003274] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {{ contactForm.processing ? 'Отправка…' : 'Отправить' }}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </MainLayout>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import { Link, useForm, usePage } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
@@ -190,23 +465,92 @@ const props = defineProps({
   featuredTours: Array,
   cities: Array,
   stats: Object,
+  timelineEvents: {
+    type: Array,
+    default: () => [],
+  },
+  userFavorites: {
+    type: Object,
+    default: null,
+  },
 })
+
+const page = usePage()
+const mapContainerRef = ref(null)
+const highlightedCityId = ref(null)
+
+const flashSuccess = computed(() => page.props.flash?.success ?? null)
+
+const RUSSIA_BOUNDS = { minLat: 41, maxLat: 76, minLng: 20, maxLng: 190 }
+
+function projectToMap(lat, lng) {
+  const la = Number(lat)
+  const ln = Number(lng)
+  const x = ((ln - RUSSIA_BOUNDS.minLng) / (RUSSIA_BOUNDS.maxLng - RUSSIA_BOUNDS.minLng)) * 820 + 90
+  const y = ((RUSSIA_BOUNDS.maxLat - la) / (RUSSIA_BOUNDS.maxLat - RUSSIA_BOUNDS.minLat)) * 380 + 70
+  return {
+    x: Math.min(Math.max(x, 70), 930),
+    y: Math.min(Math.max(y, 55), 520),
+  }
+}
+
+const mapCityMarkers = computed(() => {
+  const list = props.cities || []
+  const withCoords = []
+  const without = []
+  list.forEach((city) => {
+    const lat = city.lat
+    const lng = city.lng
+    if (lat != null && lng != null && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))) {
+      const { x, y } = projectToMap(lat, lng)
+      withCoords.push({
+        ...city,
+        pctLeft: (x / 1000) * 100,
+        pctTop: (y / 600) * 100,
+      })
+    } else {
+      without.push(city)
+    }
+  })
+  const cols = 3
+  without.forEach((city, i) => {
+    const row = Math.floor(i / cols)
+    const col = i % cols
+    const x = 200 + col * 200
+    const y = 380 + row * 72
+    withCoords.push({
+      ...city,
+      pctLeft: (x / 1000) * 100,
+      pctTop: (y / 600) * 100,
+    })
+  })
+  return withCoords
+})
+
+const sortedTimelineEvents = computed(() => {
+  const raw = props.timelineEvents || []
+  return [...raw].sort(
+    (a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime(),
+  )
+})
+
+const timelineEventsCount = computed(() => (props.timelineEvents || []).length)
 
 const statCards = computed(() => [
   {
-    value: props.stats.cities,
+    value: props.stats?.cities ?? 0,
     label: 'Атомных городов',
     icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" /></svg>',
   },
   {
-    value: props.stats.tours,
+    value: props.stats?.tours ?? 0,
     label: 'Туров возможностей',
     icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" /></svg>',
   },
   {
-    value: '3',
-    label: 'Направления',
-    icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5" /></svg>',
+    value: timelineEventsCount.value,
+    label: 'Событий в хронологии',
+    icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5" /></svg>',
   },
   {
     value: '3000+',
@@ -215,8 +559,59 @@ const statCards = computed(() => [
   },
 ])
 
+const contactForm = useForm({
+  name: '',
+  email: '',
+  phone: '',
+  message: '',
+})
+
+function submitContact() {
+  contactForm.post(route('contact.submit'), {
+    preserveScroll: true,
+    onSuccess: () => {
+      contactForm.reset()
+    },
+  })
+}
+
 function formatPrice(value) {
   if (!value) return '—'
   return new Intl.NumberFormat('ru-RU').format(value)
+}
+
+function formatEventDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return String(dateStr)
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(d)
+}
+
+function timelineTypeClass(type) {
+  switch (type) {
+    case 'news':
+      return 'bg-blue-100 text-blue-800'
+    case 'milestone':
+      return 'bg-amber-100 text-amber-900'
+    case 'event':
+    default:
+      return 'bg-emerald-100 text-emerald-900'
+  }
+}
+
+function timelineTypeLabel(type) {
+  switch (type) {
+    case 'news':
+      return 'Новость'
+    case 'milestone':
+      return 'Веха'
+    case 'event':
+    default:
+      return 'Событие'
+  }
 }
 </script>
