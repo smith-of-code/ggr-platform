@@ -145,6 +145,27 @@
   opacity: 0;
 }
 
+/* ── Sidebar nav scrollable when content overflows ── */
+.r-sidebar__nav {
+  overflow-y: auto !important;
+  min-height: 0 !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+.r-sidebar__nav::-webkit-scrollbar {
+  width: 4px;
+}
+.r-sidebar__nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.r-sidebar__nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+.r-sidebar__nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 /* ── Sidebar footer buttons — match main nav style ── */
 .r-sidebar__bottom {
   font-size: var(--text-sm) !important;
