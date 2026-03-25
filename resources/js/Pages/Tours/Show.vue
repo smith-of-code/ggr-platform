@@ -24,7 +24,74 @@
             <RBadge v-if="tour.closed_city" variant="warning">Закрытый город</RBadge>
           </div>
 
+          <!-- Реакции -->
+          <div class="reveal mt-6">
+            <p class="mb-3 text-sm font-medium text-gray-500">Как вам тур?</p>
+            <div class="flex flex-wrap gap-2 sm:gap-3">
+              <button
+                v-for="item in reactionItems"
+                :key="item.key"
+                type="button"
+                :disabled="reactionSending"
+                class="group flex min-w-[4.25rem] flex-col items-center gap-1 rounded-xl border px-3 py-2.5 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#003274]/35 hover:shadow-md active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]/40 disabled:cursor-wait disabled:opacity-60 disabled:active:scale-100"
+                :class="currentUserReaction === item.key
+                  ? 'border-[#003274] bg-[#003274]/[0.08] ring-2 ring-[#003274]/25 shadow-sm'
+                  : 'border-gray-200 bg-white'"
+                :title="item.label"
+                @click="sendReaction(item.key)"
+              >
+                <span class="text-xl leading-none transition-transform duration-200 group-hover:scale-110" aria-hidden="true">{{ item.emoji }}</span>
+                <span class="tabular-nums text-xs font-semibold text-gray-700">
+                  <Transition name="count-pop" mode="out-in">
+                    <span :key="reactionsDisplay[item.key]">{{ reactionsDisplay[item.key] }}</span>
+                  </Transition>
+                </span>
+              </button>
+            </div>
+          </div>
+
           <div class="reveal mt-8 text-lg leading-relaxed text-gray-600" v-html="tour.description" />
+
+          <section v-if="tour.target_audience" class="reveal mt-10">
+            <h2 class="text-xl font-bold text-gray-900">Для кого этот тур</h2>
+            <div class="html-content mt-4 text-base leading-relaxed text-gray-700" v-html="tour.target_audience" />
+          </section>
+
+          <section v-if="tour.organizer_info" class="reveal mt-10">
+            <h2 class="text-xl font-bold text-gray-900">Организатор</h2>
+            <div class="html-content mt-4 text-base leading-relaxed text-gray-700" v-html="tour.organizer_info" />
+          </section>
+
+          <section v-if="tour.cities?.length" class="reveal mt-12">
+            <h2 class="text-xl font-bold text-gray-900">Города</h2>
+            <div class="mt-6 grid gap-4 sm:grid-cols-2">
+              <Link
+                v-for="city in tour.cities"
+                :key="city.id"
+                :href="route('cities.show', city.slug)"
+                class="group flex gap-4 overflow-hidden rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-[#003274]/30 hover:shadow-md"
+              >
+                <div class="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                  <img
+                    v-if="city.image"
+                    :src="city.image"
+                    :alt="city.name"
+                    class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+                <div class="flex min-w-0 flex-1 flex-col justify-center">
+                  <span class="font-semibold text-gray-900 transition-colors group-hover:text-[#003274]">{{ city.name }}</span>
+                  <span v-if="city.region" class="mt-0.5 text-sm text-gray-500">{{ city.region }}</span>
+                  <span class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#003274]">
+                    Подробнее
+                    <svg class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                  </span>
+                </div>
+              </Link>
+            </div>
+          </section>
 
           <!-- Departures -->
           <section v-if="tour.departures?.length" class="reveal mt-12">
@@ -57,7 +124,25 @@
         <!-- Sidebar -->
         <div class="mt-10 lg:mt-0">
           <RCard elevation="raised" class="reveal sticky top-20">
-            <h2 class="text-lg font-bold text-gray-900">Детали тура</h2>
+            <div class="flex items-start justify-between gap-3">
+              <h2 class="text-lg font-bold text-gray-900">Детали тура</h2>
+              <button
+                type="button"
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-all duration-200 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/50 disabled:cursor-wait disabled:opacity-60"
+                :class="isFavorited ? 'border-rose-200 bg-rose-50 text-rose-600' : ''"
+                :disabled="favoriteSending"
+                :title="isAuthed ? (isFavorited ? 'Убрать из избранного' : 'В избранное') : 'Войдите, чтобы добавить в избранное'"
+                aria-label="Избранное"
+                @click="toggleFavorite"
+              >
+                <svg v-if="isFavorited" class="h-5 w-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17l-.022.012-.007.003-.002.001h-.002z" />
+                </svg>
+                <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                </svg>
+              </button>
+            </div>
             <dl class="mt-5 space-y-5">
               <div class="flex items-start gap-3">
                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50">
@@ -139,17 +224,130 @@
   </MainLayout>
 </template>
 
+<style scoped>
+.html-content :deep(p) {
+  margin-bottom: 1rem;
+}
+.html-content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+.html-content :deep(a) {
+  color: #003274;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.html-content :deep(ul),
+.html-content :deep(ol) {
+  margin: 0.75rem 0 1rem;
+  padding-left: 1.25rem;
+}
+.html-content :deep(ul) {
+  list-style-type: disc;
+}
+.count-pop-enter-active,
+.count-pop-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.count-pop-enter-from {
+  opacity: 0;
+  transform: translateY(-5px) scale(0.85);
+}
+.count-pop-leave-to {
+  opacity: 0;
+  transform: translateY(5px) scale(0.85);
+}
+</style>
+
 <script setup>
-import { ref, reactive } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { ref, reactive, computed, watch } from 'vue'
+import { router, usePage, Link } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
 useScrollReveal()
 
+const REACTION_KEYS = ['love', 'wow', 'fire', 'cool', 'star']
+const REACTION_META = {
+  love: { emoji: '❤️', label: 'Нравится' },
+  wow: { emoji: '😮', label: 'Вау' },
+  fire: { emoji: '🔥', label: 'Огонь' },
+  cool: { emoji: '😎', label: 'Круто' },
+  star: { emoji: '⭐', label: 'Звезда' },
+}
+
 const props = defineProps({
-  tour: Object,
+  tour: { type: Object, required: true },
+  userReaction: { type: String, default: null },
 })
+
+const page = usePage()
+
+const isAuthed = computed(() => !!page.props.auth?.user)
+
+const currentUserReaction = computed(() => props.userReaction ?? props.tour?.user_reaction ?? null)
+
+const reactionsDisplay = computed(() => {
+  const raw = props.tour?.reactions_count
+  const out = {}
+  for (const key of REACTION_KEYS) {
+    out[key] = raw?.[key] ?? 0
+  }
+  return out
+})
+
+const reactionItems = computed(() =>
+  REACTION_KEYS.map((key) => ({
+    key,
+    emoji: REACTION_META[key].emoji,
+    label: REACTION_META[key].label,
+  })),
+)
+
+const reactionSending = ref(false)
+const favoriteSending = ref(false)
+
+const isFavorited = ref(!!props.tour?.is_favorited)
+
+watch(
+  () => props.tour?.is_favorited,
+  (v) => {
+    if (typeof v === 'boolean') {
+      isFavorited.value = v
+    }
+  },
+)
+
+function sendReaction(emoji) {
+  if (reactionSending.value) {
+    return
+  }
+  reactionSending.value = true
+  router.post(route('tours.react', props.tour.id), { emoji }, {
+    preserveScroll: true,
+    only: ['tour', 'userReaction'],
+    onFinish: () => {
+      reactionSending.value = false
+    },
+  })
+}
+
+function toggleFavorite() {
+  if (!isAuthed.value) {
+    router.visit(route('login'))
+    return
+  }
+  if (favoriteSending.value) {
+    return
+  }
+  favoriteSending.value = true
+  router.post(route('favorites.toggle', { type: 'tour', id: props.tour.id }), {}, {
+    preserveScroll: true,
+    only: ['tour', 'userReaction'],
+    onFinish: () => {
+      favoriteSending.value = false
+    },
+  })
+}
 
 const showModal = ref(false)
 const form = reactive({

@@ -39,6 +39,30 @@
             >
               Туры
             </Link>
+            <Link
+              :href="route('education.index')"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
+              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/vshgr') }"
+            >
+              ВШГР
+            </Link>
+            <Link
+              :href="route('research.index')"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
+              :class="{
+                'bg-blue-50 text-[#003274]':
+                  $page.url.startsWith('/research') || $page.url.startsWith('/recipes'),
+              }"
+            >
+              Исследования
+            </Link>
+            <Link
+              :href="route('blog.index')"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
+              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/blog') }"
+            >
+              Блог
+            </Link>
             <div class="ml-2 h-6 w-px bg-gray-200" />
             <Link
               v-if="$page.props.auth?.user"
@@ -84,6 +108,9 @@
           <Link :href="route('home')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Главная</Link>
           <Link :href="route('cities.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Города</Link>
           <Link :href="route('tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Туры</Link>
+          <Link :href="route('education.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">ВШГР</Link>
+          <Link :href="route('research.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Исследования</Link>
+          <Link :href="route('blog.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Блог</Link>
           <div class="my-2 border-t border-gray-100" />
           <Link
             v-if="$page.props.auth?.user"
@@ -130,6 +157,9 @@
               <Link :href="route('home')" class="text-sm text-gray-500 transition hover:text-[#003274]">Главная</Link>
               <Link :href="route('cities.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Города</Link>
               <Link :href="route('tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Туры</Link>
+              <Link :href="route('education.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">ВШГР</Link>
+              <Link :href="route('research.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Исследования</Link>
+              <Link :href="route('blog.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Блог</Link>
             </div>
           </div>
           <div>

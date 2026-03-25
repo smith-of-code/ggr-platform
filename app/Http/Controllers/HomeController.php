@@ -3,13 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\City;
+use App\Models\ContactSubmission;
+use App\Models\Favorite;
+use App\Models\TimelineEvent;
 use App\Models\Tour;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class HomeController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $featuredTours = Tour::where('is_featured', true)
             ->where('is_active', true)
@@ -26,6 +31,28 @@ class HomeController extends Controller
         $citiesCount = $cities->count();
         $toursCount = Tour::where('is_active', true)->count();
 
+        $timelineEvents = TimelineEvent::query()
+            ->where('is_active', true)
+            ->orderByDesc('event_date')
+            ->limit(10)
+            ->get();
+
+        $userFavorites = null;
+        if ($request->user()) {
+            $userFavorites = [
+                'cityIds' => Favorite::query()
+                    ->where('user_id', $request->user()->id)
+                    ->where('favorable_type', City::class)
+                    ->pluck('favorable_id')
+                    ->all(),
+                'tourIds' => Favorite::query()
+                    ->where('user_id', $request->user()->id)
+                    ->where('favorable_type', Tour::class)
+                    ->pluck('favorable_id')
+                    ->all(),
+            ];
+        }
+
         return Inertia::render('Home', [
             'featuredTours' => $featuredTours,
             'cities' => $cities,
@@ -33,6 +60,28 @@ class HomeController extends Controller
                 'cities' => $citiesCount,
                 'tours' => $toursCount,
             ],
+            'timelineEvents' => $timelineEvents,
+            'userFavorites' => $userFavorites,
         ]);
+    }
+
+    public function contactSubmit(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'phone' => 'nullable|string|max:50',
+            'message' => 'required|string|max:5000',
+        ]);
+
+        ContactSubmission::query()->create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'message' => $validated['message'],
+            'source' => 'home_contact',
+        ]);
+
+        return back()->with('success', 'Сообщение отправлено. Мы свяжемся с вами в ближайшее время.');
     }
 }

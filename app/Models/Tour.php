@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Tour extends Model
 {
@@ -35,6 +36,9 @@ class Tour extends Model
         'image',
         'position',
         'is_active',
+        'target_audience',
+        'organizer_info',
+        'reactions_count',
     ];
 
     protected $casts = [
@@ -45,6 +49,7 @@ class Tour extends Model
         'is_featured' => 'boolean',
         'is_active' => 'boolean',
         'price_from' => 'decimal:2',
+        'reactions_count' => 'array',
     ];
 
     public function cities(): BelongsToMany
@@ -60,6 +65,16 @@ class Tour extends Model
     public function media()
     {
         return $this->morphMany(Media::class, 'mediable')->orderBy('order');
+    }
+
+    public function reactions(): HasMany
+    {
+        return $this->hasMany(TourReaction::class);
+    }
+
+    public function favorites(): MorphMany
+    {
+        return $this->morphMany(Favorite::class, 'favorable');
     }
 
     public const PROJECTS = [
