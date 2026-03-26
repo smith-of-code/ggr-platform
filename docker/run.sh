@@ -36,7 +36,6 @@ fi
 
 docker exec ${APP_NAME}_fpm composer update
 docker exec ${APP_NAME}_fpm php artisan storage:link
-docker exec ${APP_NAME}_fpm php artisan key:generate
 docker exec ${APP_NAME}_fpm php artisan migrate
 docker exec ${APP_NAME}_fpm npm update --prefer-online
 docker exec ${APP_NAME}_fpm npm run build
