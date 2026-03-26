@@ -39,6 +39,7 @@
     </div>
 
     <p v-if="error" class="mt-1 text-sm text-red-600">{{ error }}</p>
+    <p v-if="uploadError" class="mt-1 text-sm text-red-600">{{ uploadError }}</p>
 
     <!-- Uploading -->
     <div v-if="uploading" class="mt-2 flex items-center gap-2 text-sm text-gray-500">
@@ -110,6 +111,7 @@ const emit = defineEmits(['update:modelValue'])
 const fileInput = ref(null)
 const isDragging = ref(false)
 const uploading = ref(false)
+const uploadError = ref('')
 const previewUrl = ref(props.modelValue || '')
 
 const showCropper = ref(false)
@@ -142,6 +144,7 @@ function onFileSelected(e) {
 
 function handleFile(file) {
   selectedFile = file
+  uploadError.value = ''
   const reader = new FileReader()
   reader.onload = (e) => {
     cropSrc.value = e.target.result
@@ -209,10 +212,12 @@ async function applyCrop() {
       if (data.url) {
         previewUrl.value = data.url
         emit('update:modelValue', data.url)
+      } else {
+        uploadError.value = 'Сервер не вернул URL изображения'
       }
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data?.errors?.image?.[0] || 'Ошибка загрузки'
-      alert(msg)
+      uploadError.value = msg
     } finally {
       uploading.value = false
       selectedFile = null
