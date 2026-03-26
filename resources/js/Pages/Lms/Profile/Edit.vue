@@ -2,55 +2,146 @@
   <LmsLayout :event="event" :user="user" :profile="profile">
     <Head :title="`Профиль – ${event?.title || event?.name}`" />
     <div class="space-y-6">
-      <h1 class="font-brand text-2xl font-bold text-gray-900">Редактирование профиля</h1>
+      <h1 class="font-brand text-2xl font-bold text-gray-900">Личный кабинет</h1>
 
-      <!-- Display section with ProfileCard -->
+      <!-- Profile incomplete banner -->
+      <div
+        v-if="!isProfileComplete"
+        class="rounded-xl border border-amber-300 bg-amber-50 px-5 py-4"
+      >
+        <div class="flex items-start gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-6 w-6 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <div>
+            <p class="font-semibold text-amber-800">Заполните профиль</p>
+            <p class="mt-1 text-sm text-amber-700">
+              Только при заполненном личном кабинете участник может записаться на курс.
+              Заполните все обязательные поля и загрузите необходимые документы.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Avatar card -->
       <ProfileCard
         :full-name="fullName"
         :avatar="avatarDisplayUrl"
-        :position="profile?.position"
-        :workplace="profile?.city"
+        :position="form.position || profile?.position"
+        :workplace="selectedCityName || profile?.city"
         :phone="form.phone || profile?.phone"
-        :email="user?.email"
+        :email="form.email || user?.email"
         :points="profile?.points"
         :rank="profile?.rank"
         :status="profile?.status"
       />
 
+      <!-- Personal data -->
       <RCard>
         <template #default>
-          <form @submit.prevent="submit" class="space-y-6">
-            <RInput
-              :model-value="fullName"
-              label="ФИО"
-              type="text"
-              disabled
-            />
-            <RInput
-              :model-value="user?.email"
-              label="Email"
-              type="email"
-              disabled
-            />
-            <RInput
-              v-model="form.phone"
-              label="Телефон"
-              type="tel"
-              placeholder="+7 (___) ___-__-__"
-              :error="form.errors.phone"
-            />
-            <RInput
-              v-model="form.position"
-              label="Должность"
-              placeholder="Ваша должность"
-              :error="form.errors.position"
-            />
-            <RInput
-              v-model="form.city"
-              label="Место работы"
-              placeholder="Организация / город"
-              :error="form.errors.city"
-            />
+          <h2 class="mb-5 text-lg font-semibold text-gray-900">Личные данные</h2>
+          <form @submit.prevent="submit" class="space-y-5">
+            <div class="grid gap-5 sm:grid-cols-3">
+              <RInput
+                v-model="form.last_name"
+                label="Фамилия"
+                placeholder="Иванов"
+                :error="form.errors.last_name"
+              />
+              <RInput
+                v-model="form.first_name"
+                label="Имя"
+                placeholder="Иван"
+                :error="form.errors.first_name"
+              />
+              <RInput
+                v-model="form.patronymic"
+                label="Отчество"
+                placeholder="Иванович"
+                :error="form.errors.patronymic"
+              />
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+              <RInput
+                v-model="form.email"
+                label="Email"
+                type="email"
+                placeholder="email@example.com"
+                :error="form.errors.email"
+              />
+              <RInput
+                v-model="form.phone"
+                label="Телефон"
+                type="tel"
+                placeholder="+7 (___) ___-__-__"
+                :error="form.errors.phone"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-500">Удобный канал коммуникации</label>
+              <div class="flex items-center gap-6">
+                <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    v-model="form.preferred_channel"
+                    value="telegram"
+                    class="h-4 w-4 border-gray-300 text-rosatom-500 focus:ring-rosatom-500"
+                  />
+                  Telegram
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    v-model="form.preferred_channel"
+                    value="max"
+                    class="h-4 w-4 border-gray-300 text-rosatom-500 focus:ring-rosatom-500"
+                  />
+                  MAX
+                </label>
+              </div>
+              <p v-if="form.errors.preferred_channel" class="mt-1 text-sm text-red-600">{{ form.errors.preferred_channel }}</p>
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-500">Город</label>
+              <select
+                v-model="form.city_id"
+                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+              >
+                <option :value="null">Выберите город</option>
+                <option v-for="c in cities" :key="c.id" :value="c.id">{{ c.name }}</option>
+              </select>
+              <p v-if="form.errors.city_id" class="mt-1 text-sm text-red-600">{{ form.errors.city_id }}</p>
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+              <RInput
+                v-model="form.organization"
+                label="Организация"
+                placeholder="Название организации"
+                :error="form.errors.organization"
+              />
+              <RInput
+                v-model="form.position"
+                label="Должность"
+                placeholder="Ваша должность"
+                :error="form.errors.position"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-medium text-gray-500">Описание проекта или идеи</label>
+              <textarea
+                v-model="form.project_description"
+                rows="4"
+                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 transition placeholder:text-gray-400 focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+                placeholder="Опишите ваш проект или идею..."
+              />
+              <p v-if="form.errors.project_description" class="mt-1 text-sm text-red-600">{{ form.errors.project_description }}</p>
+            </div>
+
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-500">Аватар</label>
               <div class="flex items-center gap-4">
@@ -77,6 +168,7 @@
               </div>
               <p v-if="form.errors.avatar" class="mt-1 text-sm text-red-600">{{ form.errors.avatar }}</p>
             </div>
+
             <div class="flex gap-3 pt-2">
               <RButton
                 type="submit"
@@ -90,7 +182,7 @@
                 as="div"
                 class="inline-block"
               >
-                <RButton variant="outline">
+                <RButton variant="outline" type="button">
                   Отмена
                 </RButton>
               </Link>
@@ -98,6 +190,64 @@
           </form>
         </template>
       </RCard>
+
+      <!-- Documents -->
+      <RCard>
+        <template #default>
+          <h2 class="mb-5 text-lg font-semibold text-gray-900">Документы</h2>
+          <div class="space-y-4">
+            <div
+              v-for="dt in docConfig"
+              :key="dt.type"
+              class="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-900">{{ dt.label }}</p>
+                <p v-if="uploadedDoc(dt.type)" class="mt-1 text-xs text-green-600">
+                  Загружен: {{ uploadedDoc(dt.type).original_name }}
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <a
+                  v-if="dt.hasTemplate"
+                  :href="route('lms.profile.templates.download', { event: event?.slug, type: dt.type })"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-rosatom-50 px-3 py-1.5 text-sm font-medium text-rosatom-700 transition hover:bg-rosatom-100"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                  Скачать шаблон
+                </a>
+                <label class="cursor-pointer">
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    @change="(e) => uploadDoc(dt.type, e)"
+                  />
+                  <span class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                    </svg>
+                    {{ uploadedDoc(dt.type) ? 'Заменить' : 'Загрузить' }}
+                  </span>
+                </label>
+                <button
+                  v-if="uploadedDoc(dt.type)"
+                  type="button"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100"
+                  :disabled="docDeleteProcessing"
+                  @click="deleteDoc(uploadedDoc(dt.type).id)"
+                >
+                  Удалить
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </RCard>
+
+      <!-- Social accounts -->
       <RCard>
         <template #default>
           <h2 class="mb-4 text-lg font-semibold text-gray-900">Привязанные аккаунты</h2>
@@ -129,6 +279,7 @@
                   <RButton
                     variant="outline"
                     size="sm"
+                    type="button"
                     @click="confirmRelink(p)"
                   >
                     Сменить
@@ -136,6 +287,7 @@
                   <RButton
                     variant="outline"
                     size="sm"
+                    type="button"
                     @click="confirmUnlink(p)"
                     :disabled="unlinkForm.processing"
                   >
@@ -147,7 +299,7 @@
                     :href="route('lms.social.link', { event: event?.slug, provider: p.key })"
                     class="inline-block"
                   >
-                    <RButton variant="outline" size="sm">
+                    <RButton variant="outline" size="sm" type="button">
                       Привязать
                     </RButton>
                   </a>
@@ -166,12 +318,13 @@
       >
         <template #footer>
           <div class="flex justify-end gap-3">
-            <RButton variant="outline" size="sm" @click="showConfirmModal = false">
+            <RButton variant="outline" size="sm" type="button" @click="showConfirmModal = false">
               Отмена
             </RButton>
             <RButton
               :variant="confirmAction === 'unlink' ? 'danger' : 'primary'"
               size="sm"
+              type="button"
               @click="executeConfirmedAction"
               :loading="unlinkForm.processing"
             >
@@ -195,6 +348,10 @@ const props = defineProps({
   user: { type: Object, required: true },
   profile: { type: Object, default: () => ({}) },
   socialAccounts: { type: Object, default: () => ({}) },
+  cities: { type: Array, default: () => [] },
+  isProfileComplete: { type: Boolean, default: false },
+  documentTypes: { type: Array, default: () => [] },
+  documentTypesWithTemplate: { type: Array, default: () => [] },
 })
 
 const user = computed(() => props.user || usePage().props.auth?.user || {})
@@ -203,6 +360,12 @@ const fullName = computed(() => {
   const u = user.value
   const parts = [u.last_name, u.first_name, u.patronymic].filter(Boolean)
   return parts.length > 0 ? parts.join(' ') : u.name || ''
+})
+
+const selectedCityName = computed(() => {
+  if (!form.city_id) return ''
+  const city = props.cities.find(c => c.id === form.city_id)
+  return city?.name || ''
 })
 
 const socialAccounts = computed(() => props.socialAccounts || {})
@@ -259,9 +422,16 @@ function executeConfirmedAction() {
 }
 
 const form = useForm({
+  last_name: props.user?.last_name ?? '',
+  first_name: props.user?.first_name ?? '',
+  patronymic: props.user?.patronymic ?? '',
+  email: props.user?.email ?? '',
   phone: props.profile?.phone ?? '',
+  city_id: props.profile?.city_id ?? null,
+  organization: props.profile?.organization ?? '',
   position: props.profile?.position ?? '',
-  city: props.profile?.city ?? '',
+  project_description: props.profile?.project_description ?? '',
+  preferred_channel: props.profile?.preferred_channel ?? '',
   avatar: null,
 })
 
@@ -286,6 +456,43 @@ function submit() {
     _method: 'patch',
   })).post(route('lms.profile.update', { event: props.event?.slug }), {
     forceFormData: true,
+    preserveScroll: true,
+  })
+}
+
+// Documents
+const docConfig = [
+  { type: 'enrollment_application', label: 'Заявление на зачисление', hasTemplate: true },
+  { type: 'snils', label: 'Скан СНИЛС', hasTemplate: false },
+  { type: 'diploma', label: 'Скан диплома о высшем или среднем образовании', hasTemplate: false },
+  { type: 'personal_data_consent', label: 'Согласие на обработку персональных данных', hasTemplate: true },
+  { type: 'name_change_certificate', label: 'Свидетельство о перемене фамилии (при наличии)', hasTemplate: false },
+]
+
+const docDeleteProcessing = ref(false)
+
+function uploadedDoc(type) {
+  return props.profile?.documents?.find(d => d.type === type) || null
+}
+
+function uploadDoc(type, e) {
+  const file = e.target?.files?.[0]
+  if (!file) return
+
+  const docForm = useForm({ type, file })
+  docForm.post(route('lms.profile.documents.upload', { event: props.event?.slug }), {
+    forceFormData: true,
+    preserveScroll: true,
+    onFinish: () => { e.target.value = '' },
+  })
+}
+
+function deleteDoc(docId) {
+  if (!confirm('Удалить документ?')) return
+  docDeleteProcessing.value = true
+  router.delete(route('lms.profile.documents.delete', { event: props.event?.slug, document: docId }), {
+    preserveScroll: true,
+    onFinish: () => { docDeleteProcessing.value = false },
   })
 }
 </script>

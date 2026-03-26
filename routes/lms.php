@@ -57,6 +57,9 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/documents', [ProfileController::class, 'uploadDocument'])->name('profile.documents.upload');
+    Route::delete('/profile/documents/{document}', [ProfileController::class, 'deleteDocument'])->name('profile.documents.delete');
+    Route::get('/profile/templates/{type}', [ProfileController::class, 'downloadTemplate'])->name('profile.templates.download');
 
     // Social SSO — link/unlink (auth required)
     Route::get('/social/{provider}/link', [SocialAuthController::class, 'redirectToLink'])->name('social.link');

@@ -27,11 +27,6 @@ class CourseController extends Controller
 
         $query = LmsCourse::where('lms_event_id', $event->id)
             ->where('is_active', true)
-            ->whereIn('id', fn($sub) =>
-                $sub->select('lms_course_id')
-                    ->from('lms_course_enrollments')
-                    ->where('user_id', $user->id)
-            )
             ->orderBy('position')
             ->with('stages');
 
@@ -134,6 +129,10 @@ class CourseController extends Controller
             ];
         })->values();
 
+        $profile = LmsProfile::where('user_id', $user->id)
+            ->where('lms_event_id', $event->id)
+            ->first();
+
         return Inertia::render('Lms/Courses/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'sequential', 'starts_at', 'ends_at']),
@@ -141,6 +140,7 @@ class CourseController extends Controller
             'modules' => $modules,
             'orphanStages' => $orphanStages,
             'stages' => $course->stages->sortBy('position')->map(fn($s) => $s->only(['id', 'title', 'type', 'position']))->values(),
+            'isProfileComplete' => $profile?->isProfileComplete() ?? false,
         ]);
     }
 
@@ -150,6 +150,16 @@ class CourseController extends Controller
             abort(404);
         }
         $user = auth()->user();
+
+        $profile = LmsProfile::where('user_id', $user->id)
+            ->where('lms_event_id', $event->id)
+            ->first();
+
+        if (! $profile || ! $profile->isProfileComplete()) {
+            return redirect()->back()->withErrors([
+                'enroll' => 'Для записи на курс необходимо заполнить профиль.',
+            ]);
+        }
 
         $existing = LmsCourseEnrollment::where('lms_course_id', $course->id)
             ->where('user_id', $user->id)

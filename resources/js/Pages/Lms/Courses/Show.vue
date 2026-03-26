@@ -55,9 +55,17 @@
                 </RButton>
               </div>
             </template>
-            <RButton v-else variant="primary" @click="enroll">
-              Записаться на курс
-            </RButton>
+            <template v-else>
+              <div v-if="!isProfileComplete" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                <p class="text-sm font-medium text-amber-800">Для записи на курс необходимо заполнить профиль</p>
+                <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-1 inline-block text-sm font-medium text-rosatom-600 hover:underline">
+                  Перейти в личный кабинет
+                </Link>
+              </div>
+              <RButton v-else variant="primary" @click="enroll">
+                Записаться на курс
+              </RButton>
+            </template>
           </div>
         </div>
       </RCard>
@@ -185,7 +193,7 @@
 
 <script setup>
 import { computed, reactive } from 'vue'
-import { Head, router, usePage } from '@inertiajs/vue3'
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import {
   ArrowLeftIcon,
@@ -210,6 +218,7 @@ const props = defineProps({
   modules: Array,
   orphanStages: Array,
   stages: Array,
+  isProfileComplete: { type: Boolean, default: false },
 })
 
 const enrollmentStatus = computed(() => props.enrollment?.status ?? null)

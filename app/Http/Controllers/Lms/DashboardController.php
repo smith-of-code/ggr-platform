@@ -76,6 +76,7 @@ class DashboardController extends Controller
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'last_name', 'first_name', 'patronymic', 'email']),
             'profile' => $profile,
+            'isProfileComplete' => $profile?->isProfileComplete() ?? false,
             'courses' => $courses,
             'trajectories' => $activeTrajectories,
             'upcomingAssignments' => $upcomingAssignments,
