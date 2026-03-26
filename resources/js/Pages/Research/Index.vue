@@ -8,6 +8,12 @@
         <p class="mt-3 max-w-2xl text-lg text-gray-500">
           Аналитика и материалы о туристическом потенциале атомных городов: тренды, аудитория и развитие дестинаций.
         </p>
+        <div class="mt-6 flex gap-2">
+          <span class="rounded-full bg-[#003274] px-5 py-2 text-sm font-semibold text-white">Исследования</span>
+          <Link :href="route('recipes.index')" class="rounded-full border border-gray-200 bg-white px-5 py-2 text-sm font-semibold text-gray-600 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800">
+            Атомы вкуса
+          </Link>
+        </div>
       </div>
 
       <div class="reveal mt-10">

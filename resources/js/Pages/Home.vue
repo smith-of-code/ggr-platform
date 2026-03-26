@@ -175,6 +175,63 @@
         </div>
       </section>
 
+      <!-- Атомы вкуса -->
+      <section v-if="latestRecipes?.length" class="bg-white px-4 py-20 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl">
+          <div class="reveal flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-800 ring-1 ring-amber-200/60">
+                <span aria-hidden="true">🍳</span> Атомы вкуса
+              </div>
+              <h2 class="mt-3 text-2xl font-bold text-gray-900 sm:text-3xl">Книга атомных рецептов</h2>
+              <p class="mt-2 max-w-xl text-gray-500">
+                Блюда из городов атомной отрасли — откройте для себя кулинарные традиции регионов
+              </p>
+            </div>
+            <Link
+              :href="route('recipes.index')"
+              class="group flex items-center gap-1.5 text-sm font-semibold text-amber-700 transition hover:text-amber-900"
+            >
+              Все рецепты
+              <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+              </svg>
+            </Link>
+          </div>
+
+          <div class="reveal mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Link
+              v-for="recipe in latestRecipes"
+              :key="recipe.id"
+              :href="route('recipes.show', recipe.slug)"
+              class="group overflow-hidden rounded-2xl border border-amber-100/80 bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+            >
+              <div class="relative aspect-[4/3] overflow-hidden bg-amber-50">
+                <img
+                  v-if="recipe.image"
+                  :src="recipe.image"
+                  :alt="recipe.title"
+                  class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div v-else class="flex h-full items-center justify-center text-4xl text-amber-300">🍽️</div>
+                <div v-if="recipe.cooking_time" class="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm backdrop-blur-sm">
+                  ⏱ {{ recipe.cooking_time }}
+                </div>
+              </div>
+              <div class="p-5">
+                <h3 class="text-base font-bold text-gray-900 transition group-hover:text-amber-700">{{ recipe.title }}</h3>
+                <p v-if="recipe.city" class="mt-1 text-xs font-medium text-amber-600">{{ recipe.city.name }}</p>
+                <p v-if="recipe.description" class="mt-2 line-clamp-2 text-sm text-gray-500">{{ recipe.description }}</p>
+                <div v-if="recipe.difficulty || recipe.servings" class="mt-3 flex items-center gap-3 text-xs text-gray-400">
+                  <span v-if="recipe.difficulty">{{ recipe.difficulty }}</span>
+                  <span v-if="recipe.servings">{{ recipe.servings }} порц.</span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <!-- Timeline -->
       <section class="bg-slate-50 px-4 py-20 sm:px-6 lg:px-8">
         <div class="relative mx-auto max-w-5xl">
@@ -411,6 +468,7 @@ const props = defineProps({
   featuredTours: Array,
   cities: Array,
   allCities: { type: Array, default: () => [] },
+  latestRecipes: { type: Array, default: () => [] },
   stats: Object,
   timelineEvents: {
     type: Array,

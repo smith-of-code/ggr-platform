@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\City;
 use App\Models\ContactSubmission;
 use App\Models\Favorite;
+use App\Models\Recipe;
 use App\Models\TimelineEvent;
 use App\Models\Tour;
 use Illuminate\Http\RedirectResponse;
@@ -39,6 +40,17 @@ class HomeController extends Controller
         $citiesCount = City::where('is_active', true)->count();
         $toursCount = Tour::where('is_active', true)->count();
 
+        $latestRecipes = [];
+        if (Schema::hasTable('recipes')) {
+            $latestRecipes = Recipe::query()
+                ->where('is_published', true)
+                ->whereNotNull('published_at')
+                ->with('city')
+                ->orderByDesc('published_at')
+                ->limit(6)
+                ->get();
+        }
+
         $timelineEvents = [];
         if (Schema::hasTable('timeline_events')) {
             $timelineEvents = TimelineEvent::query()
@@ -72,6 +84,7 @@ class HomeController extends Controller
                 'cities' => $citiesCount,
                 'tours' => $toursCount,
             ],
+            'latestRecipes' => $latestRecipes,
             'timelineEvents' => $timelineEvents,
             'userFavorites' => $userFavorites,
         ]);
