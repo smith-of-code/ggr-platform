@@ -16,12 +16,11 @@
         <label class="mb-2 block text-sm font-semibold text-gray-700">Описание</label>
         <textarea v-model="form.description" rows="4" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" placeholder="Описание города" />
       </div>
-      <div>
-        <RInput v-model="form.image" type="url" label="URL изображения" placeholder="https://..." />
-        <div v-if="form.image" class="mt-3 overflow-hidden rounded-xl border border-gray-200">
-          <img :src="form.image" class="h-40 w-full object-cover" @error="form.image = ''" />
-        </div>
-      </div>
+      <ImageUploadCrop
+        v-model="form.image"
+        label="Фото города"
+        :upload-url="route('admin.upload.image')"
+      />
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="mb-2 block text-sm font-semibold text-gray-700">Позиция</label>
@@ -46,6 +45,7 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 
 const props = defineProps({ city: Object })
 

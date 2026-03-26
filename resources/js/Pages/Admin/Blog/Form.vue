@@ -64,12 +64,12 @@
           <p v-if="form.errors.content" class="mt-1 text-sm text-red-600">{{ form.errors.content }}</p>
         </div>
 
-        <div>
-          <RInput v-model="form.image" type="url" label="URL изображения" placeholder="https://..." :error="form.errors.image" />
-          <div v-if="form.image" class="mt-3 overflow-hidden rounded-xl border border-gray-200">
-            <img :src="form.image" class="h-48 w-full object-cover" alt="" @error="form.image = ''" />
-          </div>
-        </div>
+        <ImageUploadCrop
+          v-model="form.image"
+          label="Изображение статьи"
+          :upload-url="route('admin.upload.image')"
+          :error="form.errors.image"
+        />
 
         <RInput
           v-model="tagsJoined"
@@ -101,6 +101,7 @@ import { computed } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 
 const props = defineProps({
   post: { type: Object, default: null },

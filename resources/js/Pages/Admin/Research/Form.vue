@@ -71,12 +71,10 @@
         </div>
 
         <div>
-          <label class="mb-2 block text-sm font-semibold text-gray-700">Содержание</label>
-          <textarea
+          <RichTextEditor
             v-model="form.content"
-            rows="16"
-            class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-2 focus:ring-[#003274]/10"
-            placeholder="Полный текст"
+            label="Содержание"
+            :upload-url="route('admin.upload.image')"
           />
           <p v-if="form.errors.content" class="mt-1 text-sm text-red-600">{{ form.errors.content }}</p>
         </div>
@@ -91,10 +89,12 @@
           <p v-if="form.errors.results_summary" class="mt-1 text-sm text-red-600">{{ form.errors.results_summary }}</p>
         </div>
 
-        <RInput v-model="form.image" type="url" label="URL изображения" placeholder="https://..." :error="form.errors.image" />
-        <div v-if="form.image" class="overflow-hidden rounded-xl border border-gray-200">
-          <img :src="form.image" class="h-48 w-full object-cover" alt="" @error="form.image = ''" />
-        </div>
+        <ImageUploadCrop
+          v-model="form.image"
+          label="Изображение"
+          :upload-url="route('admin.upload.image')"
+          :error="form.errors.image"
+        />
 
         <RInput
           v-model="form.pdf_file"
@@ -125,6 +125,8 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import RichTextEditor from '@/Components/RichTextEditor.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 
 const props = defineProps({
   research: { type: Object, default: null },

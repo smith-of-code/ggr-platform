@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ResearchController as AdminResearchController;
 use App\Http\Controllers\Admin\RecipeController as AdminRecipeController;
 use App\Http\Controllers\Admin\EducationProductController as AdminEducationProductController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlogController;
@@ -68,6 +69,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::resource('recipes', AdminRecipeController::class)->except(['show']);
     Route::resource('education-products', AdminEducationProductController::class)->except(['show']);
     Route::patch('/education-products/course/{course}/toggle', [AdminEducationProductController::class, 'toggleCourseActive'])->name('education-products.toggleCourse');
+
+    Route::post('/upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
 
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');
