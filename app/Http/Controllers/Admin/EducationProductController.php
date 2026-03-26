@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\EducationProduct;
+use App\Models\Lms\LmsCourse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,9 +20,27 @@ class EducationProductController extends Controller
             ->orderBy('id')
             ->paginate(15);
 
+        $lmsCourses = Schema::hasTable('lms_courses')
+            ? LmsCourse::query()
+                ->withCount('enrollments')
+                ->orderBy('position')
+                ->get()
+            : collect();
+
         return Inertia::render('Admin/EducationProducts/Index', [
             'products' => $products,
+            'lmsCourses' => $lmsCourses,
         ]);
+    }
+
+    public function toggleCourseActive(LmsCourse $course): RedirectResponse
+    {
+        $course->update(['is_active' => !$course->is_active]);
+
+        $status = $course->is_active ? 'опубликован' : 'скрыт';
+
+        return redirect()->route('admin.education-products.index')
+            ->with('success', "Курс «{$course->title}» {$status}");
     }
 
     public function create(): Response

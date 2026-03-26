@@ -67,6 +67,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::resource('research', AdminResearchController::class)->except(['show']);
     Route::resource('recipes', AdminRecipeController::class)->except(['show']);
     Route::resource('education-products', AdminEducationProductController::class)->except(['show']);
+    Route::patch('/education-products/course/{course}/toggle', [AdminEducationProductController::class, 'toggleCourseActive'])->name('education-products.toggleCourse');
 
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');
