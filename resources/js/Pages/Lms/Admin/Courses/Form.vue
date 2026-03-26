@@ -66,6 +66,12 @@
               </div>
             </div>
           </div>
+          <div>
+            <RInput v-model="form.starts_at" label="Дата начала" type="date" :error="form.errors.starts_at" />
+          </div>
+          <div>
+            <RInput v-model="form.ends_at" label="Дата окончания" type="date" :error="form.errors.ends_at" />
+          </div>
           <div class="flex items-end">
             <RCheckbox v-model="form.sequential" label="Последовательное прохождение" />
           </div>
@@ -384,6 +390,8 @@ const form = useForm({
   slug: props.course?.slug ?? '',
   description: props.course?.description ?? '',
   image: props.course?.image ?? '',
+  starts_at: props.course?.starts_at?.substring(0, 10) ?? '',
+  ends_at: props.course?.ends_at?.substring(0, 10) ?? '',
   sequential: props.course?.sequential ?? true,
   is_active: props.course?.is_active ?? true,
   requires_approval: props.course?.requires_approval ?? false,
