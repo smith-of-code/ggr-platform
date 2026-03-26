@@ -21,11 +21,24 @@ class ApplicationController extends Controller
             $query->where('status', $request->status);
         }
 
-        $applications = $query->paginate(20);
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('email', 'ilike', "%{$search}%")
+                  ->orWhere('phone', 'ilike', "%{$search}%");
+            });
+        }
+
+        $applications = $query->paginate(20)->withQueryString();
 
         return Inertia::render('Admin/Applications/Index', [
             'applications' => $applications,
-            'filters' => $request->only('status'),
+            'filters' => $request->only('status', 'type', 'search'),
             'statusCounts' => [
                 'all' => Application::count(),
                 'new' => Application::where('status', 'new')->count(),
@@ -33,6 +46,15 @@ class ApplicationController extends Controller
                 'approved' => Application::where('status', 'approved')->count(),
                 'rejected' => Application::where('status', 'rejected')->count(),
             ],
+        ]);
+    }
+
+    public function show(Application $application): Response
+    {
+        $application->load(['tour', 'tourDeparture']);
+
+        return Inertia::render('Admin/Applications/Show', [
+            'application' => $application,
         ]);
     }
 
