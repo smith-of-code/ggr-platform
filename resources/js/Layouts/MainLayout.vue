@@ -63,6 +63,13 @@
             >
               Блог
             </Link>
+            <Link
+              :href="route('vacancies.index')"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
+              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/vacancies') }"
+            >
+              Вакансии
+            </Link>
             <div class="ml-2 h-6 w-px bg-gray-200" />
             <Link
               v-if="$page.props.auth?.user"
@@ -111,6 +118,7 @@
           <Link :href="route('education.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">ВШГР</Link>
           <Link :href="route('research.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Исследования</Link>
           <Link :href="route('blog.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Блог</Link>
+          <Link :href="route('vacancies.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Вакансии</Link>
           <div class="my-2 border-t border-gray-100" />
           <Link
             v-if="$page.props.auth?.user"
@@ -160,6 +168,7 @@
               <Link :href="route('education.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">ВШГР</Link>
               <Link :href="route('research.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Исследования</Link>
               <Link :href="route('blog.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Блог</Link>
+              <Link :href="route('vacancies.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Вакансии</Link>
             </div>
           </div>
           <div>
