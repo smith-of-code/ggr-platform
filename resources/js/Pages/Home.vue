@@ -180,17 +180,14 @@
         <div class="mx-auto max-w-7xl">
           <div class="reveal flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-800 ring-1 ring-amber-200/60">
-                <span aria-hidden="true">🍳</span> Атомы вкуса
-              </div>
-              <h2 class="mt-3 text-2xl font-bold text-gray-900 sm:text-3xl">Книга атомных рецептов</h2>
+              <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Книга <span class="text-[#003274]">атомных</span> рецептов</h2>
               <p class="mt-2 max-w-xl text-gray-500">
                 Блюда из городов атомной отрасли — откройте для себя кулинарные традиции регионов
               </p>
             </div>
             <Link
               :href="route('recipes.index')"
-              class="group flex items-center gap-1.5 text-sm font-semibold text-amber-700 transition hover:text-amber-900"
+              class="group flex items-center gap-1.5 text-sm font-semibold text-[#003274] transition hover:text-[#025ea1]"
             >
               Все рецепты
               <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -204,23 +201,27 @@
               v-for="recipe in latestRecipes"
               :key="recipe.id"
               :href="route('recipes.show', recipe.slug)"
-              class="group overflow-hidden rounded-2xl border border-amber-100/80 bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              class="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
-              <div class="relative aspect-[4/3] overflow-hidden bg-amber-50">
+              <div class="relative aspect-[4/3] overflow-hidden bg-gray-100">
                 <img
                   v-if="recipe.image"
                   :src="recipe.image"
                   :alt="recipe.title"
                   class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div v-else class="flex h-full items-center justify-center text-4xl text-amber-300">🍽️</div>
+                <div v-else class="flex h-full items-center justify-center bg-gradient-to-br from-[#003274]/10 to-gray-100">
+                  <svg class="h-12 w-12 text-[#003274]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12M12.265 3.11a.375.375 0 1 1-.53 0L12 2.845l.265.265Z" />
+                  </svg>
+                </div>
                 <div v-if="recipe.cooking_time" class="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm backdrop-blur-sm">
-                  ⏱ {{ recipe.cooking_time }}
+                  {{ recipe.cooking_time }}
                 </div>
               </div>
               <div class="p-5">
-                <h3 class="text-base font-bold text-gray-900 transition group-hover:text-amber-700">{{ recipe.title }}</h3>
-                <p v-if="recipe.city" class="mt-1 text-xs font-medium text-amber-600">{{ recipe.city.name }}</p>
+                <h3 class="text-base font-bold text-gray-900 transition group-hover:text-[#003274]">{{ recipe.title }}</h3>
+                <p v-if="recipe.city" class="mt-1 text-xs font-medium text-[#025ea1]">{{ recipe.city.name }}</p>
                 <p v-if="recipe.description" class="mt-2 line-clamp-2 text-sm text-gray-500">{{ recipe.description }}</p>
                 <div v-if="recipe.difficulty || recipe.servings" class="mt-3 flex items-center gap-3 text-xs text-gray-400">
                   <span v-if="recipe.difficulty">{{ recipe.difficulty }}</span>
