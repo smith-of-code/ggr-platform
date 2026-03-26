@@ -95,72 +95,79 @@
         </div>
 
         <div class="space-y-6">
-          <div
-            v-for="(mod, mIdx) in form.modules"
-            :key="mIdx"
-            :ref="el => { if (el) moduleRefs[mIdx] = el }"
-            class="rounded-2xl border border-rosatom-200 bg-rosatom-50/30 p-5"
-          >
-            <div class="mb-4 flex items-start justify-between gap-3">
-              <div class="flex-1 space-y-3">
-                <button
-                  v-if="!mod.title"
-                  type="button"
-                  class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-rosatom-600 transition hover:bg-rosatom-50 hover:text-rosatom-700"
-                  @click="openModuleSearch(mIdx)"
-                >
-                  <MagnifyingGlassIcon class="h-3.5 w-3.5" />
-                  Найти модуль из другого курса
-                </button>
-                <div class="flex items-center gap-2">
-                  <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-rosatom-500 text-xs font-bold text-white">{{ mIdx + 1 }}</span>
-                  <RInput v-model="mod.title" placeholder="Название модуля *" required class="flex-1" />
+          <template v-for="(mod, mIdx) in form.modules" :key="mIdx">
+            <div
+              :ref="el => { if (el) moduleRefs[mIdx] = el }"
+              class="rounded-2xl border border-rosatom-200 bg-rosatom-50/30 p-5"
+            >
+              <div class="mb-4 flex items-start justify-between gap-3">
+                <div class="flex-1 space-y-3">
+                  <button
+                    v-if="!mod.title"
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-rosatom-600 transition hover:bg-rosatom-50 hover:text-rosatom-700"
+                    @click="openModuleSearch(mIdx)"
+                  >
+                    <MagnifyingGlassIcon class="h-3.5 w-3.5" />
+                    Найти модуль из другого курса
+                  </button>
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-rosatom-500 text-xs font-bold text-white">{{ mIdx + 1 }}</span>
+                    <RInput v-model="mod.title" placeholder="Название модуля *" required class="flex-1" />
+                  </div>
+                  <RInput v-model="mod.description" placeholder="Описание модуля (необязательно)" />
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <RInput v-model="mod.available_from" label="Открытие" type="datetime-local" />
+                    <RInput v-model="mod.available_to" label="Закрытие" type="datetime-local" />
+                  </div>
                 </div>
-                <RInput v-model="mod.description" placeholder="Описание модуля (необязательно)" />
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <RInput v-model="mod.available_from" label="Открытие" type="datetime-local" />
-                  <RInput v-model="mod.available_to" label="Закрытие" type="datetime-local" />
+                <div class="flex shrink-0 gap-1 pt-1">
+                  <RButton v-if="mIdx > 0" variant="ghost" size="sm" icon-only type="button" @click="moveModule(mIdx, -1)">
+                    <template #icon><ChevronUpIcon class="h-4 w-4" /></template>
+                  </RButton>
+                  <RButton v-if="mIdx < form.modules.length - 1" variant="ghost" size="sm" icon-only type="button" @click="moveModule(mIdx, 1)">
+                    <template #icon><ChevronDownIcon class="h-4 w-4" /></template>
+                  </RButton>
+                  <RButton variant="danger" size="sm" icon-only type="button" @click="removeModule(mIdx)">
+                    <template #icon><XMarkIcon class="h-4 w-4" /></template>
+                  </RButton>
                 </div>
               </div>
-              <div class="flex shrink-0 gap-1 pt-1">
-                <RButton v-if="mIdx > 0" variant="ghost" size="sm" icon-only type="button" @click="moveModule(mIdx, -1)">
-                  <template #icon><ChevronUpIcon class="h-4 w-4" /></template>
-                </RButton>
-                <RButton v-if="mIdx < form.modules.length - 1" variant="ghost" size="sm" icon-only type="button" @click="moveModule(mIdx, 1)">
-                  <template #icon><ChevronDownIcon class="h-4 w-4" /></template>
-                </RButton>
-                <RButton variant="danger" size="sm" icon-only type="button" @click="removeModule(mIdx)">
-                  <template #icon><XMarkIcon class="h-4 w-4" /></template>
+
+              <!-- Этапы внутри модуля -->
+              <div class="ml-4 border-l-2 border-rosatom-200 pl-4">
+                <h4 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Этапы модуля</h4>
+                <div class="space-y-3">
+                  <StageEditor
+                    v-for="(stage, sIdx) in mod.stages"
+                    :key="sIdx"
+                    :stage="stage"
+                    :index="sIdx"
+                    :total="mod.stages.length"
+                    :tests="tests"
+                    :assignments="assignments"
+                    :videos="videos"
+                    :event-slug="event.slug"
+                    @move="(delta) => moveModuleStage(mIdx, sIdx, delta)"
+                    @remove="removeModuleStage(mIdx, sIdx)"
+                    @search="openStageSearch(mIdx, sIdx)"
+                    @search-block="openBlockSearch(mIdx, sIdx)"
+                  />
+                </div>
+                <RButton variant="ghost" size="sm" type="button" class="mt-3" @click="addModuleStage(mIdx)">
+                  <template #icon><PlusIcon class="h-4 w-4" /></template>
+                  Добавить этап
                 </RButton>
               </div>
             </div>
 
-            <!-- Этапы внутри модуля -->
-            <div class="ml-4 border-l-2 border-rosatom-200 pl-4">
-              <h4 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Этапы модуля</h4>
-              <div class="space-y-3">
-                <StageEditor
-                  v-for="(stage, sIdx) in mod.stages"
-                  :key="sIdx"
-                  :stage="stage"
-                  :index="sIdx"
-                  :total="mod.stages.length"
-                  :tests="tests"
-                  :assignments="assignments"
-                  :videos="videos"
-                  :event-slug="event.slug"
-                  @move="(delta) => moveModuleStage(mIdx, sIdx, delta)"
-                  @remove="removeModuleStage(mIdx, sIdx)"
-                  @search="openStageSearch(mIdx, sIdx)"
-                  @search-block="openBlockSearch(mIdx, sIdx)"
-                />
-              </div>
-              <RButton variant="ghost" size="sm" type="button" class="mt-3" @click="addModuleStage(mIdx)">
+            <div class="flex justify-center">
+              <RButton variant="outline" size="sm" type="button" @click="insertModuleAfter(mIdx)">
                 <template #icon><PlusIcon class="h-4 w-4" /></template>
-                Добавить этап
+                Добавить модуль
               </RButton>
             </div>
-          </div>
+          </template>
         </div>
       </RCard>
 
@@ -417,6 +424,12 @@ function addModule() {
   nextTick(() => {
     const idx = form.modules.length - 1
     moduleRefs.value[idx]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
+}
+function insertModuleAfter(mIdx) {
+  form.modules.splice(mIdx + 1, 0, emptyModule())
+  nextTick(() => {
+    moduleRefs.value[mIdx + 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   })
 }
 function removeModule(idx) {

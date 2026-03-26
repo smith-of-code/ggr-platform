@@ -20,7 +20,7 @@
           v-for="item in coursesList"
           :key="item.course.id"
           :title="item.course.title"
-          :description="item.course.description"
+          :description="stripTags(item.course.description)"
           :image="item.course.image"
           :progress="item.enrolled && item.progress > 0 ? item.progress : undefined"
           :stages-count="item.stages_count || 0"
@@ -99,6 +99,11 @@ function enrollmentBadge(item) {
   if (status === 'rejected') return { text: 'Отклонена', variant: 'error' }
   if (item.enrolled) return { text: 'Вы записаны', variant: 'info' }
   return undefined
+}
+
+function stripTags(html) {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
 }
 
 function stageWord(n) {

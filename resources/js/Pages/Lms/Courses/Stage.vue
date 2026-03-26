@@ -2,34 +2,13 @@
   <LmsLayout :event="event" :user="user" :profile="profile">
     <Head :title="`${stage?.title} – ${course?.title}`" />
     <div class="space-y-6">
-      <div class="flex items-center justify-between">
-        <Link
-          :href="route('lms.courses.show', { event: event?.slug, course: course?.id })"
-          class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-rosatom-700"
-        >
-          <ArrowLeftIcon class="h-4 w-4" />
-          {{ course?.title }}
-        </Link>
-        <div class="flex gap-3">
-          <RButton
-            v-if="prevStage"
-            variant="outline"
-            size="sm"
-            @click="router.visit(route('lms.stages.show', { event: event?.slug, course: course?.id, stage: prevStage.id }))"
-          >
-            <template #icon><ChevronLeftIcon class="h-4 w-4" /></template>
-            Назад
-          </RButton>
-          <RButton
-            v-if="nextStage"
-            variant="primary"
-            size="sm"
-            @click="router.visit(route('lms.stages.show', { event: event?.slug, course: course?.id, stage: nextStage.id }))"
-          >
-            Далее
-          </RButton>
-        </div>
-      </div>
+      <Link
+        :href="route('lms.courses.show', { event: event?.slug, course: course?.id })"
+        class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-rosatom-700"
+      >
+        <ArrowLeftIcon class="h-4 w-4" />
+        {{ course?.title }}
+      </Link>
 
       <RCard elevation="raised">
         <h1 class="font-brand text-xl font-bold text-gray-900">{{ stage?.title }}</h1>
@@ -171,6 +150,25 @@
           <span class="font-medium">Этап пройден</span>
         </div>
       </RCard>
+
+      <div class="flex items-center" :class="prevStage && nextStage ? 'justify-between' : nextStage ? 'justify-end' : 'justify-start'">
+        <RButton
+          v-if="prevStage"
+          variant="outline"
+          @click="router.visit(route('lms.stages.show', { event: event?.slug, course: course?.id, stage: prevStage.id }))"
+        >
+          <template #icon><ChevronLeftIcon class="h-4 w-4" /></template>
+          Назад
+        </RButton>
+        <RButton
+          v-if="nextStage"
+          variant="primary"
+          @click="router.visit(route('lms.stages.show', { event: event?.slug, course: course?.id, stage: nextStage.id }))"
+        >
+          Далее
+          <template #icon><ChevronRightIcon class="h-4 w-4" /></template>
+        </RButton>
+      </div>
     </div>
   </LmsLayout>
 </template>

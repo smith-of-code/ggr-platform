@@ -15,7 +15,7 @@
         </div>
         <div class="p-6 lg:p-8">
           <h1 class="font-brand text-2xl font-bold text-gray-900">{{ course?.title }}</h1>
-          <p v-if="course?.description" class="mt-2 text-gray-600">{{ course.description }}</p>
+          <div v-if="course?.description" class="prose prose-sm mt-2 max-w-none text-gray-600" v-html="course.description" />
 
           <!-- Dates -->
           <div v-if="course?.starts_at || course?.ends_at" class="mt-4 flex items-center gap-2 text-sm text-gray-500">
@@ -107,9 +107,7 @@
             </button>
 
             <!-- Module description -->
-            <p v-if="mod.module.description && expandedModules[mi]" class="border-t border-gray-100 bg-gray-50/50 px-5 py-3 text-sm text-gray-500">
-              {{ mod.module.description }}
-            </p>
+            <div v-if="mod.module.description && expandedModules[mi]" class="prose prose-sm max-w-none border-t border-gray-100 bg-gray-50/50 px-5 py-3 text-gray-500" v-html="mod.module.description" />
 
             <!-- Stages list -->
             <div v-if="expandedModules[mi]" class="divide-y divide-gray-50">

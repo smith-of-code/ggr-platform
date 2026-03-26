@@ -102,7 +102,7 @@
             v-for="course in courses.slice(0, 6)"
             :key="course.id"
             :title="course.title"
-            :description="course.description"
+            :description="stripTags(course.description)"
             :image="course.image"
             :progress="course.progress_percent ?? 0"
             :badge="(course.progress_percent ?? 0) >= 100 ? { text: 'Завершён', variant: 'success' } : undefined"
@@ -210,6 +210,11 @@ function countdown(deadline) {
   if (days > 0) return `Осталось ${days} дн. ${hours} ч.`
   if (hours > 0) return `Осталось ${hours} ч.`
   return 'Меньше часа'
+}
+
+function stripTags(html) {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
 }
 
 function formatDate(dateStr) {
