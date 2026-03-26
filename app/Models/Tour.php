@@ -34,6 +34,8 @@ class Tour extends Model
         'bchp_participant',
         'is_featured',
         'image',
+        'gallery',
+        'video_url',
         'position',
         'is_active',
         'target_audience',
@@ -50,6 +52,7 @@ class Tour extends Model
         'is_active' => 'boolean',
         'price_from' => 'decimal:2',
         'reactions_count' => 'array',
+        'gallery' => 'array',
     ];
 
     public function cities(): BelongsToMany

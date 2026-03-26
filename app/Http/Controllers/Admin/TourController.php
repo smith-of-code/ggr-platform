@@ -116,6 +116,10 @@ class TourController extends Controller
             'cost_info' => 'nullable|string',
             'application_info' => 'nullable|string',
             'position' => 'nullable|integer',
+            'image' => 'nullable|string',
+            'gallery' => 'nullable|array',
+            'gallery.*' => 'string',
+            'video_url' => 'nullable|string|max:500',
         ]);
     }
 

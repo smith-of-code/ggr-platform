@@ -84,6 +84,77 @@
             />
           </RCard>
 
+          <!-- Gallery -->
+          <RCard elevation="raised">
+            <h2 class="mb-4 text-base font-bold text-gray-900">Галерея фото</h2>
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <div
+                  v-for="(url, gi) in form.gallery"
+                  :key="gi"
+                  class="group relative aspect-video overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+                >
+                  <img :src="url" alt="" class="h-full w-full object-cover" />
+                  <div class="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition group-hover:opacity-100">
+                    <button
+                      type="button"
+                      class="rounded-lg bg-white/90 p-1.5 text-gray-700 transition hover:bg-white"
+                      title="Переместить влево"
+                      :disabled="gi === 0"
+                      @click="moveGalleryItem(gi, -1)"
+                    >
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-lg bg-white/90 p-1.5 text-gray-700 transition hover:bg-white"
+                      title="Переместить вправо"
+                      :disabled="gi === form.gallery.length - 1"
+                      @click="moveGalleryItem(gi, 1)"
+                    >
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-lg bg-red-500/90 p-1.5 text-white transition hover:bg-red-600"
+                      title="Удалить"
+                      @click="form.gallery.splice(gi, 1)"
+                    >
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]"
+                @click="$refs.galleryInput.click()"
+              >
+                <svg class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 3h18a1.5 1.5 0 0 1 1.5 1.5v15a1.5 1.5 0 0 1-1.5 1.5H3a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 3 3Z" />
+                </svg>
+                <span v-if="!galleryUploading" class="text-sm font-medium text-gray-500">Нажмите, чтобы добавить фото</span>
+                <span v-else class="text-sm font-medium text-[#003274]">Загрузка…</span>
+              </div>
+              <input ref="galleryInput" type="file" accept="image/*" multiple class="hidden" @change="uploadGalleryFiles" />
+            </div>
+          </RCard>
+
+          <!-- Video -->
+          <RCard elevation="raised">
+            <h2 class="mb-4 text-base font-bold text-gray-900">Видео</h2>
+            <RInput
+              v-model="form.video_url"
+              label="Ссылка на видео"
+              placeholder="https://youtube.com/watch?v=... или rutube.ru/video/..."
+            />
+            <p class="mt-2 text-xs text-gray-400">Поддерживается YouTube и RuTube</p>
+            <div v-if="videoPreviewSrc" class="mt-4 overflow-hidden rounded-xl border border-gray-200">
+              <div class="aspect-video">
+                <iframe :src="videoPreviewSrc" class="h-full w-full" allow="autoplay; encrypted-media" allowfullscreen />
+              </div>
+            </div>
+          </RCard>
+
           <!-- Cities -->
           <RCard elevation="raised">
             <h2 class="mb-4 text-base font-bold text-gray-900">Города</h2>
@@ -153,6 +224,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
+import axios from 'axios'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
@@ -178,11 +250,55 @@ const tourMeta = computed(() => {
   return m
 })
 
+const galleryUploading = ref(false)
+
+const videoPreviewSrc = computed(() => {
+  const url = form.video_url
+  if (!url) return null
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/)
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`
+  const rt = url.match(/rutube\.ru\/(?:video\/|play\/embed\/)([a-zA-Z0-9_-]+)/)
+  if (rt) return `https://rutube.ru/play/embed/${rt[1]}`
+  return null
+})
+
+async function uploadGalleryFiles(e) {
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
+  galleryUploading.value = true
+  for (const file of files) {
+    try {
+      const fd = new FormData()
+      fd.append('image', file)
+      const { data } = await axios.post(route('admin.upload.image'), fd)
+      if (data.url) {
+        form.gallery.push(data.url)
+      }
+    } catch {
+      // skip failed uploads
+    }
+  }
+  galleryUploading.value = false
+  e.target.value = ''
+}
+
+function moveGalleryItem(index, direction) {
+  const newIndex = index + direction
+  if (newIndex < 0 || newIndex >= form.gallery.length) return
+  const arr = [...form.gallery]
+  const tmp = arr[index]
+  arr[index] = arr[newIndex]
+  arr[newIndex] = tmp
+  form.gallery = arr
+}
+
 const form = useForm({
   title: props.tour?.title ?? '',
   slug: props.tour?.slug ?? '',
   description: props.tour?.description ?? '',
   image: props.tour?.image ?? '',
+  gallery: props.tour?.gallery ?? [],
+  video_url: props.tour?.video_url ?? '',
   start_city: props.tour?.start_city ?? '',
   duration: props.tour?.duration ?? '',
   project: props.tour?.project ?? '',

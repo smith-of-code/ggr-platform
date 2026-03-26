@@ -3,14 +3,67 @@
     <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div class="lg:grid lg:grid-cols-3 lg:gap-10">
         <div class="lg:col-span-2">
-          <!-- Hero image -->
-          <div class="reveal overflow-hidden rounded-xl bg-gray-200 shadow-sm">
-            <div class="aspect-video overflow-hidden">
-              <img
-                v-if="tour.image"
-                :src="tour.image"
-                :alt="tour.title"
-                class="h-full w-full object-cover"
+          <!-- Hero image / Gallery -->
+          <div v-if="allMedia.length > 1" class="reveal">
+            <div class="grid gap-2" :class="allMedia.length >= 3 ? 'grid-cols-4 grid-rows-2' : 'grid-cols-2'">
+              <button
+                type="button"
+                class="group relative overflow-hidden rounded-xl bg-gray-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]"
+                :class="allMedia.length >= 3 ? 'col-span-2 row-span-2' : ''"
+                @click="openLightbox(0)"
+              >
+                <div :class="allMedia.length >= 3 ? 'aspect-[4/3]' : 'aspect-video'" class="overflow-hidden">
+                  <img :src="allMedia[0]" :alt="tour.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                </div>
+                <div class="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
+              </button>
+              <button
+                v-for="(img, mi) in allMedia.slice(1, allMedia.length >= 3 ? 5 : 2)"
+                :key="mi"
+                type="button"
+                class="group relative overflow-hidden rounded-xl bg-gray-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]"
+                @click="openLightbox(mi + 1)"
+              >
+                <div class="aspect-video overflow-hidden">
+                  <img :src="img" :alt="`Фото ${mi + 2}`" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                </div>
+                <div class="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
+                <div
+                  v-if="mi === (allMedia.length >= 3 ? 3 : 1) && allMedia.length > (allMedia.length >= 3 ? 5 : 2)"
+                  class="absolute inset-0 flex items-center justify-center bg-black/50 text-xl font-bold text-white"
+                >
+                  +{{ allMedia.length - (allMedia.length >= 3 ? 5 : 2) }}
+                </div>
+              </button>
+            </div>
+            <button
+              type="button"
+              class="mt-3 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+              @click="openLightbox(0)"
+            >
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 3h18a1.5 1.5 0 0 1 1.5 1.5v15a1.5 1.5 0 0 1-1.5 1.5H3a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 3 3Z" />
+              </svg>
+              Все фото ({{ allMedia.length }})
+            </button>
+          </div>
+          <div v-else-if="tour.image" class="reveal overflow-hidden rounded-xl bg-gray-200 shadow-sm">
+            <button type="button" class="group w-full focus:outline-none" @click="openLightbox(0)">
+              <div class="aspect-video overflow-hidden">
+                <img :src="tour.image" :alt="tour.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+              </div>
+            </button>
+          </div>
+
+          <!-- Video -->
+          <div v-if="videoEmbedSrc" class="reveal mt-6 overflow-hidden rounded-xl border border-gray-200 bg-black shadow-md">
+            <div class="aspect-video w-full">
+              <iframe
+                :src="videoEmbedSrc"
+                class="h-full w-full"
+                title="Видео тура"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
               />
             </div>
           </div>
@@ -221,6 +274,54 @@
         </template>
       </RModal>
     </div>
+
+    <!-- Lightbox -->
+    <Teleport to="body">
+      <div
+        v-if="lightboxIndex !== null && allMedia[lightboxIndex]"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Просмотр фото"
+        @click.self="lightboxIndex = null"
+      >
+        <button
+          type="button"
+          class="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2.5 text-white transition hover:bg-white/20 focus:outline-none"
+          @click="lightboxIndex = null"
+        >
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+        </button>
+
+        <button
+          v-if="lightboxIndex > 0"
+          type="button"
+          class="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 focus:outline-none"
+          @click="lightboxIndex--"
+        >
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+        </button>
+
+        <button
+          v-if="lightboxIndex < allMedia.length - 1"
+          type="button"
+          class="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 focus:outline-none"
+          @click="lightboxIndex++"
+        >
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+        </button>
+
+        <img
+          :src="allMedia[lightboxIndex]"
+          :alt="`Фото ${lightboxIndex + 1}`"
+          class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+        />
+
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-white/80">
+          {{ lightboxIndex + 1 }} / {{ allMedia.length }}
+        </div>
+      </div>
+    </Teleport>
   </MainLayout>
 </template>
 
@@ -259,12 +360,14 @@
 </style>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { router, usePage, Link } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
 useScrollReveal()
+
+const lightboxIndex = ref(null)
 
 const REACTION_KEYS = ['love', 'wow', 'fire', 'cool', 'star']
 const REACTION_META = {
@@ -283,6 +386,41 @@ const props = defineProps({
 const page = usePage()
 
 const isAuthed = computed(() => !!page.props.auth?.user)
+
+const allMedia = computed(() => {
+  const imgs = []
+  if (props.tour.image) imgs.push(props.tour.image)
+  if (Array.isArray(props.tour.gallery)) {
+    for (const url of props.tour.gallery) {
+      if (url && !imgs.includes(url)) imgs.push(url)
+    }
+  }
+  return imgs
+})
+
+const videoEmbedSrc = computed(() => {
+  const url = props.tour.video_url
+  if (!url || typeof url !== 'string') return null
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/)
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`
+  const rt = url.match(/rutube\.ru\/(?:video\/|play\/embed\/)([a-zA-Z0-9_-]+)/)
+  if (rt) return `https://rutube.ru/play/embed/${rt[1]}`
+  return null
+})
+
+function openLightbox(index) {
+  lightboxIndex.value = index
+}
+
+function onLightboxKeydown(e) {
+  if (lightboxIndex.value === null) return
+  if (e.key === 'Escape') lightboxIndex.value = null
+  if (e.key === 'ArrowLeft' && lightboxIndex.value > 0) lightboxIndex.value--
+  if (e.key === 'ArrowRight' && lightboxIndex.value < allMedia.value.length - 1) lightboxIndex.value++
+}
+
+onMounted(() => window.addEventListener('keydown', onLightboxKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onLightboxKeydown))
 
 const currentUserReaction = computed(() => props.userReaction ?? props.tour?.user_reaction ?? null)
 
