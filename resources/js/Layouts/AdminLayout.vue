@@ -17,7 +17,7 @@
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 space-y-1 px-3 py-4">
+      <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <Link
           :href="route('admin.dashboard')"
           :class="[isActive('admin.dashboard') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
@@ -39,7 +39,7 @@
         </Link>
 
         <div class="pb-1 pt-4">
-          <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Контент</p>
+          <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Контент портала</p>
         </div>
 
         <Link
@@ -50,16 +50,6 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
           </svg>
           Города
-        </Link>
-
-        <Link
-          :href="route('lms.admin.events.index')"
-          :class="[isActive('lms.admin') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
-        >
-          <svg :class="[isActive('lms.admin') ? 'text-[#003274]' : 'text-gray-400 group-hover:text-gray-600']" class="h-5 w-5 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25v14.25" />
-          </svg>
-          LMS ВШГР
         </Link>
 
         <Link
@@ -82,10 +72,6 @@
           Блог
         </Link>
 
-        <div class="pb-1 pt-4">
-          <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Образование</p>
-        </div>
-
         <Link
           :href="route('admin.education-products.index')"
           :class="[isActive('admin.education-products') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
@@ -95,10 +81,6 @@
           </svg>
           Продукты ВШГР
         </Link>
-
-        <div class="pb-1 pt-4">
-          <p class="px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Исследования</p>
-        </div>
 
         <Link
           :href="route('admin.research.index')"
@@ -118,6 +100,24 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12M12.265 3.11a.375.375 0 1 1-.53 0L12 2.845l.265.265Z" />
           </svg>
           Рецепты
+        </Link>
+
+        <!-- LMS Switch -->
+        <div class="mx-1 my-4 border-t border-gray-200"></div>
+        <Link
+          :href="route('lms.admin.events.index')"
+          class="group flex items-center gap-3 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 px-3 py-3 text-sm font-semibold text-indigo-700 transition-all duration-150 hover:from-indigo-100 hover:to-blue-100 hover:shadow-sm"
+        >
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+            </svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="leading-tight">Админка LMS ВШГР</p>
+            <p class="text-xs font-normal text-indigo-500">Курсы, тесты, участники</p>
+          </div>
+          <svg class="h-4 w-4 shrink-0 text-indigo-400 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
         </Link>
       </nav>
 
@@ -174,7 +174,6 @@ function isActive(routePrefix) {
   if (routePrefix === 'admin.education-products') return url.startsWith('/admin/education-products')
   if (routePrefix === 'admin.research') return url.startsWith('/admin/research')
   if (routePrefix === 'admin.recipes') return url.startsWith('/admin/recipes')
-  if (routePrefix === 'lms.admin') return url.startsWith('/lms-admin')
   return false
 }
 </script>
