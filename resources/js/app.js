@@ -1,7 +1,7 @@
 import '../css/app.css';
 import './bootstrap';
 
-import { createInertiaApp, router } from '@inertiajs/vue3';
+import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
@@ -19,14 +19,6 @@ const uiKitComponents = {
     RModal, RTabs, RProgress, RSidebar,
     CourseCard, ProfileCard, Leaderboard, AssignmentCard,
 };
-
-router.on('before', (event) => {
-    const path = event.detail.visit.url.pathname;
-    if (path === '/lms' || path.startsWith('/lms/') || path === '/lms-admin' || path.startsWith('/lms-admin/')) {
-        event.preventDefault();
-        window.location.href = event.detail.visit.url.href;
-    }
-});
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,

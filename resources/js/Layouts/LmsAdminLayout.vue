@@ -19,13 +19,13 @@
             <p class="text-xs" style="color: var(--color-primary-light)">Админ-панель</p>
           </div>
         </div>
-        <button
+        <a
+          :href="route('admin.dashboard')"
           class="group mt-3 flex w-full items-center gap-2.5 rounded-lg bg-white/10 px-3 py-2 text-left text-xs font-semibold text-white/90 transition hover:bg-white/20 hover:text-white"
-          @click="navigateTo('admin.dashboard')"
         >
           <svg class="h-4 w-4 shrink-0 text-white/60 transition group-hover:-translate-x-0.5 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
           <span>Админка портала</span>
-        </button>
+        </a>
       </template>
       <template #footer>
         <RButton

@@ -132,7 +132,7 @@
 
         <!-- LMS Switch -->
         <div class="mx-1 my-4 border-t border-gray-200"></div>
-        <Link
+        <a
           :href="route('lms.admin.events.index')"
           class="group flex items-center gap-3 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 px-3 py-3 text-sm font-semibold text-indigo-700 transition-all duration-150 hover:from-indigo-100 hover:to-blue-100 hover:shadow-sm"
         >
@@ -146,7 +146,7 @@
             <p class="text-xs font-normal text-indigo-500">Курсы, тесты, участники</p>
           </div>
           <svg class="h-4 w-4 shrink-0 text-indigo-400 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-        </Link>
+        </a>
       </nav>
 
       <!-- User footer -->
