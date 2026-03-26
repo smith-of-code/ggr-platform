@@ -20,6 +20,12 @@
             <p class="mt-3 max-w-2xl text-lg text-gray-600">
               Блюда из городов атомной отрасли — готовьте дома и открывайте новые вкусы регионов.
             </p>
+            <div class="mt-6 flex gap-2">
+              <Link :href="route('research.index')" class="rounded-full border border-gray-200 bg-white px-5 py-2 text-sm font-semibold text-gray-600 transition hover:border-[#003274]/30 hover:bg-blue-50 hover:text-[#003274]">
+                Исследования
+              </Link>
+              <span class="rounded-full bg-amber-600 px-5 py-2 text-sm font-semibold text-white">Атомы вкуса</span>
+            </div>
           </div>
         </div>
 

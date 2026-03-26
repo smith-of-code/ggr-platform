@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\EducationProductController as AdminEducationProdu
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
+use App\Http\Controllers\Admin\TimelineEventController as AdminTimelineController;
+use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CityController;
@@ -19,6 +21,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResearchController;
 use App\Http\Controllers\TourController;
+use App\Http\Controllers\VacancyController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public portal (no auth required) ──
@@ -42,6 +45,9 @@ Route::get('/research/{slug}', [ResearchController::class, 'show'])->name('resea
 Route::get('/recipes', [ResearchController::class, 'recipes'])->name('recipes.index');
 Route::get('/recipes/{slug}', [ResearchController::class, 'recipeShow'])->name('recipes.show');
 
+Route::get('/vacancies', [VacancyController::class, 'index'])->name('vacancies.index');
+Route::get('/vacancies/{vacancy:slug}', [VacancyController::class, 'show'])->name('vacancies.show');
+
 // ── Auth-required portal features ──
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -56,6 +62,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/applications/export', [AdminApplicationController::class, 'export'])->name('applications.export');
     Route::get('/applications', [AdminApplicationController::class, 'index'])->name('applications.index');
+    Route::get('/applications/{application}', [AdminApplicationController::class, 'show'])->name('applications.show');
     Route::patch('/applications/{application}/status', [AdminApplicationController::class, 'updateStatus'])->name('applications.updateStatus');
     Route::resource('cities', AdminCityController::class)->except(['show']);
     Route::patch('/cities/{city}/toggle-active', [AdminCityController::class, 'toggleActive'])->name('cities.toggleActive');
@@ -69,6 +76,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::resource('recipes', AdminRecipeController::class)->except(['show']);
     Route::resource('education-products', AdminEducationProductController::class)->except(['show']);
     Route::patch('/education-products/course/{course}/toggle', [AdminEducationProductController::class, 'toggleCourseActive'])->name('education-products.toggleCourse');
+
+    Route::resource('vacancies', AdminVacancyController::class)->except(['show']);
+    Route::patch('/vacancies/{vacancy}/toggle-publish', [AdminVacancyController::class, 'togglePublish'])->name('vacancies.togglePublish');
+
+    Route::resource('timeline', AdminTimelineController::class)->except(['show']);
+    Route::patch('/timeline/{timeline}/toggle-active', [AdminTimelineController::class, 'toggleActive'])->name('timeline.toggleActive');
 
     Route::post('/upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
 

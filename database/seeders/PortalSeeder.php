@@ -7,6 +7,7 @@ use App\Models\EducationProduct;
 use App\Models\Recipe;
 use App\Models\Research;
 use App\Models\TimelineEvent;
+use App\Models\Vacancy;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 
@@ -19,6 +20,7 @@ class PortalSeeder extends Seeder
         $this->seedResearches();
         $this->seedRecipes();
         $this->seedCityExtras();
+        $this->seedVacancies();
     }
 
     private function seedTimelineEvents(): void
@@ -368,6 +370,84 @@ class PortalSeeder extends Seeder
 
         foreach ($extras as $slug => $data) {
             City::where('slug', $slug)->update($data);
+        }
+    }
+
+    private function seedVacancies(): void
+    {
+        if (!Schema::hasTable('vacancies')) {
+            return;
+        }
+
+        $sosnovy = City::where('slug', 'sosnovyj-bor')->first();
+        $novovoronezh = City::where('slug', 'novovoronezh')->first();
+        $obninsk = City::where('slug', 'obninsk')->first();
+        $sarov = City::where('slug', 'sarov')->first();
+
+        $vacancies = [
+            [
+                'title' => 'Инженер-технолог АЭС',
+                'slug' => 'inzhener-tekhnolog-aes',
+                'city_id' => $sosnovy?->id,
+                'company' => 'Ленинградская АЭС',
+                'employment_type' => 'full_time',
+                'salary' => 'от 120 000 ₽',
+                'description' => '<p>Обеспечение технологической безопасности и эффективности работы энергоблоков. Участие в модернизации оборудования.</p>',
+                'requirements' => '<ul><li>Высшее техническое образование (ядерная энергетика)</li><li>Опыт работы от 3 лет</li><li>Знание нормативной документации</li></ul>',
+                'conditions' => '<ul><li>Официальное трудоустройство</li><li>ДМС</li><li>Жильё для иногородних</li><li>Ежегодный отпуск 36 дней</li></ul>',
+                'is_published' => true,
+                'published_at' => now(),
+                'position' => 1,
+            ],
+            [
+                'title' => 'Специалист по туризму',
+                'slug' => 'specialist-po-turizmu',
+                'city_id' => $novovoronezh?->id,
+                'company' => 'Администрация г. Нововоронеж',
+                'employment_type' => 'full_time',
+                'salary' => 'от 55 000 ₽',
+                'description' => '<p>Развитие туристического направления города. Организация экскурсий и мероприятий для гостей.</p>',
+                'requirements' => '<ul><li>Высшее образование (туризм, менеджмент)</li><li>Опыт организации мероприятий</li><li>Коммуникабельность</li></ul>',
+                'conditions' => '<ul><li>Гибкий график</li><li>Командировки по атомным городам</li><li>Карьерный рост</li></ul>',
+                'is_published' => true,
+                'published_at' => now(),
+                'position' => 2,
+            ],
+            [
+                'title' => 'Научный сотрудник (физика)',
+                'slug' => 'nauchnyj-sotrudnik-fizika',
+                'city_id' => $obninsk?->id,
+                'company' => 'ФЭИ им. Лейпунского',
+                'employment_type' => 'full_time',
+                'salary' => 'от 90 000 ₽',
+                'description' => '<p>Проведение научных исследований в области ядерной физики и реакторных технологий.</p>',
+                'requirements' => '<ul><li>Степень кандидата наук (физика)</li><li>Публикации в научных журналах</li><li>Английский язык B2+</li></ul>',
+                'conditions' => '<ul><li>Современная лаборатория</li><li>Грантовая поддержка</li><li>Международные конференции</li></ul>',
+                'is_published' => true,
+                'published_at' => now(),
+                'position' => 3,
+            ],
+            [
+                'title' => 'Стажёр-программист',
+                'slug' => 'stazher-programmist',
+                'city_id' => $sarov?->id,
+                'company' => 'РФЯЦ-ВНИИЭФ',
+                'employment_type' => 'internship',
+                'salary' => 'от 40 000 ₽',
+                'description' => '<p>Стажировка в IT-подразделении ведущего ядерного центра. Работа с системами моделирования.</p>',
+                'requirements' => '<ul><li>Студент последних курсов (информатика, математика)</li><li>Знание Python, C++</li><li>Базовые навыки Linux</li></ul>',
+                'conditions' => '<ul><li>Наставничество</li><li>Возможность трудоустройства</li><li>Общежитие</li></ul>',
+                'is_published' => true,
+                'published_at' => now(),
+                'position' => 4,
+            ],
+        ];
+
+        foreach ($vacancies as $data) {
+            Vacancy::updateOrCreate(
+                ['slug' => $data['slug']],
+                $data,
+            );
         }
     }
 }

@@ -56,4 +56,9 @@ class City extends Model
     {
         return $this->hasMany(Recipe::class);
     }
+
+    public function vacancies(): HasMany
+    {
+        return $this->hasMany(Vacancy::class);
+    }
 }

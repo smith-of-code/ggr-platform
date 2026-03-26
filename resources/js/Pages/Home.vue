@@ -156,9 +156,9 @@
         </div>
       </section>
 
-      <!-- Geography map -->
+      <!-- Interactive Yandex Map -->
       <section
-        v-if="cities?.length"
+        v-if="allCities?.length"
         class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-20 text-white sm:px-6 lg:px-8"
       >
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(255,255,255,0.12),transparent_55%)]" />
@@ -166,66 +166,68 @@
           <div class="reveal text-center">
             <h2 class="text-2xl font-bold sm:text-3xl">География проекта</h2>
             <p class="mx-auto mt-3 max-w-2xl text-sm text-white/80 sm:text-base">
-              Атомные города на карте России — нажмите на точку, чтобы перейти на страницу города
+              Атомные города на карте России — нажмите на маркер, чтобы узнать о городе и перейти на его страницу
             </p>
           </div>
-          <div ref="mapContainerRef" class="relative mx-auto mt-12 aspect-[5/3] w-full max-w-5xl">
-            <svg
-              class="absolute inset-0 h-full w-full drop-shadow-lg"
-              viewBox="0 0 1000 600"
-              preserveAspectRatio="xMidYMid meet"
-              aria-hidden="true"
-            >
-              <defs>
-                <linearGradient id="homeMapRussia" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="rgba(255,255,255,0.14)" />
-                  <stop offset="100%" stop-color="rgba(255,255,255,0.05)" />
-                </linearGradient>
-                <filter id="homeMapGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="4" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              <path
-                fill="url(#homeMapRussia)"
-                stroke="rgba(255,255,255,0.28)"
-                stroke-width="1.5"
-                filter="url(#homeMapGlow)"
-                d="M 118 118 C 168 78 248 72 338 88 L 468 82 C 558 76 648 92 738 108 L 838 132 C 898 158 928 208 918 268 C 912 318 878 368 818 402 L 698 448 C 588 478 458 488 338 472 L 218 438 C 148 398 98 328 92 248 C 88 188 98 148 118 118 Z"
-              />
-            </svg>
-            <div class="absolute inset-0">
-              <Link
-                v-for="city in mapCityMarkers"
-                :key="city.id"
-                :href="route('cities.show', city.slug)"
-                class="group absolute flex max-w-[140px] flex-col items-center gap-1 sm:max-w-[180px]"
-                :class="[
-                  '-translate-x-1/2 -translate-y-full',
-                  highlightedCityId === city.id ? 'z-20' : 'z-10',
-                ]"
-                :style="{ left: city.pctLeft + '%', top: city.pctTop + '%' }"
-                @mouseenter="highlightedCityId = city.id"
-                @mouseleave="highlightedCityId = null"
-                @focusin="highlightedCityId = city.id"
-                @focusout="highlightedCityId = null"
-              >
-                <span
-                  class="flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-white shadow-md ring-2 ring-[#003274]/40 transition duration-300 group-hover:scale-125 group-hover:bg-[#ffd54f] sm:h-5 sm:w-5"
-                  :class="userFavorites?.cityIds?.includes(city.id) ? 'bg-amber-200 ring-amber-400/60' : ''"
-                >
-                  <span class="h-2 w-2 rounded-full bg-[#003274] group-hover:bg-[#003274]" />
-                </span>
-                <span
-                  class="rounded-md bg-[#003274]/90 px-2 py-0.5 text-center text-[10px] font-semibold leading-tight text-white shadow-md backdrop-blur-sm transition group-hover:bg-white group-hover:text-[#003274] sm:text-xs"
-                >
-                  {{ city.name }}
-                </span>
-              </Link>
+          <div class="reveal mx-auto mt-10 overflow-hidden rounded-2xl shadow-2xl shadow-black/30" style="height: 520px">
+            <YandexCityMap :cities="allCities" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Атомы вкуса -->
+      <section v-if="latestRecipes?.length" class="bg-white px-4 py-20 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl">
+          <div class="reveal flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-800 ring-1 ring-amber-200/60">
+                <span aria-hidden="true">🍳</span> Атомы вкуса
+              </div>
+              <h2 class="mt-3 text-2xl font-bold text-gray-900 sm:text-3xl">Книга атомных рецептов</h2>
+              <p class="mt-2 max-w-xl text-gray-500">
+                Блюда из городов атомной отрасли — откройте для себя кулинарные традиции регионов
+              </p>
             </div>
+            <Link
+              :href="route('recipes.index')"
+              class="group flex items-center gap-1.5 text-sm font-semibold text-amber-700 transition hover:text-amber-900"
+            >
+              Все рецепты
+              <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+              </svg>
+            </Link>
+          </div>
+
+          <div class="reveal mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Link
+              v-for="recipe in latestRecipes"
+              :key="recipe.id"
+              :href="route('recipes.show', recipe.slug)"
+              class="group overflow-hidden rounded-2xl border border-amber-100/80 bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+            >
+              <div class="relative aspect-[4/3] overflow-hidden bg-amber-50">
+                <img
+                  v-if="recipe.image"
+                  :src="recipe.image"
+                  :alt="recipe.title"
+                  class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div v-else class="flex h-full items-center justify-center text-4xl text-amber-300">🍽️</div>
+                <div v-if="recipe.cooking_time" class="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm backdrop-blur-sm">
+                  ⏱ {{ recipe.cooking_time }}
+                </div>
+              </div>
+              <div class="p-5">
+                <h3 class="text-base font-bold text-gray-900 transition group-hover:text-amber-700">{{ recipe.title }}</h3>
+                <p v-if="recipe.city" class="mt-1 text-xs font-medium text-amber-600">{{ recipe.city.name }}</p>
+                <p v-if="recipe.description" class="mt-2 line-clamp-2 text-sm text-gray-500">{{ recipe.description }}</p>
+                <div v-if="recipe.difficulty || recipe.servings" class="mt-3 flex items-center gap-3 text-xs text-gray-400">
+                  <span v-if="recipe.difficulty">{{ recipe.difficulty }}</span>
+                  <span v-if="recipe.servings">{{ recipe.servings }} порц.</span>
+                </div>
+              </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -457,6 +459,7 @@
 import { computed, ref } from 'vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import YandexCityMap from '@/Components/YandexCityMap.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
 useScrollReveal()
@@ -464,6 +467,8 @@ useScrollReveal()
 const props = defineProps({
   featuredTours: Array,
   cities: Array,
+  allCities: { type: Array, default: () => [] },
+  latestRecipes: { type: Array, default: () => [] },
   stats: Object,
   timelineEvents: {
     type: Array,
@@ -476,56 +481,8 @@ const props = defineProps({
 })
 
 const page = usePage()
-const mapContainerRef = ref(null)
-const highlightedCityId = ref(null)
 
 const flashSuccess = computed(() => page.props.flash?.success ?? null)
-
-const RUSSIA_BOUNDS = { minLat: 41, maxLat: 76, minLng: 20, maxLng: 190 }
-
-function projectToMap(lat, lng) {
-  const la = Number(lat)
-  const ln = Number(lng)
-  const x = ((ln - RUSSIA_BOUNDS.minLng) / (RUSSIA_BOUNDS.maxLng - RUSSIA_BOUNDS.minLng)) * 820 + 90
-  const y = ((RUSSIA_BOUNDS.maxLat - la) / (RUSSIA_BOUNDS.maxLat - RUSSIA_BOUNDS.minLat)) * 380 + 70
-  return {
-    x: Math.min(Math.max(x, 70), 930),
-    y: Math.min(Math.max(y, 55), 520),
-  }
-}
-
-const mapCityMarkers = computed(() => {
-  const list = props.cities || []
-  const withCoords = []
-  const without = []
-  list.forEach((city) => {
-    const lat = city.lat
-    const lng = city.lng
-    if (lat != null && lng != null && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))) {
-      const { x, y } = projectToMap(lat, lng)
-      withCoords.push({
-        ...city,
-        pctLeft: (x / 1000) * 100,
-        pctTop: (y / 600) * 100,
-      })
-    } else {
-      without.push(city)
-    }
-  })
-  const cols = 3
-  without.forEach((city, i) => {
-    const row = Math.floor(i / cols)
-    const col = i % cols
-    const x = 200 + col * 200
-    const y = 380 + row * 72
-    withCoords.push({
-      ...city,
-      pctLeft: (x / 1000) * 100,
-      pctTop: (y / 600) * 100,
-    })
-  })
-  return withCoords
-})
 
 const sortedTimelineEvents = computed(() => {
   const raw = props.timelineEvents || []
