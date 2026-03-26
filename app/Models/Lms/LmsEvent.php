@@ -31,6 +31,7 @@ class LmsEvent extends Model
 
     public const DEFAULT_MENU_CONFIG = [
         'courses' => true,
+        'grants' => true,
         'trajectories' => true,
         'tests' => true,
         'assignments' => true,

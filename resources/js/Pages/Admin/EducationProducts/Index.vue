@@ -137,7 +137,7 @@
                   </div>
                   <div>
                     <p class="text-sm font-medium text-gray-900">{{ course.title }}</p>
-                    <p v-if="course.description" class="mt-0.5 line-clamp-1 text-xs text-gray-400">{{ course.description }}</p>
+                    <p v-if="course.description" class="mt-0.5 line-clamp-1 text-xs text-gray-400">{{ stripTags(course.description) }}</p>
                   </div>
                 </div>
               </td>
@@ -184,6 +184,11 @@ import { Head, Link, router } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 
 defineProps({ products: Object, lmsCourses: { type: Array, default: () => [] } })
+
+function stripTags(html) {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
+}
 
 function confirmDestroy(product) {
   if (confirm(`Удалить продукт «${product.title}»?`)) {

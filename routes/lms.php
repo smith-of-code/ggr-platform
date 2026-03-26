@@ -32,6 +32,8 @@ use App\Http\Controllers\Lms\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Lms\Admin\FormController as AdminFormController;
 use App\Http\Controllers\Lms\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Lms\Admin\UploadController as AdminUploadController;
+use App\Http\Controllers\Lms\GrantController;
+use App\Http\Controllers\Lms\Admin\GrantController as AdminGrantController;
 use App\Http\Controllers\Lms\FormPublicController;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +59,9 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/documents', [ProfileController::class, 'uploadDocument'])->name('profile.documents.upload');
+    Route::delete('/profile/documents/{document}', [ProfileController::class, 'deleteDocument'])->name('profile.documents.delete');
+    Route::get('/profile/templates/{type}', [ProfileController::class, 'downloadTemplate'])->name('profile.templates.download');
 
     // Social SSO — link/unlink (auth required)
     Route::get('/social/{provider}/link', [SocialAuthController::class, 'redirectToLink'])->name('social.link');
@@ -85,6 +90,7 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
     Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
     Route::post('/assignments/{assignment}/submit', [AssignmentController::class, 'submit'])->name('assignments.submit');
+    Route::post('/assignments/{assignment}/draft', [AssignmentController::class, 'draft'])->name('assignments.draft');
     Route::post('/assignments/{assignment}/comment', [AssignmentController::class, 'comment'])->name('assignments.comment');
     Route::patch('/assignments/{assignment}/submissions/{submission}', [AssignmentController::class, 'update'])->name('assignments.update');
 
@@ -92,6 +98,12 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/trajectories', [TrajectoryController::class, 'index'])->name('trajectories.index');
     Route::get('/trajectories/{trajectory}', [TrajectoryController::class, 'show'])->name('trajectories.show');
     Route::post('/trajectories/{trajectory}/enroll', [TrajectoryController::class, 'enroll'])->name('trajectories.enroll');
+
+    // Grants
+    Route::get('/grants', [GrantController::class, 'index'])->name('grants.index');
+    Route::get('/grants/{grant}', [GrantController::class, 'show'])->name('grants.show');
+    Route::post('/grants/{grant}/enroll', [GrantController::class, 'enroll'])->name('grants.enroll');
+    Route::delete('/grants/{grant}/unenroll', [GrantController::class, 'unenroll'])->name('grants.unenroll');
 
     // Videos
     Route::get('/videos', [VideoController::class, 'index'])->name('videos.index');
@@ -138,6 +150,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::post('assignments/{assignment}/submissions/{submission}/review', [AdminAssignmentController::class, 'review'])->name('assignments.review');
         Route::post('assignments/{assignment}/submissions/{submission}/comment', [AdminAssignmentController::class, 'comment'])->name('assignments.comment');
         Route::resource('trajectories', AdminTrajectoryController::class);
+        Route::resource('grants', AdminGrantController::class);
         Route::resource('videos', AdminVideoController::class);
         Route::resource('kb', AdminKbController::class);
         Route::resource('materials', AdminMaterialController::class);

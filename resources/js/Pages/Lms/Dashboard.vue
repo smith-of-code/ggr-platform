@@ -38,6 +38,25 @@
         </div>
       </div>
 
+      <!-- Profile incomplete banner -->
+      <div
+        v-if="!isProfileComplete"
+        class="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-6 w-6 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+        </svg>
+        <div>
+          <p class="font-semibold text-amber-800">Заполните профиль</p>
+          <p class="mt-1 text-sm text-amber-700">
+            Только при заполненном личном кабинете участник может записаться на курс.
+          </p>
+          <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-2 inline-block text-sm font-medium text-rosatom-600 hover:underline">
+            Перейти в личный кабинет
+          </Link>
+        </div>
+      </div>
+
       <!-- Stats cards -->
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <RCard elevation="raised">
@@ -102,7 +121,7 @@
             v-for="course in courses.slice(0, 6)"
             :key="course.id"
             :title="course.title"
-            :description="course.description"
+            :description="stripTags(course.description)"
             :image="course.image"
             :progress="course.progress_percent ?? 0"
             :badge="(course.progress_percent ?? 0) >= 100 ? { text: 'Завершён', variant: 'success' } : undefined"
@@ -186,6 +205,7 @@ const props = defineProps({
   event: { type: Object, required: true },
   user: { type: Object, default: () => ({}) },
   profile: { type: Object, default: () => ({}) },
+  isProfileComplete: { type: Boolean, default: false },
   courses: { type: Array, default: () => [] },
   trajectories: { type: Array, default: () => [] },
   upcomingAssignments: { type: Array, default: () => [] },
@@ -210,6 +230,11 @@ function countdown(deadline) {
   if (days > 0) return `Осталось ${days} дн. ${hours} ч.`
   if (hours > 0) return `Осталось ${hours} ч.`
   return 'Меньше часа'
+}
+
+function stripTags(html) {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
 }
 
 function formatDate(dateStr) {

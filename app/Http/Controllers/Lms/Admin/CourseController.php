@@ -292,6 +292,8 @@ class CourseController extends Controller
             'sequential' => ['boolean'],
             'is_active' => ['boolean'],
             'requires_approval' => ['boolean'],
+            'starts_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date'],
             'modules' => ['nullable', 'array'],
             'modules.*.title' => ['required', 'string', 'max:255'],
             'modules.*.description' => ['nullable', 'string'],

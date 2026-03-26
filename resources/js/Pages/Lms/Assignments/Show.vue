@@ -99,7 +99,7 @@
 
         <!-- Submit / resubmit form -->
         <form
-          v-if="!submission || submission.status === 'not_submitted' || submission.status === 'revision'"
+          v-if="!submission || submission.status === 'not_submitted' || submission.status === 'revision' || submission.status === 'draft'"
           @submit.prevent="submitWork"
           class="mt-6 space-y-5"
         >
@@ -155,9 +155,14 @@
             <p v-if="form.errors.files" class="mt-1.5 text-sm text-red-600">{{ form.errors.files }}</p>
           </div>
 
-          <RButton variant="primary" :loading="form.processing" :disabled="form.processing">
-            {{ form.processing ? 'Отправка...' : (submission?.status === 'revision' ? 'Отправить доработку' : 'Отправить работу') }}
-          </RButton>
+          <div class="flex gap-3">
+            <RButton variant="primary" :loading="form.processing" :disabled="form.processing || draftSaving">
+              {{ form.processing ? 'Отправка...' : (submission?.status === 'revision' ? 'Отправить доработку' : 'Отправить работу') }}
+            </RButton>
+            <RButton type="button" variant="outline" :loading="draftSaving" :disabled="form.processing || draftSaving" @click="saveDraft">
+              {{ draftSaving ? 'Сохранение...' : 'Сохранить как черновик' }}
+            </RButton>
+          </div>
         </form>
       </RCard>
 
@@ -299,6 +304,7 @@ const fileInput = ref(null)
 const selectedFiles = ref([])
 const commentFileInput = ref(null)
 const commentFiles = ref([])
+const draftSaving = ref(false)
 
 const form = useForm({
   text_content: props.submission?.text_content || '',
@@ -340,11 +346,11 @@ function timelineStepClass(index) {
 }
 
 function statusLabel(status) {
-  return { not_submitted: 'Не сдано', submitted: 'На проверке', revision: 'На доработке', approved: 'Принято', rejected: 'Отклонено', resubmitted: 'Пересдано' }[status] || status
+  return { not_submitted: 'Не сдано', draft: 'Черновик', submitted: 'На проверке', revision: 'На доработке', approved: 'Принято', rejected: 'Отклонено', resubmitted: 'Пересдано' }[status] || status
 }
 
 function statusBadgeVariant(status) {
-  return { not_submitted: 'neutral', submitted: 'info', revision: 'warning', approved: 'success', rejected: 'error', resubmitted: 'info' }[status] || 'neutral'
+  return { not_submitted: 'neutral', draft: 'neutral', submitted: 'info', revision: 'warning', approved: 'success', rejected: 'error', resubmitted: 'info' }[status] || 'neutral'
 }
 
 function decisionLabel(decision) {
@@ -429,6 +435,14 @@ function formatDate(dateStr) {
 function submitWork() {
   form.post(route('lms.assignments.submit', { event: props.event?.slug, assignment: props.assignment?.id }), {
     forceFormData: true,
+  })
+}
+
+function saveDraft() {
+  draftSaving.value = true
+  form.post(route('lms.assignments.draft', { event: props.event?.slug, assignment: props.assignment?.id }), {
+    forceFormData: true,
+    onFinish: () => { draftSaving.value = false },
   })
 }
 

@@ -108,6 +108,50 @@ class AssignmentController extends Controller
         return redirect()->back();
     }
 
+    public function draft(Request $request, LmsEvent $event, LmsAssignment $assignment): RedirectResponse
+    {
+        if ($assignment->lms_event_id !== $event->id) {
+            abort(404);
+        }
+        $user = auth()->user();
+        $validated = $request->validate([
+            'text_content' => ['nullable', 'string'],
+            'link' => ['nullable', 'url', 'max:500'],
+            'files' => ['nullable', 'array'],
+            'files.*' => ['file'],
+        ]);
+
+        $disk = config('filesystems.upload_disk');
+        $files = [];
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store('assignments/' . $assignment->id, $disk);
+                $files[] = Storage::disk($disk)->url($path);
+            }
+        }
+
+        $existing = LmsAssignmentSubmission::where('lms_assignment_id', $assignment->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        $mergedFiles = $existing ? array_merge($existing->files ?? [], $files) : $files;
+
+        LmsAssignmentSubmission::updateOrCreate(
+            [
+                'lms_assignment_id' => $assignment->id,
+                'user_id' => $user->id,
+            ],
+            [
+                'text_content' => $validated['text_content'] ?? null,
+                'link' => $validated['link'] ?? null,
+                'files' => $mergedFiles,
+                'status' => 'draft',
+            ]
+        );
+
+        return redirect()->back();
+    }
+
     public function comment(Request $request, LmsEvent $event, LmsAssignment $assignment): RedirectResponse
     {
         if ($assignment->lms_event_id !== $event->id) {

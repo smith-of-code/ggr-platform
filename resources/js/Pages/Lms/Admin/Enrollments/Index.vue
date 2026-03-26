@@ -24,6 +24,8 @@
               <tr class="border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400">
                 <th class="px-6 py-3 font-medium">Участник</th>
                 <th v-if="!course" class="px-6 py-3 font-medium">Курс</th>
+                <th class="px-6 py-3 font-medium">Организация / Должность</th>
+                <th class="px-6 py-3 font-medium">Проект / Идея</th>
                 <th class="px-6 py-3 font-medium">Дата заявки</th>
                 <th class="px-6 py-3 font-medium">Статус</th>
                 <th class="px-6 py-3 font-medium">Рассмотрено</th>
@@ -37,11 +39,26 @@
                     <RAvatar :name="e.user?.name" size="sm" />
                     <div>
                       <p class="font-medium text-gray-900">{{ e.user?.name }}</p>
-                      <p class="text-xs text-gray-400">{{ e.user?.email }}</p>
+                      <p v-if="e.profile_data?.phone" class="text-xs text-gray-400">
+                        {{ e.profile_data.phone }}
+                        <span v-if="e.profile_data.preferred_channel" class="ml-1 rounded bg-gray-100 px-1 py-0.5 text-[10px] font-medium uppercase text-gray-500">
+                          {{ e.profile_data.preferred_channel }}
+                        </span>
+                      </p>
+                      <p v-else class="text-xs text-gray-400">{{ e.user?.email }}</p>
                     </div>
                   </div>
                 </td>
                 <td v-if="!course" class="px-6 py-4 text-gray-600">{{ e.course?.title }}</td>
+                <td class="px-6 py-4">
+                  <p v-if="e.profile_data?.organization" class="text-sm text-gray-700">{{ e.profile_data.organization }}</p>
+                  <p v-if="e.profile_data?.position" class="text-xs text-gray-400">{{ e.profile_data.position }}</p>
+                  <span v-if="!e.profile_data?.organization && !e.profile_data?.position" class="text-xs text-gray-300">—</span>
+                </td>
+                <td class="px-6 py-4">
+                  <p v-if="e.profile_data?.project_description" class="line-clamp-2 max-w-xs text-sm text-gray-600">{{ e.profile_data.project_description }}</p>
+                  <span v-else class="text-xs text-gray-300">—</span>
+                </td>
                 <td class="px-6 py-4 text-gray-500">{{ formatDate(e.created_at) }}</td>
                 <td class="px-6 py-4">
                   <RBadge :variant="statusVariant(e.status)" size="sm">{{ statusLabel(e.status) }}</RBadge>
@@ -74,7 +91,7 @@
                 </td>
               </tr>
               <tr v-if="!enrollmentsList.length">
-                <td :colspan="course ? 5 : 6" class="px-6 py-12 text-center text-sm text-gray-400">
+                <td :colspan="course ? 7 : 8" class="px-6 py-12 text-center text-sm text-gray-400">
                   Заявок не найдено
                 </td>
               </tr>

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Lms\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Lms\LmsAssignment;
 use App\Models\Lms\LmsCourse;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsTrajectory;
+use App\Models\Lms\LmsTrajectoryBlock;
 use App\Models\Lms\LmsTrajectoryStep;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +19,7 @@ class TrajectoryController extends Controller
     public function index(LmsEvent $event): Response
     {
         $trajectories = $event->trajectories()
-            ->with('steps.course')
+            ->with(['steps.course', 'blocks'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -30,11 +32,13 @@ class TrajectoryController extends Controller
     public function create(LmsEvent $event): Response
     {
         $courses = $event->courses()->orderBy('position')->get(['id', 'title']);
+        $assignments = LmsAssignment::where('lms_event_id', $event->id)->orderBy('title')->get(['id', 'title']);
 
         return Inertia::render('Lms/Admin/Trajectories/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'trajectory' => null,
             'courses' => $courses,
+            'assignments' => $assignments,
         ]);
     }
 
@@ -48,6 +52,15 @@ class TrajectoryController extends Controller
             'steps.*.is_locked' => ['boolean'],
             'steps.*.opens_at' => ['nullable', 'date'],
             'steps.*.position' => ['nullable', 'integer'],
+            'blocks' => ['nullable', 'array'],
+            'blocks.*.type' => ['required', 'in:static,task'],
+            'blocks.*.title' => ['nullable', 'string', 'max:255'],
+            'blocks.*.description' => ['nullable', 'string'],
+            'blocks.*.date_label' => ['nullable', 'string', 'max:100'],
+            'blocks.*.date_start' => ['nullable', 'date'],
+            'blocks.*.date_end' => ['nullable', 'date'],
+            'blocks.*.lms_assignment_id' => ['nullable', 'exists:lms_assignments,id'],
+            'blocks.*.position' => ['nullable', 'integer'],
         ]);
 
         $validated['lms_event_id'] = $event->id;
@@ -56,6 +69,7 @@ class TrajectoryController extends Controller
         $trajectory = LmsTrajectory::create($validated);
 
         $this->syncSteps($trajectory, $event, $validated['steps'] ?? []);
+        $this->syncBlocks($trajectory, $validated['blocks'] ?? []);
 
         return redirect()->route('lms.admin.trajectories.index', $event)->with('success', 'Траектория создана');
     }
@@ -64,13 +78,15 @@ class TrajectoryController extends Controller
     {
         $this->ensureTrajectoryBelongsToEvent($trajectory, $event);
 
-        $trajectory->load('steps.course');
+        $trajectory->load(['steps.course', 'blocks.assignment']);
         $courses = $event->courses()->orderBy('position')->get(['id', 'title']);
+        $assignments = LmsAssignment::where('lms_event_id', $event->id)->orderBy('title')->get(['id', 'title']);
 
         return Inertia::render('Lms/Admin/Trajectories/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'trajectory' => $trajectory,
             'courses' => $courses,
+            'assignments' => $assignments,
         ]);
     }
 
@@ -86,6 +102,15 @@ class TrajectoryController extends Controller
             'steps.*.is_locked' => ['boolean'],
             'steps.*.opens_at' => ['nullable', 'date'],
             'steps.*.position' => ['nullable', 'integer'],
+            'blocks' => ['nullable', 'array'],
+            'blocks.*.type' => ['required', 'in:static,task'],
+            'blocks.*.title' => ['nullable', 'string', 'max:255'],
+            'blocks.*.description' => ['nullable', 'string'],
+            'blocks.*.date_label' => ['nullable', 'string', 'max:100'],
+            'blocks.*.date_start' => ['nullable', 'date'],
+            'blocks.*.date_end' => ['nullable', 'date'],
+            'blocks.*.lms_assignment_id' => ['nullable', 'exists:lms_assignments,id'],
+            'blocks.*.position' => ['nullable', 'integer'],
         ]);
 
         $validated['is_active'] = $request->boolean('is_active', true);
@@ -93,6 +118,7 @@ class TrajectoryController extends Controller
         $trajectory->update($validated);
 
         $this->syncSteps($trajectory, $event, $validated['steps'] ?? []);
+        $this->syncBlocks($trajectory, $validated['blocks'] ?? []);
 
         return redirect()->route('lms.admin.trajectories.index', $event)->with('success', 'Траектория обновлена');
     }
@@ -121,6 +147,25 @@ class TrajectoryController extends Controller
                     'position' => $step['position'] ?? $index,
                 ]);
             }
+        }
+    }
+
+    private function syncBlocks(LmsTrajectory $trajectory, array $blocks): void
+    {
+        $trajectory->blocks()->delete();
+
+        foreach ($blocks as $index => $block) {
+            LmsTrajectoryBlock::create([
+                'lms_trajectory_id' => $trajectory->id,
+                'type' => $block['type'],
+                'title' => $block['title'] ?? null,
+                'description' => $block['description'] ?? null,
+                'date_label' => $block['date_label'] ?? null,
+                'date_start' => $block['date_start'] ?? null,
+                'date_end' => $block['date_end'] ?? null,
+                'lms_assignment_id' => $block['lms_assignment_id'] ?? null,
+                'position' => $block['position'] ?? $index,
+            ]);
         }
     }
 
