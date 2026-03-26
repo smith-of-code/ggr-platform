@@ -29,7 +29,14 @@ class HomeController extends Controller
             ->limit(6)
             ->get();
 
-        $citiesCount = $cities->count();
+        $allCities = City::where('is_active', true)
+            ->whereNotNull('lat')
+            ->whereNotNull('lng')
+            ->select('id', 'name', 'slug', 'lat', 'lng', 'region', 'population', 'image')
+            ->orderBy('position')
+            ->get();
+
+        $citiesCount = City::where('is_active', true)->count();
         $toursCount = Tour::where('is_active', true)->count();
 
         $timelineEvents = [];
@@ -60,6 +67,7 @@ class HomeController extends Controller
         return Inertia::render('Home', [
             'featuredTours' => $featuredTours,
             'cities' => $cities,
+            'allCities' => $allCities,
             'stats' => [
                 'cities' => $citiesCount,
                 'tours' => $toursCount,
