@@ -16,6 +16,49 @@
         </div>
       </div>
 
+      <!-- Interactive Research Map -->
+      <div v-if="mapCities?.length" class="reveal mt-10">
+        <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
+          <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <div>
+              <h2 class="text-lg font-bold text-gray-900">Карта исследований</h2>
+              <p class="mt-0.5 text-sm text-gray-500">Нажмите на маркер города, чтобы увидеть исследования</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-4 text-xs text-gray-400">
+                <span class="flex items-center gap-1.5">
+                  <span class="inline-block h-3 w-3 rounded-full bg-[#0288d1]"></span> 1
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <span class="inline-block h-3 w-3 rounded-full bg-[#0277bd]"></span> 2
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <span class="inline-block h-3 w-3 rounded-full bg-[#025ea1]"></span> 3–4
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <span class="inline-block h-3 w-3 rounded-full bg-[#003274]"></span> 5+
+                </span>
+              </div>
+              <button
+                type="button"
+                class="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                @click="mapExpanded = !mapExpanded"
+              >
+                <svg v-if="!mapExpanded" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                </svg>
+                <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div :style="{ height: mapExpanded ? '600px' : '400px' }" class="transition-all duration-300">
+            <ResearchCityMap :cities="mapCities" :height="mapExpanded ? '600px' : '400px'" />
+          </div>
+        </div>
+      </div>
+
       <div class="reveal mt-10">
         <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-md sm:p-8">
           <form @submit.prevent="applyFilters" class="flex flex-col gap-4 sm:flex-row sm:items-end">
@@ -135,9 +178,10 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import ResearchCityMap from '@/Components/ResearchCityMap.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
 useScrollReveal()
@@ -145,8 +189,11 @@ useScrollReveal()
 const props = defineProps({
   researches: Object,
   cities: Array,
+  mapCities: { type: Array, default: () => [] },
   filters: Object,
 })
+
+const mapExpanded = ref(false)
 
 const filters = reactive({
   city: props.filters?.city != null && props.filters?.city !== '' ? String(props.filters.city) : '',
