@@ -356,7 +356,44 @@
           </div>
         </section>
 
-        <!-- 11. Tours -->
+        <!-- 11. Vacancies -->
+        <section v-if="city.vacancies?.length" class="reveal mb-16">
+          <div class="flex items-end justify-between">
+            <h2 class="text-2xl font-bold text-gray-900">Вакансии в городе</h2>
+            <Link
+              :href="route('vacancies.index') + '?city=' + city.id"
+              class="group flex items-center gap-1.5 text-sm font-semibold text-[#003274] transition hover:text-[#025ea1]"
+            >
+              Все вакансии
+              <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+              </svg>
+            </Link>
+          </div>
+          <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Link
+              v-for="(v, i) in city.vacancies"
+              :key="v.id"
+              :href="route('vacancies.show', v.slug)"
+              class="reveal group flex flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#003274]/25 hover:shadow-lg"
+              :class="'reveal-delay-' + ((i % 5) + 1)"
+            >
+              <div class="flex flex-wrap items-center gap-2">
+                <RBadge v-if="v.employment_type" variant="primary" size="sm">{{ employmentTypeLabel(v.employment_type) }}</RBadge>
+                <span v-if="v.company" class="text-xs text-gray-500">{{ v.company }}</span>
+              </div>
+              <h3 class="mt-2 font-semibold text-gray-900 transition group-hover:text-[#003274]">{{ v.title }}</h3>
+              <p v-if="v.salary" class="mt-2 text-sm font-bold text-[#003274]">{{ v.salary }}</p>
+              <p v-if="v.description" class="mt-2 line-clamp-2 text-sm text-gray-600">{{ stripHtml(v.description) }}</p>
+              <span class="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-medium text-[#003274]">
+                Подробнее
+                <svg class="h-4 w-4 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+              </span>
+            </Link>
+          </div>
+        </section>
+
+        <!-- 12. Tours -->
         <section v-if="city.tours?.length" class="reveal">
           <h2 class="text-2xl font-bold text-gray-900">Туры в городе</h2>
           <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -515,6 +552,18 @@ function formatPrice(value) {
 function stripHtml(html) {
   if (!html) return ''
   return html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+}
+
+function employmentTypeLabel(type) {
+  const map = {
+    full_time: 'Полная занятость',
+    part_time: 'Частичная занятость',
+    contract: 'Контракт',
+    internship: 'Стажировка',
+    remote: 'Удалённо',
+    shift: 'Вахта',
+  }
+  return map[type] || type
 }
 
 function isInfrastructureScores(val) {
