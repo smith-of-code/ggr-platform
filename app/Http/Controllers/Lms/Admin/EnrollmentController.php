@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsCourse;
 use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
+use App\Models\Lms\LmsProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,24 @@ class EnrollmentController extends Controller
         }
 
         $enrollments = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+
+        $userIds = collect($enrollments->items())->pluck('user_id')->unique();
+        $profiles = LmsProfile::where('lms_event_id', $event->id)
+            ->whereIn('user_id', $userIds)
+            ->get()
+            ->keyBy('user_id');
+
+        $enrollments->getCollection()->transform(function ($enrollment) use ($profiles) {
+            $profile = $profiles->get($enrollment->user_id);
+            $enrollment->profile_data = $profile ? [
+                'phone' => $profile->phone,
+                'preferred_channel' => $profile->preferred_channel,
+                'organization' => $profile->organization,
+                'position' => $profile->position,
+                'project_description' => $profile->project_description,
+            ] : null;
+            return $enrollment;
+        });
 
         $courses = $event->courses()->orderBy('title')->get(['id', 'title']);
 
@@ -68,6 +87,24 @@ class EnrollmentController extends Controller
         }
 
         $enrollments = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+
+        $userIds = collect($enrollments->items())->pluck('user_id')->unique();
+        $profiles = LmsProfile::where('lms_event_id', $event->id)
+            ->whereIn('user_id', $userIds)
+            ->get()
+            ->keyBy('user_id');
+
+        $enrollments->getCollection()->transform(function ($enrollment) use ($profiles) {
+            $profile = $profiles->get($enrollment->user_id);
+            $enrollment->profile_data = $profile ? [
+                'phone' => $profile->phone,
+                'preferred_channel' => $profile->preferred_channel,
+                'organization' => $profile->organization,
+                'position' => $profile->position,
+                'project_description' => $profile->project_description,
+            ] : null;
+            return $enrollment;
+        });
 
         $counts = LmsCourseEnrollment::where('lms_course_id', $course->id)
             ->selectRaw("

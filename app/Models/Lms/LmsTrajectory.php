@@ -38,4 +38,10 @@ class LmsTrajectory extends Model
     {
         return $this->hasMany(LmsTrajectoryEnrollment::class, 'lms_trajectory_id');
     }
+
+    /** @return HasMany<LmsTrajectoryBlock> */
+    public function blocks(): HasMany
+    {
+        return $this->hasMany(LmsTrajectoryBlock::class, 'lms_trajectory_id')->orderBy('position');
+    }
 }
