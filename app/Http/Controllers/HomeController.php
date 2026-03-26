@@ -9,6 +9,7 @@ use App\Models\TimelineEvent;
 use App\Models\Tour;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,14 +32,17 @@ class HomeController extends Controller
         $citiesCount = $cities->count();
         $toursCount = Tour::where('is_active', true)->count();
 
-        $timelineEvents = TimelineEvent::query()
-            ->where('is_active', true)
-            ->orderByDesc('event_date')
-            ->limit(10)
-            ->get();
+        $timelineEvents = [];
+        if (Schema::hasTable('timeline_events')) {
+            $timelineEvents = TimelineEvent::query()
+                ->where('is_active', true)
+                ->orderByDesc('event_date')
+                ->limit(10)
+                ->get();
+        }
 
         $userFavorites = null;
-        if ($request->user()) {
+        if ($request->user() && Schema::hasTable('favorites')) {
             $userFavorites = [
                 'cityIds' => Favorite::query()
                     ->where('user_id', $request->user()->id)
@@ -73,6 +77,10 @@ class HomeController extends Controller
             'phone' => 'nullable|string|max:50',
             'message' => 'required|string|max:5000',
         ]);
+
+        if (!Schema::hasTable('contact_submissions')) {
+            return back()->with('success', 'Сообщение отправлено.');
+        }
 
         ContactSubmission::query()->create([
             'name' => $validated['name'],

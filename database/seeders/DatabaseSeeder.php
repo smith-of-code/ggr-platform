@@ -317,5 +317,6 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call(LmsSeeder::class);
+        $this->call(PortalSeeder::class);
     }
 }

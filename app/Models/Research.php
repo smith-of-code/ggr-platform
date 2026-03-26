@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Research extends Model
 {
+    protected $table = 'researches';
+
     protected $fillable = [
         'title',
         'slug',

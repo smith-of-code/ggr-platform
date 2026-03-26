@@ -8,20 +8,23 @@
       <h1 class="text-2xl font-bold text-gray-900">{{ city ? 'Редактировать город' : 'Новый город' }}</h1>
     </div>
 
-    <RCard elevation="raised" class="max-w-2xl">
+    <RCard elevation="raised" class="max-w-4xl">
     <form @submit.prevent="submit" class="space-y-6">
       <RInput v-model="form.name" label="Название *" placeholder="Название города" :error="form.errors.name" required />
       <RInput v-model="form.slug" label="Slug" placeholder="Автоматически из названия" />
-      <div>
-        <label class="mb-2 block text-sm font-semibold text-gray-700">Описание</label>
-        <textarea v-model="form.description" rows="4" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" placeholder="Описание города" />
-      </div>
-      <div>
-        <RInput v-model="form.image" type="url" label="URL изображения" placeholder="https://..." />
-        <div v-if="form.image" class="mt-3 overflow-hidden rounded-xl border border-gray-200">
-          <img :src="form.image" class="h-40 w-full object-cover" @error="form.image = ''" />
-        </div>
-      </div>
+
+      <RichTextEditor
+        v-model="form.description"
+        label="Описание города"
+        :upload-url="route('admin.upload.image')"
+      />
+
+      <ImageUploadCrop
+        v-model="form.image"
+        label="Фото города"
+        :upload-url="route('admin.upload.image')"
+      />
+
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="mb-2 block text-sm font-semibold text-gray-700">Позиция</label>
@@ -36,18 +39,40 @@
         <RButton variant="primary" :loading="form.processing" :disabled="form.processing">
           Сохранить
         </RButton>
+        <button type="button" class="rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="showPreview = true">
+          <span class="flex items-center gap-1.5">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+            Предпросмотр
+          </span>
+        </button>
         <Link :href="route('admin.cities.index')" class="rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50">Отмена</Link>
       </div>
     </form>
     </RCard>
+
+    <ContentPreview
+      :open="showPreview"
+      :title="form.name"
+      :content="form.description"
+      :image="form.image"
+      :meta="[
+        form.is_active ? { label: 'Активен', class: 'bg-green-50 text-green-700' } : { label: 'Скрыт', class: 'bg-gray-100 text-gray-500' },
+      ]"
+      @close="showPreview = false"
+    />
   </AdminLayout>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import RichTextEditor from '@/Components/RichTextEditor.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
+import ContentPreview from '@/Components/ContentPreview.vue'
 
 const props = defineProps({ city: Object })
+const showPreview = ref(false)
 
 const form = useForm({
   name: props.city?.name ?? '',
