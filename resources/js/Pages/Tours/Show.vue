@@ -55,16 +55,22 @@
             </button>
           </div>
 
-          <!-- Video -->
-          <div v-if="videoEmbedSrc" class="reveal mt-6 overflow-hidden rounded-xl border border-gray-200 bg-black shadow-md">
-            <div class="aspect-video w-full">
-              <iframe
-                :src="videoEmbedSrc"
-                class="h-full w-full"
-                title="Видео тура"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen
-              />
+          <!-- Videos -->
+          <div v-if="videoEmbeds.length" class="reveal mt-6 space-y-4">
+            <div
+              v-for="(src, vi) in videoEmbeds"
+              :key="vi"
+              class="overflow-hidden rounded-xl border border-gray-200 bg-black shadow-md"
+            >
+              <div class="aspect-video w-full">
+                <iframe
+                  :src="src"
+                  class="h-full w-full"
+                  :title="`Видео ${vi + 1}`"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
+                />
+              </div>
             </div>
           </div>
 
@@ -398,14 +404,19 @@ const allMedia = computed(() => {
   return imgs
 })
 
-const videoEmbedSrc = computed(() => {
-  const url = props.tour.video_url
+function parseEmbed(url) {
   if (!url || typeof url !== 'string') return null
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/)
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`
   const rt = url.match(/rutube\.ru\/(?:video\/|play\/embed\/)([a-zA-Z0-9_-]+)/)
   if (rt) return `https://rutube.ru/play/embed/${rt[1]}`
   return null
+}
+
+const videoEmbeds = computed(() => {
+  const vids = props.tour.videos
+  if (!Array.isArray(vids)) return []
+  return vids.map(parseEmbed).filter(Boolean)
 })
 
 function openLightbox(index) {

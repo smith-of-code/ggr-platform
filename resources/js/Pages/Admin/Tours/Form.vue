@@ -139,20 +139,43 @@
             </div>
           </RCard>
 
-          <!-- Video -->
+          <!-- Videos -->
           <RCard elevation="raised">
             <h2 class="mb-4 text-base font-bold text-gray-900">Видео</h2>
-            <RInput
-              v-model="form.video_url"
-              label="Ссылка на видео"
-              placeholder="https://youtube.com/watch?v=... или rutube.ru/video/..."
-            />
-            <p class="mt-2 text-xs text-gray-400">Поддерживается YouTube и RuTube</p>
-            <div v-if="videoPreviewSrc" class="mt-4 overflow-hidden rounded-xl border border-gray-200">
-              <div class="aspect-video">
-                <iframe :src="videoPreviewSrc" class="h-full w-full" allow="autoplay; encrypted-media" allowfullscreen />
+            <div class="space-y-3">
+              <div v-for="(vid, vi) in form.videos" :key="vi" class="space-y-2">
+                <div class="flex gap-2">
+                  <input
+                    v-model="form.videos[vi]"
+                    type="text"
+                    placeholder="https://youtube.com/watch?v=... или rutube.ru/video/..."
+                    class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10"
+                  />
+                  <button
+                    type="button"
+                    class="shrink-0 rounded-xl border border-red-200 bg-white p-2.5 text-red-500 transition hover:bg-red-50"
+                    title="Удалить видео"
+                    @click="form.videos.splice(vi, 1)"
+                  >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                <div v-if="parseVideoEmbed(form.videos[vi])" class="overflow-hidden rounded-lg border border-gray-200">
+                  <div class="aspect-video">
+                    <iframe :src="parseVideoEmbed(form.videos[vi])" class="h-full w-full" allow="autoplay; encrypted-media" allowfullscreen />
+                  </div>
+                </div>
               </div>
             </div>
+            <button
+              type="button"
+              class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-3 text-sm font-medium text-gray-500 transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03] hover:text-[#003274]"
+              @click="form.videos.push('')"
+            >
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Добавить видео
+            </button>
+            <p class="mt-2 text-xs text-gray-400">Поддерживается YouTube и RuTube</p>
           </RCard>
 
           <!-- Cities -->
@@ -252,15 +275,14 @@ const tourMeta = computed(() => {
 
 const galleryUploading = ref(false)
 
-const videoPreviewSrc = computed(() => {
-  const url = form.video_url
+function parseVideoEmbed(url) {
   if (!url) return null
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/)
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`
   const rt = url.match(/rutube\.ru\/(?:video\/|play\/embed\/)([a-zA-Z0-9_-]+)/)
   if (rt) return `https://rutube.ru/play/embed/${rt[1]}`
   return null
-})
+}
 
 async function uploadGalleryFiles(e) {
   const files = Array.from(e.target.files || [])
@@ -298,7 +320,7 @@ const form = useForm({
   description: props.tour?.description ?? '',
   image: props.tour?.image ?? '',
   gallery: props.tour?.gallery ?? [],
-  video_url: props.tour?.video_url ?? '',
+  videos: props.tour?.videos?.length ? [...props.tour.videos] : [],
   start_city: props.tour?.start_city ?? '',
   duration: props.tour?.duration ?? '',
   project: props.tour?.project ?? '',

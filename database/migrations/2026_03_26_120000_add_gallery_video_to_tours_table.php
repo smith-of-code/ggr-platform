@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::table('tours', function (Blueprint $table) {
             $table->json('gallery')->nullable()->after('image');
-            $table->string('video_url')->nullable()->after('gallery');
+            $table->json('videos')->nullable()->after('gallery');
         });
     }
 
     public function down(): void
     {
         Schema::table('tours', function (Blueprint $table) {
-            $table->dropColumn(['gallery', 'video_url']);
+            $table->dropColumn(['gallery', 'videos']);
         });
     }
 };

@@ -35,7 +35,7 @@ class Tour extends Model
         'is_featured',
         'image',
         'gallery',
-        'video_url',
+        'videos',
         'position',
         'is_active',
         'target_audience',
@@ -53,6 +53,7 @@ class Tour extends Model
         'price_from' => 'decimal:2',
         'reactions_count' => 'array',
         'gallery' => 'array',
+        'videos' => 'array',
     ];
 
     public function cities(): BelongsToMany

@@ -119,7 +119,8 @@ class TourController extends Controller
             'image' => 'nullable|string',
             'gallery' => 'nullable|array',
             'gallery.*' => 'string',
-            'video_url' => 'nullable|string|max:500',
+            'videos' => 'nullable|array',
+            'videos.*' => 'string|max:500',
         ]);
     }
 
