@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\City;
 use App\Models\Favorite;
+use App\Models\Vacancy;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,6 +41,13 @@ class CityController extends Controller
                 ->where('is_published', true)
                 ->whereNotNull('published_at')
                 ->orderByDesc('published_at');
+        }
+
+        if (Schema::hasTable('vacancies')) {
+            $eagerLoad['vacancies'] = fn ($q) => $q
+                ->where('is_published', true)
+                ->orderBy('position')
+                ->orderByDesc('created_at');
         }
 
         $city = City::where('slug', $slug)
