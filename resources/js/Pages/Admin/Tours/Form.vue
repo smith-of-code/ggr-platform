@@ -22,8 +22,11 @@
             <RInput v-model="form.slug" label="Slug" />
             <RInput v-model="form.start_city" label="Город старта" />
             <div class="sm:col-span-2">
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Описание</label>
-              <textarea v-model="form.description" rows="4" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
+              <RichTextEditor
+                v-model="form.description"
+                label="Описание тура"
+                :upload-url="route('admin.upload.image')"
+              />
             </div>
             <RInput v-model="form.duration" label="Продолжительность" placeholder="2 дня, 1 ночь" />
             <div>
@@ -72,6 +75,15 @@
 
         <!-- Right column -->
         <div class="space-y-6">
+          <!-- Image -->
+          <RCard elevation="raised">
+            <ImageUploadCrop
+              v-model="form.image"
+              label="Изображение тура"
+              :upload-url="route('admin.upload.image')"
+            />
+          </RCard>
+
           <!-- Cities -->
           <RCard elevation="raised">
             <h2 class="mb-4 text-base font-bold text-gray-900">Города</h2>
@@ -117,17 +129,37 @@
         <RButton variant="primary" :loading="form.processing" :disabled="form.processing">
           Сохранить
         </RButton>
+        <button type="button" class="rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="showPreview = true">
+          <span class="flex items-center gap-1.5">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+            Предпросмотр
+          </span>
+        </button>
         <Link :href="route('admin.tours.index')" class="rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50">Отмена</Link>
       </div>
     </form>
+
+    <ContentPreview
+      :open="showPreview"
+      :title="form.title"
+      :content="form.description"
+      :image="form.image"
+      :meta="tourMeta"
+      @close="showPreview = false"
+    />
   </AdminLayout>
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import RichTextEditor from '@/Components/RichTextEditor.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
+import ContentPreview from '@/Components/ContentPreview.vue'
 
 const props = defineProps({ tour: Object, cities: Array })
+const showPreview = ref(false)
 
 const checkboxOptions = [
   { key: 'is_active', label: 'Активен' },
@@ -137,10 +169,20 @@ const checkboxOptions = [
   { key: 'closed_city', label: 'Закрытый город' },
 ]
 
+const tourMeta = computed(() => {
+  const m = []
+  if (form.start_city) m.push({ label: form.start_city, class: 'bg-blue-50 text-blue-700' })
+  if (form.duration) m.push({ label: form.duration, class: 'bg-purple-50 text-purple-700' })
+  if (form.price_from) m.push({ label: `от ${Number(form.price_from).toLocaleString('ru-RU')} ₽`, class: 'bg-green-50 text-green-700' })
+  if (form.season) m.push({ label: { winter: 'Зима', spring: 'Весна', summer: 'Лето', autumn: 'Осень' }[form.season] || form.season })
+  return m
+})
+
 const form = useForm({
   title: props.tour?.title ?? '',
   slug: props.tour?.slug ?? '',
   description: props.tour?.description ?? '',
+  image: props.tour?.image ?? '',
   start_city: props.tour?.start_city ?? '',
   duration: props.tour?.duration ?? '',
   project: props.tour?.project ?? '',

@@ -110,6 +110,12 @@
           <RButton variant="primary" type="submit" :loading="form.processing" :disabled="form.processing">
             Сохранить
           </RButton>
+          <button type="button" class="rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="showPreview = true">
+            <span class="flex items-center gap-1.5">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+              Предпросмотр
+            </span>
+          </button>
           <Link
             :href="route('admin.research.index')"
             class="rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
@@ -119,20 +125,45 @@
         </div>
       </form>
     </RCard>
+
+    <ContentPreview
+      :open="showPreview"
+      :title="form.title"
+      :description="form.description"
+      :content="form.content"
+      :image="form.image"
+      :meta="[
+        form.year ? { label: String(form.year), class: 'bg-blue-50 text-blue-700' } : null,
+        form.is_published ? { label: 'Опубликовано', class: 'bg-green-50 text-green-700' } : { label: 'Черновик', class: 'bg-gray-100 text-gray-500' },
+      ].filter(Boolean)"
+      @close="showPreview = false"
+    >
+      <div v-if="form.methodology" class="mb-4 rounded-xl bg-blue-50 p-4">
+        <p class="mb-1 text-xs font-semibold uppercase tracking-wider text-blue-600">Методология</p>
+        <p class="text-sm text-blue-900">{{ form.methodology }}</p>
+      </div>
+      <div v-if="form.results_summary" class="mb-6 rounded-xl bg-green-50 p-4">
+        <p class="mb-1 text-xs font-semibold uppercase tracking-wider text-green-600">Итоги / Выводы</p>
+        <p class="text-sm text-green-900">{{ form.results_summary }}</p>
+      </div>
+    </ContentPreview>
   </AdminLayout>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
+import ContentPreview from '@/Components/ContentPreview.vue'
 
 const props = defineProps({
   research: { type: Object, default: null },
   cities: { type: Array, default: () => [] },
 })
 
+const showPreview = ref(false)
 let slugManuallyEdited = false
 
 const form = useForm({
