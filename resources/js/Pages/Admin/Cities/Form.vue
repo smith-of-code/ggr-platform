@@ -192,12 +192,17 @@
             </div>
           </RCard>
 
-          <!-- Save -->
-          <div class="sticky bottom-6">
-            <RButton variant="primary" :loading="form.processing" :disabled="form.processing" class="w-full">
-              Сохранить
-            </RButton>
-          </div>
+        </div>
+      </div>
+
+      <!-- Sticky save bar -->
+      <div class="sticky bottom-0 z-10 -mx-4 mt-6 border-t border-gray-200 bg-white/95 px-4 py-4 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div class="flex items-center gap-3">
+          <RButton variant="primary" :loading="form.processing" :disabled="form.processing" class="px-12">
+            Сохранить
+          </RButton>
+          <span v-if="form.isDirty" class="text-sm text-amber-600">Есть несохранённые изменения</span>
+          <span v-if="form.recentlySuccessful" class="text-sm text-green-600">Сохранено</span>
         </div>
       </div>
     </form>
