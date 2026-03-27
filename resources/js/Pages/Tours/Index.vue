@@ -7,8 +7,8 @@
       </div>
 
       <!-- Modern Filters -->
-      <div class="reveal mt-10">
-        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-md sm:p-8">
+      <div class="reveal relative z-10 mt-10">
+        <div class="overflow-visible rounded-2xl border border-gray-100 bg-white p-6 shadow-md sm:p-8">
           <div class="mb-6 flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#003274]/10">
               <svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -23,75 +23,10 @@
 
           <form @submit.prevent="applyFilters">
             <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <!-- Project -->
-              <div class="group relative">
-                <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-400">Проект</label>
-                <div class="relative">
-                  <select v-model="filters.project" class="peer w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-gray-50 py-3 pl-4 pr-10 text-sm font-medium text-gray-700 transition-all duration-200 hover:border-[#003274]/40 hover:bg-white focus:border-[#003274] focus:bg-white focus:shadow-[0_0_0_3px_rgba(0,50,116,0.1)] focus:outline-none">
-                    <option value="">Все проекты</option>
-                    <option value="start_atomgrad">Старт в Атомград</option>
-                    <option value="atoms_vkusa">Атомы вкуса</option>
-                    <option value="llr">Лучшие люди Росатома</option>
-                  </select>
-                  <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors peer-hover:text-[#003274] peer-focus:text-[#003274]">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Season -->
-              <div class="group relative">
-                <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-400">Сезон</label>
-                <div class="relative">
-                  <select v-model="filters.season" class="peer w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-gray-50 py-3 pl-4 pr-10 text-sm font-medium text-gray-700 transition-all duration-200 hover:border-[#003274]/40 hover:bg-white focus:border-[#003274] focus:bg-white focus:shadow-[0_0_0_3px_rgba(0,50,116,0.1)] focus:outline-none">
-                    <option value="">Любой сезон</option>
-                    <option value="winter">❄ Зима</option>
-                    <option value="spring">🌿 Весна</option>
-                    <option value="summer">☀ Лето</option>
-                    <option value="autumn">🍂 Осень</option>
-                  </select>
-                  <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors peer-hover:text-[#003274] peer-focus:text-[#003274]">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Participation -->
-              <div class="group relative">
-                <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-400">Участие</label>
-                <div class="relative">
-                  <select v-model="filters.participation_type" class="peer w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-gray-50 py-3 pl-4 pr-10 text-sm font-medium text-gray-700 transition-all duration-200 hover:border-[#003274]/40 hover:bg-white focus:border-[#003274] focus:bg-white focus:shadow-[0_0_0_3px_rgba(0,50,116,0.1)] focus:outline-none">
-                    <option value="">Любое</option>
-                    <option value="contest">🏆 Конкурс</option>
-                    <option value="paid">💳 За свой счёт</option>
-                  </select>
-                  <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors peer-hover:text-[#003274] peer-focus:text-[#003274]">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <!-- City -->
-              <div class="group relative">
-                <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-400">Город</label>
-                <div class="relative">
-                  <select v-model="filters.city" class="peer w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-gray-50 py-3 pl-4 pr-10 text-sm font-medium text-gray-700 transition-all duration-200 hover:border-[#003274]/40 hover:bg-white focus:border-[#003274] focus:bg-white focus:shadow-[0_0_0_3px_rgba(0,50,116,0.1)] focus:outline-none">
-                    <option value="">Все города</option>
-                    <option v-for="c in cities" :key="c.id" :value="c.id">{{ c.name }}</option>
-                  </select>
-                  <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors peer-hover:text-[#003274] peer-focus:text-[#003274]">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+              <FilterDropdown v-model="filters.project" label="Проект" :options="projectOptions" />
+              <FilterDropdown v-model="filters.season" label="Сезон" :options="seasonOptions" />
+              <FilterDropdown v-model="filters.participation_type" label="Участие" :options="participationOptions" />
+              <FilterDropdown v-model="filters.city" label="Город" :options="cityOptions" />
             </div>
 
             <!-- Checkboxes & Actions -->
@@ -184,7 +119,7 @@
         >
         <RCard elevation="raised" hoverable class="group h-full">
           <template #cover>
-          <div class="aspect-video overflow-hidden bg-gray-100">
+          <div class="aspect-video overflow-hidden rounded-t-2xl bg-gray-100">
             <img
               v-if="tour.image"
               :src="tour.image"
@@ -215,6 +150,12 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
               </svg>
               {{ tour.start_city }}
+            </p>
+            <p v-if="nearestDeparture(tour)" class="mt-2 flex items-center gap-1.5 text-sm text-gray-500">
+              <svg class="h-3.5 w-3.5 shrink-0 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+              </svg>
+              <span>{{ formatDateShort(nearestDeparture(tour).start_date) }} — {{ formatDateShort(nearestDeparture(tour).end_date) }}</span>
             </p>
             <div class="mt-4 flex items-center justify-between border-t border-gray-50 pt-4">
               <p class="text-lg font-bold text-[#003274]">
@@ -273,9 +214,10 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref, onMounted, onUnmounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import FilterDropdown from '@/Components/FilterDropdown.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
 useScrollReveal()
@@ -285,6 +227,32 @@ const props = defineProps({
   cities: Array,
   filters: Object,
 })
+
+const projectOptions = [
+  { value: '', label: 'Все проекты' },
+  { value: 'start_atomgrad', label: 'Старт в Атомград' },
+  { value: 'atoms_vkusa', label: 'Атомы вкуса' },
+  { value: 'llr', label: 'Лучшие люди Росатома' },
+]
+
+const seasonOptions = [
+  { value: '', label: 'Любой сезон' },
+  { value: 'winter', label: 'Зима', icon: '❄' },
+  { value: 'spring', label: 'Весна', icon: '🌿' },
+  { value: 'summer', label: 'Лето', icon: '☀' },
+  { value: 'autumn', label: 'Осень', icon: '🍂' },
+]
+
+const participationOptions = [
+  { value: '', label: 'Любое' },
+  { value: 'contest', label: 'Конкурс', icon: '🏆' },
+  { value: 'paid', label: 'За свой счёт', icon: '💳' },
+]
+
+const cityOptions = computed(() => [
+  { value: '', label: 'Все города' },
+  ...(props.cities || []).map(c => ({ value: c.id, label: c.name })),
+])
 
 const filters = reactive({
   ...props.filters,
@@ -335,6 +303,19 @@ function cityLabel(id) {
 function formatPrice(value) {
   if (!value) return '—'
   return new Intl.NumberFormat('ru-RU').format(value)
+}
+
+function formatDateShort(date) {
+  return new Date(date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+}
+
+function nearestDeparture(tour) {
+  if (!tour.departures?.length) return null
+  const now = new Date()
+  const future = tour.departures
+    .filter(d => new Date(d.end_date) >= now)
+    .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+  return future[0] || tour.departures[tour.departures.length - 1]
 }
 
 function tourWord(count) {

@@ -259,8 +259,15 @@
       </div>
 
       <!-- Application modal -->
-      <RModal v-model="showModal" title="Оставить заявку" subtitle="Заполните форму, и мы свяжемся с вами" size="md">
-        <form @submit.prevent="submitApplication" class="space-y-4">
+      <RModal v-model="showModal" :title="applicationSent ? '' : 'Оставить заявку'" :subtitle="applicationSent ? '' : 'Заполните форму, и мы свяжемся с вами'" size="md">
+        <div v-if="applicationSent" class="flex flex-col items-center py-6 text-center">
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+            <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+          </div>
+          <h3 class="mt-4 text-xl font-bold text-gray-900">Заявка отправлена!</h3>
+          <p class="mt-2 max-w-sm text-gray-600">Спасибо за интерес к туру. Мы свяжемся с вами в ближайшее время.</p>
+        </div>
+        <form v-else @submit.prevent="submitApplication" class="space-y-4">
           <RInput v-model="form.name" label="Имя" placeholder="Ваше имя" required />
           <RInput v-model="form.email" type="email" label="Email" placeholder="your@email.com" required />
           <RInput v-model="form.phone" type="tel" label="Телефон" placeholder="+7 (___) ___-__-__" />
@@ -271,12 +278,19 @@
         </form>
 
         <template #footer>
-          <RButton variant="outline" @click="showModal = false">
-            Отмена
-          </RButton>
-          <RButton variant="primary" @click="submitApplication">
-            Отправить
-          </RButton>
+          <template v-if="applicationSent">
+            <RButton variant="primary" @click="closeApplicationModal">
+              Закрыть
+            </RButton>
+          </template>
+          <template v-else>
+            <RButton variant="outline" @click="showModal = false">
+              Отмена
+            </RButton>
+            <RButton variant="primary" @click="submitApplication">
+              Отправить
+            </RButton>
+          </template>
         </template>
       </RModal>
     </div>
@@ -499,6 +513,7 @@ function toggleFavorite() {
 }
 
 const showModal = ref(false)
+const applicationSent = ref(false)
 const form = reactive({
   name: '',
   email: '',
@@ -509,7 +524,14 @@ const form = reactive({
 
 function openApplicationModal(departureId = null) {
   form.tour_departure_id = departureId
+  applicationSent.value = false
   showModal.value = true
+}
+
+function closeApplicationModal() {
+  showModal.value = false
+  applicationSent.value = false
+  form.name = form.email = form.phone = form.message = ''
 }
 
 function submitApplication() {
@@ -522,8 +544,9 @@ function submitApplication() {
     phone: form.phone,
     message: form.message,
   }, {
+    preserveScroll: true,
     onSuccess: () => {
-      showModal.value = false
+      applicationSent.value = true
       form.name = form.email = form.phone = form.message = ''
     },
   })
