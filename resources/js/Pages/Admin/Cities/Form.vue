@@ -109,6 +109,36 @@
             </div>
           </RCard>
 
+          <!-- Social objects -->
+          <RCard elevation="raised">
+            <div class="space-y-5 p-6">
+              <div>
+                <h2 class="text-base font-bold text-gray-900">Социальная сфера</h2>
+                <p class="mt-1 text-sm text-gray-500">Списки объектов по категориям</p>
+              </div>
+              <div v-for="cat in socialCategories" :key="cat.key" class="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                <div class="mb-3 flex items-center justify-between">
+                  <h3 class="text-sm font-bold uppercase tracking-wide text-[#003274]">{{ cat.label }}</h3>
+                  <button type="button" class="rounded-lg bg-[#003274] px-2.5 py-1 text-xs font-medium text-white transition hover:bg-[#003274]/90" @click="addSocialItem(cat.key)">+ Добавить</button>
+                </div>
+                <div class="space-y-2">
+                  <div v-for="(_, si) in form.social_objects[cat.key]" :key="si" class="flex gap-2">
+                    <input
+                      v-model="form.social_objects[cat.key][si]"
+                      type="text"
+                      :placeholder="cat.placeholder"
+                      class="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm transition focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/10"
+                    />
+                    <button type="button" class="shrink-0 rounded-lg border border-gray-200 p-2 text-gray-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500" @click="form.social_objects[cat.key].splice(si, 1)">
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                  <p v-if="!form.social_objects[cat.key].length" class="text-xs text-gray-400">Пока пусто</p>
+                </div>
+              </div>
+            </div>
+          </RCard>
+
           <!-- Coordinates -->
           <RCard elevation="raised">
             <div class="space-y-4 p-6">
@@ -192,12 +222,17 @@
             </div>
           </RCard>
 
-          <!-- Save -->
-          <div class="sticky bottom-6">
-            <RButton variant="primary" :loading="form.processing" :disabled="form.processing" class="w-full">
-              Сохранить
-            </RButton>
-          </div>
+        </div>
+      </div>
+
+      <!-- Sticky save bar -->
+      <div class="sticky bottom-0 z-10 -mx-4 mt-6 border-t border-gray-200 bg-white/95 px-4 py-4 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div class="flex items-center gap-3">
+          <RButton variant="primary" :loading="form.processing" :disabled="form.processing" class="px-12">
+            Сохранить
+          </RButton>
+          <span v-if="form.isDirty" class="text-sm text-amber-600">Есть несохранённые изменения</span>
+          <span v-if="form.recentlySuccessful" class="text-sm text-green-600">Сохранено</span>
         </div>
       </div>
     </form>
@@ -240,6 +275,16 @@ function defaultInfrastructure() {
   return { work: 0, housing: 0, leisure: 0, education: 0, medicine: 0 }
 }
 
+const socialCategories = [
+  { key: 'education', label: 'Образование', placeholder: 'Филиал МИФИ' },
+  { key: 'medicine', label: 'Медицина', placeholder: 'ЦМСЧ-38 ФМБА' },
+  { key: 'culture', label: 'Культура', placeholder: 'ДК «Строитель»' },
+]
+
+function defaultSocialObjects() {
+  return { education: [], medicine: [], culture: [] }
+}
+
 const form = useForm({
   name: props.city?.name ?? '',
   slug: props.city?.slug ?? '',
@@ -254,6 +299,7 @@ const form = useForm({
   infrastructure: { ...defaultInfrastructure(), ...(props.city?.infrastructure ?? {}) },
   facts: props.city?.facts ?? [],
   attractions: props.city?.attractions ?? [],
+  social_objects: { ...defaultSocialObjects(), ...(props.city?.social_objects ?? {}) },
   gallery: props.city?.gallery ?? [],
   video_url: props.city?.video_url ?? '',
 })
@@ -264,6 +310,10 @@ function addFact() {
 
 function addAttraction() {
   form.attractions.push({ title: '', description: '', image: '' })
+}
+
+function addSocialItem(category) {
+  form.social_objects[category].push('')
 }
 
 async function uploadGalleryFiles(e) {
