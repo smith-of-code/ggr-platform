@@ -2,7 +2,7 @@
   <MainLayout>
     <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div class="reveal">
-        <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">Туры возможностей</h1>
+        <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">Каталог туров</h1>
         <p class="mt-3 max-w-2xl text-lg text-gray-500">Каталог туров в атомные города России</p>
       </div>
 
