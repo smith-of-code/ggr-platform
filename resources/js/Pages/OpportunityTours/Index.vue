@@ -28,27 +28,33 @@
         <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Проекты программы</h2>
         <p class="mt-2 text-gray-500">Три направления для развития туризма в атомных городах</p>
         <div class="mt-10 grid gap-8 lg:grid-cols-3">
-          <a
-            v-for="project in projects"
-            :key="project.title"
-            :href="project.link"
+          <Link
+            v-for="d in directionsOrFallback"
+            :key="d.slug || d.title"
+            :href="d.slug ? route('directions.show', d.slug) : '#'"
             class="group overflow-hidden rounded-2xl border border-gray-200 transition hover:border-[#003274]/30 hover:shadow-lg"
           >
             <div class="aspect-[16/9] overflow-hidden">
               <img
-                :src="project.image"
-                :alt="project.title"
+                v-if="d.image"
+                :src="d.image"
+                :alt="d.title"
                 class="h-full w-full object-cover transition duration-500 group-hover:scale-110"
               />
+              <div v-else class="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                <svg class="h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                </svg>
+              </div>
             </div>
             <div class="p-6">
               <h3 class="text-xl font-bold text-[#003274] transition group-hover:text-[#025ea1]">
-                {{ project.title }}
+                {{ d.title }}
                 <span class="ml-1 inline-block transition group-hover:translate-x-1">&rarr;</span>
               </h3>
-              <p class="mt-3 leading-relaxed text-gray-600">{{ project.description }}</p>
+              <p class="mt-3 leading-relaxed text-gray-600">{{ d.description }}</p>
             </div>
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -347,12 +353,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 
 const props = defineProps({
   featuredTours: { type: Array, default: () => [] },
+  directions: { type: Array, default: () => [] },
+})
+
+const directionsOrFallback = computed(() => {
+  if (props.directions.length) return props.directions
+  return projects
 })
 
 const stats = [
