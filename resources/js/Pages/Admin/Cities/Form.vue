@@ -1,54 +1,206 @@
 <template>
   <AdminLayout>
-    <div class="mb-8">
-      <Link :href="route('admin.cities.index')" class="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700">
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-        Назад к городам
-      </Link>
-      <h1 class="text-2xl font-bold text-gray-900">{{ city ? 'Редактировать город' : 'Новый город' }}</h1>
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <Link :href="route('admin.cities.index')" class="mb-2 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-700">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+          Назад к городам
+        </Link>
+        <h1 class="text-2xl font-bold text-gray-900">{{ city ? 'Редактировать город' : 'Новый город' }}</h1>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" class="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="showPreview = true">Предпросмотр</button>
+        <Link :href="route('admin.cities.index')" class="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50">Отмена</Link>
+      </div>
     </div>
 
-    <RCard elevation="raised" class="max-w-4xl">
-    <form @submit.prevent="submit" class="space-y-6">
-      <RInput v-model="form.name" label="Название *" placeholder="Название города" :error="form.errors.name" required />
-      <RInput v-model="form.slug" label="Slug" placeholder="Автоматически из названия" />
+    <form @submit.prevent="submit">
+      <div class="grid gap-8 lg:grid-cols-3">
+        <!-- Left column -->
+        <div class="space-y-6 lg:col-span-2">
+          <!-- Basic info -->
+          <RCard elevation="raised">
+            <div class="space-y-5 p-6">
+              <RInput v-model="form.name" label="Название *" placeholder="Название города" :error="form.errors.name" required />
+              <RInput v-model="form.slug" label="Slug" placeholder="Автоматически из названия" :error="form.errors.slug" />
+              <div class="grid gap-4 sm:grid-cols-2">
+                <RInput v-model="form.region" label="Регион" placeholder="Ленинградская область" :error="form.errors.region" />
+                <RInput v-model="form.population" label="Население" type="number" placeholder="68000" :error="form.errors.population" />
+              </div>
+              <RichTextEditor v-model="form.description" label="Описание города" :upload-url="route('admin.upload.image')" />
+            </div>
+          </RCard>
 
-      <RichTextEditor
-        v-model="form.description"
-        label="Описание города"
-        :upload-url="route('admin.upload.image')"
-      />
+          <!-- Infrastructure scores -->
+          <RCard elevation="raised">
+            <div class="space-y-5 p-6">
+              <div>
+                <h2 class="text-base font-bold text-gray-900">Инфраструктура</h2>
+                <p class="mt-1 text-sm text-gray-500">Оценка развития ключевых сфер (0–100)</p>
+              </div>
+              <div class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                <div v-for="inf in infraFields" :key="inf.key">
+                  <div class="mb-1.5 flex items-center justify-between">
+                    <label class="text-sm font-semibold text-gray-700">{{ inf.label }}</label>
+                    <span class="text-sm font-bold tabular-nums text-[#003274]">{{ form.infrastructure[inf.key] ?? 0 }}%</span>
+                  </div>
+                  <input
+                    v-model.number="form.infrastructure[inf.key]"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    class="h-2 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-[#003274]"
+                  />
+                </div>
+              </div>
+            </div>
+          </RCard>
 
-      <ImageUploadCrop
-        v-model="form.image"
-        label="Фото города"
-        :upload-url="route('admin.upload.image')"
-      />
+          <!-- Facts -->
+          <RCard elevation="raised">
+            <div class="space-y-4 p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-base font-bold text-gray-900">Факты о городе</h2>
+                  <p class="mt-1 text-sm text-gray-500">Короткие факты, отображаются как чипсы</p>
+                </div>
+                <button type="button" class="rounded-lg bg-[#003274] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[#003274]/90" @click="addFact">+ Добавить</button>
+              </div>
+              <div v-for="(_, fi) in form.facts" :key="fi" class="flex gap-2">
+                <input
+                  v-model="form.facts[fi]"
+                  type="text"
+                  placeholder="Город основан в 1973 году"
+                  class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-2 focus:ring-[#003274]/10"
+                />
+                <button type="button" class="shrink-0 rounded-lg border border-gray-200 p-2.5 text-gray-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500" @click="form.facts.splice(fi, 1)">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <p v-if="!form.facts.length" class="text-sm text-gray-400">Фактов пока нет</p>
+            </div>
+          </RCard>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="mb-2 block text-sm font-semibold text-gray-700">Позиция</label>
-          <input v-model.number="form.position" type="number" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
+          <!-- Attractions -->
+          <RCard elevation="raised">
+            <div class="space-y-4 p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-base font-bold text-gray-900">Достопримечательности</h2>
+                  <p class="mt-1 text-sm text-gray-500">Объекты для туристов</p>
+                </div>
+                <button type="button" class="rounded-lg bg-[#003274] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[#003274]/90" @click="addAttraction">+ Добавить</button>
+              </div>
+              <div v-for="(attr, ai) in form.attractions" :key="ai" class="rounded-xl border border-gray-200 bg-gray-50/50 p-4">
+                <div class="mb-3 flex items-start justify-between">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-400">{{ ai + 1 }}</span>
+                  <button type="button" class="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500" @click="form.attractions.splice(ai, 1)">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                <div class="space-y-3">
+                  <input v-model="attr.title" type="text" placeholder="Название" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/10" />
+                  <textarea v-model="attr.description" placeholder="Описание (необязательно)" rows="2" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/10" />
+                  <ImageUploadCrop v-model="attr.image" label="Фото" :upload-url="route('admin.upload.image')" />
+                </div>
+              </div>
+              <p v-if="!form.attractions.length" class="text-sm text-gray-400">Достопримечательностей пока нет</p>
+            </div>
+          </RCard>
+
+          <!-- Coordinates -->
+          <RCard elevation="raised">
+            <div class="space-y-4 p-6">
+              <h2 class="text-base font-bold text-gray-900">Координаты</h2>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-gray-700">Широта (lat)</label>
+                  <input v-model.number="form.lat" type="number" step="any" min="-90" max="90" placeholder="59.9" class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-2 focus:ring-[#003274]/10" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-semibold text-gray-700">Долгота (lng)</label>
+                  <input v-model.number="form.lng" type="number" step="any" min="-180" max="180" placeholder="29.1" class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-2 focus:ring-[#003274]/10" />
+                </div>
+              </div>
+            </div>
+          </RCard>
         </div>
-        <div class="flex items-end pb-1">
-          <RCheckbox v-model="form.is_active" label="Активен" />
-        </div>
-      </div>
 
-      <div class="flex gap-3 border-t border-gray-100 pt-6">
-        <RButton variant="primary" :loading="form.processing" :disabled="form.processing">
-          Сохранить
-        </RButton>
-        <button type="button" class="rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="showPreview = true">
-          <span class="flex items-center gap-1.5">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
-            Предпросмотр
-          </span>
-        </button>
-        <Link :href="route('admin.cities.index')" class="rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50">Отмена</Link>
+        <!-- Right column -->
+        <div class="space-y-6">
+          <!-- Image -->
+          <RCard elevation="raised">
+            <ImageUploadCrop v-model="form.image" label="Фото города" :upload-url="route('admin.upload.image')" />
+          </RCard>
+
+          <!-- Status & position -->
+          <RCard elevation="raised">
+            <div class="space-y-4 p-6">
+              <div>
+                <label class="mb-1.5 block text-sm font-semibold text-gray-700">Позиция</label>
+                <input v-model.number="form.position" type="number" class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-2 focus:ring-[#003274]/10" />
+              </div>
+              <RCheckbox v-model="form.is_active" label="Активен" />
+            </div>
+          </RCard>
+
+          <!-- Gallery -->
+          <RCard elevation="raised">
+            <div class="space-y-3 p-6">
+              <h2 class="text-base font-bold text-gray-900">Галерея</h2>
+              <div class="grid grid-cols-2 gap-2">
+                <div
+                  v-for="(url, gi) in form.gallery"
+                  :key="gi"
+                  class="group relative aspect-video overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+                >
+                  <img :src="url" alt="" class="h-full w-full object-cover" />
+                  <div class="absolute inset-0 flex items-center justify-center gap-1 bg-black/40 opacity-0 transition group-hover:opacity-100">
+                    <button type="button" class="rounded-lg bg-white/90 p-1.5 text-gray-700 transition hover:bg-white" title="Влево" :disabled="gi === 0" @click="moveGalleryItem(gi, -1)">
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                    </button>
+                    <button type="button" class="rounded-lg bg-white/90 p-1.5 text-gray-700 transition hover:bg-white" title="Вправо" :disabled="gi === form.gallery.length - 1" @click="moveGalleryItem(gi, 1)">
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </button>
+                    <button type="button" class="rounded-lg bg-red-500/90 p-1.5 text-white transition hover:bg-red-600" title="Удалить" @click="form.gallery.splice(gi, 1)">
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]"
+                @click="$refs.galleryInput.click()"
+              >
+                <svg class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 3h18a1.5 1.5 0 0 1 1.5 1.5v15a1.5 1.5 0 0 1-1.5 1.5H3a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 3 3Z" />
+                </svg>
+                <span v-if="!galleryUploading" class="text-sm font-medium text-gray-500">Добавить фото</span>
+                <span v-else class="text-sm font-medium text-[#003274]">Загрузка…</span>
+              </div>
+              <input ref="galleryInput" type="file" accept="image/*" multiple class="hidden" @change="uploadGalleryFiles" />
+            </div>
+          </RCard>
+
+          <!-- Video -->
+          <RCard elevation="raised">
+            <div class="space-y-3 p-6">
+              <h2 class="text-base font-bold text-gray-900">Видео</h2>
+              <RInput v-model="form.video_url" label="" placeholder="https://youtube.com/watch?v=..." :error="form.errors.video_url" />
+              <p class="text-xs text-gray-400">YouTube или RuTube ссылка</p>
+            </div>
+          </RCard>
+
+          <!-- Save -->
+          <div class="sticky bottom-6">
+            <RButton variant="primary" :loading="form.processing" :disabled="form.processing" class="w-full">
+              Сохранить
+            </RButton>
+          </div>
+        </div>
       </div>
     </form>
-    </RCard>
 
     <ContentPreview
       :open="showPreview"
@@ -66,6 +218,7 @@
 <script setup>
 import { ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
+import axios from 'axios'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
@@ -73,6 +226,19 @@ import ContentPreview from '@/Components/ContentPreview.vue'
 
 const props = defineProps({ city: Object })
 const showPreview = ref(false)
+const galleryUploading = ref(false)
+
+const infraFields = [
+  { key: 'work', label: 'Работа' },
+  { key: 'housing', label: 'Жильё' },
+  { key: 'leisure', label: 'Досуг' },
+  { key: 'education', label: 'Образование' },
+  { key: 'medicine', label: 'Медицина' },
+]
+
+function defaultInfrastructure() {
+  return { work: 0, housing: 0, leisure: 0, education: 0, medicine: 0 }
+}
 
 const form = useForm({
   name: props.city?.name ?? '',
@@ -81,7 +247,54 @@ const form = useForm({
   image: props.city?.image ?? '',
   position: props.city?.position ?? 0,
   is_active: props.city?.is_active ?? true,
+  region: props.city?.region ?? '',
+  population: props.city?.population ?? null,
+  lat: props.city?.lat ?? null,
+  lng: props.city?.lng ?? null,
+  infrastructure: { ...defaultInfrastructure(), ...(props.city?.infrastructure ?? {}) },
+  facts: props.city?.facts ?? [],
+  attractions: props.city?.attractions ?? [],
+  gallery: props.city?.gallery ?? [],
+  video_url: props.city?.video_url ?? '',
 })
+
+function addFact() {
+  form.facts.push('')
+}
+
+function addAttraction() {
+  form.attractions.push({ title: '', description: '', image: '' })
+}
+
+async function uploadGalleryFiles(e) {
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
+  galleryUploading.value = true
+  for (const file of files) {
+    try {
+      const fd = new FormData()
+      fd.append('image', file)
+      const { data } = await axios.post(route('admin.upload.image'), fd)
+      if (data.url) {
+        form.gallery.push(data.url)
+      }
+    } catch {
+      // skip failed uploads
+    }
+  }
+  galleryUploading.value = false
+  e.target.value = ''
+}
+
+function moveGalleryItem(index, direction) {
+  const newIndex = index + direction
+  if (newIndex < 0 || newIndex >= form.gallery.length) return
+  const arr = [...form.gallery]
+  const tmp = arr[index]
+  arr[index] = arr[newIndex]
+  arr[newIndex] = tmp
+  form.gallery = arr
+}
 
 function submit() {
   props.city
