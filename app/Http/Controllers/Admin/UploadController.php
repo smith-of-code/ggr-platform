@@ -12,6 +12,41 @@ use Illuminate\Support\Str;
 
 class UploadController extends Controller
 {
+    public function file(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|max:51200',
+        ]);
+
+        $disk = config('filesystems.upload_disk', 'public');
+        $file = $request->file('file');
+
+        $filename = Str::ulid() . '.' . ($file->guessExtension() ?: 'bin');
+        $directory = 'uploads/files/' . now()->format('Y/m');
+
+        try {
+            $path = Storage::disk($disk)->putFileAs($directory, $file, $filename, 'public');
+
+            if (!$path) {
+                throw new \RuntimeException("putFileAs returned empty path (disk: {$disk})");
+            }
+
+            return response()->json([
+                'url' => Storage::disk($disk)->url($path),
+                'name' => $file->getClientOriginalName(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('File upload failed', [
+                'disk' => $disk,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Не удалось загрузить файл. Попробуйте ещё раз.',
+            ], 500);
+        }
+    }
+
     public function image(Request $request): JsonResponse
     {
         $request->validate([

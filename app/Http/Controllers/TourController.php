@@ -6,6 +6,7 @@ use App\Models\City;
 use App\Models\Favorite;
 use App\Models\Tour;
 use App\Models\TourReaction;
+use App\Models\TourReview;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -76,9 +77,21 @@ class TourController extends Controller
             $tour->setAttribute('reactions_count', []);
         }
 
+        $reviews = TourReview::where('tour_id', $tour->id)
+            ->where('is_approved', true)
+            ->with('user:id,name')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $userReviewExists = $user
+            ? TourReview::where('tour_id', $tour->id)->where('user_id', $user->id)->exists()
+            : false;
+
         return Inertia::render('Tours/Show', [
             'tour' => $tour,
             'userReaction' => $userReaction,
+            'reviews' => $reviews,
+            'userReviewExists' => $userReviewExists,
         ]);
     }
 

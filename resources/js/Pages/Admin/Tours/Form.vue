@@ -11,77 +11,229 @@
     <form @submit.prevent="submit" class="space-y-8">
       <div class="grid gap-8 lg:grid-cols-3">
         <!-- Left column -->
-        <RCard elevation="raised" class="lg:col-span-2">
-          <div class="space-y-6">
-          <h2 class="text-base font-bold text-gray-900">Основная информация</h2>
+        <div class="space-y-6 lg:col-span-2">
+          <RCard elevation="raised">
+            <div class="space-y-6">
+              <h2 class="text-base font-bold text-gray-900">Основная информация</h2>
+              <div class="grid gap-5 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                  <RInput v-model="form.title" label="Название *" :error="form.errors.title" required />
+                </div>
+                <RInput v-model="form.slug" label="Slug" />
+                <RInput v-model="form.start_city" label="Город старта" />
+                <div class="sm:col-span-2">
+                  <RichTextEditor v-model="form.description" label="Описание тура" :upload-url="route('admin.upload.image')" />
+                </div>
+                <RInput v-model="form.duration" label="Продолжительность" placeholder="2 дня, 1 ночь" />
+                <RInput v-model="form.group_size" label="Размер группы" placeholder="до 30 человек" />
+                <RInput v-model.number="form.min_age" label="Мин. возраст" type="number" />
+                <div>
+                  <label class="mb-2 block text-sm font-semibold text-gray-700">Цена от (₽)</label>
+                  <input v-model.number="form.price_from" type="number" min="0" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-semibold text-gray-700">Проект</label>
+                  <select v-model="form.project" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
+                    <option value="">—</option>
+                    <option value="start_atomgrad">Старт в Атомград</option>
+                    <option value="atoms_vkusa">Атомы вкуса</option>
+                    <option value="llr">Лучшие люди Росатома</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-semibold text-gray-700">Участие</label>
+                  <select v-model="form.participation_type" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
+                    <option value="">—</option>
+                    <option value="contest">Конкурс</option>
+                    <option value="paid">За свой счёт</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-semibold text-gray-700">Сезон</label>
+                  <select v-model="form.season" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
+                    <option value="">—</option>
+                    <option value="winter">Зима</option>
+                    <option value="spring">Весна</option>
+                    <option value="summer">Лето</option>
+                    <option value="autumn">Осень</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-semibold text-gray-700">Позиция</label>
+                  <input v-model.number="form.position" type="number" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-3 border-t border-gray-100 pt-5">
+                <RCheckbox v-for="opt in checkboxOptions" :key="opt.key" v-model="form[opt.key]" :label="opt.label" />
+              </div>
+            </div>
+          </RCard>
 
-          <div class="grid gap-5 sm:grid-cols-2">
-            <div class="sm:col-span-2">
-              <RInput v-model="form.title" label="Название *" :error="form.errors.title" required />
-            </div>
-            <RInput v-model="form.slug" label="Slug" />
-            <RInput v-model="form.start_city" label="Город старта" />
-            <div class="sm:col-span-2">
-              <RichTextEditor
-                v-model="form.description"
-                label="Описание тура"
-                :upload-url="route('admin.upload.image')"
-              />
-            </div>
-            <RInput v-model="form.duration" label="Продолжительность" placeholder="2 дня, 1 ночь" />
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Цена от (₽)</label>
-              <input v-model.number="form.price_from" type="number" min="0" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
-            </div>
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Проект</label>
-              <select v-model="form.project" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
-                <option value="">—</option>
-                <option value="start_atomgrad">Старт в Атомград</option>
-                <option value="atoms_vkusa">Атомы вкуса</option>
-                <option value="llr">Лучшие люди Росатома</option>
-              </select>
-            </div>
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Участие</label>
-              <select v-model="form.participation_type" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
-                <option value="">—</option>
-                <option value="contest">Конкурс</option>
-                <option value="paid">За свой счёт</option>
-              </select>
-            </div>
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Сезон</label>
-              <select v-model="form.season" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
-                <option value="">—</option>
-                <option value="winter">Зима</option>
-                <option value="spring">Весна</option>
-                <option value="summer">Лето</option>
-                <option value="autumn">Осень</option>
-              </select>
-            </div>
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Позиция</label>
-              <input v-model.number="form.position" type="number" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
-            </div>
-          </div>
+          <!-- Program days -->
+          <RCard elevation="raised">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h2 class="text-base font-bold text-gray-900">Программа по дням</h2>
+                <div v-if="form.program_pdf" class="flex items-center gap-2">
+                  <a :href="form.program_pdf" target="_blank" class="text-sm text-[#003274] hover:underline">PDF загружен</a>
+                  <button type="button" class="text-red-400 hover:text-red-600" @click="form.program_pdf = ''">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              </div>
 
-          <!-- Checkboxes -->
-          <div class="flex flex-wrap gap-3 border-t border-gray-100 pt-5">
-            <RCheckbox v-for="opt in checkboxOptions" :key="opt.key" v-model="form[opt.key]" :label="opt.label" />
-          </div>
-          </div>
-        </RCard>
+              <div v-for="(day, di) in form.program_days" :key="di" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div class="mb-2 flex items-center justify-between">
+                  <span class="text-sm font-semibold text-gray-500">День {{ di + 1 }}</span>
+                  <button type="button" class="text-red-400 hover:text-red-600" @click="form.program_days.splice(di, 1)">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                <div class="space-y-3">
+                  <RInput v-model="day.title" label="Заголовок" placeholder="Прибытие и знакомство" />
+                  <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">Описание</label>
+                    <textarea v-model="day.description" rows="3" class="w-full rounded-xl border-gray-200 bg-white px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" placeholder="Описание дня..." />
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button type="button" class="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-3 text-sm font-medium text-gray-500 transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03] hover:text-[#003274]" @click="form.program_days.push({ title: '', description: '' })">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  Добавить день
+                </button>
+                <button type="button" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="$refs.programPdfInput.click()">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                  {{ pdfUploading === 'program' ? 'Загрузка…' : 'Загрузить PDF' }}
+                </button>
+                <input ref="programPdfInput" type="file" accept=".pdf" class="hidden" @change="e => uploadPdf(e, 'program_pdf')" />
+              </div>
+            </div>
+          </RCard>
+
+          <!-- Accommodations -->
+          <RCard elevation="raised">
+            <div class="space-y-4">
+              <h2 class="text-base font-bold text-gray-900">Проживание</h2>
+
+              <div v-for="(acc, ai) in form.accommodations" :key="ai" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div class="mb-3 flex items-center justify-between">
+                  <span class="text-sm font-semibold text-gray-500">Вариант {{ ai + 1 }}</span>
+                  <button type="button" class="text-red-400 hover:text-red-600" @click="form.accommodations.splice(ai, 1)">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                <div class="space-y-3">
+                  <div class="grid items-end gap-3 sm:grid-cols-2">
+                    <RInput v-model="acc.title" label="Название" placeholder="Гостиница «Атомик»" />
+                    <div>
+                      <label class="mb-1 block text-sm font-semibold text-gray-700">Категория бюджета</label>
+                      <select v-model="acc.budget" class="w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
+                        <option value="">—</option>
+                        <option value="economy">Эконом</option>
+                        <option value="standard">Стандарт</option>
+                        <option value="comfort">Комфорт</option>
+                        <option value="luxury">Люкс</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">Описание</label>
+                    <textarea v-model="acc.description" rows="2" class="w-full rounded-xl border-gray-200 bg-white px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" placeholder="Описание проживания..." />
+                  </div>
+                  <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">Фото</label>
+                    <div class="flex flex-wrap gap-2">
+                      <div v-for="(img, ii) in acc.images" :key="ii" class="group relative h-20 w-28 overflow-hidden rounded-lg border border-gray-200">
+                        <img :src="img" alt="" class="h-full w-full object-cover" />
+                        <button type="button" class="absolute right-1 top-1 rounded-full bg-red-500/90 p-0.5 text-white opacity-0 transition group-hover:opacity-100" @click="acc.images.splice(ii, 1)">
+                          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                      <button type="button" class="flex h-20 w-28 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-200 text-gray-400 transition hover:border-[#003274]/40 hover:text-[#003274]" @click="$refs[`accImgInput${ai}`][0].click()">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                      </button>
+                      <input :ref="`accImgInput${ai}`" type="file" accept="image/*" multiple class="hidden" @change="e => uploadAccImages(e, ai)" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-3 text-sm font-medium text-gray-500 transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03] hover:text-[#003274]" @click="form.accommodations.push({ title: '', budget: '', description: '', images: [] })">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                Добавить вариант проживания
+              </button>
+            </div>
+          </RCard>
+
+          <!-- Memo -->
+          <RCard elevation="raised">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h2 class="text-base font-bold text-gray-900">Памятка участника</h2>
+                <div v-if="form.memo_pdf" class="flex items-center gap-2">
+                  <a :href="form.memo_pdf" target="_blank" class="text-sm text-[#003274] hover:underline">PDF загружен</a>
+                  <button type="button" class="text-red-400 hover:text-red-600" @click="form.memo_pdf = ''">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              </div>
+              <RichTextEditor v-model="form.memo_text" label="Текст памятки" :upload-url="route('admin.upload.image')" />
+              <button type="button" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="$refs.memoPdfInput.click()">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                {{ pdfUploading === 'memo' ? 'Загрузка…' : 'Загрузить PDF памятки' }}
+              </button>
+              <input ref="memoPdfInput" type="file" accept=".pdf" class="hidden" @change="e => uploadPdf(e, 'memo_pdf')" />
+            </div>
+          </RCard>
+
+          <!-- Pass info -->
+          <RCard elevation="raised">
+            <div class="space-y-4">
+              <h2 class="text-base font-bold text-gray-900">Оформление пропуска</h2>
+              <p class="text-sm text-gray-500">Информация об оформлении пропуска в город или на объекты (отображается если «Закрытый город» включен)</p>
+              <RichTextEditor v-model="form.pass_info" label="Информация о пропуске" :upload-url="route('admin.upload.image')" />
+            </div>
+          </RCard>
+
+          <!-- Conditions -->
+          <RCard elevation="raised">
+            <div class="space-y-4">
+              <h2 class="text-base font-bold text-gray-900">Условия участия</h2>
+              <RichTextEditor v-model="form.conditions" label="Условия участия в туре" :upload-url="route('admin.upload.image')" />
+            </div>
+          </RCard>
+
+          <!-- Cost info -->
+          <RCard elevation="raised">
+            <div class="space-y-4">
+              <h2 class="text-base font-bold text-gray-900">Стоимость и оплата</h2>
+              <RichTextEditor v-model="form.cost_info" label="Информация о стоимости" :upload-url="route('admin.upload.image')" />
+            </div>
+          </RCard>
+
+          <!-- Target audience -->
+          <RCard elevation="raised">
+            <div class="space-y-4">
+              <h2 class="text-base font-bold text-gray-900">Для кого этот тур</h2>
+              <RichTextEditor v-model="form.target_audience" label="Целевая аудитория" :upload-url="route('admin.upload.image')" />
+            </div>
+          </RCard>
+
+          <!-- Organizer info -->
+          <RCard elevation="raised">
+            <div class="space-y-4">
+              <h2 class="text-base font-bold text-gray-900">Организатор</h2>
+              <RichTextEditor v-model="form.organizer_info" label="Информация об организаторе" :upload-url="route('admin.upload.image')" />
+            </div>
+          </RCard>
+        </div>
 
         <!-- Right column -->
         <div class="space-y-6">
-          <!-- Image -->
           <RCard elevation="raised">
-            <ImageUploadCrop
-              v-model="form.image"
-              label="Изображение тура"
-              :upload-url="route('admin.upload.image')"
-            />
+            <ImageUploadCrop v-model="form.image" label="Изображение тура" :upload-url="route('admin.upload.image')" />
           </RCard>
 
           <!-- Gallery -->
@@ -89,46 +241,22 @@
             <h2 class="mb-4 text-base font-bold text-gray-900">Галерея фото</h2>
             <div class="space-y-3">
               <div class="grid grid-cols-2 gap-2">
-                <div
-                  v-for="(url, gi) in form.gallery"
-                  :key="gi"
-                  class="group relative aspect-video overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                >
+                <div v-for="(url, gi) in form.gallery" :key="gi" class="group relative aspect-video overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                   <img :src="url" alt="" class="h-full w-full object-cover" />
                   <div class="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition group-hover:opacity-100">
-                    <button
-                      type="button"
-                      class="rounded-lg bg-white/90 p-1.5 text-gray-700 transition hover:bg-white"
-                      title="Переместить влево"
-                      :disabled="gi === 0"
-                      @click="moveGalleryItem(gi, -1)"
-                    >
+                    <button type="button" class="rounded-lg bg-white/90 p-1.5 text-gray-700 transition hover:bg-white" title="Переместить влево" :disabled="gi === 0" @click="moveGalleryItem(gi, -1)">
                       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
                     </button>
-                    <button
-                      type="button"
-                      class="rounded-lg bg-white/90 p-1.5 text-gray-700 transition hover:bg-white"
-                      title="Переместить вправо"
-                      :disabled="gi === form.gallery.length - 1"
-                      @click="moveGalleryItem(gi, 1)"
-                    >
+                    <button type="button" class="rounded-lg bg-white/90 p-1.5 text-gray-700 transition hover:bg-white" title="Переместить вправо" :disabled="gi === form.gallery.length - 1" @click="moveGalleryItem(gi, 1)">
                       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                     </button>
-                    <button
-                      type="button"
-                      class="rounded-lg bg-red-500/90 p-1.5 text-white transition hover:bg-red-600"
-                      title="Удалить"
-                      @click="form.gallery.splice(gi, 1)"
-                    >
+                    <button type="button" class="rounded-lg bg-red-500/90 p-1.5 text-white transition hover:bg-red-600" title="Удалить" @click="form.gallery.splice(gi, 1)">
                       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                     </button>
                   </div>
                 </div>
               </div>
-              <div
-                class="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]"
-                @click="$refs.galleryInput.click()"
-              >
+              <div class="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]" @click="$refs.galleryInput.click()">
                 <svg class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 3h18a1.5 1.5 0 0 1 1.5 1.5v15a1.5 1.5 0 0 1-1.5 1.5H3a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 3 3Z" />
                 </svg>
@@ -145,18 +273,8 @@
             <div class="space-y-3">
               <div v-for="(vid, vi) in form.videos" :key="vi" class="space-y-2">
                 <div class="flex gap-2">
-                  <input
-                    v-model="form.videos[vi]"
-                    type="text"
-                    placeholder="https://youtube.com/watch?v=... или rutube.ru/video/..."
-                    class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10"
-                  />
-                  <button
-                    type="button"
-                    class="shrink-0 rounded-xl border border-red-200 bg-white p-2.5 text-red-500 transition hover:bg-red-50"
-                    title="Удалить видео"
-                    @click="form.videos.splice(vi, 1)"
-                  >
+                  <input v-model="form.videos[vi]" type="text" placeholder="https://youtube.com/watch?v=... или rutube.ru/video/..." class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
+                  <button type="button" class="shrink-0 rounded-xl border border-red-200 bg-white p-2.5 text-red-500 transition hover:bg-red-50" title="Удалить видео" @click="form.videos.splice(vi, 1)">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -167,11 +285,7 @@
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-3 text-sm font-medium text-gray-500 transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03] hover:text-[#003274]"
-              @click="form.videos.push('')"
-            >
+            <button type="button" class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-3 text-sm font-medium text-gray-500 transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03] hover:text-[#003274]" @click="form.videos.push('')">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               Добавить видео
             </button>
@@ -219,17 +333,21 @@
       </div>
 
       <!-- Actions -->
-      <div class="flex gap-3">
-        <RButton variant="primary" :loading="form.processing" :disabled="form.processing">
-          Сохранить
-        </RButton>
-        <button type="button" class="rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="showPreview = true">
-          <span class="flex items-center gap-1.5">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
-            Предпросмотр
-          </span>
-        </button>
-        <Link :href="route('admin.tours.index')" class="rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50">Отмена</Link>
+      <div class="sticky bottom-0 z-10 -mx-4 border-t border-gray-200 bg-white/95 px-12 py-4 backdrop-blur sm:-mx-6">
+        <div class="flex items-center gap-3">
+          <RButton variant="primary" :loading="form.processing" :disabled="form.processing">
+            Сохранить
+          </RButton>
+          <button type="button" class="rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="showPreview = true">
+            <span class="flex items-center gap-1.5">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+              Предпросмотр
+            </span>
+          </button>
+          <Link :href="route('admin.tours.index')" class="rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50">Отмена</Link>
+          <span v-if="form.recentlySuccessful" class="ml-auto text-sm font-medium text-green-600">Сохранено</span>
+          <span v-else-if="form.isDirty" class="ml-auto text-sm text-amber-600">Есть несохранённые изменения</span>
+        </div>
       </div>
     </form>
 
@@ -255,6 +373,7 @@ import ContentPreview from '@/Components/ContentPreview.vue'
 
 const props = defineProps({ tour: Object, cities: Array })
 const showPreview = ref(false)
+const pdfUploading = ref(null)
 
 const checkboxOptions = [
   { key: 'is_active', label: 'Активен' },
@@ -262,6 +381,7 @@ const checkboxOptions = [
   { key: 'for_children', label: 'С детьми' },
   { key: 'for_foreigners', label: 'Иностранцам' },
   { key: 'closed_city', label: 'Закрытый город' },
+  { key: 'bchp_participant', label: 'Участник программы БЧП' },
 ]
 
 const tourMeta = computed(() => {
@@ -293,12 +413,8 @@ async function uploadGalleryFiles(e) {
       const fd = new FormData()
       fd.append('image', file)
       const { data } = await axios.post(route('admin.upload.image'), fd)
-      if (data.url) {
-        form.gallery.push(data.url)
-      }
-    } catch {
-      // skip failed uploads
-    }
+      if (data.url) form.gallery.push(data.url)
+    } catch { /* skip */ }
   }
   galleryUploading.value = false
   e.target.value = ''
@@ -314,6 +430,38 @@ function moveGalleryItem(index, direction) {
   form.gallery = arr
 }
 
+async function uploadPdf(e, field) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  pdfUploading.value = field === 'program_pdf' ? 'program' : 'memo'
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const { data } = await axios.post(route('admin.upload.file'), fd)
+    if (data.url) form[field] = data.url
+  } catch { /* skip */ }
+  pdfUploading.value = null
+  e.target.value = ''
+}
+
+async function uploadAccImages(e, accIndex) {
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
+  const newImages = [...(form.accommodations[accIndex].images || [])]
+  for (const file of files) {
+    try {
+      const fd = new FormData()
+      fd.append('image', file)
+      const { data } = await axios.post(route('admin.upload.image'), fd)
+      if (data.url) newImages.push(data.url)
+    } catch { /* skip */ }
+  }
+  const updated = [...form.accommodations]
+  updated[accIndex] = { ...updated[accIndex], images: newImages }
+  form.accommodations = updated
+  e.target.value = ''
+}
+
 const form = useForm({
   title: props.tour?.title ?? '',
   slug: props.tour?.slug ?? '',
@@ -323,6 +471,8 @@ const form = useForm({
   videos: props.tour?.videos?.length ? [...props.tour.videos] : [],
   start_city: props.tour?.start_city ?? '',
   duration: props.tour?.duration ?? '',
+  group_size: props.tour?.group_size ?? '',
+  min_age: props.tour?.min_age ?? null,
   project: props.tour?.project ?? '',
   participation_type: props.tour?.participation_type ?? '',
   season: props.tour?.season ?? '',
@@ -334,6 +484,17 @@ const form = useForm({
   for_children: props.tour?.for_children ?? false,
   for_foreigners: props.tour?.for_foreigners ?? false,
   closed_city: props.tour?.closed_city ?? false,
+  bchp_participant: props.tour?.bchp_participant ?? false,
+  program_days: props.tour?.program_days ?? [],
+  program_pdf: props.tour?.program_pdf ?? '',
+  accommodations: props.tour?.accommodations ?? [],
+  memo_text: props.tour?.memo_text ?? '',
+  memo_pdf: props.tour?.memo_pdf ?? '',
+  pass_info: props.tour?.pass_info ?? '',
+  conditions: props.tour?.conditions ?? '',
+  cost_info: props.tour?.cost_info ?? '',
+  target_audience: props.tour?.target_audience ?? '',
+  organizer_info: props.tour?.organizer_info ?? '',
   departures: props.tour?.departures?.length
     ? props.tour.departures.map(d => ({
         start_date: d.start_date?.slice(0, 10) ?? '',
