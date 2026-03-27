@@ -11,10 +11,12 @@ use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TimelineEventController as AdminTimelineController;
+use App\Http\Controllers\Admin\DirectionController as AdminDirectionController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\DirectionController;
 use App\Http\Controllers\EducationController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
@@ -49,6 +51,8 @@ Route::get('/recipes', [ResearchController::class, 'recipes'])->name('recipes.in
 Route::get('/recipes/{slug}', [ResearchController::class, 'recipeShow'])->name('recipes.show');
 
 Route::get('/opportunity-tours', [OpportunityToursController::class, 'index'])->name('opportunity-tours.index');
+
+Route::get('/directions/{slug}', [DirectionController::class, 'show'])->name('directions.show');
 
 Route::get('/vacancies', [VacancyController::class, 'index'])->name('vacancies.index');
 Route::get('/vacancies/{vacancy:slug}', [VacancyController::class, 'show'])->name('vacancies.show');
@@ -86,6 +90,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::resource('vacancies', AdminVacancyController::class)->except(['show']);
     Route::patch('/vacancies/{vacancy}/toggle-publish', [AdminVacancyController::class, 'togglePublish'])->name('vacancies.togglePublish');
+
+    Route::resource('directions', AdminDirectionController::class)->except(['show']);
+    Route::patch('/directions/{direction}/toggle-active', [AdminDirectionController::class, 'toggleActive'])->name('directions.toggleActive');
 
     Route::resource('timeline', AdminTimelineController::class)->except(['show']);
     Route::patch('/timeline/{timeline}/toggle-active', [AdminTimelineController::class, 'toggleActive'])->name('timeline.toggleActive');
