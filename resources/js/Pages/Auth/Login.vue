@@ -5,7 +5,7 @@
     <!-- Left panel: branding -->
     <div class="hidden w-1/2 flex-col justify-between bg-rosatom-800 p-12 lg:flex">
       <div>
-        <img src="/images/logo-horizontal.png" alt="ГГР" class="h-20 w-auto" />
+        <img src="/images/logo-horizontal.svg" alt="ГГР" class="h-20 w-auto brightness-0 invert" />
       </div>
       <div>
         <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
@@ -22,9 +22,8 @@
     <div class="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12">
       <div class="w-full max-w-md">
         <!-- Mobile logo -->
-        <div class="mb-8 text-center lg:hidden">
-          <img src="/images/logo-compact.png" alt="ГГР" class="mx-auto mb-4 h-24 w-auto rounded-lg" />
-          <p class="font-brand text-lg font-bold text-rosatom-800">ВШГР</p>
+        <div class="mb-8 flex justify-center lg:hidden">
+          <img src="/images/logo-horizontal.svg" alt="ГГР" class="h-20 w-auto" />
         </div>
 
         <h1 class="text-2xl font-bold text-gray-900">Вход в систему</h1>

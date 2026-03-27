@@ -11,7 +11,7 @@
       <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;1&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')" />
       <div class="relative z-10 flex flex-1 flex-col justify-between p-12">
         <div>
-          <img src="/images/logo-horizontal.png" alt="ГГР" class="h-20 w-auto" />
+          <img src="/images/logo-horizontal.svg" alt="ГГР" class="h-20 w-auto brightness-0 invert" />
         </div>
         <div>
           <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
@@ -28,8 +28,8 @@
     <div class="relative flex flex-1 flex-col items-center justify-center px-6 py-12">
       <div class="absolute inset-0 bg-gradient-to-br from-white via-white to-rosatom-50/60" />
       <div class="relative z-10 w-full max-w-md">
-        <div class="mb-8 text-center lg:hidden">
-          <img src="/images/logo-compact.png" alt="ГГР" class="mx-auto mb-4 h-20 w-auto" />
+        <div class="mb-8 flex justify-center lg:hidden">
+          <img src="/images/logo-horizontal.svg" alt="ГГР" class="h-20 w-auto" />
         </div>
 
         <template v-if="error">
@@ -37,7 +37,7 @@
             <ExclamationTriangleIcon class="mx-auto h-12 w-12 text-red-400" />
             <h2 class="mt-4 text-lg font-semibold text-red-800">Ссылка недействительна</h2>
             <p class="mt-2 text-sm text-red-600">{{ error }}</p>
-            <a :href="route('lms.login', event.slug)"
+            <a :href="route('login')"
                class="mt-4 inline-block text-sm font-medium text-rosatom-600 hover:underline">
               Перейти на страницу входа
             </a>

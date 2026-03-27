@@ -75,8 +75,7 @@ class SocialAuthController extends Controller
             if ($flow === 'link') {
                 return redirect()->route('lms.profile.edit', $event)->withErrors(['social' => 'Не удалось получить данные от провайдера.']);
             }
-            $errorRoute = $event ? route('lms.login', $event) : route('login');
-            return redirect($errorRoute)->withErrors(['social' => 'Не удалось получить данные от провайдера.']);
+            return redirect()->route('login')->withErrors(['social' => 'Не удалось получить данные от провайдера.']);
         }
 
         if ($flow === 'link') {
@@ -165,7 +164,7 @@ class SocialAuthController extends Controller
             ->first();
 
         if (!$account) {
-            return redirect()->route('lms.login', $event)
+            return redirect()->route('login')
                 ->withErrors(['social' => 'Аккаунт не привязан. Войдите по email и привяжите аккаунт в профиле.']);
         }
 

@@ -12,7 +12,7 @@ import {
     CourseCard, ProfileCard, Leaderboard, AssignmentCard,
 } from '@rosatom-ggr/ui-kit';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Гостеприимные города Росатома';
 
 const uiKitComponents = {
     RButton, RInput, RCheckbox, RAvatar, RBadge, RCard,

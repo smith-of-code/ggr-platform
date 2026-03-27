@@ -39,10 +39,7 @@ use Illuminate\Support\Facades\Route;
 
 // ── LMS Auth ──
 Route::prefix('lms/{event:slug}')->name('lms.')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::get('/login', [AuthController::class, 'redirectToGlobalLogin'])->name('login');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/invite/{token}', [AuthController::class, 'showInvite'])->name('invite');
     Route::post('/invite/{token}', [AuthController::class, 'registerByInvite'])->name('invite.register');

@@ -8,11 +8,7 @@
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 items-center justify-between">
           <Link :href="route('home')" class="flex items-center gap-2.5 transition hover:opacity-80">
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#003274]">
-              <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" />
-              </svg>
-            </div>
+            <img src="/images/logo-icon.svg" alt="ГГР" class="h-9 w-auto" />
             <span class="hidden text-lg font-bold text-[#003274] sm:block">Росатом Travel</span>
           </Link>
 

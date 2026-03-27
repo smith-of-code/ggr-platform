@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Lms\LmsProfile;
+use App\Services\GamificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,8 +18,12 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        if ($redirect = $request->query('redirect')) {
+            session(['url.intended' => $redirect]);
+        }
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
@@ -41,6 +46,7 @@ class AuthenticatedSessionController extends Controller
         if ($lmsProfile && $lmsProfile->role !== 'admin') {
             $event = $lmsProfile->event;
             if ($event) {
+                app(GamificationService::class)->awardPoints($event, $user, 'login_daily', 'Ежедневный вход');
                 return redirect()->intended(route('lms.dashboard', $event->slug, false));
             }
         }
