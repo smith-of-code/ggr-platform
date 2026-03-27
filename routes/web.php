@@ -24,7 +24,9 @@ use App\Http\Controllers\OpportunityToursController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResearchController;
 use App\Http\Controllers\TourController;
+use App\Http\Controllers\TourReviewController;
 use App\Http\Controllers\VacancyController;
+use App\Http\Controllers\Admin\TourReviewController as AdminTourReviewController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public portal (no auth required) ──
@@ -63,6 +65,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/favorites/{type}/{id}', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+
+    Route::post('/tours/{tour}/reviews', [TourReviewController::class, 'store'])->name('tours.reviews.store');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
@@ -94,6 +98,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::patch('/timeline/{timeline}/toggle-active', [AdminTimelineController::class, 'toggleActive'])->name('timeline.toggleActive');
 
     Route::post('/upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
+    Route::post('/upload/file', [AdminUploadController::class, 'file'])->name('upload.file');
+
+    Route::get('/tour-reviews', [AdminTourReviewController::class, 'index'])->name('tour-reviews.index');
+    Route::patch('/tour-reviews/{tourReview}/approve', [AdminTourReviewController::class, 'approve'])->name('tour-reviews.approve');
+    Route::patch('/tour-reviews/{tourReview}/reject', [AdminTourReviewController::class, 'reject'])->name('tour-reviews.reject');
+    Route::delete('/tour-reviews/{tourReview}', [AdminTourReviewController::class, 'destroy'])->name('tour-reviews.destroy');
 
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');

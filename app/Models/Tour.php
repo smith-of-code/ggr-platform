@@ -25,9 +25,13 @@ class Tour extends Model
         'min_age',
         'price_from',
         'program_pdf',
+        'program_days',
         'memo_pdf',
+        'memo_text',
+        'pass_info',
         'departure_info',
         'accommodation_info',
+        'accommodations',
         'conditions',
         'cost_info',
         'application_info',
@@ -54,6 +58,8 @@ class Tour extends Model
         'reactions_count' => 'array',
         'gallery' => 'array',
         'videos' => 'array',
+        'program_days' => 'array',
+        'accommodations' => 'array',
     ];
 
     public function cities(): BelongsToMany
@@ -74,6 +80,11 @@ class Tour extends Model
     public function reactions(): HasMany
     {
         return $this->hasMany(TourReaction::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(TourReview::class);
     }
 
     public function favorites(): MorphMany
