@@ -89,7 +89,8 @@ const assignmentsList = computed(() => {
 
 function stripHtml(html) {
   if (!html) return ''
-  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120)
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  return (doc.body.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120)
 }
 
 function mapStatus(status) {

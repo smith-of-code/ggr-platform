@@ -95,7 +95,11 @@ let timeout = null
 
 const types = { full_time: 'Полная', part_time: 'Частичная', remote: 'Удалённо', internship: 'Стажировка', contract: 'Подряд' }
 function typeLabel(t) { return types[t] || t }
-function stripHtml(html) { return html?.replace(/<[^>]*>/g, '') || '' }
+function stripHtml(html) {
+  if (!html) return ''
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  return (doc.body.textContent || '').replace(/\s+/g, ' ').trim()
+}
 
 function applyFilters() {
   const params = {}

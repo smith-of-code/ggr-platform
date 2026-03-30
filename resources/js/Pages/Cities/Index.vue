@@ -186,7 +186,8 @@ function resetFilters() {
 
 function stripHtml(html) {
   if (!html) return ''
-  return html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  return (doc.body.textContent || '').replace(/\s+/g, ' ').trim()
 }
 
 function formatPopulation(v) {
