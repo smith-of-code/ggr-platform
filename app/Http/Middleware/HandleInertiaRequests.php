@@ -40,6 +40,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'subscribed' => fn () => $request->session()->get('subscribed'),
+                'profile_completed' => fn () => $request->session()->get('profile_completed'),
             ],
             'user' => fn () => $request->user()?->only(['id', 'name', 'email', 'phone']),
             'profile' => function () use ($request) {

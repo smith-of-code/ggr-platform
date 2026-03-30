@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Lms;
 
 use App\Http\Controllers\Controller;
-use App\Models\City;
+
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsProfileDocument;
@@ -32,15 +32,13 @@ class ProfileController extends Controller
             ->get(['provider', 'created_at'])
             ->keyBy('provider');
 
-        $cities = City::orderBy('name')->get(['id', 'name']);
-
         return Inertia::render('Lms/Profile/Edit', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'profile' => $profile,
             'user' => $user->only(['name', 'last_name', 'first_name', 'patronymic', 'email', 'phone']),
             'socialAccounts' => $socialAccounts,
-            'cities' => $cities,
             'isProfileComplete' => $profile->isProfileComplete(),
+            'missingFields' => $profile->getMissingFields(),
             'documentTypes' => LmsProfileDocument::TYPES,
             'documentTypesWithTemplate' => LmsProfileDocument::TYPES_WITH_TEMPLATE,
         ]);
@@ -55,7 +53,7 @@ class ProfileController extends Controller
             'patronymic' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'city_id' => ['nullable', 'integer', 'exists:cities,id'],
+            'city' => ['nullable', 'string', 'max:255'],
             'organization' => ['nullable', 'string', 'max:255'],
             'position' => ['nullable', 'string', 'max:255'],
             'project_description' => ['nullable', 'string', 'max:5000'],
@@ -92,6 +90,13 @@ class ProfileController extends Controller
             $profile->update(['avatar' => $avatarUrl]);
         }
 
+        $profile->refresh();
+        $profile->load('documents');
+
+        if ($profile->isProfileComplete()) {
+            return redirect()->back()->with('profile_completed', true);
+        }
+
         return redirect()->back();
     }
 
@@ -117,6 +122,13 @@ class ProfileController extends Controller
                 'original_name' => $request->file('file')->getClientOriginalName(),
             ]
         );
+
+        $profile->refresh();
+        $profile->load('documents');
+
+        if ($profile->isProfileComplete()) {
+            return redirect()->back()->with('profile_completed', true);
+        }
 
         return redirect()->back();
     }

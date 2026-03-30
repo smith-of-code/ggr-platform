@@ -28,7 +28,7 @@
             <div class="mb-3 flex items-start justify-between gap-2">
               <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rosatom-50">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rosatom-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 8h4.5a2.5 2.5 0 0 1 0 5H9V8Zm0 5v3m0 0v2m0-2H7m2 0h4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
               </div>
               <RBadge v-if="item.enrolled" variant="success" size="sm">Выбран</RBadge>
@@ -47,7 +47,7 @@
 
       <div v-if="!grants?.length" class="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 8h4.5a2.5 2.5 0 0 1 0 5H9V8Zm0 5v3m0 0v2m0-2H7m2 0h4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
         </svg>
         <p class="mt-3 text-sm text-gray-400">Гранты пока не добавлены</p>
       </div>
@@ -72,7 +72,7 @@ function stripTags(html) {
 
 function formatDate(d) {
   if (!d) return ''
-  return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+  return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function formatDateRange(grant) {
