@@ -101,6 +101,9 @@ class LmsProfile extends Model
         if (! $this->city) {
             $missing[] = 'Город';
         }
+        if (! $this->project_description) {
+            $missing[] = 'Описание проекта или идеи';
+        }
         if (! $this->organization) {
             $missing[] = 'Организация';
         }

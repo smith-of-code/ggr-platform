@@ -149,12 +149,12 @@
             </div>
 
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-500">Описание проекта или идеи</label>
+              <label class="mb-2 block text-sm font-medium text-gray-500">Описание проекта или идеи *</label>
               <textarea
                 v-model="form.project_description"
-                rows="4"
+                rows="5"
                 class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 transition placeholder:text-gray-400 focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
-                placeholder="Опишите ваш проект или идею..."
+                placeholder="Напишите название и стадию развития проекта на текущий момент. Например: Создание сувенирной продукции в городе Глазов. Проект развиваем 6 месяцев, отшили партию футболок и толстовок с креативными надписями. В месяц получаем 15 заказов, есть 1 сотрудник. Если у вас еще нет проекта, опишите подробно вашу идею."
               />
               <p v-if="form.errors.project_description" class="mt-1 text-sm text-red-600">{{ form.errors.project_description }}</p>
             </div>

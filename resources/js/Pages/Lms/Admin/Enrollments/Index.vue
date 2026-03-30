@@ -74,12 +74,14 @@
                   <div class="flex justify-end gap-2">
                     <template v-if="e.status === 'pending'">
                       <RButton variant="primary" size="sm" @click="approve(e.id)">Одобрить</RButton>
+                      <RButton variant="outline" size="sm" @click="openReassign(e)">Перевести</RButton>
                       <RButton variant="danger" size="sm" @click="reject(e.id)">Отклонить</RButton>
                     </template>
                     <template v-else-if="e.status === 'rejected'">
                       <RButton variant="outline" size="sm" @click="approve(e.id)">Одобрить</RButton>
                     </template>
                     <template v-if="e.status === 'enrolled'">
+                      <RButton variant="outline" size="sm" @click="openReassign(e)">Перевести</RButton>
                       <RButton variant="outline" size="sm" class="text-gray-500" @click="unenroll(e)">
                         Отписать
                       </RButton>
@@ -116,11 +118,44 @@
         />
       </div>
     </div>
+    <!-- Reassign modal -->
+    <RModal v-model="showReassignModal" title="Перевести на другой курс" size="sm">
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600">
+          Участник: <span class="font-medium text-gray-900">{{ reassignEnrollment?.user?.name }}</span>
+        </p>
+        <p class="text-sm text-gray-600">
+          Текущий курс: <span class="font-medium text-gray-900">{{ reassignEnrollment?.course?.title }}</span>
+        </p>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-gray-700">Новый курс</label>
+          <select
+            v-model="reassignCourseId"
+            class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
+          >
+            <option :value="null" disabled>Выберите курс</option>
+            <option
+              v-for="c in availableCoursesForReassign"
+              :key="c.id"
+              :value="c.id"
+            >
+              {{ c.title }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <RButton variant="outline" size="sm" type="button" @click="showReassignModal = false">Отмена</RButton>
+          <RButton variant="primary" size="sm" type="button" :disabled="!reassignCourseId" @click="submitReassign">Перевести</RButton>
+        </div>
+      </template>
+    </RModal>
   </LmsAdminLayout>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
@@ -176,6 +211,30 @@ function remove(enrollment) {
   const userName = enrollment.user?.name || 'запись'
   if (!confirm(`Удалить запись ${userName}? Это действие нельзя отменить.`)) return
   router.delete(route('lms.admin.enrollments.destroy', [props.event.slug, enrollment.id]))
+}
+
+const showReassignModal = ref(false)
+const reassignEnrollment = ref(null)
+const reassignCourseId = ref(null)
+
+const availableCoursesForReassign = computed(() => {
+  if (!reassignEnrollment.value) return []
+  return (props.courses || []).filter(c => c.id !== reassignEnrollment.value.course?.id)
+})
+
+function openReassign(enrollment) {
+  reassignEnrollment.value = enrollment
+  reassignCourseId.value = null
+  showReassignModal.value = true
+}
+
+function submitReassign() {
+  if (!reassignCourseId.value || !reassignEnrollment.value) return
+  router.post(
+    route('lms.admin.enrollments.reassign', [props.event.slug, reassignEnrollment.value.id]),
+    { course_id: reassignCourseId.value },
+    { onSuccess: () => { showReassignModal.value = false } }
+  )
 }
 
 function statusVariant(status) {

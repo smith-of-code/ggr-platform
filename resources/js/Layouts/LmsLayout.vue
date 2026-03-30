@@ -165,7 +165,7 @@ const sidebarItems = computed(() => {
   ]
 
   if (mc.courses) items.push({ id: 'lms.courses', label: 'Курсы', icon: icons.courses })
-  if (mc.grants) items.push({ id: 'lms.grants', label: 'Гранты', icon: icons.grants })
+  if (mc.grants) items.push({ id: 'lms.grants', label: 'Возможности', icon: icons.grants })
   if (mc.trajectories) items.push({ id: 'lms.trajectories', label: 'Траектории', icon: icons.trajectories })
   if (mc.tests) items.push({ id: 'lms.tests', label: 'Тестирование', icon: icons.tests })
   if (mc.assignments) items.push({ id: 'lms.assignments', label: 'Задания', icon: icons.assignments })

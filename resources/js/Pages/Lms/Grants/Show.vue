@@ -8,14 +8,21 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
           </svg>
         </template>
-        Все гранты
+        Все возможности
       </RButton>
 
       <RCard elevation="raised">
         <div class="p-6 lg:p-8">
           <div class="flex items-start justify-between gap-4">
-            <h1 class="font-brand text-2xl font-bold text-gray-900">{{ grant?.title }}</h1>
-            <RBadge v-if="enrolled" variant="success">Выбран</RBadge>
+            <div>
+              <div class="mb-2 flex items-center gap-2">
+                <span class="rounded-full px-2.5 py-0.5 text-xs font-medium" :class="typeBadgeClass">{{ typeLabel }}</span>
+                <span v-if="grant?.city" class="text-xs text-gray-400">{{ grant.city }}</span>
+              </div>
+              <h1 class="font-brand text-2xl font-bold text-gray-900">{{ grant?.title }}</h1>
+            </div>
+            <RBadge v-if="enrolled" variant="success">Участвую</RBadge>
+            <RBadge v-else-if="isExpired" variant="danger">Истёк срок</RBadge>
           </div>
 
           <div v-if="grant?.description" class="prose prose-sm mt-4 max-w-none" v-html="grant.description" />
@@ -65,22 +72,25 @@
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                     <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
                   </svg>
-                  Вы выбрали этот грант
+                  Вы участвуете
                 </div>
                 <RButton variant="outline" size="sm" type="button" @click="unenroll">
-                  Отменить выбор
+                  Отменить участие
                 </RButton>
               </div>
             </template>
             <template v-else>
-              <div v-if="!isProfileComplete" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
-                <p class="text-sm font-medium text-amber-800">Для выбора гранта необходимо заполнить профиль</p>
+              <div v-if="isExpired" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <p class="text-sm font-medium text-red-800">Срок подачи заявок истёк</p>
+              </div>
+              <div v-else-if="!isProfileComplete" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                <p class="text-sm font-medium text-amber-800">Для участия необходимо заполнить профиль</p>
                 <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-1 inline-block text-sm font-medium text-rosatom-600 hover:underline">
                   Перейти в личный кабинет
                 </Link>
               </div>
               <RButton v-else variant="primary" @click="enroll">
-                Выбрать грант
+                Участвовать
               </RButton>
             </template>
           </div>
@@ -91,6 +101,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 
@@ -100,6 +111,21 @@ const props = defineProps({
   documents: Array,
   enrolled: Boolean,
   isProfileComplete: { type: Boolean, default: false },
+})
+
+const TYPE_LABELS = { grant: 'Грант', subsidy: 'Субсидия', credit: 'Кредит' }
+const TYPE_CLASSES = {
+  grant: 'bg-blue-50 text-blue-700',
+  subsidy: 'bg-violet-50 text-violet-700',
+  credit: 'bg-amber-50 text-amber-700',
+}
+
+const typeLabel = computed(() => TYPE_LABELS[props.grant?.type] || props.grant?.type)
+const typeBadgeClass = computed(() => TYPE_CLASSES[props.grant?.type] || 'bg-gray-50 text-gray-700')
+
+const isExpired = computed(() => {
+  if (!props.grant?.application_end) return false
+  return new Date(props.grant.application_end) < new Date()
 })
 
 function enroll() {

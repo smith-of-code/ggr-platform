@@ -9,6 +9,7 @@ use App\Models\Lms\LmsGrantDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,6 +39,8 @@ class GrantController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'type' => ['required', Rule::in(array_keys(LmsGrant::TYPES))],
+            'city' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'application_start' => ['nullable', 'date'],
             'application_end' => ['nullable', 'date'],
@@ -76,6 +79,8 @@ class GrantController extends Controller
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'type' => ['required', Rule::in(array_keys(LmsGrant::TYPES))],
+            'city' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'application_start' => ['nullable', 'date'],
             'application_end' => ['nullable', 'date'],

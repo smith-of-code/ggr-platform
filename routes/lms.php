@@ -68,6 +68,7 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
+    Route::delete('/courses/{course}/enroll', [CourseController::class, 'unenroll'])->name('courses.unenroll');
 
     // Course stages
     Route::get('/courses/{course}/stages/{stage}', [StageController::class, 'show'])->name('stages.show');
@@ -164,6 +165,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::get('courses/{course}/enrollments', [AdminEnrollmentController::class, 'courseEnrollments'])->name('enrollments.course');
         Route::post('enrollments/{enrollment}/approve', [AdminEnrollmentController::class, 'approve'])->name('enrollments.approve');
         Route::post('enrollments/{enrollment}/reject', [AdminEnrollmentController::class, 'reject'])->name('enrollments.reject');
+        Route::post('enrollments/{enrollment}/reassign', [AdminEnrollmentController::class, 'reassign'])->name('enrollments.reassign');
         Route::delete('enrollments/{enrollment}', [AdminEnrollmentController::class, 'destroy'])->name('enrollments.destroy');
         Route::resource('gamification', AdminGamificationController::class);
         Route::post('gamification/manual-points', [AdminGamificationController::class, 'manualPoints'])->name('gamification.manual-points');

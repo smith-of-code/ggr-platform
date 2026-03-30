@@ -17,10 +17,21 @@ class GrantController extends Controller
     public function index(LmsEvent $event): Response
     {
         $user = auth()->user();
+        $request = request();
 
-        $grants = LmsGrant::where('lms_event_id', $event->id)
-            ->where('is_active', true)
-            ->orderBy('position')
+        $query = LmsGrant::where('lms_event_id', $event->id)
+            ->where('is_active', true);
+
+        if ($type = $request->input('type')) {
+            $query->where('type', $type);
+        }
+
+        if ($city = $request->input('city')) {
+            $query->where('city', $city);
+        }
+
+        $grants = $query->orderByRaw("CASE WHEN application_end IS NOT NULL AND application_end < NOW() THEN 1 ELSE 0 END")
+            ->orderByRaw("CASE WHEN application_end IS NOT NULL THEN application_end ELSE '2999-12-31'::timestamp END ASC")
             ->get();
 
         $enrolledIds = LmsGrantEnrollment::where('user_id', $user->id)
@@ -29,7 +40,7 @@ class GrantController extends Controller
             ->toArray();
 
         $grantsData = $grants->map(fn ($g) => [
-            'grant' => $g->only(['id', 'title', 'description', 'application_start', 'application_end']),
+            'grant' => $g->only(['id', 'title', 'type', 'city', 'description', 'application_start', 'application_end']),
             'enrolled' => in_array($g->id, $enrolledIds),
         ]);
 
@@ -41,6 +52,10 @@ class GrantController extends Controller
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'grants' => $grantsData,
             'isProfileComplete' => $profile?->isProfileComplete() ?? false,
+            'filters' => [
+                'type' => $request->input('type', ''),
+                'city' => $request->input('city', ''),
+            ],
         ]);
     }
 
@@ -70,7 +85,7 @@ class GrantController extends Controller
 
         return Inertia::render('Lms/Grants/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
-            'grant' => $grant->only(['id', 'title', 'description', 'application_start', 'application_end']),
+            'grant' => $grant->only(['id', 'title', 'type', 'city', 'description', 'application_start', 'application_end']),
             'documents' => $documents,
             'enrolled' => $enrolled,
             'isProfileComplete' => $profile?->isProfileComplete() ?? false,

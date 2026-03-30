@@ -113,7 +113,7 @@ const sidebarItems = computed(() => {
       { id: 'tests', label: 'Тесты', icon: icons.tests },
       { id: 'assignments', label: 'Задания', icon: icons.assignments },
       { id: 'trajectories', label: 'Траектории', icon: icons.trajectories },
-      { id: 'grants', label: 'Гранты', icon: icons.grants },
+      { id: 'grants', label: 'Возможности', icon: icons.grants },
       { id: 'videos', label: 'Видео', icon: icons.videos },
       { id: 'kb', label: 'База знаний', icon: icons.kb },
       { id: 'materials', label: 'Материалы', icon: icons.materials },

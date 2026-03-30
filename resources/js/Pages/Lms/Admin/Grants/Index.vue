@@ -2,13 +2,13 @@
   <LmsAdminLayout :event="event">
     <div class="mb-8 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Гранты</h1>
-        <p class="mt-1 text-sm text-gray-500">Управление грантами и субсидиями</p>
+        <h1 class="text-2xl font-bold text-gray-900">Возможности</h1>
+        <p class="mt-1 text-sm text-gray-500">Управление грантами, субсидиями и кредитами</p>
       </div>
       <Link :href="route('lms.admin.grants.create', event.slug)">
         <RButton>
           <template #icon><PlusIcon class="h-4 w-4" /></template>
-          Создать грант
+          Создать
         </RButton>
       </Link>
     </div>
@@ -19,6 +19,7 @@
           <thead>
             <tr class="border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400">
               <th class="px-6 py-3 font-medium">Название</th>
+              <th class="px-6 py-3 font-medium">Тип</th>
               <th class="px-6 py-3 font-medium">Приём заявок</th>
               <th class="px-6 py-3 font-medium">Участники</th>
               <th class="px-6 py-3 font-medium">Статус</th>
@@ -28,6 +29,7 @@
           <tbody class="divide-y divide-gray-50">
             <tr v-for="g in grantsList" :key="g.id" class="transition hover:bg-gray-50/50">
               <td class="px-6 py-4 font-medium text-gray-900">{{ g.title }}</td>
+              <td class="px-6 py-4 text-gray-500">{{ typeLabels[g.type] || g.type }}</td>
               <td class="px-6 py-4 text-gray-500">{{ formatDateRange(g) }}</td>
               <td class="px-6 py-4 text-gray-500">{{ g.enrollments_count ?? 0 }}</td>
               <td class="px-6 py-4">
@@ -49,7 +51,7 @@
               </td>
             </tr>
             <tr v-if="!grantsList.length">
-              <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-400">Гранты не найдены</td>
+              <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-400">Возможности не найдены</td>
             </tr>
           </tbody>
         </table>
@@ -74,8 +76,10 @@ const grantsList = computed(() => {
   return Array.isArray(raw) ? raw : []
 })
 
+const typeLabels = { grant: 'Грант', subsidy: 'Субсидия', credit: 'Кредит' }
+
 function destroy(grant) {
-  if (!confirm(`Удалить грант «${grant.title}»?`)) return
+  if (!confirm(`Удалить «${grant.title}»?`)) return
   router.delete(route('lms.admin.grants.destroy', [props.event.slug, grant.id]))
 }
 
