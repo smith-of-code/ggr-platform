@@ -1,17 +1,15 @@
 <template>
   <MainLayout>
-    <Head title="Туры возможностей" />
+    <Head :title="heroTitle" />
 
     <!-- Цифры проекта -->
     <section class="bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-20 text-white sm:px-6 lg:px-8">
       <div class="mx-auto max-w-7xl text-center">
-        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Туры возможностей</h1>
-        <p class="mx-auto mt-4 max-w-2xl text-lg text-white/80">
-          Программа развития внутреннего туризма в атомных городах России
-        </p>
+        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">{{ heroTitle }}</h1>
+        <p class="mx-auto mt-4 max-w-2xl text-lg text-white/80">{{ heroDescription }}</p>
         <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div
-            v-for="stat in stats"
+            v-for="stat in statsData"
             :key="stat.label"
             class="rounded-2xl bg-white/10 px-6 py-8 backdrop-blur-sm transition hover:bg-white/15"
           >
@@ -31,7 +29,7 @@
           <Link
             v-for="d in directionsOrFallback"
             :key="d.slug || d.title"
-            :href="d.slug ? route('directions.show', d.slug) : '#'"
+            :href="d.slug ? route('directions.show', d.slug) : (d.link || '#')"
             class="group overflow-hidden rounded-2xl border border-gray-200 transition hover:border-[#003274]/30 hover:shadow-lg"
           >
             <div class="aspect-[16/9] overflow-hidden">
@@ -60,7 +58,7 @@
     </section>
 
     <!-- Видео туров -->
-    <section class="bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
+    <section v-if="videosData.length" class="bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-7xl">
         <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Видео туров</h2>
         <p class="mt-2 text-gray-500">Смотрите как проходят наши туры</p>
@@ -71,24 +69,39 @@
             style="scrollbar-width: none"
           >
             <div
-              v-for="(video, i) in videos"
+              v-for="(video, i) in videosData"
               :key="i"
               class="w-full flex-shrink-0 snap-center sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]"
             >
-              <div class="overflow-hidden rounded-2xl bg-white shadow-sm">
-                <div class="aspect-video">
-                  <iframe
-                    :src="video.embedUrl"
-                    class="h-full w-full"
-                    frameborder="0"
-                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                    allowfullscreen
+              <button
+                type="button"
+                class="group w-full overflow-hidden rounded-2xl bg-white text-left shadow-sm transition hover:shadow-lg"
+                @click="openVideoModal(video)"
+              >
+                <div class="relative aspect-video bg-gray-200">
+                  <img
+                    v-if="video.thumbnail"
+                    :src="video.thumbnail"
+                    :alt="video.title"
+                    class="h-full w-full object-cover"
                   />
+                  <div v-else class="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                    <svg class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                  </div>
+                  <div class="absolute inset-0 flex items-center justify-center bg-black/20 transition group-hover:bg-black/30">
+                    <div class="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 shadow-lg transition group-hover:scale-110">
+                      <svg class="ml-1 h-6 w-6 text-[#003274]" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
                 <div class="p-4">
                   <h3 class="font-semibold text-gray-900">{{ video.title }}</h3>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
           <button
@@ -111,13 +124,69 @@
       </div>
     </section>
 
+    <!-- Модальное окно видео -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200"
+        enter-from-class="opacity-0"
+        leave-active-class="transition duration-200"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="activeVideo"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          @click.self="closeVideoModal"
+        >
+          <Transition
+            enter-active-class="transition duration-200"
+            enter-from-class="scale-95 opacity-0"
+            leave-active-class="transition duration-200"
+            leave-to-class="scale-95 opacity-0"
+          >
+            <div v-if="activeVideo" class="relative w-full max-w-4xl">
+              <button
+                type="button"
+                @click="closeVideoModal"
+                class="absolute -right-2 -top-10 rounded-full p-1.5 text-white/80 transition hover:text-white"
+              >
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div class="overflow-hidden rounded-2xl bg-black">
+                <div class="aspect-video">
+                  <video
+                    v-if="activeVideo.videoFile"
+                    :src="activeVideo.videoFile"
+                    controls
+                    autoplay
+                    class="h-full w-full"
+                    :poster="activeVideo.thumbnail || undefined"
+                  />
+                  <iframe
+                    v-else-if="activeVideo.embedUrl"
+                    :src="activeVideo.embedUrl"
+                    class="h-full w-full"
+                    frameborder="0"
+                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                    allowfullscreen
+                  />
+                </div>
+              </div>
+              <p v-if="activeVideo.title" class="mt-3 text-center text-lg font-semibold text-white">{{ activeVideo.title }}</p>
+            </div>
+          </Transition>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Как принять участие -->
-    <section class="bg-white px-4 py-16 sm:px-6 lg:px-8">
+    <section v-if="stepsData.length" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-7xl">
         <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Как принять участие</h2>
         <p class="mt-2 text-gray-500">Три простых шага для участия в программе</p>
         <div class="mt-10 grid gap-8 lg:grid-cols-3">
-          <div v-for="(step, i) in participationSteps" :key="i" class="relative rounded-2xl border border-gray-200 p-8">
+          <div v-for="(step, i) in stepsData" :key="i" class="relative rounded-2xl border border-gray-200 p-8">
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#003274] text-lg font-bold text-white">
               {{ i + 1 }}
             </div>
@@ -140,17 +209,17 @@
     </section>
 
     <!-- Счётчик эмоций -->
-    <section class="bg-gradient-to-r from-[#003274] to-[#025ea1] px-4 py-16 text-white sm:px-6 lg:px-8">
+    <section v-if="emotionsData.length" class="bg-gradient-to-r from-[#003274] to-[#025ea1] px-4 py-16 text-white sm:px-6 lg:px-8">
       <div class="mx-auto max-w-7xl text-center">
         <h2 class="text-2xl font-bold sm:text-3xl">Счётчик эмоций</h2>
         <p class="mx-auto mt-2 max-w-xl text-white/70">Впечатления участников наших туров</p>
         <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
           <div
-            v-for="emotion in emotions"
+            v-for="emotion in emotionsData"
             :key="emotion.label"
             class="rounded-2xl bg-white/10 px-4 py-6 backdrop-blur-sm"
           >
-            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/15" v-html="emotion.icon" />
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/15" v-html="emotionIconSvg(emotion.icon)" />
             <p class="mt-3 text-2xl font-bold">{{ emotion.count }}</p>
             <p class="mt-1 text-sm text-white/70">{{ emotion.label }}</p>
           </div>
@@ -267,20 +336,20 @@
     </section>
 
     <!-- Социальные сети -->
-    <section class="bg-white px-4 py-16 sm:px-6 lg:px-8">
+    <section v-if="socialsData.length" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-7xl text-center">
         <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Мы в социальных сетях</h2>
         <p class="mt-2 text-gray-500">Следите за нашими новостями</p>
         <div class="mt-10 flex flex-wrap justify-center gap-4">
           <a
-            v-for="social in socials"
+            v-for="social in socialsData"
             :key="social.name"
             :href="social.url"
             target="_blank"
             rel="noopener noreferrer"
             class="flex items-center gap-3 rounded-xl border border-gray-200 px-6 py-4 transition hover:border-[#003274]/30 hover:shadow-md"
           >
-            <span class="text-2xl" v-html="social.icon" />
+            <span class="text-2xl" v-html="socialIconSvg(social.icon)" />
             <span class="font-medium text-gray-700">{{ social.name }}</span>
           </a>
         </div>
@@ -288,12 +357,12 @@
     </section>
 
     <!-- FAQ -->
-    <section class="bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
+    <section v-if="faqData.length" class="bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-3xl">
         <h2 class="text-center text-2xl font-bold text-gray-900 sm:text-3xl">Ответы на популярные вопросы</h2>
         <div class="mt-10 space-y-3">
           <div
-            v-for="(item, i) in faq"
+            v-for="(item, i) in faqData"
             :key="i"
             class="overflow-hidden rounded-xl border border-gray-200 bg-white"
           >
@@ -322,7 +391,7 @@
               leave-to-class="max-h-0 opacity-0"
             >
               <div v-if="openFaq === i" class="overflow-hidden">
-                <p class="px-6 pb-5 leading-relaxed text-gray-600">{{ item.answer }}</p>
+                <div class="faq-answer px-6 pb-5 leading-relaxed text-gray-600" v-html="item.answer" />
               </div>
             </Transition>
           </div>
@@ -330,22 +399,32 @@
       </div>
     </section>
 
-    <!-- Партнёры -->
-    <section class="bg-white px-4 py-16 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-7xl text-center">
+    <!-- Партнёры — бесконечная карусель -->
+    <section v-if="partnersData.length" class="overflow-hidden bg-white py-16">
+      <div class="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
         <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Партнёры</h2>
         <p class="mt-2 text-gray-500">Организации, поддерживающие программу</p>
-        <div class="mt-10 grid grid-cols-2 items-center gap-8 sm:grid-cols-3 lg:grid-cols-6">
-          <div
-            v-for="partner in partners"
-            :key="partner.name"
-            class="flex flex-col items-center gap-3 rounded-xl px-4 py-6 transition hover:bg-gray-50"
+      </div>
+      <div class="partners-carousel mt-10">
+        <div class="partners-track">
+          <component
+            v-for="(partner, i) in [...partnersData, ...partnersData]"
+            :key="'p' + i"
+            :is="partner.url ? 'a' : 'div'"
+            :href="partner.url || undefined"
+            :target="partner.url ? '_blank' : undefined"
+            :rel="partner.url ? 'noopener noreferrer' : undefined"
+            class="flex h-32 w-[320px] flex-shrink-0 items-center justify-center px-6 transition hover:opacity-60"
+            :title="partner.name"
           >
-            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-2xl font-bold text-[#003274]">
-              {{ partner.name.charAt(0) }}
-            </div>
-            <span class="text-sm font-medium text-gray-700">{{ partner.name }}</span>
-          </div>
+            <img
+              v-if="partner.logo"
+              :src="partner.logo"
+              :alt="partner.name"
+              class="max-h-full max-w-full object-contain"
+            />
+            <span v-else class="text-lg font-semibold text-gray-400">{{ partner.name }}</span>
+          </component>
         </div>
       </div>
     </section>
@@ -356,89 +435,102 @@
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import { emotionIcon, socialIcon } from '@/utils/opportunityToursIcons'
 
 const props = defineProps({
   featuredTours: { type: Array, default: () => [] },
   directions: { type: Array, default: () => [] },
+  pageData: { type: Object, default: () => ({}) },
 })
+
+const d = props.pageData
+
+const heroTitle = computed(() => d.hero_title || 'Туры возможностей')
+const heroDescription = computed(() => d.hero_description || 'Программа развития внутреннего туризма в атомных городах России')
+const statsData = computed(() => d.stats?.length ? d.stats : defaultStats)
+const emotionsData = computed(() => d.emotions?.length ? d.emotions : defaultEmotions)
+const partnersData = computed(() => d.partners?.length ? d.partners : defaultPartners)
+const socialsData = computed(() => d.socials?.length ? d.socials : defaultSocials)
+const faqData = computed(() => d.faq?.length ? d.faq : defaultFaq)
+const videosData = computed(() => d.videos?.length ? d.videos : defaultVideos)
+const stepsData = computed(() => d.participation_steps?.length ? d.participation_steps : defaultSteps)
 
 const directionsOrFallback = computed(() => {
+  const projects = d.projects
+  if (projects?.length) {
+    return projects
+      .map(p => {
+        if (p.type === 'direction') {
+          const dir = props.directions.find(dd => dd.id === Number(p.direction_id))
+          return dir || null
+        }
+        return {
+          title: p.title,
+          description: p.description,
+          image: p.image || null,
+          slug: null,
+          link: p.link || null,
+        }
+      })
+      .filter(Boolean)
+  }
   if (props.directions.length) return props.directions
-  return projects
+  return defaultProjects
 })
 
-const stats = [
+const defaultStats = [
   { value: '47', label: 'Туров реализовано' },
   { value: '12 000+', label: 'Гостей посетило атомные города' },
   { value: '15', label: 'Городов участвовало в 2025 году' },
   { value: '20', label: 'Городов участвует в 2026 году' },
 ]
 
-const projects = [
-  {
-    image: 'https://loremflickr.com/800/450/city,architecture',
-    title: 'Старт в Атомград',
-    description: 'Программа знакомства с атомными городами России. Уникальная возможность увидеть современные технологии и богатую историю городов атомной промышленности.',
-    link: '#',
-  },
-  {
-    image: 'https://loremflickr.com/800/450/food,cooking',
-    title: 'Атомы вкуса',
-    description: 'Гастрономический проект, раскрывающий кулинарные традиции атомных городов. Авторские рецепты, мастер-классы и дегустации от лучших шеф-поваров.',
-    link: '#',
-  },
-  {
-    image: 'https://loremflickr.com/800/450/team,professionals',
-    title: 'Лучшие люди Росатома',
-    description: 'Истории людей, которые создают будущее. Встречи с учёными, инженерами и руководителями, посвятившими жизнь развитию атомной отрасли.',
-    link: '#',
-  },
+const defaultEmotions = [
+  { icon: 'heart', count: '8 540', label: 'Нравится' },
+  { icon: 'eye', count: '3 210', label: 'Удивление' },
+  { icon: 'fire', count: '5 780', label: 'Огонь' },
+  { icon: 'thumbs-up', count: '4 120', label: 'Круто' },
+  { icon: 'star', count: '6 350', label: 'Восторг' },
 ]
 
-const videos = [
+const defaultProjects = [
+  { title: 'Старт в Атомград', description: 'Программа знакомства с атомными городами России.' },
+  { title: 'Атомы вкуса', description: 'Гастрономический проект, раскрывающий кулинарные традиции.' },
+  { title: 'Лучшие люди Росатома', description: 'Истории людей, которые создают будущее.' },
+]
+
+const defaultPartners = [
+  { name: 'Росатом', url: 'https://rosatom.ru', logo: null },
+  { name: 'ТВЭЛ', url: 'https://tvel.ru', logo: null },
+  { name: 'АРМЗ', url: 'https://armz.ru', logo: null },
+]
+
+const defaultSocials = [
+  { name: 'ВКонтакте', url: 'https://vk.com/rosatom_travel', icon: 'vk' },
+  { name: 'Telegram', url: 'https://t.me/rosatom_travel', icon: 'telegram' },
+]
+
+const defaultFaq = [
+  { question: 'Кто может принять участие в турах?', answer: 'Участие открыто для всех желающих старше 18 лет.' },
+]
+
+const defaultVideos = [
   { title: 'Тур в Саров', embedUrl: 'https://vk.com/video_ext.php?oid=-200000000&id=456239000&hd=2' },
-  { title: 'Тур в Обнинск', embedUrl: 'https://vk.com/video_ext.php?oid=-200000000&id=456239001&hd=2' },
-  { title: 'Тур в Озёрск', embedUrl: 'https://vk.com/video_ext.php?oid=-200000000&id=456239002&hd=2' },
-  { title: 'Тур в Северск', embedUrl: 'https://vk.com/video_ext.php?oid=-200000000&id=456239003&hd=2' },
 ]
 
-const participationSteps = [
-  {
-    title: 'Зарегистрируйтесь',
-    description: 'Создайте личный кабинет на платформе, заполните профиль и укажите свои интересы для подбора подходящего тура.',
-  },
-  {
-    title: 'Выберите тур',
-    description: 'Ознакомьтесь с каталогом доступных туров, выберите подходящие даты и направление. Подайте заявку на участие.',
-  },
-  {
-    title: 'Отправляйтесь в путешествие',
-    description: 'Получите подтверждение участия, подготовьтесь к поездке по нашим рекомендациям и наслаждайтесь незабываемым путешествием.',
-  },
+const defaultSteps = [
+  { title: 'Зарегистрируйтесь', description: 'Создайте личный кабинет на платформе.' },
+  { title: 'Выберите тур', description: 'Ознакомьтесь с каталогом доступных туров.' },
+  { title: 'Отправляйтесь в путешествие', description: 'Получите подтверждение и наслаждайтесь путешествием.' },
 ]
 
-const emotions = [
-  {
-    icon: '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" /></svg>',
-    count: '8 540', label: 'Нравится',
-  },
-  {
-    icon: '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>',
-    count: '3 210', label: 'Удивление',
-  },
-  {
-    icon: '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z" /></svg>',
-    count: '5 780', label: 'Огонь',
-  },
-  {
-    icon: '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V3a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m7.348-7.052a9.024 9.024 0 0 0-5.197-2.353M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z" /></svg>',
-    count: '4 120', label: 'Круто',
-  },
-  {
-    icon: '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>',
-    count: '6 350', label: 'Восторг',
-  },
-]
+function emotionIconSvg(key) {
+  return emotionIcon(key, 'h-6 w-6 text-white')
+}
+
+function socialIconSvg(key) {
+  return socialIcon(key, 'h-6 w-6')
+}
 
 function projectLabel(key) {
   const labels = { start_atomgrad: 'Старт в Атомград', atoms_vkusa: 'Атомы вкуса', llr: 'Лучшие люди Росатома' }
@@ -450,51 +542,10 @@ function formatPrice(value) {
   return new Intl.NumberFormat('ru-RU').format(value)
 }
 
-const socials = [
-  { name: 'ВКонтакте', url: 'https://vk.com/rosatom_travel', icon: '<svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.391 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.12-5.335-3.202C4.624 10.857 4.03 8.57 4.03 8.096c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.678.847 2.49 2.27 4.675 2.862 4.675.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.204.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.254-1.406 2.15-3.574 2.15-3.574.119-.254.322-.491.762-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z"/></svg>' },
-  { name: 'Telegram', url: 'https://t.me/rosatom_travel', icon: '<svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>' },
-  { name: 'YouTube', url: 'https://youtube.com/@rosatom_travel', icon: '<svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>' },
-]
-
-const faq = [
-  {
-    question: 'Кто может принять участие в турах?',
-    answer: 'Участие в турах открыто для всех желающих старше 18 лет. Для некоторых туров в закрытые города может потребоваться предварительное оформление пропуска, о чём мы информируем заранее.',
-  },
-  {
-    question: 'Как подать заявку на тур?',
-    answer: 'Зарегистрируйтесь на платформе, перейдите в каталог туров, выберите интересующий тур и нажмите кнопку «Оставить заявку». Наш менеджер свяжется с вами для уточнения деталей.',
-  },
-  {
-    question: 'Включено ли проживание в стоимость тура?',
-    answer: 'В большинстве туров проживание включено в стоимость. Точная информация о том, что входит в стоимость, указана в описании каждого конкретного тура.',
-  },
-  {
-    question: 'Можно ли участвовать с детьми?',
-    answer: 'Да, некоторые туры адаптированы для семейного посещения. В каталоге используйте фильтр «Для детей», чтобы найти подходящие программы.',
-  },
-  {
-    question: 'Как отменить или перенести участие?',
-    answer: 'Вы можете отменить участие не позднее чем за 7 дней до начала тура через личный кабинет или связавшись с нашей службой поддержки. Перенос на другие даты возможен при наличии свободных мест.',
-  },
-  {
-    question: 'Предоставляется ли трансфер?',
-    answer: 'В большинстве туров трансфер от вокзала/аэропорта до места размещения включён. Подробности указаны в описании каждого тура.',
-  },
-]
-
-const partners = [
-  { name: 'Росатом' },
-  { name: 'ТВЭЛ' },
-  { name: 'АРМЗ' },
-  { name: 'АСЭ' },
-  { name: 'РАСУ' },
-  { name: 'Атомэнергопроект' },
-]
-
 const openFaq = ref(null)
 const videoSlider = ref(null)
 const toursSlider = ref(null)
+const activeVideo = ref(null)
 
 function toggleFaq(index) {
   openFaq.value = openFaq.value === index ? null : index
@@ -511,4 +562,45 @@ function scrollTours(direction) {
   const cardWidth = toursSlider.value.firstElementChild?.offsetWidth ?? 300
   toursSlider.value.scrollBy({ left: direction * (cardWidth + 24), behavior: 'smooth' })
 }
+
+function openVideoModal(video) {
+  if (!video.videoFile && !video.embedUrl) return
+  activeVideo.value = video
+  document.body.style.overflow = 'hidden'
+}
+
+function closeVideoModal() {
+  activeVideo.value = null
+  document.body.style.overflow = ''
+}
 </script>
+
+<style scoped>
+.faq-answer :deep(a) {
+  color: #003274;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+.faq-answer :deep(a:hover) {
+  color: #025ea1;
+}
+
+.partners-carousel {
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+.partners-track {
+  display: flex;
+  width: max-content;
+  animation: scroll-partners 25s linear infinite;
+}
+.partners-track:hover {
+  animation-play-state: paused;
+}
+@keyframes scroll-partners {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+</style>

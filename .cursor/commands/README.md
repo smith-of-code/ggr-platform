@@ -79,6 +79,22 @@ scope: my-feature | module | путь   (опц.)
 
 ---
 
+## /feature-review — Правки от заказчика
+
+Обрабатывает замечания/пожелания заказчика по существующей фиче: классифицирует, обновляет спеку, создаёт задачи и выполняет их.
+
+```
+slug: my-feature
+feedback: "1) Кнопка «Сохранить» должна быть зелёной. 2) Добавить фильтр по дате. 3) Непонятно что за поле «Код»."
+mode: normal | fast   (по умолчанию normal)
+max_steps: 5          (только для fast)
+```
+
+Классификация каждой правки: UI_TWEAK, BEHAVIOR_CHANGE, NEW_REQUIREMENT, CLARIFICATION, OUT_OF_SCOPE, ALREADY_DONE.
+Неясные формулировки записываются в open-questions для уточнения у заказчика.
+
+---
+
 ## /refactor — Рефакторинг
 
 Улучшает структуру кода без изменения поведения.
@@ -117,6 +133,8 @@ role: участник | админ | гость  (опц.)
 /feature-work   slug=my-feature mode=fast          (пакетно)
                     ↓
 /feature-fix    slug=my-feature issue="..."        (если баг)
+                    ↓
+/feature-review slug=my-feature feedback="..."     (правки заказчика)
                     ↓
 /e2e-cases      scope=my-feature                   (тесткейсы)
                     ↓
