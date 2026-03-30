@@ -41,6 +41,15 @@ class SettingsService
         );
     }
 
+    public function getGroupFresh(string $group): array
+    {
+        if (! $this->tableExists()) {
+            return [];
+        }
+
+        return Setting::getGroup($group);
+    }
+
     public function setGroup(string $group, array $values): void
     {
         Setting::setGroup($group, $values);
