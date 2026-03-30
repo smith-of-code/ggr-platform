@@ -47,6 +47,22 @@
         v-html="post.content"
       />
 
+      <!-- Видео -->
+      <div v-if="postVideos.length" class="mt-10 border-t border-gray-200 pt-8">
+        <p class="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Видео</p>
+        <div class="grid gap-6" :class="postVideos.length > 1 ? 'sm:grid-cols-2' : ''">
+          <div v-for="(video, vi) in postVideos" :key="vi" class="aspect-video overflow-hidden rounded-xl bg-gray-100">
+            <iframe
+              :src="embedUrl(video)"
+              class="h-full w-full"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            />
+          </div>
+        </div>
+      </div>
+
       <div v-if="tags.length" class="mt-10 border-t border-gray-200 pt-8">
         <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Теги</p>
         <div class="flex flex-wrap gap-2">
@@ -140,6 +156,7 @@ const CATEGORY_LABELS = {
   news: 'Новости программы',
   announcements: 'Анонсы',
   partner_articles: 'Статьи партнёров',
+  atoms_vkusa: 'Атомы вкуса',
 }
 
 const props = defineProps({
@@ -152,6 +169,23 @@ const tags = computed(() => {
   if (!t) return []
   return Array.isArray(t) ? t : []
 })
+
+const postVideos = computed(() => {
+  const v = props.post?.videos
+  if (!v) return []
+  return Array.isArray(v) ? v.filter(Boolean) : []
+})
+
+function embedUrl(url) {
+  if (!url) return ''
+  // YouTube
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/)
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
+  // RuTube
+  const rtMatch = url.match(/rutube\.ru\/video\/([a-zA-Z0-9]+)/)
+  if (rtMatch) return `https://rutube.ru/play/embed/${rtMatch[1]}`
+  return url
+}
 
 function categoryLabel(key) {
   return CATEGORY_LABELS[key] ?? key ?? ''

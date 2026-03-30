@@ -119,7 +119,11 @@ const blockTypeBadges = {
 
 function blockTypeLabel(type) { return blockTypeLabels[type] || type }
 function blockTypeBadge(type) { return blockTypeBadges[type] || 'bg-gray-100 text-gray-700' }
-function stripHtml(html) { return html ? html.replace(/<[^>]*>/g, '') : '' }
+function stripHtml(html) {
+  if (!html) return ''
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  return (doc.body.textContent || '').replace(/\s+/g, ' ').trim()
+}
 
 const emit = defineEmits(['close', 'select'])
 

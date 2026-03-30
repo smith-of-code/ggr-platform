@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\DirectionController as AdminDirectionController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BlogSubscriptionController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\DirectionController;
 use App\Http\Controllers\EducationController;
@@ -36,11 +37,12 @@ Route::get('/cities', [CityController::class, 'index'])->name('cities.index');
 Route::get('/cities/{slug}', [CityController::class, 'show'])->name('cities.show');
 Route::get('/tours', [TourController::class, 'index'])->name('tours.index');
 Route::get('/tours/{slug}', [TourController::class, 'show'])->name('tours.show');
-Route::post('/tours/{tour}/react', [TourController::class, 'react'])->name('tours.react');
 Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
 Route::post('/contact', [HomeController::class, 'contactSubmit'])->name('contact.submit');
 
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::post('/blog/subscribe', [BlogSubscriptionController::class, 'subscribe'])->name('blog.subscribe');
+Route::get('/blog/unsubscribe/{token}', [BlogSubscriptionController::class, 'unsubscribe'])->name('blog.unsubscribe');
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/vshgr', [EducationController::class, 'index'])->name('education.index');
@@ -67,6 +69,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/favorites/{type}/{id}', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
 
+    Route::post('/tours/{tour}/react', [TourController::class, 'react'])->name('tours.react');
     Route::post('/tours/{tour}/reviews', [TourReviewController::class, 'store'])->name('tours.reviews.store');
 });
 

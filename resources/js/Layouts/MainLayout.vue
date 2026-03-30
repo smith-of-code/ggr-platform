@@ -7,97 +7,48 @@
     >
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 items-center justify-between">
-          <Link :href="route('home')" class="flex items-center gap-2.5 transition hover:opacity-80">
+          <Link :href="route('home')" class="flex shrink-0 items-center gap-2 transition hover:opacity-80">
             <img src="/images/logo-icon.svg" alt="ГГР" class="h-9 w-auto" />
-            <span class="hidden text-lg font-bold text-[#003274] sm:block">Росатом Travel</span>
+            <span class="hidden text-lg font-bold text-[#003274] lg:block">Росатом Travel</span>
           </Link>
 
           <!-- Desktop nav -->
-          <nav class="hidden items-center gap-1 md:flex">
-            <Link
-              :href="route('home')"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
-              :class="{ 'bg-blue-50 text-[#003274]': $page.url === '/' }"
-            >
-              Главная
-            </Link>
-            <Link
-              :href="route('cities.index')"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
-              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/cities') }"
-            >
-              Города
-            </Link>
-            <Link
-              :href="route('tours.index')"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
-              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/tours') }"
-            >
-              Туры
-            </Link>
-            <Link
-              :href="route('opportunity-tours.index')"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
-              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/opportunity-tours') }"
-            >
-              Туры возможностей
-            </Link>
-            <Link
-              :href="route('education.index')"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
-              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/vshgr') }"
-            >
-              ВШГР
-            </Link>
-            <Link
-              :href="route('research.index')"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
-              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/research') }"
-            >
-              Исследования
-            </Link>
-            <Link
-              :href="route('recipes.index')"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
-              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/recipes') }"
-            >
-              Атомы вкуса
-            </Link>
-            <Link
-              :href="route('blog.index')"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
-              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/blog') }"
-            >
-              Блог
-            </Link>
-            <Link
-              :href="route('vacancies.index')"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
-              :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/vacancies') }"
-            >
-              Вакансии
-            </Link>
-            <div class="ml-2 h-6 w-px bg-gray-200" />
+          <nav class="hidden flex-1 items-center justify-center lg:flex">
+            <div class="flex items-center gap-0.5">
+              <Link
+                v-for="item in navItems"
+                :key="item.href"
+                :href="item.href"
+                class="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274] xl:px-3"
+                :class="{ 'bg-[#003274]/5 text-[#003274] font-semibold': item.active }"
+              >
+                {{ item.label }}
+              </Link>
+            </div>
+          </nav>
+
+          <!-- Auth button (desktop) -->
+          <div class="hidden shrink-0 lg:flex">
             <Link
               v-if="$page.props.auth?.user"
               :href="route('admin.dashboard')"
-              class="ml-2 rounded-lg bg-[#003274] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#025ea1]"
+              class="rounded-lg bg-[#003274] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#025ea1]"
             >
               Админка
             </Link>
             <Link
               v-else
               :href="route('login')"
-              class="ml-2 rounded-lg border border-[#003274] px-4 py-2 text-sm font-medium text-[#003274] transition hover:bg-[#003274] hover:text-white"
+              class="rounded-lg border border-[#003274] px-4 py-2 text-sm font-medium text-[#003274] transition hover:bg-[#003274] hover:text-white"
             >
               Вход
             </Link>
-          </nav>
+          </div>
 
           <!-- Mobile menu button -->
           <button
             @click="mobileOpen = !mobileOpen"
-            class="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 md:hidden"
+            class="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 lg:hidden"
           >
             <svg v-if="!mobileOpen" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -118,10 +69,10 @@
         leave-from-class="translate-y-0 opacity-100"
         leave-to-class="-translate-y-2 opacity-0"
       >
-        <div v-if="mobileOpen" class="border-t border-gray-200 bg-white px-4 pb-4 pt-2 md:hidden">
+        <div v-if="mobileOpen" class="border-t border-gray-200 bg-white px-4 pb-4 pt-2 lg:hidden">
           <Link :href="route('home')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Главная</Link>
           <Link :href="route('cities.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Города</Link>
-          <Link :href="route('tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Туры</Link>
+          <Link :href="route('tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Каталог туров</Link>
           <Link :href="route('opportunity-tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Туры возможностей</Link>
           <Link :href="route('education.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">ВШГР</Link>
           <Link :href="route('research.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Исследования</Link>
@@ -169,7 +120,7 @@
             <div class="mt-4 flex flex-col gap-3">
               <Link :href="route('home')" class="text-sm text-gray-500 transition hover:text-[#003274]">Главная</Link>
               <Link :href="route('cities.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Города</Link>
-              <Link :href="route('tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Туры</Link>
+              <Link :href="route('tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Каталог туров</Link>
               <Link :href="route('opportunity-tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Туры возможностей</Link>
               <Link :href="route('education.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">ВШГР</Link>
               <Link :href="route('research.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Исследования</Link>
@@ -197,11 +148,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { Link, usePage } from '@inertiajs/vue3'
 
+const page = usePage()
 const mobileOpen = ref(false)
 const scrolled = ref(false)
+
+const navItems = computed(() => [
+  { label: 'Главная', href: route('home'), active: page.url === '/' },
+  { label: 'Города', href: route('cities.index'), active: page.url.startsWith('/cities') },
+  { label: 'Каталог туров', href: route('tours.index'), active: page.url.startsWith('/tours') },
+  { label: 'Туры возможностей', href: route('opportunity-tours.index'), active: page.url.startsWith('/opportunity-tours') },
+  { label: 'ВШГР', href: route('education.index'), active: page.url.startsWith('/vshgr') },
+  { label: 'Исследования', href: route('research.index'), active: page.url.startsWith('/research') },
+  { label: 'Атомы вкуса', href: route('recipes.index'), active: page.url.startsWith('/recipes') },
+  { label: 'Блог', href: route('blog.index'), active: page.url.startsWith('/blog') },
+  { label: 'Вакансии', href: route('vacancies.index'), active: page.url.startsWith('/vacancies') },
+])
 
 function onScroll() {
   scrolled.value = window.scrollY > 10

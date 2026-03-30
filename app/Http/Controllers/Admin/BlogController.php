@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendNewPostNotifications;
 use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,13 +42,20 @@ class BlogController extends Controller
             'category' => ['required', Rule::in(array_keys(Post::CATEGORIES))],
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:255',
+            'videos' => 'nullable|array',
+            'videos.*' => 'nullable|url|max:2048',
             'is_published' => 'boolean',
         ]);
 
         $validated['is_published'] = $request->boolean('is_published');
         $validated['published_at'] = $validated['is_published'] ? now() : null;
+        $validated['videos'] = array_values(array_filter($validated['videos'] ?? []));
 
-        Post::create($validated);
+        $post = Post::create($validated);
+
+        if ($post->is_published) {
+            SendNewPostNotifications::dispatch($post);
+        }
 
         return redirect()->route('admin.blog.index')->with('success', 'Запись создана');
     }
@@ -71,6 +79,8 @@ class BlogController extends Controller
             'category' => ['required', Rule::in(array_keys(Post::CATEGORIES))],
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:255',
+            'videos' => 'nullable|array',
+            'videos.*' => 'nullable|url|max:2048',
             'is_published' => 'boolean',
         ]);
 
@@ -78,8 +88,14 @@ class BlogController extends Controller
         $validated['published_at'] = $validated['is_published']
             ? ($post->published_at ?? now())
             : null;
+        $validated['videos'] = array_values(array_filter($validated['videos'] ?? []));
 
+        $wasPublished = $post->is_published;
         $post->update($validated);
+
+        if (!$wasPublished && $post->is_published) {
+            SendNewPostNotifications::dispatch($post);
+        }
 
         return redirect()->route('admin.blog.index')->with('success', 'Запись обновлена');
     }
@@ -93,11 +109,16 @@ class BlogController extends Controller
 
     public function togglePublish(Post $post): RedirectResponse
     {
-        $isPublished = !$post->is_published;
+        $wasPublished = $post->is_published;
+        $isPublished = !$wasPublished;
         $post->update([
             'is_published' => $isPublished,
             'published_at' => $isPublished ? ($post->published_at ?? now()) : null,
         ]);
+
+        if (!$wasPublished && $isPublished) {
+            SendNewPostNotifications::dispatch($post);
+        }
 
         return redirect()->back()->with(
             'success',

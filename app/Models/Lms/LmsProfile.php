@@ -78,31 +78,51 @@ class LmsProfile extends Model
 
     public function isProfileComplete(): bool
     {
+        return count($this->getMissingFields()) === 0;
+    }
+
+    public function getMissingFields(): array
+    {
+        $missing = [];
         $user = $this->user;
 
-        if (! $user?->last_name || ! $user?->first_name || ! $user?->email) {
-            return false;
+        if (! $user || ! $user->last_name) {
+            $missing[] = 'Фамилия';
+        }
+        if (! $user || ! $user->first_name) {
+            $missing[] = 'Имя';
+        }
+        if (! $user || ! $user->email) {
+            $missing[] = 'Email';
+        }
+        if (! $this->phone) {
+            $missing[] = 'Телефон';
+        }
+        if (! $this->city) {
+            $missing[] = 'Город';
+        }
+        if (! $this->organization) {
+            $missing[] = 'Организация';
+        }
+        if (! $this->position) {
+            $missing[] = 'Должность';
         }
 
-        if (! $this->phone || ! $this->city_id || ! $this->organization || ! $this->position) {
-            return false;
-        }
-
-        $requiredDocs = [
-            LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION,
-            LmsProfileDocument::TYPE_SNILS,
-            LmsProfileDocument::TYPE_DIPLOMA,
-            LmsProfileDocument::TYPE_PERSONAL_DATA_CONSENT,
+        $docLabels = [
+            LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION => 'Заявление на зачисление',
+            LmsProfileDocument::TYPE_SNILS => 'СНИЛС',
+            LmsProfileDocument::TYPE_DIPLOMA => 'Диплом',
+            LmsProfileDocument::TYPE_PERSONAL_DATA_CONSENT => 'Согласие на обработку ПД',
         ];
 
         $uploadedTypes = $this->documents()->pluck('type')->toArray();
 
-        foreach ($requiredDocs as $type) {
+        foreach ($docLabels as $type => $label) {
             if (! in_array($type, $uploadedTypes)) {
-                return false;
+                $missing[] = $label . ' (документ)';
             }
         }
 
-        return true;
+        return $missing;
     }
 }

@@ -60,6 +60,7 @@
           <RichTextEditor
             v-model="form.content"
             label="Содержание *"
+            :upload-url="route('admin.upload.image')"
           />
           <p v-if="form.errors.content" class="mt-1 text-sm text-red-600">{{ form.errors.content }}</p>
         </div>
@@ -77,6 +78,27 @@
           placeholder="через запятую: туры, атомград"
           :error="form.errors.tags"
         />
+
+        <!-- Видео -->
+        <div>
+          <label class="mb-2 block text-sm font-semibold text-gray-700">Видео (YouTube / RuTube)</label>
+          <div v-for="(video, vi) in form.videos" :key="vi" class="mb-2 flex items-center gap-2">
+            <input
+              v-model="form.videos[vi]"
+              type="url"
+              placeholder="https://www.youtube.com/watch?v=..."
+              class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#003274]/10"
+            />
+            <button type="button" @click="removeVideo(vi)" class="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-600">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <button type="button" @click="addVideo" class="mt-1 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-[#003274] transition hover:bg-[#003274]/5">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            Добавить видео
+          </button>
+          <p v-if="form.errors.videos" class="mt-1 text-sm text-red-600">{{ form.errors.videos }}</p>
+        </div>
 
         <RCheckbox v-model="form.is_published" label="Опубликовано" />
 
@@ -140,8 +162,17 @@ const form = useForm({
   content: props.post?.content ?? '',
   image: props.post?.image ?? '',
   tags: props.post?.tags?.length ? [...props.post.tags] : [],
+  videos: props.post?.videos?.length ? [...props.post.videos] : [],
   is_published: props.post?.is_published ?? false,
 })
+
+function addVideo() {
+  form.videos = [...form.videos, '']
+}
+
+function removeVideo(index) {
+  form.videos = form.videos.filter((_, i) => i !== index)
+}
 
 const tagsJoined = computed({
   get() {

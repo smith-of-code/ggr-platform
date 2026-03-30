@@ -104,45 +104,24 @@ class TourController extends Controller
         $emojiKey = $validated['emoji'];
 
         DB::transaction(function () use ($request, $tour, $emojiKey): void {
-            if ($request->user()) {
-                $existing = TourReaction::query()
-                    ->where('tour_id', $tour->id)
-                    ->where('user_id', $request->user()->id)
-                    ->first();
+            $existing = TourReaction::query()
+                ->where('tour_id', $tour->id)
+                ->where('user_id', $request->user()->id)
+                ->first();
 
-                if ($existing !== null && $existing->emoji === $emojiKey) {
-                    $existing->delete();
-                } else {
-                    TourReaction::query()->updateOrCreate(
-                        [
-                            'tour_id' => $tour->id,
-                            'user_id' => $request->user()->id,
-                        ],
-                        [
-                            'ip_address' => $request->ip() ?? '',
-                            'emoji' => $emojiKey,
-                        ]
-                    );
-                }
+            if ($existing !== null && $existing->emoji === $emojiKey) {
+                $existing->delete();
             } else {
-                $reaction = TourReaction::query()
-                    ->where('tour_id', $tour->id)
-                    ->whereNull('user_id')
-                    ->where('ip_address', $request->ip() ?? '')
-                    ->first();
-
-                if ($reaction !== null && $reaction->emoji === $emojiKey) {
-                    $reaction->delete();
-                } elseif ($reaction !== null) {
-                    $reaction->update(['emoji' => $emojiKey]);
-                } else {
-                    TourReaction::query()->create([
+                TourReaction::query()->updateOrCreate(
+                    [
                         'tour_id' => $tour->id,
-                        'user_id' => null,
+                        'user_id' => $request->user()->id,
+                    ],
+                    [
                         'ip_address' => $request->ip() ?? '',
                         'emoji' => $emojiKey,
-                    ]);
-                }
+                    ]
+                );
             }
 
             $counts = [];

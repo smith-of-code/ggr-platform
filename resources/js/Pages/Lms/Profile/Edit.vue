@@ -4,9 +4,25 @@
     <div class="space-y-6">
       <h1 class="font-brand text-2xl font-bold text-gray-900">Личный кабинет</h1>
 
+      <!-- Profile completed banner -->
+      <div
+        v-if="showCompletedBanner"
+        class="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-4"
+      >
+        <div class="flex items-start gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-6 w-6 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          <div>
+            <p class="font-semibold text-emerald-800">Профиль заполнен!</p>
+            <p class="mt-1 text-sm text-emerald-700">Переходите к выбору курса.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Profile incomplete banner -->
       <div
-        v-if="!isProfileComplete"
+        v-if="!isProfileComplete && missingFields.length > 0 && !showCompletedBanner"
         class="rounded-xl border border-amber-300 bg-amber-50 px-5 py-4"
       >
         <div class="flex items-start gap-3">
@@ -16,9 +32,11 @@
           <div>
             <p class="font-semibold text-amber-800">Заполните профиль</p>
             <p class="mt-1 text-sm text-amber-700">
-              Только при заполненном личном кабинете участник может записаться на курс.
-              Заполните все обязательные поля и загрузите необходимые документы.
+              Для записи на курс необходимо заполнить все обязательные поля. Не хватает:
             </p>
+            <ul class="mt-2 list-inside list-disc space-y-0.5 text-sm text-amber-700">
+              <li v-for="field in missingFields" :key="field">{{ field }}</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -44,13 +62,13 @@
             <div class="grid gap-5 sm:grid-cols-3">
               <RInput
                 v-model="form.last_name"
-                label="Фамилия"
+                label="Фамилия *"
                 placeholder="Иванов"
                 :error="form.errors.last_name"
               />
               <RInput
                 v-model="form.first_name"
-                label="Имя"
+                label="Имя *"
                 placeholder="Иван"
                 :error="form.errors.first_name"
               />
@@ -65,14 +83,14 @@
             <div class="grid gap-5 sm:grid-cols-2">
               <RInput
                 v-model="form.email"
-                label="Email"
+                label="Email *"
                 type="email"
                 placeholder="email@example.com"
                 :error="form.errors.email"
               />
               <RInput
                 v-model="form.phone"
-                label="Телефон"
+                label="Телефон *"
                 type="tel"
                 placeholder="+7 (___) ___-__-__"
                 :error="form.errors.phone"
@@ -104,28 +122,27 @@
               <p v-if="form.errors.preferred_channel" class="mt-1 text-sm text-red-600">{{ form.errors.preferred_channel }}</p>
             </div>
 
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-500">Город</label>
-              <select
-                v-model="form.city_id"
-                class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
-              >
-                <option :value="null">Выберите город</option>
-                <option v-for="c in cities" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-              <p v-if="form.errors.city_id" class="mt-1 text-sm text-red-600">{{ form.errors.city_id }}</p>
-            </div>
+            <SearchSelect
+              v-model="form.city"
+              :options="cityOptions"
+              value-key="value"
+              label-key="label"
+              label="Город *"
+              placeholder="Выберите город"
+              search-placeholder="Поиск города..."
+              :error="form.errors.city"
+            />
 
             <div class="grid gap-5 sm:grid-cols-2">
               <RInput
                 v-model="form.organization"
-                label="Организация"
+                label="Организация *"
                 placeholder="Название организации"
                 :error="form.errors.organization"
               />
               <RInput
                 v-model="form.position"
-                label="Должность"
+                label="Должность *"
                 placeholder="Ваша должность"
                 :error="form.errors.position"
               />
@@ -339,8 +356,9 @@
 
 <script setup>
 import { Head, Link, useForm, usePage, router } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
+import SearchSelect from '@/Components/SearchSelect.vue'
 import { fileUrl } from '@/lib/fileUrl'
 
 const props = defineProps({
@@ -348,10 +366,25 @@ const props = defineProps({
   user: { type: Object, required: true },
   profile: { type: Object, default: () => ({}) },
   socialAccounts: { type: Object, default: () => ({}) },
-  cities: { type: Array, default: () => [] },
   isProfileComplete: { type: Boolean, default: false },
+  missingFields: { type: Array, default: () => [] },
   documentTypes: { type: Array, default: () => [] },
   documentTypesWithTemplate: { type: Array, default: () => [] },
+})
+
+const page = usePage()
+const showCompletedBanner = ref(false)
+const wasIncomplete = ref(!props.isProfileComplete)
+
+watch(() => page.props?.flash?.profile_completed, (val) => {
+  if (val) showCompletedBanner.value = true
+}, { immediate: true })
+
+watch(() => props.isProfileComplete, (val) => {
+  if (val && wasIncomplete.value) {
+    showCompletedBanner.value = true
+    wasIncomplete.value = false
+  }
 })
 
 const user = computed(() => props.user || usePage().props.auth?.user || {})
@@ -362,11 +395,19 @@ const fullName = computed(() => {
   return parts.length > 0 ? parts.join(' ') : u.name || ''
 })
 
-const selectedCityName = computed(() => {
-  if (!form.city_id) return ''
-  const city = props.cities.find(c => c.id === form.city_id)
-  return city?.name || ''
-})
+const CITY_NAMES = [
+  'Ангарск', 'Байкальск', 'Балаково', 'Билибино', 'Волгодонск',
+  'Глазов', 'Десногорск', 'Димитровград', 'Железногорск',
+  'Заречный (Пензенская область)', 'Заречный (Свердловская область)',
+  'Зеленогорск', 'Краснокаменск', 'Курчатов', 'Лесной', 'Неман',
+  'Нововоронеж', 'Новоуральск', 'Обнинск', 'Озёрск', 'Певек',
+  'Полярные Зори', 'Саров', 'Северск', 'Снежинск', 'Советск',
+  'Сосновый Бор', 'Трёхгорный', 'Удомля', 'Усолье-Сибирское', 'Электросталь',
+]
+
+const cityOptions = CITY_NAMES.map(name => ({ value: name, label: name }))
+
+const selectedCityName = computed(() => form.city || '')
 
 const socialAccounts = computed(() => props.socialAccounts || {})
 
@@ -427,7 +468,7 @@ const form = useForm({
   patronymic: props.user?.patronymic ?? '',
   email: props.user?.email ?? '',
   phone: props.profile?.phone ?? '',
-  city_id: props.profile?.city_id ?? null,
+  city: props.profile?.city ?? '',
   organization: props.profile?.organization ?? '',
   position: props.profile?.position ?? '',
   project_description: props.profile?.project_description ?? '',
@@ -462,10 +503,10 @@ function submit() {
 
 // Documents
 const docConfig = [
-  { type: 'enrollment_application', label: 'Заявление на зачисление', hasTemplate: true },
-  { type: 'snils', label: 'Скан СНИЛС', hasTemplate: false },
-  { type: 'diploma', label: 'Скан диплома о высшем или среднем образовании', hasTemplate: false },
-  { type: 'personal_data_consent', label: 'Согласие на обработку персональных данных', hasTemplate: true },
+  { type: 'enrollment_application', label: 'Заявление на зачисление *', hasTemplate: true },
+  { type: 'snils', label: 'Скан СНИЛС *', hasTemplate: false },
+  { type: 'diploma', label: 'Скан диплома о высшем или среднем образовании *', hasTemplate: false },
+  { type: 'personal_data_consent', label: 'Согласие на обработку персональных данных *', hasTemplate: true },
   { type: 'name_change_certificate', label: 'Свидетельство о перемене фамилии (при наличии)', hasTemplate: false },
 ]
 
