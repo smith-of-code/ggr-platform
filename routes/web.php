@@ -36,7 +36,6 @@ Route::get('/cities', [CityController::class, 'index'])->name('cities.index');
 Route::get('/cities/{slug}', [CityController::class, 'show'])->name('cities.show');
 Route::get('/tours', [TourController::class, 'index'])->name('tours.index');
 Route::get('/tours/{slug}', [TourController::class, 'show'])->name('tours.show');
-Route::post('/tours/{tour}/react', [TourController::class, 'react'])->name('tours.react');
 Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
 Route::post('/contact', [HomeController::class, 'contactSubmit'])->name('contact.submit');
 
@@ -69,6 +68,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/favorites/{type}/{id}', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
 
+    Route::post('/tours/{tour}/react', [TourController::class, 'react'])->name('tours.react');
     Route::post('/tours/{tour}/reviews', [TourReviewController::class, 'store'])->name('tours.reviews.store');
 });
 

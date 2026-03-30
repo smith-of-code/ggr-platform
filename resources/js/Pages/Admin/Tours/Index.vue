@@ -2,7 +2,7 @@
   <AdminLayout>
     <div class="mb-8 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Туры</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Каталог туров</h1>
         <p class="mt-1 text-sm text-gray-500">Управление каталогом туров</p>
       </div>
       <Link :href="route('admin.tours.create')" class="flex items-center gap-2 rounded-xl bg-[#003274] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#003274]/20 transition hover:bg-[#025ea1]">

@@ -95,7 +95,7 @@
           <!-- Reactions -->
           <div class="reveal mt-6">
             <p class="mb-3 text-sm font-medium text-gray-500">Как вам тур?</p>
-            <div class="flex flex-wrap gap-2 sm:gap-3">
+            <div v-if="isAuthed" class="flex flex-wrap gap-2 sm:gap-3">
               <button
                 v-for="item in reactionItems"
                 :key="item.key"
@@ -113,6 +113,13 @@
                   </Transition>
                 </span>
               </button>
+            </div>
+            <div v-else class="flex flex-wrap items-center gap-2">
+              <div v-for="item in reactionItems" :key="item.key" class="flex min-w-[4.25rem] flex-col items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">
+                <span class="text-xl leading-none" aria-hidden="true">{{ item.emoji }}</span>
+                <span class="tabular-nums text-xs font-semibold text-gray-700">{{ reactionsDisplay[item.key] }}</span>
+              </div>
+              <Link :href="route('login')" class="ml-2 text-sm font-medium text-[#003274] transition hover:underline">Войдите, чтобы оценить</Link>
             </div>
           </div>
 

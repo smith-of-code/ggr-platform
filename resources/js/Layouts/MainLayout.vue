@@ -33,7 +33,7 @@
               class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274]"
               :class="{ 'bg-blue-50 text-[#003274]': $page.url.startsWith('/tours') }"
             >
-              Туры
+              Каталог туров
             </Link>
             <Link
               :href="route('opportunity-tours.index')"
@@ -121,7 +121,7 @@
         <div v-if="mobileOpen" class="border-t border-gray-200 bg-white px-4 pb-4 pt-2 md:hidden">
           <Link :href="route('home')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Главная</Link>
           <Link :href="route('cities.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Города</Link>
-          <Link :href="route('tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Туры</Link>
+          <Link :href="route('tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Каталог туров</Link>
           <Link :href="route('opportunity-tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Туры возможностей</Link>
           <Link :href="route('education.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">ВШГР</Link>
           <Link :href="route('research.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Исследования</Link>
@@ -169,7 +169,7 @@
             <div class="mt-4 flex flex-col gap-3">
               <Link :href="route('home')" class="text-sm text-gray-500 transition hover:text-[#003274]">Главная</Link>
               <Link :href="route('cities.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Города</Link>
-              <Link :href="route('tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Туры</Link>
+              <Link :href="route('tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Каталог туров</Link>
               <Link :href="route('opportunity-tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Туры возможностей</Link>
               <Link :href="route('education.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">ВШГР</Link>
               <Link :href="route('research.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Исследования</Link>
