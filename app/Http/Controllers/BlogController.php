@@ -21,13 +21,42 @@ class BlogController extends Controller
             $query->where('category', $category);
         }
 
+        $search = $request->query('search');
+        if (is_string($search) && mb_strlen(trim($search)) >= 2) {
+            $search = trim($search);
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'LIKE', "%{$search}%")
+                  ->orWhere('excerpt', 'LIKE', "%{$search}%")
+                  ->orWhere('content', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $tag = $request->query('tag');
+        if (is_string($tag) && mb_strlen(trim($tag)) >= 1) {
+            $query->whereJsonContains('tags', trim($tag));
+        }
+
         $posts = $query->paginate(12)->withQueryString();
+
+        $allTags = Post::query()
+            ->where('is_published', true)
+            ->whereNotNull('published_at')
+            ->whereNotNull('tags')
+            ->pluck('tags')
+            ->flatten()
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
 
         return Inertia::render('Blog/Index', [
             'posts' => $posts,
             'categories' => Post::CATEGORIES,
+            'allTags' => $allTags,
             'filters' => [
                 'category' => is_string($category) && array_key_exists($category, Post::CATEGORIES) ? $category : null,
+                'search' => is_string($search) && mb_strlen(trim($search)) >= 2 ? trim($search) : null,
+                'tag' => is_string($tag) && mb_strlen(trim($tag)) >= 1 ? trim($tag) : null,
             ],
         ]);
     }

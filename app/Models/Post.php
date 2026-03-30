@@ -14,12 +14,14 @@ class Post extends Model
         'image',
         'category',
         'tags',
+        'videos',
         'is_published',
         'published_at',
     ];
 
     protected $casts = [
         'tags' => 'array',
+        'videos' => 'array',
         'is_published' => 'boolean',
         'published_at' => 'datetime',
     ];
@@ -28,5 +30,6 @@ class Post extends Model
         'news' => 'Новости программы',
         'announcements' => 'Анонсы',
         'partner_articles' => 'Статьи партнёров',
+        'atoms_vkusa' => 'Атомы вкуса',
     ];
 }

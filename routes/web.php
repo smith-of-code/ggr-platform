@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\DirectionController as AdminDirectionController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BlogSubscriptionController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\DirectionController;
 use App\Http\Controllers\EducationController;
@@ -40,6 +41,8 @@ Route::post('/applications', [ApplicationController::class, 'store'])->name('app
 Route::post('/contact', [HomeController::class, 'contactSubmit'])->name('contact.submit');
 
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::post('/blog/subscribe', [BlogSubscriptionController::class, 'subscribe'])->name('blog.subscribe');
+Route::get('/blog/unsubscribe/{token}', [BlogSubscriptionController::class, 'unsubscribe'])->name('blog.unsubscribe');
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/vshgr', [EducationController::class, 'index'])->name('education.index');
