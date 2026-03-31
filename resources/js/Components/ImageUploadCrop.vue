@@ -104,6 +104,7 @@ const props = defineProps({
   uploadUrl: { type: String, default: '/admin/upload/image' },
   aspectRatio: { type: Number, default: 16 / 9 },
   previewClass: { type: String, default: 'h-48 w-full object-cover' },
+  skipCrop: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -145,6 +146,10 @@ function onFileSelected(e) {
 function handleFile(file) {
   selectedFile = file
   uploadError.value = ''
+  if (props.skipCrop) {
+    uploadOriginal(file)
+    return
+  }
   const reader = new FileReader()
   reader.onload = (e) => {
     cropSrc.value = e.target.result
@@ -152,6 +157,29 @@ function handleFile(file) {
     nextTick(initCropper)
   }
   reader.readAsDataURL(file)
+}
+
+async function uploadOriginal(file) {
+  uploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('image', file)
+    const { data } = await axios.post(props.uploadUrl, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    if (data.url) {
+      previewUrl.value = data.url
+      emit('update:modelValue', data.url)
+    } else {
+      uploadError.value = 'Сервер не вернул URL изображения'
+    }
+  } catch (err) {
+    const msg = err.response?.data?.message || err.response?.data?.errors?.image?.[0] || 'Ошибка загрузки'
+    uploadError.value = msg
+  } finally {
+    uploading.value = false
+    selectedFile = null
+  }
 }
 
 function initCropper() {

@@ -14,9 +14,18 @@
         <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
         <div class="absolute bottom-0 left-0 right-0 mx-auto max-w-7xl px-4 pb-8 sm:px-6 sm:pb-10 lg:px-8">
           <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 class="text-4xl font-bold text-white sm:text-5xl">{{ city.name }}</h1>
-              <p v-if="city.region" class="mt-2 text-lg text-white/85 sm:text-xl">{{ city.region }}</p>
+            <div class="flex items-end gap-4">
+              <img
+                v-if="city.coat_of_arms"
+                :src="city.coat_of_arms"
+                :alt="`Герб ${city.name}`"
+                class="h-16 w-16 shrink-0 object-contain sm:h-20 sm:w-20"
+                :class="isJpeg(city.coat_of_arms) ? 'rounded-lg bg-white/20 p-1 shadow-lg ring-2 ring-white/60' : 'drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]'"
+              />
+              <div>
+                <h1 class="text-4xl font-bold text-white sm:text-5xl">{{ city.name }}</h1>
+                <p v-if="city.region" class="mt-2 text-lg text-white/85 sm:text-xl">{{ city.region }}</p>
+              </div>
             </div>
             <div class="flex flex-wrap gap-2">
               <button
@@ -625,6 +634,11 @@ const hasInfrastructureContent = computed(() => {
   }
   return infrastructureList.value.length > 0
 })
+
+function isJpeg(url) {
+  if (!url || typeof url !== 'string') return false
+  return /\.jpe?g(\?.*)?$/i.test(url)
+}
 
 function normalizeSocialList(arr) {
   if (!Array.isArray(arr)) {

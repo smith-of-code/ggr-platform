@@ -169,6 +169,12 @@
             <ImageUploadCrop v-model="form.image" label="Фото города" :upload-url="route('admin.upload.image')" />
           </RCard>
 
+          <!-- Coat of arms -->
+          <RCard elevation="raised">
+            <ImageUploadCrop v-model="form.coat_of_arms" label="Герб города" :upload-url="route('admin.upload.image')" skip-crop preview-class="mx-auto h-48 w-auto object-contain p-4" />
+            <p class="px-6 pb-4 text-xs text-gray-400">PNG без фона — без рамки; JPEG — с декоративной окантовкой</p>
+          </RCard>
+
           <!-- Status & position -->
           <RCard elevation="raised">
             <div class="space-y-4 p-6">
@@ -295,6 +301,7 @@ const form = useForm({
   slug: props.city?.slug ?? '',
   description: props.city?.description ?? '',
   image: props.city?.image ?? '',
+  coat_of_arms: props.city?.coat_of_arms ?? '',
   position: props.city?.position ?? 0,
   is_active: props.city?.is_active ?? true,
   region: props.city?.region ?? '',

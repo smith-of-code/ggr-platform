@@ -15,6 +15,7 @@ class City extends Model
         'description',
         'infrastructure',
         'image',
+        'coat_of_arms',
         'position',
         'is_active',
         'region',
