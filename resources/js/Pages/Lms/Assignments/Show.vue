@@ -39,7 +39,7 @@
             class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
           >
             <ArrowDownTrayIcon class="h-4 w-4" />
-            Скачать шаблон задания
+            {{ assignment.template_file_name || 'Скачать шаблон задания' }}
           </a>
         </div>
 
@@ -72,29 +72,57 @@
           {{ submission?.status === 'submitted' ? 'Ваша работа отправлена' : 'Отправка работы' }}
         </h2>
 
+        <!-- Submitted summary (for approved/submitted) -->
         <div v-if="submission?.status === 'submitted' || submission?.status === 'approved'" class="mt-4 rounded-xl bg-accent-green/10 p-4">
           <div class="flex items-center gap-2 text-accent-green">
             <CheckCircleIcon class="h-5 w-5" />
             <span class="font-semibold">{{ submission.status === 'approved' ? 'Работа принята!' : 'Работа отправлена на проверку' }}</span>
           </div>
-          <div v-if="submission?.text_content" class="mt-3 rounded-lg bg-white p-3 text-sm text-gray-700">
-            {{ submission.text_content }}
-          </div>
-          <div v-if="submission?.link" class="mt-2">
-            <a :href="submission.link" target="_blank" class="text-sm text-rosatom-600 hover:underline">{{ submission.link }}</a>
-          </div>
-          <div v-if="submission?.files?.length" class="mt-2 flex flex-wrap gap-2">
-            <a
-              v-for="(file, idx) in submission.files"
-              :key="idx"
-              :href="fileUrl(file)"
-              target="_blank"
-              class="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-            >
-              <PaperClipIcon class="h-3.5 w-3.5" />
-              Файл {{ idx + 1 }}
-            </a>
-          </div>
+
+          <!-- Show answers by tasks -->
+          <template v-if="hasTasks && submission?.answers?.length">
+            <div v-for="task in assignment.tasks" :key="task.id" class="mt-4 rounded-lg bg-white p-3">
+              <p class="mb-1 text-xs font-semibold text-gray-500">{{ task.title }}</p>
+              <template v-for="answer in answersForTask(task.id)" :key="answer.id">
+                <p v-if="answer.text_content" class="text-sm text-gray-700">{{ answer.text_content }}</p>
+                <a v-if="answer.link" :href="answer.link" target="_blank" class="text-sm text-rosatom-600 hover:underline">{{ answer.link }}</a>
+                <div v-if="answer.files?.length" class="mt-1 flex flex-wrap gap-2">
+                  <a
+                    v-for="(f, fi) in answer.files"
+                    :key="fi"
+                    :href="fileUrl(typeof f === 'string' ? f : f.path)"
+                    target="_blank"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-100"
+                  >
+                    <PaperClipIcon class="h-3.5 w-3.5" />
+                    {{ typeof f === 'string' ? `Файл ${fi+1}` : (f.name || `Файл ${fi+1}`) }}
+                  </a>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Legacy display -->
+          <template v-else>
+            <div v-if="submission?.text_content" class="mt-3 rounded-lg bg-white p-3 text-sm text-gray-700">
+              {{ submission.text_content }}
+            </div>
+            <div v-if="submission?.link" class="mt-2">
+              <a :href="submission.link" target="_blank" class="text-sm text-rosatom-600 hover:underline">{{ submission.link }}</a>
+            </div>
+            <div v-if="submission?.files?.length" class="mt-2 flex flex-wrap gap-2">
+              <a
+                v-for="(file, idx) in submission.files"
+                :key="idx"
+                :href="fileUrl(file)"
+                target="_blank"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              >
+                <PaperClipIcon class="h-3.5 w-3.5" />
+                Файл {{ idx + 1 }}
+              </a>
+            </div>
+          </template>
         </div>
 
         <!-- Submit / resubmit form -->
@@ -103,57 +131,123 @@
           @submit.prevent="submitWork"
           class="mt-6 space-y-5"
         >
-          <div>
-            <label for="text_content" class="block text-sm font-medium text-gray-700">Текст решения</label>
-            <textarea
-              id="text_content"
-              v-model="form.text_content"
-              rows="6"
-              class="mt-2 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
-              placeholder="Опишите решение, ответьте на вопросы задания..."
-            />
-            <p v-if="form.errors.text_content" class="mt-1.5 text-sm text-red-600">{{ form.errors.text_content }}</p>
-          </div>
-
-          <RInput v-model="form.link" type="url" label="Ссылка (по желанию)" placeholder="https://docs.google.com/..." :error="form.errors.link" />
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Прикрепить файлы</label>
-            <div
-              class="relative mt-2 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-6 text-center transition hover:border-rosatom-400"
-              :class="{ 'border-rosatom-500 bg-rosatom-50': selectedFiles.length > 0 }"
-            >
-              <template v-if="selectedFiles.length > 0">
-                <PaperClipIcon class="mx-auto mb-2 h-8 w-8 text-rosatom-500" />
-                <p class="text-sm font-medium text-gray-900">{{ selectedFiles.length }} {{ fileWord(selectedFiles.length) }}</p>
-                <div class="mt-2 flex flex-wrap justify-center gap-2">
-                  <span
-                    v-for="(f, i) in selectedFiles"
-                    :key="i"
-                    class="inline-flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs text-gray-600 shadow-sm"
+          <!-- Tasks-based form -->
+          <template v-if="hasTasks">
+            <div v-for="(task, tIdx) in assignment.tasks" :key="task.id" class="rounded-xl border border-gray-200 p-4">
+              <div class="mb-3 flex items-start gap-3">
+                <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rosatom-100 text-xs font-bold text-rosatom-600">{{ tIdx + 1 }}</span>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-gray-900">{{ task.title }}</p>
+                  <p v-if="task.description" class="mt-1 text-sm text-gray-500">{{ task.description }}</p>
+                  <a
+                    v-if="task.template_file"
+                    :href="task.template_file"
+                    target="_blank"
+                    class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-200"
                   >
-                    <DocumentIcon class="h-3.5 w-3.5" />
-                    {{ f.name }}
-                  </span>
+                    <ArrowDownTrayIcon class="h-3.5 w-3.5" />
+                    {{ task.template_file_name || 'Скачать шаблон' }}
+                  </a>
                 </div>
-                <button type="button" class="mt-2 text-xs text-rosatom-600 hover:underline" @click="clearFiles">Убрать файлы</button>
-              </template>
-              <template v-else>
-                <ArrowUpTrayIcon class="mx-auto mb-2 h-8 w-8 text-gray-400" />
-                <p class="text-sm font-medium text-gray-700">Нажмите или перетащите файлы</p>
-                <p class="mt-1 text-xs text-gray-400">PDF, DOCX, XLSX, PNG, JPG — до 20 МБ</p>
-              </template>
-              <input
-                ref="fileInput"
-                type="file"
-                multiple
-                accept=".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.zip"
-                class="absolute inset-0 cursor-pointer opacity-0"
-                @change="onFilesSelected"
-              />
+              </div>
+
+              <!-- Text field -->
+              <div v-if="task.response_type === 'text'">
+                <textarea
+                  v-model="taskAnswers[task.id].text_content"
+                  rows="4"
+                  class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+                  placeholder="Введите ваш ответ..."
+                />
+              </div>
+
+              <!-- Link field -->
+              <div v-else-if="task.response_type === 'link'">
+                <RInput v-model="taskAnswers[task.id].link" type="url" placeholder="https://..." />
+              </div>
+
+              <!-- File field -->
+              <div v-else-if="task.response_type === 'file'">
+                <div
+                  class="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-4 text-center transition hover:border-rosatom-400"
+                  :class="{ 'border-rosatom-500 bg-rosatom-50': taskAnswers[task.id]._files?.length > 0 }"
+                >
+                  <template v-if="taskAnswers[task.id]._files?.length > 0">
+                    <PaperClipIcon class="mx-auto mb-1 h-6 w-6 text-rosatom-500" />
+                    <p class="text-sm font-medium text-gray-900">{{ taskAnswers[task.id]._files.length }} {{ fileWord(taskAnswers[task.id]._files.length) }}</p>
+                    <div class="mt-1 flex flex-wrap justify-center gap-1">
+                      <span v-for="(f, fi) in taskAnswers[task.id]._files" :key="fi" class="inline-flex items-center gap-1 rounded-lg bg-white px-2 py-0.5 text-xs text-gray-600 shadow-sm">
+                        <DocumentIcon class="h-3 w-3" /> {{ f.name }}
+                      </span>
+                    </div>
+                    <button type="button" class="mt-1 text-xs text-rosatom-600 hover:underline" @click="clearTaskFiles(task.id)">Убрать</button>
+                  </template>
+                  <template v-else>
+                    <ArrowUpTrayIcon class="mx-auto mb-1 h-6 w-6 text-gray-400" />
+                    <p class="text-sm font-medium text-gray-700">Нажмите или перетащите файлы</p>
+                    <p class="mt-0.5 text-xs text-gray-400">PDF, DOCX, XLSX, PNG, JPG — до 20 МБ</p>
+                  </template>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.zip"
+                    class="absolute inset-0 cursor-pointer opacity-0"
+                    @change="e => onTaskFilesSelected(task.id, e)"
+                  />
+                </div>
+              </div>
             </div>
-            <p v-if="form.errors.files" class="mt-1.5 text-sm text-red-600">{{ form.errors.files }}</p>
-          </div>
+          </template>
+
+          <!-- Legacy form (no tasks) -->
+          <template v-else>
+            <div>
+              <label for="text_content" class="block text-sm font-medium text-gray-700">Текст решения</label>
+              <textarea
+                id="text_content"
+                v-model="form.text_content"
+                rows="6"
+                class="mt-2 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+                placeholder="Опишите решение, ответьте на вопросы задания..."
+              />
+              <p v-if="form.errors.text_content" class="mt-1.5 text-sm text-red-600">{{ form.errors.text_content }}</p>
+            </div>
+
+            <RInput v-model="form.link" type="url" label="Ссылка (по желанию)" placeholder="https://docs.google.com/..." :error="form.errors.link" />
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Прикрепить файлы</label>
+              <div
+                class="relative mt-2 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-6 text-center transition hover:border-rosatom-400"
+                :class="{ 'border-rosatom-500 bg-rosatom-50': selectedFiles.length > 0 }"
+              >
+                <template v-if="selectedFiles.length > 0">
+                  <PaperClipIcon class="mx-auto mb-2 h-8 w-8 text-rosatom-500" />
+                  <p class="text-sm font-medium text-gray-900">{{ selectedFiles.length }} {{ fileWord(selectedFiles.length) }}</p>
+                  <div class="mt-2 flex flex-wrap justify-center gap-2">
+                    <span v-for="(f, i) in selectedFiles" :key="i" class="inline-flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-xs text-gray-600 shadow-sm">
+                      <DocumentIcon class="h-3.5 w-3.5" /> {{ f.name }}
+                    </span>
+                  </div>
+                  <button type="button" class="mt-2 text-xs text-rosatom-600 hover:underline" @click="clearFiles">Убрать файлы</button>
+                </template>
+                <template v-else>
+                  <ArrowUpTrayIcon class="mx-auto mb-2 h-8 w-8 text-gray-400" />
+                  <p class="text-sm font-medium text-gray-700">Нажмите или перетащите файлы</p>
+                  <p class="mt-1 text-xs text-gray-400">PDF, DOCX, XLSX, PNG, JPG — до 20 МБ</p>
+                </template>
+                <input
+                  ref="fileInput"
+                  type="file"
+                  multiple
+                  accept=".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.zip"
+                  class="absolute inset-0 cursor-pointer opacity-0"
+                  @change="onFilesSelected"
+                />
+              </div>
+              <p v-if="form.errors.files" class="mt-1.5 text-sm text-red-600">{{ form.errors.files }}</p>
+            </div>
+          </template>
 
           <div class="flex gap-3">
             <RButton variant="primary" :loading="form.processing" :disabled="form.processing || draftSaving">
@@ -183,7 +277,6 @@
                   : 'mr-8 border-blue-200 bg-blue-50',
             ]"
           >
-            <!-- Header -->
             <div class="mb-2 flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-semibold" :class="msg.isReview ? 'text-amber-800' : msg.isMine ? 'text-rosatom-700' : 'text-blue-800'">
@@ -198,11 +291,7 @@
               </div>
               <span class="text-xs text-gray-400">{{ formatDate(msg.date) }}</span>
             </div>
-
-            <!-- Text -->
             <p class="whitespace-pre-wrap text-sm text-gray-800">{{ msg.text }}</p>
-
-            <!-- Files -->
             <div v-if="msg.files?.length" class="mt-3 flex flex-wrap gap-2">
               <a
                 v-for="(f, i) in msg.files"
@@ -219,7 +308,7 @@
         </div>
       </RCard>
 
-      <!-- Comment form (always visible when submission exists) -->
+      <!-- Comment form -->
       <RCard v-if="submission" elevation="raised">
         <h2 class="mb-4 font-brand text-lg font-bold text-gray-900">Написать комментарий</h2>
 
@@ -247,14 +336,7 @@
                 @change="onCommentFilesSelected"
               />
             </label>
-            <button
-              v-if="commentFiles.length > 0"
-              type="button"
-              class="text-xs text-red-500 hover:underline"
-              @click="clearCommentFiles"
-            >
-              Убрать
-            </button>
+            <button v-if="commentFiles.length > 0" type="button" class="text-xs text-red-500 hover:underline" @click="clearCommentFiles">Убрать</button>
             <div class="flex-1" />
             <RButton variant="primary" :loading="commentForm.processing" :disabled="commentForm.processing || !commentForm.text.trim()">
               Отправить
@@ -262,13 +344,8 @@
           </div>
 
           <div v-if="commentFiles.length > 0" class="flex flex-wrap gap-2">
-            <span
-              v-for="(f, i) in commentFiles"
-              :key="i"
-              class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-xs text-gray-600"
-            >
-              <DocumentIcon class="h-3.5 w-3.5" />
-              {{ f.name }}
+            <span v-for="(f, i) in commentFiles" :key="i" class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-xs text-gray-600">
+              <DocumentIcon class="h-3.5 w-3.5" /> {{ f.name }}
             </span>
           </div>
         </form>
@@ -279,7 +356,7 @@
 
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import { fileUrl } from '@/lib/fileUrl'
 import {
@@ -300,6 +377,8 @@ const props = defineProps({
   submission: { type: Object, default: null },
 })
 
+const hasTasks = computed(() => (props.assignment?.tasks?.length ?? 0) > 0)
+
 const fileInput = ref(null)
 const selectedFiles = ref([])
 const commentFileInput = ref(null)
@@ -310,12 +389,35 @@ const form = useForm({
   text_content: props.submission?.text_content || '',
   link: props.submission?.link || '',
   files: [],
+  answers: [],
 })
 
-const commentForm = useForm({
-  text: '',
-  files: [],
-})
+const commentForm = useForm({ text: '', files: [] })
+
+const taskAnswers = reactive(
+  Object.fromEntries(
+    (props.assignment?.tasks || []).map(task => {
+      const existing = (props.submission?.answers || []).find(a => a.lms_assignment_task_id === task.id)
+      return [task.id, {
+        text_content: existing?.text_content || '',
+        link: existing?.link || '',
+        _files: [],
+      }]
+    })
+  )
+)
+
+function answersForTask(taskId) {
+  return (props.submission?.answers || []).filter(a => a.lms_assignment_task_id === taskId)
+}
+
+function buildAnswersPayload() {
+  return (props.assignment?.tasks || []).map(task => ({
+    task_id: task.id,
+    text_content: taskAnswers[task.id]?.text_content || '',
+    link: taskAnswers[task.id]?.link || '',
+  }))
+}
 
 const isOverdue = computed(() => {
   if (!props.assignment?.deadline) return false
@@ -335,9 +437,7 @@ const currentStepIndex = computed(() => {
   return map[status] ?? -1
 })
 
-function isStepDone(idx) {
-  return idx < currentStepIndex.value
-}
+function isStepDone(idx) { return idx < currentStepIndex.value }
 
 function timelineStepClass(index) {
   if (index < currentStepIndex.value) return 'bg-rosatom-100 text-rosatom-600'
@@ -348,52 +448,37 @@ function timelineStepClass(index) {
 function statusLabel(status) {
   return { not_submitted: 'Не сдано', draft: 'Черновик', submitted: 'На проверке', revision: 'На доработке', approved: 'Принято', rejected: 'Отклонено', resubmitted: 'Пересдано' }[status] || status
 }
-
 function statusBadgeVariant(status) {
   return { not_submitted: 'neutral', draft: 'neutral', submitted: 'info', revision: 'warning', approved: 'success', rejected: 'error', resubmitted: 'info' }[status] || 'neutral'
 }
-
 function decisionLabel(decision) {
   return { approve: 'Принято', revision: 'На доработку', reject: 'Отклонено' }[decision] || decision
 }
-
 function decisionBadgeVariant(decision) {
   return { approve: 'success', revision: 'warning', reject: 'error' }[decision] || 'neutral'
 }
 
 const dialogMessages = computed(() => {
   if (!props.submission) return []
-
   const messages = []
   const currentUserId = props.user?.id
 
   for (const r of props.submission.reviews || []) {
     messages.push({
-      key: `review-${r.id}`,
-      isReview: true,
-      isMine: false,
+      key: `review-${r.id}`, isReview: true, isMine: false,
       authorName: r.reviewer?.name || 'Проверяющий',
-      text: r.comment || '',
-      files: r.files,
-      decision: r.decision,
-      date: r.created_at,
-      timestamp: new Date(r.created_at).getTime(),
+      text: r.comment || '', files: r.files, decision: r.decision,
+      date: r.created_at, timestamp: new Date(r.created_at).getTime(),
     })
   }
-
   for (const c of props.submission.comments || []) {
     messages.push({
-      key: `comment-${c.id}`,
-      isReview: false,
-      isMine: c.user_id === currentUserId,
+      key: `comment-${c.id}`, isReview: false, isMine: c.user_id === currentUserId,
       authorName: c.user?.name || 'Пользователь',
-      text: c.text,
-      files: c.files,
-      date: c.created_at,
+      text: c.text, files: c.files, date: c.created_at,
       timestamp: new Date(c.created_at).getTime(),
     })
   }
-
   messages.sort((a, b) => a.timestamp - b.timestamp)
   return messages
 })
@@ -403,18 +488,23 @@ function onFilesSelected(e) {
   selectedFiles.value = files
   form.files = files
 }
-
 function clearFiles() {
   selectedFiles.value = []
   form.files = []
   if (fileInput.value) fileInput.value.value = ''
 }
 
+function onTaskFilesSelected(taskId, e) {
+  taskAnswers[taskId]._files = Array.from(e.target.files || [])
+}
+function clearTaskFiles(taskId) {
+  taskAnswers[taskId]._files = []
+}
+
 function onCommentFilesSelected(e) {
   commentFiles.value = Array.from(e.target.files || [])
   commentForm.files = commentFiles.value
 }
-
 function clearCommentFiles() {
   commentFiles.value = []
   commentForm.files = []
@@ -432,15 +522,41 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+function buildFormData() {
+  const fd = new FormData()
+
+  if (hasTasks.value) {
+    const tasks = props.assignment.tasks || []
+    tasks.forEach((task, idx) => {
+      fd.append(`answers[${idx}][task_id]`, task.id)
+      fd.append(`answers[${idx}][text_content]`, taskAnswers[task.id]?.text_content || '')
+      fd.append(`answers[${idx}][link]`, taskAnswers[task.id]?.link || '')
+      if (task.response_type === 'file' && taskAnswers[task.id]?._files?.length) {
+        taskAnswers[task.id]._files.forEach(f => fd.append(`answers[${idx}][files][]`, f))
+      }
+    })
+  } else {
+    fd.append('text_content', form.text_content || '')
+    fd.append('link', form.link || '')
+    form.files.forEach(f => fd.append('files[]', f))
+  }
+
+  return fd
+}
+
 function submitWork() {
+  const fd = buildFormData()
   form.post(route('lms.assignments.submit', { event: props.event?.slug, assignment: props.assignment?.id }), {
+    data: fd,
     forceFormData: true,
   })
 }
 
 function saveDraft() {
   draftSaving.value = true
+  const fd = buildFormData()
   form.post(route('lms.assignments.draft', { event: props.event?.slug, assignment: props.assignment?.id }), {
+    data: fd,
     forceFormData: true,
     onFinish: () => { draftSaving.value = false },
   })

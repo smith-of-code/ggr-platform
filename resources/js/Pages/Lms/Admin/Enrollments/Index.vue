@@ -15,9 +15,31 @@
       </div>
     </div>
 
-    <!-- Status tabs -->
+    <!-- View toggle + Status tabs -->
+    <div class="mb-4 flex items-center justify-end gap-1">
+      <button
+        type="button"
+        class="cursor-pointer rounded-lg p-2 transition"
+        :class="viewMode === 'table' ? 'bg-rosatom-100 text-rosatom-600' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'"
+        @click="viewMode = 'table'"
+        title="Таблица"
+      >
+        <TableCellsIcon class="h-5 w-5" />
+      </button>
+      <button
+        type="button"
+        class="cursor-pointer rounded-lg p-2 transition"
+        :class="viewMode === 'cards' ? 'bg-rosatom-100 text-rosatom-600' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'"
+        @click="viewMode = 'cards'"
+        title="Карточки"
+      >
+        <Squares2X2Icon class="h-5 w-5" />
+      </button>
+    </div>
+
     <RTabs :model-value="currentStatus" :tabs="statusTabs" @update:model-value="filterByStatus">
-      <RCard elevation="raised" flush>
+      <!-- Table view -->
+      <RCard v-if="viewMode === 'table'" elevation="raised" flush>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead>
@@ -101,6 +123,77 @@
           </table>
         </div>
       </RCard>
+
+      <!-- Cards view -->
+      <div v-else>
+        <div v-if="enrollmentsList.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <RCard v-for="e in enrollmentsList" :key="e.id" elevation="raised" class="enrollment-card">
+            <div class="flex h-full flex-col">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <RAvatar :name="e.user?.name" size="md" />
+                <div class="min-w-0">
+                  <p class="font-semibold text-gray-900">{{ e.user?.name }}</p>
+                  <p v-if="e.profile_data?.phone" class="text-xs text-gray-400">
+                    {{ e.profile_data.phone }}
+                    <span v-if="e.profile_data.preferred_channel" class="ml-1 rounded bg-gray-100 px-1 py-0.5 text-[10px] font-medium uppercase text-gray-500">
+                      {{ e.profile_data.preferred_channel }}
+                    </span>
+                  </p>
+                  <p v-else class="truncate text-xs text-gray-400">{{ e.user?.email }}</p>
+                </div>
+              </div>
+              <RBadge :variant="statusVariant(e.status)" size="sm">{{ statusLabel(e.status) }}</RBadge>
+            </div>
+
+            <div class="mt-4 flex-1 space-y-2 text-sm">
+              <div v-if="!course && e.course?.title">
+                <p class="text-xs font-medium uppercase text-gray-400">Курс</p>
+                <p class="text-gray-700">{{ e.course.title }}</p>
+              </div>
+              <div v-if="e.profile_data?.organization || e.profile_data?.position">
+                <p class="text-xs font-medium uppercase text-gray-400">Организация</p>
+                <p v-if="e.profile_data?.organization" class="text-gray-700">{{ e.profile_data.organization }}</p>
+                <p v-if="e.profile_data?.position" class="text-xs text-gray-500">{{ e.profile_data.position }}</p>
+              </div>
+              <div v-if="e.profile_data?.project_description">
+                <p class="text-xs font-medium uppercase text-gray-400">Проект / Идея</p>
+                <p class="line-clamp-3 text-gray-600">{{ e.profile_data.project_description }}</p>
+              </div>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
+              <div class="text-xs text-gray-400">
+                <p>{{ formatDate(e.created_at) }}</p>
+                <p v-if="e.reviewed_at" class="mt-0.5">
+                  Рассм.: {{ e.reviewer?.name }}
+                </p>
+              </div>
+              <div class="flex flex-wrap justify-end gap-1.5">
+                <template v-if="e.status === 'pending'">
+                  <RButton variant="primary" size="sm" @click="approve(e.id)">Одобрить</RButton>
+                  <RButton variant="outline" size="sm" @click="openReassign(e)">Перевести</RButton>
+                  <RButton variant="danger" size="sm" @click="reject(e.id)">Отклонить</RButton>
+                </template>
+                <template v-else-if="e.status === 'rejected'">
+                  <RButton variant="outline" size="sm" @click="approve(e.id)">Одобрить</RButton>
+                </template>
+                <template v-if="e.status === 'enrolled'">
+                  <RButton variant="outline" size="sm" @click="openReassign(e)">Перевести</RButton>
+                  <RButton variant="outline" size="sm" class="text-gray-500" @click="unenroll(e)">Отписать</RButton>
+                </template>
+                <RButton variant="ghost" size="sm" class="text-red-500 hover:bg-red-50" @click="remove(e)">
+                  <template #icon><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg></template>
+                </RButton>
+              </div>
+            </div>
+            </div>
+          </RCard>
+        </div>
+        <RCard v-else elevation="raised">
+          <div class="py-12 text-center text-sm text-gray-400">Заявок не найдено</div>
+        </RCard>
+      </div>
     </RTabs>
 
     <!-- Pagination -->
@@ -158,7 +251,7 @@
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, TableCellsIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   event: Object,
@@ -168,6 +261,8 @@ const props = defineProps({
   currentStatus: String,
   counts: Object,
 })
+
+const viewMode = ref('table')
 
 const enrollmentsList = computed(() => {
   const raw = props.enrollments?.data || props.enrollments || []
@@ -250,3 +345,14 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 </script>
+
+<style scoped>
+.enrollment-card {
+  height: 100%;
+}
+.enrollment-card :deep(.r-card__body) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+</style>

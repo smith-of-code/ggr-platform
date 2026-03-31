@@ -7,6 +7,7 @@ use App\Models\Lms\LmsAssignment;
 use App\Models\Lms\LmsAssignmentComment;
 use App\Models\Lms\LmsAssignmentReview;
 use App\Models\Lms\LmsAssignmentSubmission;
+use App\Models\Lms\LmsAssignmentTask;
 use App\Models\Lms\LmsEvent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,19 +38,17 @@ class AssignmentController extends Controller
 
     public function store(Request $request, LmsEvent $event): RedirectResponse
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'template_file' => ['nullable', 'string', 'max:500'],
-            'completion_mode' => ['sometimes', 'string', 'in:on_submit,on_review'],
-            'deadline' => ['nullable', 'date'],
-        ]);
+        $validated = $request->validate($this->assignmentRules());
 
         $validated['lms_event_id'] = $event->id;
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['completion_mode'] ??= 'on_review';
 
-        LmsAssignment::create($validated);
+        $validated = $this->handleTemplateUpload($request, $validated, $event);
+
+        $assignment = LmsAssignment::create($validated);
+
+        $this->syncTasks($assignment, $request->input('tasks', []), $request, $event);
 
         return redirect()->route('lms.admin.assignments.index', $event)->with('success', 'Задание создано');
     }
@@ -58,8 +57,10 @@ class AssignmentController extends Controller
     {
         $this->ensureAssignmentBelongsToEvent($assignment, $event);
 
+        $assignment->load('tasks');
+
         $submissions = $assignment->submissions()
-            ->with(['user:id,name,email', 'reviews.reviewer:id,name', 'comments.user:id,name'])
+            ->with(['user:id,name,email', 'reviews.reviewer:id,name', 'comments.user:id,name', 'answers.task'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -74,6 +75,8 @@ class AssignmentController extends Controller
     {
         $this->ensureAssignmentBelongsToEvent($assignment, $event);
 
+        $assignment->load('tasks');
+
         return Inertia::render('Lms/Admin/Assignments/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'assignment' => $assignment,
@@ -84,18 +87,16 @@ class AssignmentController extends Controller
     {
         $this->ensureAssignmentBelongsToEvent($assignment, $event);
 
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'template_file' => ['nullable', 'string', 'max:500'],
-            'completion_mode' => ['sometimes', 'string', 'in:on_submit,on_review'],
-            'deadline' => ['nullable', 'date'],
-        ]);
+        $validated = $request->validate($this->assignmentRules());
 
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['completion_mode'] ??= $assignment->completion_mode;
 
+        $validated = $this->handleTemplateUpload($request, $validated, $event);
+
         $assignment->update($validated);
+
+        $this->syncTasks($assignment, $request->input('tasks', []), $request, $event);
 
         return redirect()->route('lms.admin.assignments.index', $event)->with('success', 'Задание обновлено');
     }
@@ -178,6 +179,74 @@ class AssignmentController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Комментарий добавлен');
+    }
+
+    private function assignmentRules(): array
+    {
+        return [
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'template_file' => ['nullable', 'string', 'max:500'],
+            'completion_mode' => ['sometimes', 'string', 'in:on_submit,on_review'],
+            'deadline' => ['nullable', 'date'],
+            'tasks' => ['nullable', 'array'],
+            'tasks.*.title' => ['required', 'string', 'max:255'],
+            'tasks.*.description' => ['nullable', 'string'],
+            'tasks.*.response_type' => ['required', 'string', 'in:text,link,file'],
+            'tasks.*.template_file' => ['nullable', 'string', 'max:500'],
+            'tasks.*.template_file_name' => ['nullable', 'string', 'max:255'],
+            'tasks.*.position' => ['nullable', 'integer'],
+        ];
+    }
+
+    private function handleTemplateUpload(Request $request, array $validated, LmsEvent $event): array
+    {
+        if ($request->hasFile('template_file_upload')) {
+            $request->validate(['template_file_upload' => ['file', 'max:51200']]);
+            $disk = config('filesystems.upload_disk');
+            $file = $request->file('template_file_upload');
+            $path = $file->store('uploads/assignment-templates', $disk);
+            $validated['template_file'] = Storage::disk($disk)->url($path);
+            $validated['template_file_name'] = $file->getClientOriginalName();
+        }
+
+        return $validated;
+    }
+
+    private function syncTasks(LmsAssignment $assignment, array $tasks, Request $request, LmsEvent $event): void
+    {
+        $existingIds = $assignment->tasks()->pluck('id')->toArray();
+        $incomingIds = [];
+
+        foreach ($tasks as $index => $taskData) {
+            if (empty($taskData['title'])) {
+                continue;
+            }
+
+            $attrs = [
+                'title' => $taskData['title'],
+                'description' => $taskData['description'] ?? null,
+                'response_type' => $taskData['response_type'] ?? 'file',
+                'template_file' => $taskData['template_file'] ?? null,
+                'template_file_name' => $taskData['template_file_name'] ?? null,
+                'position' => $taskData['position'] ?? $index,
+            ];
+
+            if (!empty($taskData['id']) && in_array($taskData['id'], $existingIds)) {
+                $task = LmsAssignmentTask::find($taskData['id']);
+                $task->update($attrs);
+                $incomingIds[] = $task->id;
+            } else {
+                $attrs['lms_assignment_id'] = $assignment->id;
+                $task = LmsAssignmentTask::create($attrs);
+                $incomingIds[] = $task->id;
+            }
+        }
+
+        $toDelete = array_diff($existingIds, $incomingIds);
+        if ($toDelete) {
+            LmsAssignmentTask::whereIn('id', $toDelete)->delete();
+        }
     }
 
     private function ensureAssignmentBelongsToEvent(LmsAssignment $assignment, LmsEvent $event): void

@@ -47,4 +47,10 @@ class LmsAssignmentSubmission extends Model
     {
         return $this->hasMany(LmsAssignmentComment::class, 'lms_assignment_submission_id')->orderBy('created_at');
     }
+
+    /** @return HasMany<LmsSubmissionAnswer> */
+    public function answers(): HasMany
+    {
+        return $this->hasMany(LmsSubmissionAnswer::class, 'lms_assignment_submission_id');
+    }
 }

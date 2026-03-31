@@ -20,14 +20,13 @@
               </select>
               <p v-if="form.errors.type" class="mt-1 text-sm text-red-600">{{ form.errors.type }}</p>
             </div>
-            <SearchSelect
+            <MultiSelect
               v-model="form.city"
               :options="cityOptions"
               value-key="value"
               label-key="label"
-              label="Город"
-              placeholder="Выберите город (необязательно)"
-              search-placeholder="Поиск города..."
+              label="Города"
+              placeholder="Все города"
               :error="form.errors.city"
             />
           </div>
@@ -96,7 +95,7 @@ import { ref, computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
-import SearchSelect from '@/Components/SearchSelect.vue'
+import MultiSelect from '@/Components/MultiSelect.vue'
 
 const props = defineProps({
   event: Object,
@@ -123,7 +122,7 @@ const cityOptions = CITY_NAMES.map(name => ({ value: name, label: name }))
 const form = useForm({
   title: props.grant?.title ?? '',
   type: props.grant?.type ?? 'grant',
-  city: props.grant?.city ?? '',
+  city: props.grant?.city ?? [],
   description: props.grant?.description ?? '',
   application_start: props.grant?.application_start?.substring(0, 10) ?? '',
   application_end: props.grant?.application_end?.substring(0, 10) ?? '',

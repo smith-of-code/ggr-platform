@@ -7,6 +7,7 @@ use App\Models\Lms\LmsAssignment;
 use App\Models\Lms\LmsAssignmentComment;
 use App\Models\Lms\LmsAssignmentSubmission;
 use App\Models\Lms\LmsEvent;
+use App\Models\Lms\LmsSubmissionAnswer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -56,16 +57,19 @@ class AssignmentController extends Controller
             abort(404);
         }
         $user = auth()->user();
-        $assignment->load('submissions.reviews');
+        $assignment->load('tasks');
 
         $submission = LmsAssignmentSubmission::where('lms_assignment_id', $assignment->id)
             ->where('user_id', $user->id)
-            ->with(['reviews.reviewer:id,name', 'comments.user:id,name'])
+            ->with(['reviews.reviewer:id,name', 'comments.user:id,name', 'answers.task'])
             ->first();
 
         return Inertia::render('Lms/Assignments/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
-            'assignment' => $assignment->only(['id', 'title', 'description', 'template_file', 'deadline']),
+            'assignment' => array_merge(
+                $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline']),
+                ['tasks' => $assignment->tasks]
+            ),
             'submission' => $submission,
         ]);
     }
@@ -76,34 +80,44 @@ class AssignmentController extends Controller
             abort(404);
         }
         $user = auth()->user();
+
+        $assignment->load('tasks');
+        $hasTasks = $assignment->tasks->isNotEmpty();
+
         $validated = $request->validate([
             'text_content' => ['nullable', 'string'],
             'link' => ['nullable', 'url', 'max:500'],
             'files' => ['nullable', 'array'],
             'files.*' => ['file'],
+            'answers' => ['nullable', 'array'],
+            'answers.*.task_id' => ['required_with:answers', 'integer'],
+            'answers.*.text_content' => ['nullable', 'string'],
+            'answers.*.link' => ['nullable', 'url', 'max:500'],
         ]);
 
         $disk = config('filesystems.upload_disk');
-        $files = [];
-        if ($request->hasFile('files')) {
+
+        $legacyFiles = [];
+        if (!$hasTasks && $request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
                 $path = $file->store('assignments/' . $assignment->id, $disk);
-                $files[] = Storage::disk($disk)->url($path);
+                $legacyFiles[] = Storage::disk($disk)->url($path);
             }
         }
 
-        LmsAssignmentSubmission::updateOrCreate(
+        $submission = LmsAssignmentSubmission::updateOrCreate(
+            ['lms_assignment_id' => $assignment->id, 'user_id' => $user->id],
             [
-                'lms_assignment_id' => $assignment->id,
-                'user_id' => $user->id,
-            ],
-            [
-                'text_content' => $validated['text_content'] ?? null,
-                'link' => $validated['link'] ?? null,
-                'files' => $files,
+                'text_content' => $hasTasks ? null : ($validated['text_content'] ?? null),
+                'link' => $hasTasks ? null : ($validated['link'] ?? null),
+                'files' => $hasTasks ? null : $legacyFiles,
                 'status' => 'submitted',
             ]
         );
+
+        if ($hasTasks) {
+            $this->saveAnswers($submission, $assignment, $request, $validated['answers'] ?? []);
+        }
 
         return redirect()->back();
     }
@@ -114,40 +128,51 @@ class AssignmentController extends Controller
             abort(404);
         }
         $user = auth()->user();
+
+        $assignment->load('tasks');
+        $hasTasks = $assignment->tasks->isNotEmpty();
+
         $validated = $request->validate([
             'text_content' => ['nullable', 'string'],
             'link' => ['nullable', 'url', 'max:500'],
             'files' => ['nullable', 'array'],
             'files.*' => ['file'],
+            'answers' => ['nullable', 'array'],
+            'answers.*.task_id' => ['required_with:answers', 'integer'],
+            'answers.*.text_content' => ['nullable', 'string'],
+            'answers.*.link' => ['nullable', 'url', 'max:500'],
         ]);
 
         $disk = config('filesystems.upload_disk');
-        $files = [];
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                $path = $file->store('assignments/' . $assignment->id, $disk);
-                $files[] = Storage::disk($disk)->url($path);
-            }
-        }
 
         $existing = LmsAssignmentSubmission::where('lms_assignment_id', $assignment->id)
             ->where('user_id', $user->id)
             ->first();
 
-        $mergedFiles = $existing ? array_merge($existing->files ?? [], $files) : $files;
+        $legacyFiles = [];
+        if (!$hasTasks) {
+            if ($request->hasFile('files')) {
+                foreach ($request->file('files') as $file) {
+                    $path = $file->store('assignments/' . $assignment->id, $disk);
+                    $legacyFiles[] = Storage::disk($disk)->url($path);
+                }
+            }
+            $legacyFiles = $existing ? array_merge($existing->files ?? [], $legacyFiles) : $legacyFiles;
+        }
 
-        LmsAssignmentSubmission::updateOrCreate(
+        $submission = LmsAssignmentSubmission::updateOrCreate(
+            ['lms_assignment_id' => $assignment->id, 'user_id' => $user->id],
             [
-                'lms_assignment_id' => $assignment->id,
-                'user_id' => $user->id,
-            ],
-            [
-                'text_content' => $validated['text_content'] ?? null,
-                'link' => $validated['link'] ?? null,
-                'files' => $mergedFiles,
+                'text_content' => $hasTasks ? null : ($validated['text_content'] ?? null),
+                'link' => $hasTasks ? null : ($validated['link'] ?? null),
+                'files' => $hasTasks ? null : $legacyFiles,
                 'status' => 'draft',
             ]
         );
+
+        if ($hasTasks) {
+            $this->saveAnswers($submission, $assignment, $request, $validated['answers'] ?? []);
+        }
 
         return redirect()->back();
     }
@@ -226,5 +251,45 @@ class AssignmentController extends Controller
         ]);
 
         return redirect()->back();
+    }
+
+    private function saveAnswers(LmsAssignmentSubmission $submission, LmsAssignment $assignment, Request $request, array $answers): void
+    {
+        $disk = config('filesystems.upload_disk');
+        $taskMap = $assignment->tasks->keyBy('id');
+
+        foreach ($answers as $index => $answerData) {
+            $taskId = $answerData['task_id'] ?? null;
+            if (!$taskId || !$taskMap->has($taskId)) {
+                continue;
+            }
+
+            $task = $taskMap->get($taskId);
+            $files = null;
+
+            if ($task->response_type === 'file' && $request->hasFile("answers.{$index}.files")) {
+                $uploaded = [];
+                foreach ($request->file("answers.{$index}.files") as $file) {
+                    $path = $file->store('assignments/' . $assignment->id, $disk);
+                    $uploaded[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => Storage::disk($disk)->url($path),
+                    ];
+                }
+                $files = $uploaded ?: null;
+            }
+
+            LmsSubmissionAnswer::updateOrCreate(
+                [
+                    'lms_assignment_submission_id' => $submission->id,
+                    'lms_assignment_task_id' => $taskId,
+                ],
+                [
+                    'text_content' => $task->response_type === 'text' ? ($answerData['text_content'] ?? null) : null,
+                    'link' => $task->response_type === 'link' ? ($answerData['link'] ?? null) : null,
+                    'files' => $task->response_type === 'file' ? $files : null,
+                ]
+            );
+        }
     }
 }

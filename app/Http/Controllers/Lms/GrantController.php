@@ -27,7 +27,10 @@ class GrantController extends Controller
         }
 
         if ($city = $request->input('city')) {
-            $query->where('city', $city);
+            $query->where(function ($q) use ($city) {
+                $q->whereJsonContains('city', $city)
+                  ->orWhereNull('city');
+            });
         }
 
         $grants = $query->orderByRaw("CASE WHEN application_end IS NOT NULL AND application_end < NOW() THEN 1 ELSE 0 END")

@@ -81,6 +81,9 @@
           <div class="flex items-end">
             <RCheckbox v-model="form.requires_approval" label="Требуется одобрение для записи" />
           </div>
+          <div class="flex items-end">
+            <RCheckbox v-model="form.is_mandatory" label="Обязательный курс (автозапись при регистрации)" />
+          </div>
         </div>
       </RCard>
 
@@ -395,6 +398,7 @@ const form = useForm({
   sequential: props.course?.sequential ?? true,
   is_active: props.course?.is_active ?? true,
   requires_approval: props.course?.requires_approval ?? false,
+  is_mandatory: props.course?.is_mandatory ?? false,
   modules: buildModules(),
   stages: buildOrphanStages(),
 })

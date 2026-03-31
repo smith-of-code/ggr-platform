@@ -63,11 +63,16 @@ class MaterialController extends Controller
 
         app(GamificationService::class)->awardPoints($event, $user, 'material_view', "Материал: {$section->title}");
 
+        $section->load('files');
+
         return Inertia::render('Lms/Materials/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
-            'section' => $section->only(['id', 'title', 'content']),
+            'section' => [
+                ...$section->only(['id', 'title', 'content']),
+                'files' => $section->files->map(fn ($f) => $f->only(['id', 'title', 'file_path', 'file_name', 'file_size'])),
+            ],
         ]);
     }
 }

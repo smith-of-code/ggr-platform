@@ -20,7 +20,7 @@
         </div>
       </div>
       <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ item.grant.title }}</h3>
-      <p v-if="item.grant.city" class="mt-1 text-xs text-gray-400">{{ item.grant.city }}</p>
+      <p v-if="item.grant.city?.length" class="mt-1 text-xs text-gray-400">{{ item.grant.city.join(', ') }}</p>
       <p v-if="item.grant.description" class="mt-2 line-clamp-3 text-sm text-gray-500">{{ stripTags(item.grant.description) }}</p>
       <div v-if="item.grant.application_start || item.grant.application_end" class="mt-3 flex items-center gap-1.5 text-xs text-gray-400">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

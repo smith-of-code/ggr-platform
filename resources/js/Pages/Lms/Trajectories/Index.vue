@@ -172,7 +172,7 @@ function displayDate(item) {
 function dotClass(item) {
   if (item.type === 'course') {
     if (item.enrolled && item.progress >= 100) return 'bg-green-100 text-green-600'
-    if (item.enrolled) return 'bg-rosatom-100 text-rosatom-600'
+    if (item.enrolled) return 'bg-green-100 text-green-600'
     return 'bg-gray-100 text-gray-400'
   }
   if (item.type === 'grant') {
@@ -188,8 +188,7 @@ function dotClass(item) {
 
 function borderClass(item) {
   if (item.type === 'course') {
-    if (item.enrolled && item.progress >= 100) return 'border-green-200'
-    if (item.enrolled) return 'border-rosatom-200'
+    if (item.enrolled) return 'border-green-200'
     return 'border-gray-200'
   }
   if (item.type === 'grant') return item.enrolled ? 'border-amber-200' : 'border-gray-200'
@@ -254,7 +253,7 @@ const CourseIcon = {
 }
 const GrantIcon = {
   render: () => h('svg', { class: 'h-6 w-6', fill: 'none', viewBox: '0 0 24 24', 'stroke-width': '1.5', stroke: 'currentColor' }, [
-    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' }),
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M9 8h4.5a2.5 2.5 0 0 1 0 5H9V8Zm0 5v3m0 0v2m0-2H7m2 0h4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' }),
   ])
 }
 const TaskIcon = {

@@ -31,10 +31,11 @@
               <div class="flex items-center gap-2 text-sm font-medium text-green-600">
                 <CheckCircleIcon class="h-5 w-5" />
                 Вы записаны на курс
+                <span v-if="course?.is_mandatory" class="ml-1 rounded-full bg-rosatom-100 px-2.5 py-0.5 text-xs font-semibold text-rosatom-700">Обязательный</span>
               </div>
               <RProgress :percentage="overallProgress" label="Прогресс" show-label size="sm" class="mt-3" />
               <button
-                v-if="enrollmentStatus === 'enrolled' && canCancel"
+                v-if="enrollmentStatus === 'enrolled' && canCancel && !course?.is_mandatory"
                 type="button"
                 class="mt-3 cursor-pointer text-sm font-medium text-gray-500 transition hover:text-red-600"
                 @click="unenroll"
@@ -52,6 +53,7 @@
                   </div>
                 </div>
                 <button
+                  v-if="!course?.is_mandatory"
                   type="button"
                   class="mt-3 cursor-pointer text-sm font-medium text-gray-500 transition hover:text-red-600"
                   @click="unenroll"

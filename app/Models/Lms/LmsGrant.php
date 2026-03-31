@@ -34,6 +34,7 @@ class LmsGrant extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'city' => 'array',
         'application_start' => 'datetime',
         'application_end' => 'datetime',
     ];

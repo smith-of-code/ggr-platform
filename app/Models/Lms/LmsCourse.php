@@ -20,6 +20,7 @@ class LmsCourse extends Model
         'sequential',
         'is_active',
         'requires_approval',
+        'is_mandatory',
         'position',
         'starts_at',
         'ends_at',
@@ -29,6 +30,7 @@ class LmsCourse extends Model
         'sequential' => 'boolean',
         'is_active' => 'boolean',
         'requires_approval' => 'boolean',
+        'is_mandatory' => 'boolean',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
     ];

@@ -17,7 +17,7 @@
             <div>
               <div class="mb-2 flex items-center gap-2">
                 <span class="rounded-full px-2.5 py-0.5 text-xs font-medium" :class="typeBadgeClass">{{ typeLabel }}</span>
-                <span v-if="grant?.city" class="text-xs text-gray-400">{{ grant.city }}</span>
+                <span v-if="grant?.city?.length" class="text-xs text-gray-400">{{ grant.city.join(', ') }}</span>
               </div>
               <h1 class="font-brand text-2xl font-bold text-gray-900">{{ grant?.title }}</h1>
             </div>

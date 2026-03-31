@@ -94,6 +94,7 @@ function formatDateRange(course) {
 }
 
 function enrollmentBadge(item) {
+  if (item.course?.is_mandatory) return { text: 'Обязательный', variant: 'info' }
   const status = item.enrollment?.status
   if (status === 'pending') return { text: 'Ожидает одобрения', variant: 'warning' }
   if (status === 'rejected') return { text: 'Отклонена', variant: 'error' }

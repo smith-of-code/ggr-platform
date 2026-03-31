@@ -53,7 +53,7 @@ class CourseController extends Controller
                 : 0;
             $isActiveEnrollment = $enrollment && !in_array($enrollment->status, ['pending', 'rejected']);
             return [
-                'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'starts_at', 'ends_at']),
+                'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'is_mandatory', 'starts_at', 'ends_at']),
                 'enrolled' => $isActiveEnrollment,
                 'enrollment' => $enrollment?->only(['id', 'status', 'completed_at']),
                 'progress' => $isActiveEnrollment ? $progress : 0,
@@ -137,7 +137,10 @@ class CourseController extends Controller
         if (! $enrollment) {
             $other = LmsCourseEnrollment::where('user_id', $user->id)
                 ->whereIn('status', ['pending', 'enrolled', 'in_progress'])
-                ->whereHas('course', fn ($q) => $q->where('lms_event_id', $event->id))
+                ->whereHas('course', fn ($q) => $q
+                    ->where('lms_event_id', $event->id)
+                    ->where('is_mandatory', false)
+                )
                 ->with('course:id,title')
                 ->first();
             if ($other) {
@@ -151,7 +154,7 @@ class CourseController extends Controller
 
         return Inertia::render('Lms/Courses/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
-            'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'sequential', 'starts_at', 'ends_at']),
+            'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'sequential', 'is_mandatory', 'starts_at', 'ends_at']),
             'enrollment' => $enrollment?->only(['id', 'status', 'completed_at']),
             'existingOtherEnrollment' => $existingOtherEnrollment,
             'modules' => $modules,
@@ -181,7 +184,10 @@ class CourseController extends Controller
         $existingInOtherCourse = LmsCourseEnrollment::where('user_id', $user->id)
             ->where('lms_course_id', '!=', $course->id)
             ->whereIn('status', ['pending', 'enrolled', 'in_progress'])
-            ->whereHas('course', fn ($q) => $q->where('lms_event_id', $event->id))
+            ->whereHas('course', fn ($q) => $q
+                ->where('lms_event_id', $event->id)
+                ->where('is_mandatory', false)
+            )
             ->with('course:id,title')
             ->first();
 
@@ -230,6 +236,12 @@ class CourseController extends Controller
 
         if (! $enrollment) {
             return redirect()->back();
+        }
+
+        if ($course->is_mandatory) {
+            return redirect()->back()->withErrors([
+                'enroll' => 'Нельзя отменить запись на обязательный курс.',
+            ]);
         }
 
         if ($course->starts_at && now()->gte($course->starts_at) && $enrollment->status === 'enrolled') {
