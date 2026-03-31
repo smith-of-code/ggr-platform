@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="sphere" x1="30%" y1="10%" x2="80%" y2="90%">
+      <stop offset="0%" stop-color="#5BA3E6"/>
+      <stop offset="35%" stop-color="#2E7BC4"/>
+      <stop offset="70%" stop-color="#1A5FA0"/>
+      <stop offset="100%" stop-color="#0D3B6E"/>
+    </linearGradient>
+    <linearGradient id="petal1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4A9ADE" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#1B6AB5" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="petal2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3D8DD4" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#15548F" stop-opacity="0.65"/>
+    </linearGradient>
+    <linearGradient id="petal3" x1="50%" y1="100%" x2="50%" y2="0%">
+      <stop offset="0%" stop-color="#6BB0EA" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#2672B8" stop-opacity="0.7"/>
+    </linearGradient>
+    <clipPath id="sphereClip">
+      <circle cx="100" cy="100" r="90"/>
+    </clipPath>
+  </defs>
+  <!-- Background sphere -->
+  <circle cx="100" cy="100" r="90" fill="url(#sphere)"/>
+  <!-- Three petals (trefoil) clipped to sphere -->
+  <g clip-path="url(#sphereClip)">
+    <!-- Top-left petal -->
+    <ellipse cx="72" cy="62" rx="52" ry="34" transform="rotate(-30 72 62)" fill="url(#petal1)"/>
+    <!-- Top-right petal -->
+    <ellipse cx="128" cy="62" rx="52" ry="34" transform="rotate(30 128 62)" fill="url(#petal2)"/>
+    <!-- Bottom petal -->
+    <ellipse cx="100" cy="138" rx="52" ry="34" fill="url(#petal3)"/>
+  </g>
+  <!-- Central dark triangle area (overlap of petals) -->
+  <path d="M100 65 L78 102 L122 102 Z" fill="#0A2E5C" opacity="0.6"/>
+  <!-- Electron dot -->
+  <circle cx="82" cy="56" r="10" fill="white" opacity="0.9"/>
+  <!-- Subtle highlight on sphere -->
+  <ellipse cx="70" cy="55" rx="35" ry="25" fill="white" opacity="0.08" transform="rotate(-20 70 55)"/>
+</svg>

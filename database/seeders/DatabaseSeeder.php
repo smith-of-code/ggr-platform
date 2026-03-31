@@ -319,5 +319,6 @@ class DatabaseSeeder extends Seeder
         $this->call(LmsSeeder::class);
         $this->call(PortalSeeder::class);
         $this->call(OpportunityToursSeeder::class);
+        $this->call(ResearchPageSeeder::class);
     }
 }

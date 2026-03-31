@@ -78,11 +78,6 @@ class City extends Model
         return $this->morphMany(Favorite::class, 'favorable');
     }
 
-    public function researches(): HasMany
-    {
-        return $this->hasMany(Research::class);
-    }
-
     public function recipes(): HasMany
     {
         return $this->hasMany(Recipe::class);

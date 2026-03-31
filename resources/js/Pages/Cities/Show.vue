@@ -290,38 +290,7 @@
           </div>
         </section>
 
-        <!-- 9. Researches -->
-        <section v-if="city.researches?.length" class="reveal mb-16">
-          <h2 class="text-2xl font-bold text-gray-900">Исследования</h2>
-          <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <Link
-              v-for="(r, i) in city.researches"
-              :key="r.id"
-              :href="route('research.show', r.slug)"
-              class="reveal group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#003274]/25 hover:shadow-lg"
-              :class="'reveal-delay-' + ((i % 5) + 1)"
-            >
-              <div class="aspect-[16/10] overflow-hidden bg-gray-100">
-                <img
-                  v-if="r.image"
-                  :src="r.image"
-                  :alt="r.title"
-                  class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div class="flex flex-1 flex-col p-5">
-                <h3 class="font-semibold text-gray-900 transition group-hover:text-[#003274]">{{ r.title }}</h3>
-                <p v-if="r.description" class="mt-2 line-clamp-2 text-sm text-gray-600">{{ stripHtml(r.description) }}</p>
-                <span class="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-medium text-[#003274]">
-                  Читать
-                  <svg class="h-4 w-4 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                </span>
-              </div>
-            </Link>
-          </div>
-        </section>
-
-        <!-- 10. Recipes -->
+        <!-- 9. Recipes -->
         <section v-if="city.recipes?.length" class="reveal mb-16">
           <h2 class="text-2xl font-bold text-gray-900">Рецепты региона</h2>
           <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

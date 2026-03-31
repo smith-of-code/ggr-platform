@@ -57,13 +57,6 @@ class CityController extends Controller
             'tours' => fn ($q) => $q->where('is_active', true)->with('departures'),
         ];
 
-        if (Schema::hasTable('researches')) {
-            $eagerLoad['researches'] = fn ($q) => $q
-                ->where('is_published', true)
-                ->whereNotNull('published_at')
-                ->orderByDesc('published_at');
-        }
-
         if (Schema::hasTable('recipes')) {
             $eagerLoad['recipes'] = fn ($q) => $q
                 ->where('is_published', true)

@@ -4,10 +4,10 @@ use App\Http\Controllers\Admin\ApplicationController as AdminApplicationControll
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\ResearchController as AdminResearchController;
 use App\Http\Controllers\Admin\RecipeController as AdminRecipeController;
 use App\Http\Controllers\Admin\EducationProductController as AdminEducationProductController;
 use App\Http\Controllers\Admin\OpportunityToursPageController as AdminOpportunityToursPageController;
+use App\Http\Controllers\Admin\ResearchPageController as AdminResearchPageController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
@@ -24,7 +24,8 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OpportunityToursController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ResearchController;
+use App\Http\Controllers\RecipeController;
+use App\Http\Controllers\ResearchPageController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\TourReviewController;
 use App\Http\Controllers\VacancyController;
@@ -48,10 +49,9 @@ Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/vshgr', [EducationController::class, 'index'])->name('education.index');
 Route::get('/vshgr/{slug}', [EducationController::class, 'show'])->name('education.show');
 
-Route::get('/research', [ResearchController::class, 'index'])->name('research.index');
-Route::get('/research/{slug}', [ResearchController::class, 'show'])->name('research.show');
-Route::get('/recipes', [ResearchController::class, 'recipes'])->name('recipes.index');
-Route::get('/recipes/{slug}', [ResearchController::class, 'recipeShow'])->name('recipes.show');
+Route::get('/research', [ResearchPageController::class, 'index'])->name('research.index');
+Route::get('/recipes', [RecipeController::class, 'index'])->name('recipes.index');
+Route::get('/recipes/{slug}', [RecipeController::class, 'show'])->name('recipes.show');
 
 Route::get('/opportunity-tours', [OpportunityToursController::class, 'index'])->name('opportunity-tours.index');
 
@@ -87,7 +87,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::resource('blog', AdminBlogController::class)->except(['show']);
     Route::patch('/blog/{post}/toggle-publish', [AdminBlogController::class, 'togglePublish'])->name('blog.togglePublish');
 
-    Route::resource('research', AdminResearchController::class)->except(['show']);
     Route::resource('recipes', AdminRecipeController::class)->except(['show']);
     Route::resource('education-products', AdminEducationProductController::class)->except(['show']);
     Route::patch('/education-products/course/{course}/toggle', [AdminEducationProductController::class, 'toggleCourseActive'])->name('education-products.toggleCourse');
@@ -111,6 +110,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::get('/opportunity-tours-page', [AdminOpportunityToursPageController::class, 'index'])->name('opportunity-tours-page.index');
     Route::put('/opportunity-tours-page', [AdminOpportunityToursPageController::class, 'update'])->name('opportunity-tours-page.update');
+
+    Route::get('/research-page', [AdminResearchPageController::class, 'index'])->name('research-page.index');
+    Route::put('/research-page', [AdminResearchPageController::class, 'update'])->name('research-page.update');
 
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');
