@@ -53,7 +53,7 @@ class CityController extends Controller
             'gallery.*' => 'string|max:2048',
             'video_url' => 'nullable|string|max:2048',
             'facts' => 'nullable|array',
-            'facts.*.title' => 'required|string|max:500',
+            'facts.*.title' => 'required|string|max:5000',
             'facts.*.url' => 'nullable|string|max:2048',
             'facts.*.description' => 'nullable|string',
         ]);
@@ -100,7 +100,7 @@ class CityController extends Controller
             'gallery.*' => 'string|max:2048',
             'video_url' => 'nullable|string|max:2048',
             'facts' => 'nullable|array',
-            'facts.*.title' => 'required|string|max:500',
+            'facts.*.title' => 'required|string|max:5000',
             'facts.*.url' => 'nullable|string|max:2048',
             'facts.*.description' => 'nullable|string',
         ]);
