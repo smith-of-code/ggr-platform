@@ -109,17 +109,23 @@
               <p class="mt-1 text-sm font-medium text-gray-600">{{ row.label }}</p>
             </div>
           </div>
-          <div v-if="city.facts?.length" class="mt-8 flex flex-wrap gap-2">
-            <div
-              v-for="(fact, i) in city.facts"
+          <div v-if="city.facts?.length" class="mt-8 flex flex-wrap gap-3">
+            <component
+              v-for="(fact, i) in normalizedFacts"
               :key="i"
+              :is="fact.url ? 'a' : 'div'"
+              :href="fact.url || undefined"
+              :target="fact.url ? '_blank' : undefined"
+              :rel="fact.url ? 'noopener noreferrer' : undefined"
               class="inline-flex max-w-full items-start gap-2 rounded-xl border border-[#003274]/15 bg-[#003274]/[0.04] px-4 py-2.5 text-sm text-gray-800"
+              :class="fact.url ? 'cursor-pointer no-underline transition hover:border-[#003274]/25 hover:bg-[#003274]/[0.08]' : ''"
             >
               <span class="mt-0.5 shrink-0 text-[#003274]" aria-hidden="true">
                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
               </span>
-              <span>{{ fact }}</span>
-            </div>
+              <span v-if="fact.description" class="html-content" v-html="fact.description"></span>
+              <span v-else>{{ fact.title }}</span>
+            </component>
           </div>
         </section>
 
@@ -661,6 +667,14 @@ const socialColumnCulture = computed(() => normalizeSocialList(props.city.social
 
 const hasSocialObjects = computed(() =>
   socialColumnEducation.value.length + socialColumnMedicine.value.length + socialColumnCulture.value.length > 0,
+)
+
+const normalizedFacts = computed(() =>
+  (props.city.facts ?? []).map(f =>
+    typeof f === 'string'
+      ? { title: f, url: null, description: null }
+      : { title: f.title ?? '', url: f.url || null, description: f.description || null },
+  ),
 )
 
 const aboutInfographicRows = computed(() => {

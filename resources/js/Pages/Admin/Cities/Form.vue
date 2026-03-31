@@ -68,20 +68,22 @@
               <div class="flex items-center justify-between">
                 <div>
                   <h2 class="text-base font-bold text-gray-900">Факты о городе</h2>
-                  <p class="mt-1 text-sm text-gray-500">Короткие факты, отображаются как чипсы</p>
+                  <p class="mt-1 text-sm text-gray-500">Короткие факты, отображаются как чипсы. Можно добавить ссылку и развёрнутое описание.</p>
                 </div>
                 <button type="button" class="rounded-lg bg-[#003274] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[#003274]/90" @click="addFact">+ Добавить</button>
               </div>
-              <div v-for="(_, fi) in form.facts" :key="fi" class="flex gap-2">
-                <input
-                  v-model="form.facts[fi]"
-                  type="text"
-                  placeholder="Город основан в 1973 году"
-                  class="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-2 focus:ring-[#003274]/10"
-                />
-                <button type="button" class="shrink-0 rounded-lg border border-gray-200 p-2.5 text-gray-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500" @click="form.facts.splice(fi, 1)">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                </button>
+              <div v-for="(fact, fi) in form.facts" :key="fi" class="rounded-xl border border-gray-200 bg-gray-50/50 p-4">
+                <div class="mb-3 flex items-start justify-between">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-400">{{ fi + 1 }}</span>
+                  <button type="button" class="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500" @click="form.facts.splice(fi, 1)">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                <div class="space-y-3">
+                  <input v-model="fact.title" type="text" placeholder="Заголовок факта *" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/10" />
+                  <input v-model="fact.url" type="text" placeholder="Ссылка (необязательно)" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/10" />
+                  <RichTextEditor v-model="fact.description" label="Описание (необязательно)" :upload-url="route('admin.upload.image')" />
+                </div>
               </div>
               <p v-if="!form.facts.length" class="text-sm text-gray-400">Фактов пока нет</p>
             </div>
@@ -312,7 +314,11 @@ const form = useForm({
   lat: props.city?.lat ?? null,
   lng: props.city?.lng ?? null,
   infrastructure: { ...defaultInfrastructure(), ...(props.city?.infrastructure ?? {}) },
-  facts: props.city?.facts ?? [],
+  facts: (props.city?.facts ?? []).map(f =>
+    typeof f === 'string'
+      ? { title: f, url: '', description: '' }
+      : { title: f.title ?? '', url: f.url ?? '', description: f.description ?? '' },
+  ),
   attractions: props.city?.attractions ?? [],
   social_objects: { ...defaultSocialObjects(), ...(props.city?.social_objects ?? {}) },
   gallery: props.city?.gallery ?? [],
@@ -320,7 +326,7 @@ const form = useForm({
 })
 
 function addFact() {
-  form.facts.push('')
+  form.facts.push({ title: '', url: '', description: '' })
 }
 
 function addAttraction() {

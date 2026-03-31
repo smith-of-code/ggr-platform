@@ -53,7 +53,9 @@ class CityController extends Controller
             'gallery.*' => 'string|max:2048',
             'video_url' => 'nullable|string|max:2048',
             'facts' => 'nullable|array',
-            'facts.*' => 'string|max:2000',
+            'facts.*.title' => 'required|string|max:500',
+            'facts.*.url' => 'nullable|string|max:2048',
+            'facts.*.description' => 'nullable|string',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
@@ -98,7 +100,9 @@ class CityController extends Controller
             'gallery.*' => 'string|max:2048',
             'video_url' => 'nullable|string|max:2048',
             'facts' => 'nullable|array',
-            'facts.*' => 'string|max:2000',
+            'facts.*.title' => 'required|string|max:500',
+            'facts.*.url' => 'nullable|string|max:2048',
+            'facts.*.description' => 'nullable|string',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);

@@ -41,6 +41,33 @@ class City extends Model
         'facts' => 'array',
     ];
 
+    /**
+     * Normalize legacy string[] facts into object[] format.
+     * Accessor receives raw DB value (JSON string), not the cast result.
+     */
+    public function getFactsAttribute($value): array
+    {
+        $facts = is_string($value) ? json_decode($value, true) : $value;
+
+        if (! is_array($facts)) {
+            return [];
+        }
+
+        return array_map(function ($fact) {
+            if (is_string($fact)) {
+                return ['title' => $fact, 'url' => null, 'description' => null];
+            }
+            if (is_array($fact)) {
+                return [
+                    'title' => $fact['title'] ?? '',
+                    'url' => $fact['url'] ?? null,
+                    'description' => $fact['description'] ?? null,
+                ];
+            }
+            return ['title' => '', 'url' => null, 'description' => null];
+        }, $facts);
+    }
+
     public function tours(): BelongsToMany
     {
         return $this->belongsToMany(Tour::class, 'city_tour');
