@@ -41,3 +41,24 @@
 ## Open issues
 
 (пусто)
+
+---
+
+## Правки заказчика (2026-03-31)
+
+### REV-001: Визуальное отличие «Для кого» + убрать звёздочку ✓
+- Карточки «Для кого»: иконки (academic cap, user-group, globe) вместо цифр, цветные верхние бордеры (sky/emerald/violet), фон gradient sky-50 → white
+- Звёздочка `target_audience_note` убрана
+- Files: `resources/js/Pages/Directions/Show.vue`
+
+### REV-002: Конкурсные детали — часть блока «Победить в конкурсе» ✓
+- Отдельная секция «Конкурсные детали» удалена
+- Развёрнутые ответы + Проверочное задание перенесены под карточку «Победить в конкурсе» с dashed connector
+- Расположены вертикально (Проверочное задание под Развёрнутыми ответами)
+- Заголовок «Конкурсное испытание» для группировки
+- Files: `resources/js/Pages/Directions/Show.vue`
+
+### REV-003: Исправить кнопки ✓
+- «Оставить заявку»: заменена с Inertia Link (конфликтный route POST + method GET + @click.prevent) на обычный `<button>` с `@click="scrollToTours"`
+- «Личный кабинет»: без изменений, корректно ведёт на route('login')
+- Files: `resources/js/Pages/Directions/Show.vue`
