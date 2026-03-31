@@ -51,6 +51,8 @@ class CourseController extends Controller
         $validated['sequential'] = $request->boolean('sequential', true);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['requires_approval'] = $request->boolean('requires_approval', false);
+        $validated['is_mandatory'] = $request->boolean('is_mandatory', false);
+        $validated['unlocks_gamification'] = $request->boolean('unlocks_gamification', false);
 
         $course = LmsCourse::create($validated);
 
@@ -89,6 +91,8 @@ class CourseController extends Controller
         $validated['sequential'] = $request->boolean('sequential', true);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['requires_approval'] = $request->boolean('requires_approval', false);
+        $validated['is_mandatory'] = $request->boolean('is_mandatory', false);
+        $validated['unlocks_gamification'] = $request->boolean('unlocks_gamification', false);
 
         $course->update($validated);
 
@@ -292,6 +296,8 @@ class CourseController extends Controller
             'sequential' => ['boolean'],
             'is_active' => ['boolean'],
             'requires_approval' => ['boolean'],
+            'is_mandatory' => ['boolean'],
+            'unlocks_gamification' => ['boolean'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date'],
             'modules' => ['nullable', 'array'],

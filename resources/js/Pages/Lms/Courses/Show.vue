@@ -31,16 +31,35 @@
               <div class="flex items-center gap-2 text-sm font-medium text-green-600">
                 <CheckCircleIcon class="h-5 w-5" />
                 Вы записаны на курс
+                <span v-if="course?.is_mandatory" class="ml-1 rounded-full bg-rosatom-100 px-2.5 py-0.5 text-xs font-semibold text-rosatom-700">Обязательный</span>
               </div>
               <RProgress :percentage="overallProgress" label="Прогресс" show-label size="sm" class="mt-3" />
+              <button
+                v-if="enrollmentStatus === 'enrolled' && canCancel && !course?.is_mandatory"
+                type="button"
+                class="mt-3 cursor-pointer text-sm font-medium text-gray-500 transition hover:text-red-600"
+                @click="unenroll"
+              >
+                Отменить заявку
+              </button>
             </template>
             <template v-else-if="enrollmentStatus === 'pending'">
-              <div class="flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3">
-                <ClockIcon class="h-5 w-5 shrink-0 text-amber-500" />
-                <div>
-                  <p class="text-sm font-medium text-amber-800">Заявка отправлена</p>
-                  <p class="text-xs text-amber-600">Ожидает одобрения администратором</p>
+              <div class="rounded-xl bg-amber-50 px-5 py-4">
+                <div class="flex items-start gap-3">
+                  <ClockIcon class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                  <div>
+                    <p class="text-sm font-medium text-amber-800">Ваша заявка на рассмотрении</p>
+                    <p class="mt-1 text-sm text-amber-700">Мы проверяем, насколько ваш проект соответствует выбранному курсу.</p>
+                  </div>
                 </div>
+                <button
+                  v-if="!course?.is_mandatory"
+                  type="button"
+                  class="mt-3 cursor-pointer text-sm font-medium text-gray-500 transition hover:text-red-600"
+                  @click="unenroll"
+                >
+                  Отменить заявку
+                </button>
               </div>
             </template>
             <template v-else-if="enrollmentStatus === 'rejected'">
@@ -56,11 +75,20 @@
               </div>
             </template>
             <template v-else>
-              <div v-if="!isProfileComplete" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+              <div v-if="existingOtherEnrollment" class="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
+                <p class="text-sm font-medium text-blue-800">
+                  Вы уже записаны на курс «{{ existingOtherEnrollment.course_title }}».
+                </p>
+                <p class="mt-1 text-sm text-blue-700">Чтобы записаться на другой, отмените текущую заявку.</p>
+              </div>
+              <div v-else-if="!isProfileComplete" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
                 <p class="text-sm font-medium text-amber-800">Для записи на курс необходимо заполнить профиль</p>
                 <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-1 inline-block text-sm font-medium text-rosatom-600 hover:underline">
                   Перейти в личный кабинет
                 </Link>
+              </div>
+              <div v-else-if="$page.props.errors?.enroll" class="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
+                <p class="text-sm font-medium text-red-800">{{ $page.props.errors.enroll }}</p>
               </div>
               <RButton v-else variant="primary" @click="enroll">
                 Записаться на курс
@@ -215,6 +243,7 @@ const props = defineProps({
   event: Object,
   course: Object,
   enrollment: Object,
+  existingOtherEnrollment: { type: Object, default: null },
   modules: Array,
   orphanStages: Array,
   stages: Array,
@@ -223,6 +252,11 @@ const props = defineProps({
 
 const enrollmentStatus = computed(() => props.enrollment?.status ?? null)
 const isEnrolled = computed(() => ['enrolled', 'in_progress', 'completed'].includes(enrollmentStatus.value))
+
+const canCancel = computed(() => {
+  if (!props.course?.starts_at) return true
+  return new Date() < new Date(props.course.starts_at)
+})
 
 const expandedModules = reactive(
   (props.modules || []).reduce((acc, mod, i) => {
@@ -253,6 +287,11 @@ function moduleProgress(mod) {
 
 function enroll() {
   router.post(route('lms.courses.enroll', { event: props.event?.slug, course: props.course?.id }))
+}
+
+function unenroll() {
+  if (!confirm('Отменить заявку на курс?')) return
+  router.delete(route('lms.courses.unenroll', { event: props.event?.slug, course: props.course?.id }))
 }
 
 function goToStage(stageId) {

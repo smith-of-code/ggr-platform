@@ -1,8 +1,8 @@
 <template>
   <LmsLayout :event="event" :user="$page.props.user" :profile="$page.props.profile">
-    <Head :title="`Гранты – ${event?.title}`" />
+    <Head :title="`Возможности – ${event?.title}`" />
     <div class="space-y-6">
-      <h1 class="font-brand text-2xl font-bold text-gray-900">Гранты</h1>
+      <h1 class="font-brand text-2xl font-bold text-gray-900">Возможности</h1>
 
       <div v-if="!isProfileComplete" class="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4">
         <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-6 w-6 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -10,38 +10,82 @@
         </svg>
         <div>
           <p class="font-semibold text-amber-800">Заполните профиль</p>
-          <p class="mt-1 text-sm text-amber-700">Для выбора гранта необходимо заполнить личный кабинет.</p>
+          <p class="mt-1 text-sm text-amber-700">Для выбора возможности необходимо заполнить личный кабинет.</p>
           <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-2 inline-block text-sm font-medium text-rosatom-600 hover:underline">
             Перейти в личный кабинет
           </Link>
         </div>
       </div>
 
-      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div
-          v-for="item in grants"
-          :key="item.grant.id"
-          class="group cursor-pointer overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
-          @click="router.visit(route('lms.grants.show', { event: event?.slug, grant: item.grant.id }))"
+      <!-- Filters -->
+      <div class="flex flex-wrap items-end gap-4">
+        <div class="w-48">
+          <FilterDropdown
+            v-model="filterType"
+            label="Тип"
+            :options="typeFilterOptions"
+            placeholder="Все типы"
+          />
+        </div>
+        <div class="w-64">
+          <SearchSelect
+            v-model="filterCity"
+            :options="cityOptions"
+            value-key="value"
+            label-key="label"
+            label="Город"
+            placeholder="Все города"
+            search-placeholder="Поиск города..."
+          />
+        </div>
+        <button
+          v-if="filterType || filterCity"
+          type="button"
+          class="mt-auto h-[42px] text-sm font-medium text-gray-500 transition hover:text-rosatom-600"
+          @click="resetFilters"
         >
-          <div class="p-5">
-            <div class="mb-3 flex items-start justify-between gap-2">
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rosatom-50">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rosatom-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 8h4.5a2.5 2.5 0 0 1 0 5H9V8Zm0 5v3m0 0v2m0-2H7m2 0h4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                </svg>
-              </div>
-              <RBadge v-if="item.enrolled" variant="success" size="sm">Выбран</RBadge>
-            </div>
-            <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ item.grant.title }}</h3>
-            <p v-if="item.grant.description" class="mt-2 line-clamp-3 text-sm text-gray-500">{{ stripTags(item.grant.description) }}</p>
-            <div v-if="item.grant.application_start || item.grant.application_end" class="mt-3 flex items-center gap-1.5 text-xs text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-              </svg>
-              <span>Приём заявок: {{ formatDateRange(item.grant) }}</span>
-            </div>
-          </div>
+          Сбросить
+        </button>
+      </div>
+
+      <!-- Enrolled section -->
+      <div v-if="enrolledItems.length" class="space-y-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Мои возможности</h2>
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <GrantCard
+            v-for="item in enrolledItems"
+            :key="item.grant.id"
+            :item="item"
+            :event="event"
+            badge-variant="enrolled"
+          />
+        </div>
+      </div>
+
+      <!-- Active items -->
+      <div v-if="activeItems.length" class="space-y-4">
+        <h2 v-if="enrolledItems.length" class="text-sm font-semibold uppercase tracking-wider text-gray-400">Доступные</h2>
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <GrantCard
+            v-for="item in activeItems"
+            :key="item.grant.id"
+            :item="item"
+            :event="event"
+          />
+        </div>
+      </div>
+
+      <!-- Expired items -->
+      <div v-if="expiredItems.length" class="space-y-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Срок подачи истёк</h2>
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <GrantCard
+            v-for="item in expiredItems"
+            :key="item.grant.id"
+            :item="item"
+            :event="event"
+            badge-variant="expired"
+          />
         </div>
       </div>
 
@@ -49,36 +93,80 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 8h4.5a2.5 2.5 0 0 1 0 5H9V8Zm0 5v3m0 0v2m0-2H7m2 0h4M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
         </svg>
-        <p class="mt-3 text-sm text-gray-400">Гранты пока не добавлены</p>
+        <p class="mt-3 text-sm text-gray-400">Возможности пока не добавлены</p>
       </div>
     </div>
   </LmsLayout>
 </template>
 
 <script setup>
+import { ref, computed, watch } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
+import FilterDropdown from '@/Components/FilterDropdown.vue'
+import SearchSelect from '@/Components/SearchSelect.vue'
+import GrantCard from './GrantCard.vue'
 
 const props = defineProps({
   event: Object,
   grants: Array,
   isProfileComplete: { type: Boolean, default: false },
+  filters: { type: Object, default: () => ({}) },
 })
 
-function stripTags(html) {
-  if (!html) return ''
-  return html.replace(/<[^>]*>/g, '')
+const typeFilterOptions = [
+  { value: '', label: 'Все типы' },
+  { value: 'grant', label: 'Грант' },
+  { value: 'subsidy', label: 'Субсидия' },
+  { value: 'credit', label: 'Кредит' },
+]
+
+const CITY_NAMES = [
+  'Ангарск', 'Байкальск', 'Балаково', 'Билибино', 'Волгодонск',
+  'Глазов', 'Десногорск', 'Димитровград', 'Железногорск',
+  'Заречный (Пензенская область)', 'Заречный (Свердловская область)',
+  'Зеленогорск', 'Краснокаменск', 'Курчатов', 'Лесной', 'Неман',
+  'Нововоронеж', 'Новоуральск', 'Обнинск', 'Озёрск', 'Певек',
+  'Полярные Зори', 'Саров', 'Северск', 'Снежинск', 'Советск',
+  'Сосновый Бор', 'Трёхгорный', 'Удомля', 'Усолье-Сибирское', 'Электросталь',
+]
+const cityOptions = CITY_NAMES.map(name => ({ value: name, label: name }))
+
+const filterType = ref(props.filters?.type || '')
+const filterCity = ref(props.filters?.city || '')
+
+function applyFilters() {
+  const params = {}
+  if (filterType.value) params.type = filterType.value
+  if (filterCity.value) params.city = filterCity.value
+  router.get(route('lms.grants.index', { event: props.event?.slug }), params, {
+    preserveState: true,
+    preserveScroll: true,
+  })
 }
 
-function formatDate(d) {
-  if (!d) return ''
-  return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+watch(filterType, applyFilters)
+watch(filterCity, applyFilters)
+
+function resetFilters() {
+  filterType.value = ''
+  filterCity.value = ''
 }
 
-function formatDateRange(grant) {
-  const parts = []
-  if (grant.application_start) parts.push(formatDate(grant.application_start))
-  if (grant.application_end) parts.push(formatDate(grant.application_end))
-  return parts.join(' – ')
+function isExpired(grant) {
+  if (!grant.application_end) return false
+  return new Date(grant.application_end) < new Date()
 }
+
+const enrolledItems = computed(() =>
+  (props.grants || []).filter(item => item.enrolled && !isExpired(item.grant))
+)
+
+const activeItems = computed(() =>
+  (props.grants || []).filter(item => !item.enrolled && !isExpired(item.grant))
+)
+
+const expiredItems = computed(() =>
+  (props.grants || []).filter(item => isExpired(item.grant) && !item.enrolled)
+)
 </script>

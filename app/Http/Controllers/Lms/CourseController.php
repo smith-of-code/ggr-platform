@@ -25,8 +25,13 @@ class CourseController extends Controller
             ->where('lms_event_id', $event->id)
             ->first();
 
+        $enrolledCourseIds = LmsCourseEnrollment::where('user_id', $user->id)
+            ->whereIn('status', ['enrolled', 'in_progress', 'completed', 'pending'])
+            ->pluck('lms_course_id');
+
         $query = LmsCourse::where('lms_event_id', $event->id)
             ->where('is_active', true)
+            ->orderByRaw('CASE WHEN is_mandatory = true THEN 0 WHEN id IN (' . ($enrolledCourseIds->isNotEmpty() ? $enrolledCourseIds->implode(',') : '0') . ') THEN 1 ELSE 2 END')
             ->orderBy('position')
             ->with('stages');
 
@@ -53,7 +58,7 @@ class CourseController extends Controller
                 : 0;
             $isActiveEnrollment = $enrollment && !in_array($enrollment->status, ['pending', 'rejected']);
             return [
-                'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'starts_at', 'ends_at']),
+                'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'is_mandatory', 'starts_at', 'ends_at']),
                 'enrolled' => $isActiveEnrollment,
                 'enrollment' => $enrollment?->only(['id', 'status', 'completed_at']),
                 'progress' => $isActiveEnrollment ? $progress : 0,
@@ -133,10 +138,30 @@ class CourseController extends Controller
             ->where('lms_event_id', $event->id)
             ->first();
 
+        $existingOtherEnrollment = null;
+        if (! $enrollment) {
+            $other = LmsCourseEnrollment::where('user_id', $user->id)
+                ->whereIn('status', ['pending', 'enrolled', 'in_progress'])
+                ->whereHas('course', fn ($q) => $q
+                    ->where('lms_event_id', $event->id)
+                    ->where('is_mandatory', false)
+                )
+                ->with('course:id,title')
+                ->first();
+            if ($other) {
+                $existingOtherEnrollment = [
+                    'course_title' => $other->course->title,
+                    'course_id' => $other->course->id,
+                    'status' => $other->status,
+                ];
+            }
+        }
+
         return Inertia::render('Lms/Courses/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
-            'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'sequential', 'starts_at', 'ends_at']),
+            'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'sequential', 'is_mandatory', 'starts_at', 'ends_at']),
             'enrollment' => $enrollment?->only(['id', 'status', 'completed_at']),
+            'existingOtherEnrollment' => $existingOtherEnrollment,
             'modules' => $modules,
             'orphanStages' => $orphanStages,
             'stages' => $course->stages->sortBy('position')->map(fn($s) => $s->only(['id', 'title', 'type', 'position']))->values(),
@@ -158,6 +183,22 @@ class CourseController extends Controller
         if (! $profile || ! $profile->isProfileComplete()) {
             return redirect()->back()->withErrors([
                 'enroll' => 'Для записи на курс необходимо заполнить профиль.',
+            ]);
+        }
+
+        $existingInOtherCourse = LmsCourseEnrollment::where('user_id', $user->id)
+            ->where('lms_course_id', '!=', $course->id)
+            ->whereIn('status', ['pending', 'enrolled', 'in_progress'])
+            ->whereHas('course', fn ($q) => $q
+                ->where('lms_event_id', $event->id)
+                ->where('is_mandatory', false)
+            )
+            ->with('course:id,title')
+            ->first();
+
+        if ($existingInOtherCourse) {
+            return redirect()->back()->withErrors([
+                'enroll' => 'Вы уже записаны на курс «' . $existingInOtherCourse->course->title . '». Чтобы записаться на другой, отмените текущую заявку.',
             ]);
         }
 
@@ -183,5 +224,39 @@ class CourseController extends Controller
         ]);
 
         return redirect()->back();
+    }
+
+    public function unenroll(LmsEvent $event, LmsCourse $course): RedirectResponse
+    {
+        if ($course->lms_event_id !== $event->id) {
+            abort(404);
+        }
+
+        $user = auth()->user();
+
+        $enrollment = LmsCourseEnrollment::where('lms_course_id', $course->id)
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'enrolled'])
+            ->first();
+
+        if (! $enrollment) {
+            return redirect()->back();
+        }
+
+        if ($course->is_mandatory) {
+            return redirect()->back()->withErrors([
+                'enroll' => 'Нельзя отменить запись на обязательный курс.',
+            ]);
+        }
+
+        if ($course->starts_at && now()->gte($course->starts_at) && $enrollment->status === 'enrolled') {
+            return redirect()->back()->withErrors([
+                'enroll' => 'Нельзя отменить заявку после начала обучения.',
+            ]);
+        }
+
+        $enrollment->delete();
+
+        return redirect()->back()->with('success', 'Заявка отменена.');
     }
 }

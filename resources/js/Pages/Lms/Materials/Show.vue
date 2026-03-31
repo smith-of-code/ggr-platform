@@ -19,6 +19,23 @@
             v-html="section.content"
           />
           <p v-else class="mt-6 text-gray-400">Контент отсутствует</p>
+
+          <div v-if="section?.files?.length" class="mt-8 border-t border-gray-200 pt-6">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900">Прикреплённые файлы</h2>
+            <ul class="space-y-2">
+              <li v-for="file in section.files" :key="file.id">
+                <a
+                  :href="file.file_path"
+                  target="_blank"
+                  class="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 transition hover:border-rosatom-300 hover:bg-rosatom-50/30"
+                >
+                  <DocumentArrowDownIcon class="h-5 w-5 shrink-0 text-rosatom-500" />
+                  <span class="flex-1 text-sm font-medium text-gray-800">{{ file.title || file.file_name }}</span>
+                  <span v-if="file.file_size" class="text-xs text-gray-400">{{ formatSize(file.file_size) }}</span>
+                </a>
+              </li>
+            </ul>
+          </div>
         </template>
       </RCard>
     </div>
@@ -29,7 +46,7 @@
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, DocumentArrowDownIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -39,4 +56,13 @@ const props = defineProps({
 })
 
 const user = computed(() => props.user || props.event?.user || usePage().props.auth?.user || {})
+
+function formatSize(bytes) {
+  if (!bytes) return ''
+  const units = ['Б', 'КБ', 'МБ', 'ГБ']
+  let i = 0
+  let size = bytes
+  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++ }
+  return `${size.toFixed(i > 0 ? 1 : 0)} ${units[i]}`
+}
 </script>

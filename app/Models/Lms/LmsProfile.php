@@ -13,6 +13,23 @@ class LmsProfile extends Model
 {
     protected $table = 'lms_profiles';
 
+    protected static function booted(): void
+    {
+        static::created(function (LmsProfile $profile) {
+            $mandatoryCourses = LmsCourse::where('lms_event_id', $profile->lms_event_id)
+                ->where('is_mandatory', true)
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($mandatoryCourses as $course) {
+                LmsCourseEnrollment::firstOrCreate(
+                    ['lms_course_id' => $course->id, 'user_id' => $profile->user_id],
+                    ['status' => 'enrolled']
+                );
+            }
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'lms_event_id',
@@ -100,6 +117,9 @@ class LmsProfile extends Model
         }
         if (! $this->city) {
             $missing[] = 'Город';
+        }
+        if (! $this->project_description) {
+            $missing[] = 'Описание проекта или идеи';
         }
         if (! $this->organization) {
             $missing[] = 'Организация';

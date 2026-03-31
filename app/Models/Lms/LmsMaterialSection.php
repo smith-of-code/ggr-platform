@@ -5,6 +5,7 @@ namespace App\Models\Lms;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LmsMaterialSection extends Model
 {
@@ -32,5 +33,11 @@ class LmsMaterialSection extends Model
     public function groups(): BelongsToMany
     {
         return $this->belongsToMany(LmsGroup::class, 'lms_material_access');
+    }
+
+    /** @return HasMany<LmsMaterialFile> */
+    public function files(): HasMany
+    {
+        return $this->hasMany(LmsMaterialFile::class, 'lms_material_section_id')->orderBy('position');
     }
 }

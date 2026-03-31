@@ -15,6 +15,7 @@ class LmsAssignment extends Model
         'title',
         'description',
         'template_file',
+        'template_file_name',
         'completion_mode',
         'deadline',
         'is_active',
@@ -35,5 +36,11 @@ class LmsAssignment extends Model
     public function submissions(): HasMany
     {
         return $this->hasMany(LmsAssignmentSubmission::class, 'lms_assignment_id');
+    }
+
+    /** @return HasMany<LmsAssignmentTask> */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(LmsAssignmentTask::class, 'lms_assignment_id')->orderBy('position');
     }
 }

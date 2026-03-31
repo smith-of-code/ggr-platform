@@ -1,13 +1,35 @@
 <template>
   <LmsAdminLayout :event="event">
     <div class="mb-8">
-      <h1 class="text-2xl font-bold text-gray-900">{{ grant ? 'Редактирование гранта' : 'Создание гранта' }}</h1>
+      <h1 class="text-2xl font-bold text-gray-900">{{ grant ? 'Редактирование возможности' : 'Создание возможности' }}</h1>
     </div>
 
     <form @submit.prevent="submit" class="space-y-6">
       <RCard elevation="raised">
         <div class="space-y-5">
           <RInput v-model="form.title" label="Название" :error="form.errors.title" />
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700">Тип</label>
+              <select
+                v-model="form.type"
+                class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
+              >
+                <option v-for="(label, key) in typeOptions" :key="key" :value="key">{{ label }}</option>
+              </select>
+              <p v-if="form.errors.type" class="mt-1 text-sm text-red-600">{{ form.errors.type }}</p>
+            </div>
+            <MultiSelect
+              v-model="form.city"
+              :options="cityOptions"
+              value-key="value"
+              label-key="label"
+              label="Города"
+              placeholder="Все города"
+              :error="form.errors.city"
+            />
+          </div>
 
           <div>
             <label class="mb-2 block text-sm font-medium text-gray-500">Описание</label>
@@ -73,14 +95,34 @@ import { ref, computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
+import MultiSelect from '@/Components/MultiSelect.vue'
 
 const props = defineProps({
   event: Object,
   grant: { type: Object, default: null },
 })
 
+const typeOptions = {
+  grant: 'Грант',
+  subsidy: 'Субсидия',
+  credit: 'Кредит',
+}
+
+const CITY_NAMES = [
+  'Ангарск', 'Байкальск', 'Балаково', 'Билибино', 'Волгодонск',
+  'Глазов', 'Десногорск', 'Димитровград', 'Железногорск',
+  'Заречный (Пензенская область)', 'Заречный (Свердловская область)',
+  'Зеленогорск', 'Краснокаменск', 'Курчатов', 'Лесной', 'Неман',
+  'Нововоронеж', 'Новоуральск', 'Обнинск', 'Озёрск', 'Певек',
+  'Полярные Зори', 'Саров', 'Северск', 'Снежинск', 'Советск',
+  'Сосновый Бор', 'Трёхгорный', 'Удомля', 'Усолье-Сибирское', 'Электросталь',
+]
+const cityOptions = CITY_NAMES.map(name => ({ value: name, label: name }))
+
 const form = useForm({
   title: props.grant?.title ?? '',
+  type: props.grant?.type ?? 'grant',
+  city: props.grant?.city ?? [],
   description: props.grant?.description ?? '',
   application_start: props.grant?.application_start?.substring(0, 10) ?? '',
   application_end: props.grant?.application_end?.substring(0, 10) ?? '',

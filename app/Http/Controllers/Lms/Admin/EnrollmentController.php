@@ -119,7 +119,7 @@ class EnrollmentController extends Controller
             'event' => $event->only(['id', 'slug', 'title']),
             'enrollments' => $enrollments,
             'course' => $course->only(['id', 'title']),
-            'courses' => [],
+            'courses' => $event->courses()->orderBy('title')->get(['id', 'title']),
             'currentStatus' => $status,
             'counts' => [
                 'all' => $counts->total ?? 0,
@@ -154,6 +154,39 @@ class EnrollmentController extends Controller
         ]);
 
         return $this->safeRedirect($request, $event, 'Заявка отклонена');
+    }
+
+    public function reassign(Request $request, LmsEvent $event, LmsCourseEnrollment $enrollment): RedirectResponse
+    {
+        $this->ensureEnrollmentBelongsToEvent($enrollment, $event);
+
+        $request->validate([
+            'course_id' => ['required', 'integer', 'exists:lms_courses,id'],
+        ]);
+
+        $newCourse = LmsCourse::findOrFail($request->course_id);
+        if ($newCourse->lms_event_id !== $event->id) {
+            abort(422, 'Курс не принадлежит этому событию');
+        }
+
+        $oldCourseId = $enrollment->lms_course_id;
+
+        DB::table('lms_stage_progress')
+            ->where('user_id', $enrollment->user_id)
+            ->whereIn('lms_course_stage_id', function ($q) use ($oldCourseId) {
+                $q->select('id')->from('lms_course_stages')->where('lms_course_id', $oldCourseId);
+            })
+            ->delete();
+
+        $enrollment->update([
+            'lms_course_id' => $newCourse->id,
+            'status' => 'enrolled',
+            'reviewed_at' => now(),
+            'reviewed_by' => auth()->id(),
+            'completed_at' => null,
+        ]);
+
+        return $this->safeRedirect($request, $event, 'Участник переведён на курс «' . $newCourse->title . '»');
     }
 
     public function destroy(Request $request, LmsEvent $event, LmsCourseEnrollment $enrollment): RedirectResponse

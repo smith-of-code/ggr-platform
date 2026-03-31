@@ -10,9 +10,21 @@ class LmsGrant extends Model
 {
     protected $table = 'lms_grants';
 
+    public const TYPE_GRANT = 'grant';
+    public const TYPE_SUBSIDY = 'subsidy';
+    public const TYPE_CREDIT = 'credit';
+
+    public const TYPES = [
+        self::TYPE_GRANT => 'Грант',
+        self::TYPE_SUBSIDY => 'Субсидия',
+        self::TYPE_CREDIT => 'Кредит',
+    ];
+
     protected $fillable = [
         'lms_event_id',
         'title',
+        'type',
+        'city',
         'description',
         'application_start',
         'application_end',
@@ -22,6 +34,7 @@ class LmsGrant extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'city' => 'array',
         'application_start' => 'datetime',
         'application_end' => 'datetime',
     ];

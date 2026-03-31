@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Lms\LmsProfile;
+use App\Services\GamificationService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -60,6 +61,21 @@ class HandleInertiaRequests extends Middleware
                     ->where('lms_event_id', $eventId)
                     ->with('lmsRole:id,name,slug')
                     ->first();
+            },
+            'gamificationEnabled' => function () use ($request) {
+                $user = $request->user();
+                if (!$user) return false;
+
+                $eventSlug = $request->route('event');
+                if (!$eventSlug) return false;
+
+                $event = is_object($eventSlug)
+                    ? $eventSlug
+                    : \App\Models\Lms\LmsEvent::where('slug', $eventSlug)->first();
+
+                if (!$event) return false;
+
+                return app(GamificationService::class)->isGamificationEnabled($event, $user);
             },
         ];
     }

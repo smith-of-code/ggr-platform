@@ -45,25 +45,57 @@
           <!-- Submitted work -->
           <div class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
             <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ответ участника</p>
-            <div v-if="sub.text_content" class="mb-3">
-              <p class="whitespace-pre-wrap text-sm text-gray-900">{{ sub.text_content }}</p>
-            </div>
-            <div v-if="sub.link" class="mb-3">
-              <a :href="sub.link" target="_blank" rel="noopener" class="text-sm text-rosatom-600 underline hover:text-rosatom-700">{{ sub.link }}</a>
-            </div>
-            <div v-if="sub.files?.length" class="flex flex-wrap gap-2">
-              <a
-                v-for="(f, i) in sub.files"
-                :key="i"
-                :href="fileUrl(typeof f === 'string' ? f : f.path)"
-                target="_blank"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
-              >
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
-                {{ typeof f === 'string' ? `Файл ${i+1}` : (f.name || `Файл ${i+1}`) }}
-              </a>
-            </div>
-            <p v-if="!sub.text_content && !sub.link && !sub.files?.length" class="text-sm text-gray-400">Пустой ответ</p>
+
+            <!-- Answers by tasks -->
+            <template v-if="assignment.tasks?.length && sub.answers?.length">
+              <div v-for="task in assignment.tasks" :key="task.id" class="mb-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <p class="mb-1 text-xs font-semibold text-gray-500">
+                  {{ task.title }}
+                  <span class="ml-1 font-normal text-gray-400">({{ responseTypeLabel(task.response_type) }})</span>
+                </p>
+                <template v-for="answer in getAnswersForTask(sub, task.id)" :key="answer.id">
+                  <p v-if="answer.text_content" class="whitespace-pre-wrap text-sm text-gray-900">{{ answer.text_content }}</p>
+                  <a v-if="answer.link" :href="answer.link" target="_blank" rel="noopener" class="text-sm text-rosatom-600 underline hover:text-rosatom-700">{{ answer.link }}</a>
+                  <div v-if="answer.files?.length" class="mt-1 flex flex-wrap gap-2">
+                    <a
+                      v-for="(f, fi) in answer.files"
+                      :key="fi"
+                      :href="fileUrl(typeof f === 'string' ? f : f.path)"
+                      target="_blank"
+                      class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
+                      {{ typeof f === 'string' ? `Файл ${fi+1}` : (f.name || `Файл ${fi+1}`) }}
+                    </a>
+                  </div>
+                  <p v-if="!answer.text_content && !answer.link && !answer.files?.length" class="text-xs text-gray-400">Не заполнено</p>
+                </template>
+                <p v-if="!getAnswersForTask(sub, task.id).length" class="text-xs text-gray-400">Не заполнено</p>
+              </div>
+            </template>
+
+            <!-- Legacy display -->
+            <template v-else>
+              <div v-if="sub.text_content" class="mb-3">
+                <p class="whitespace-pre-wrap text-sm text-gray-900">{{ sub.text_content }}</p>
+              </div>
+              <div v-if="sub.link" class="mb-3">
+                <a :href="sub.link" target="_blank" rel="noopener" class="text-sm text-rosatom-600 underline hover:text-rosatom-700">{{ sub.link }}</a>
+              </div>
+              <div v-if="sub.files?.length" class="flex flex-wrap gap-2">
+                <a
+                  v-for="(f, i) in sub.files"
+                  :key="i"
+                  :href="fileUrl(typeof f === 'string' ? f : f.path)"
+                  target="_blank"
+                  class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
+                >
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 002.112 2.13" /></svg>
+                  {{ typeof f === 'string' ? `Файл ${i+1}` : (f.name || `Файл ${i+1}`) }}
+                </a>
+              </div>
+              <p v-if="!sub.text_content && !sub.link && !sub.files?.length" class="text-sm text-gray-400">Пустой ответ</p>
+            </template>
           </div>
 
           <!-- Dialog thread -->
@@ -222,6 +254,14 @@ const reviewForms = reactive(
 const commentForms = reactive(
   Object.fromEntries((props.submissions?.data ?? []).map(s => [s.id, { text: '', _files: [] }]))
 )
+
+function getAnswersForTask(sub, taskId) {
+  return (sub.answers || []).filter(a => a.lms_assignment_task_id === taskId)
+}
+
+function responseTypeLabel(type) {
+  return { text: 'текст', link: 'ссылка', file: 'файл' }[type] || type
+}
 
 function statusLabel(status) {
   const map = { submitted: 'На проверке', approved: 'Принято', revision: 'На доработке', rejected: 'Отклонено', resubmitted: 'Пересдано' }

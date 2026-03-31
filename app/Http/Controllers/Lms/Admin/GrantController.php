@@ -9,6 +9,7 @@ use App\Models\Lms\LmsGrantDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,11 +39,16 @@ class GrantController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'type' => ['required', Rule::in(array_keys(LmsGrant::TYPES))],
+            'city' => ['nullable', 'array'],
+            'city.*' => ['string', 'max:255'],
             'description' => ['nullable', 'string'],
             'application_start' => ['nullable', 'date'],
             'application_end' => ['nullable', 'date'],
             'is_active' => ['boolean'],
         ]);
+
+        $validated['city'] = !empty($validated['city']) ? $validated['city'] : null;
 
         $grant = LmsGrant::create([
             ...$validated,
@@ -76,11 +82,16 @@ class GrantController extends Controller
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'type' => ['required', Rule::in(array_keys(LmsGrant::TYPES))],
+            'city' => ['nullable', 'array'],
+            'city.*' => ['string', 'max:255'],
             'description' => ['nullable', 'string'],
             'application_start' => ['nullable', 'date'],
             'application_end' => ['nullable', 'date'],
             'is_active' => ['boolean'],
         ]);
+
+        $validated['city'] = !empty($validated['city']) ? $validated['city'] : null;
 
         $grant->update($validated);
         $this->syncDocuments($request, $grant);
