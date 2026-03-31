@@ -21,7 +21,7 @@
           :title="item.assignment.title"
           :description="stripHtml(item.assignment.description)"
           :status="mapStatus(item.submission?.status)"
-          :deadline="item.assignment.deadline"
+          :deadline="formatDeadline(item.assignment.deadline)"
           :attachments="item.submission?.files?.length || 0"
           @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: item.assignment.id }))"
         />
@@ -91,6 +91,12 @@ function stripHtml(html) {
   if (!html) return ''
   const doc = new DOMParser().parseFromString(html, 'text/html')
   return (doc.body.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120)
+}
+
+function formatDeadline(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function mapStatus(status) {

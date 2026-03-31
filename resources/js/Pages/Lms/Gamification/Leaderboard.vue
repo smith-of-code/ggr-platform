@@ -6,14 +6,14 @@
       <div class="flex items-end justify-between">
         <div>
           <h1 class="font-brand text-2xl font-bold text-gray-900">Рейтинг</h1>
-          <p class="mt-1 text-sm text-gray-500">Топ участников и групп по баллам</p>
+          <p class="mt-1 text-sm text-gray-500">Топ участников, групп и городов по баллам</p>
         </div>
         <div class="flex rounded-xl bg-gray-100 p-1">
           <button
             v-for="t in tabs"
             :key="t.id"
             :class="[
-              'rounded-lg px-4 py-2 text-sm font-medium transition',
+              'cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition',
               activeTab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
             ]"
             @click="activeTab = t.id"
@@ -202,6 +202,95 @@
           Рейтинг групп пока пуст
         </RCard>
       </div>
+
+      <!-- City leaderboard -->
+      <div v-show="activeTab === 'cities'">
+        <!-- My city card -->
+        <div v-if="userCityName && userCityRank" class="mb-6 grid gap-4 sm:grid-cols-3">
+          <RCard class="relative overflow-hidden border-2 border-rosatom-500/30">
+            <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-rosatom-500/5" />
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Место вашего города</p>
+            <p class="mt-1 text-4xl font-black text-rosatom-600">#{{ userCityRank }}</p>
+            <p class="mt-1 text-sm text-gray-500">из {{ cityLeaderboard.length }} городов</p>
+          </RCard>
+          <RCard class="relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-blue-500/5" />
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Ваш город</p>
+            <p class="mt-1 truncate text-lg font-bold text-gray-900">{{ userCityName }}</p>
+            <p class="mt-1 text-sm text-gray-500">Средний балл: <span class="font-bold text-blue-600">{{ userCityAvg ?? 0 }}</span></p>
+          </RCard>
+          <RCard v-if="cityLeaderboard[0]" class="relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-green-500/5" />
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Лидер</p>
+            <p class="mt-1 truncate text-lg font-bold text-gray-900">{{ cityLeaderboard[0].city }}</p>
+            <p class="mt-1 text-2xl font-black text-green-600">{{ cityLeaderboard[0].avg_points }} ср. балл</p>
+          </RCard>
+        </div>
+
+        <div v-if="cityLeaderboard.length > 0" class="space-y-4">
+          <!-- Top city card -->
+          <RCard v-if="cityLeaderboard[0]" class="border-2 border-amber-400/40 bg-gradient-to-r from-amber-50 to-white">
+            <div class="flex items-center gap-5">
+              <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-2xl font-black text-white shadow-lg">
+                1
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-lg font-bold text-gray-900">{{ cityLeaderboard[0].city }}</p>
+                <p class="text-sm text-gray-500">{{ cityLeaderboard[0].members_count }} участников</p>
+              </div>
+              <div class="text-right">
+                <p class="text-3xl font-black text-amber-500">{{ cityLeaderboard[0].avg_points }}</p>
+                <p class="text-xs text-gray-400">ср. балл</p>
+              </div>
+            </div>
+          </RCard>
+
+          <!-- Rest of cities -->
+          <RCard flush>
+            <div class="divide-y divide-gray-100">
+              <div
+                v-for="(entry, idx) in cityLeaderboard.slice(1)"
+                :key="entry.city"
+                :class="[
+                  'flex items-center gap-4 px-5 py-4 transition',
+                  entry.city === userCityName ? 'bg-rosatom-50/60' : 'hover:bg-gray-50',
+                ]"
+              >
+                <span
+                  :class="[
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold',
+                    idx === 0 ? 'bg-gray-300 text-white' : idx === 1 ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-500',
+                  ]"
+                >
+                  {{ idx + 2 }}
+                </span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold text-gray-900">
+                    {{ entry.city }}
+                    <span v-if="entry.city === userCityName" class="ml-1 text-xs text-rosatom-500">(ваш)</span>
+                  </p>
+                  <p class="text-xs text-gray-400">{{ entry.members_count }} участников · {{ entry.total_points }} баллов всего</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-lg font-bold text-gray-900">{{ entry.avg_points }}</p>
+                  <p class="text-[10px] text-gray-400">ср. балл</p>
+                </div>
+                <div class="hidden w-32 sm:block">
+                  <div class="h-2 overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      class="h-full rounded-full bg-blue-400 transition-all duration-500"
+                      :style="{ width: `${maxCityAvg ? (entry.avg_points / maxCityAvg) * 100 : 0}%` }"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </RCard>
+        </div>
+        <RCard v-else class="px-5 py-16 text-center text-sm text-gray-400">
+          Рейтинг городов пока пуст
+        </RCard>
+      </div>
     </div>
   </LmsLayout>
 </template>
@@ -217,15 +306,23 @@ const props = defineProps({
   profile: { type: Object, default: () => ({}) },
   userLeaderboard: { type: Array, default: () => [] },
   groupLeaderboard: { type: Array, default: () => [] },
+  cityLeaderboard: { type: Array, default: () => [] },
   userRank: { type: Number, default: null },
   userPoints: { type: Number, default: null },
+  userCityRank: { type: Number, default: null },
+  userCityName: { type: String, default: null },
+  userCityAvg: { type: Number, default: null },
 })
 
 const tabs = [
   { id: 'users', label: 'Участники' },
   { id: 'groups', label: 'Группы' },
+  { id: 'cities', label: 'Города' },
 ]
-const activeTab = ref('users')
+
+const urlParams = new URLSearchParams(window.location.search)
+const initialTab = urlParams.get('tab') || 'users'
+const activeTab = ref(tabs.some(t => t.id === initialTab) ? initialTab : 'users')
 
 const topUser = computed(() => props.userLeaderboard[0] ?? null)
 
@@ -237,6 +334,11 @@ const maxUserPoints = computed(() => {
 const maxGroupPoints = computed(() => {
   if (!props.groupLeaderboard.length) return 0
   return props.groupLeaderboard[0]?.total_points || 1
+})
+
+const maxCityAvg = computed(() => {
+  if (!props.cityLeaderboard.length) return 0
+  return props.cityLeaderboard[0]?.avg_points || 1
 })
 
 const podiumOrder = [

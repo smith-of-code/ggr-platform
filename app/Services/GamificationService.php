@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Lms\LmsCourse;
+use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGamificationPoint;
 use App\Models\Lms\LmsGamificationRule;
@@ -10,8 +12,31 @@ use Illuminate\Support\Facades\DB;
 
 class GamificationService
 {
+    public function isGamificationEnabled(LmsEvent $event, User $user): bool
+    {
+        $anyUnlockingCourse = LmsCourse::where('lms_event_id', $event->id)
+            ->where('unlocks_gamification', true)
+            ->exists();
+
+        if (!$anyUnlockingCourse) {
+            return true;
+        }
+
+        return LmsCourseEnrollment::where('user_id', $user->id)
+            ->whereIn('status', ['enrolled', 'in_progress', 'completed'])
+            ->whereHas('course', fn ($q) => $q
+                ->where('lms_event_id', $event->id)
+                ->where('unlocks_gamification', true)
+            )
+            ->exists();
+    }
+
     public function awardPoints(LmsEvent $event, User $user, string $action, ?string $reason = null): void
     {
+        if (!$this->isGamificationEnabled($event, $user)) {
+            return;
+        }
+
         $rules = LmsGamificationRule::where('lms_event_id', $event->id)
             ->where('action', $action)
             ->where('is_active', true)

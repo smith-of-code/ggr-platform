@@ -138,7 +138,7 @@
                 <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rosatom-100 text-xs font-bold text-rosatom-600">{{ tIdx + 1 }}</span>
                 <div class="flex-1">
                   <p class="text-sm font-semibold text-gray-900">{{ task.title }}</p>
-                  <p v-if="task.description" class="mt-1 text-sm text-gray-500">{{ task.description }}</p>
+                  <p v-if="task.description" class="mt-1 whitespace-pre-line text-sm text-gray-500">{{ task.description }}</p>
                   <a
                     v-if="task.template_file"
                     :href="task.template_file"

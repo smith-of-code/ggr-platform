@@ -13,16 +13,18 @@
               Добро пожаловать в образовательную платформу {{ event?.title || event?.name }}
             </p>
           </div>
-          <div class="hidden shrink-0 rounded-2xl bg-white/10 p-4 lg:block">
+          <div v-if="gamificationEnabled" class="hidden shrink-0 rounded-2xl bg-white/10 p-4 lg:block">
             <TrophyIcon class="h-10 w-10 text-accent-yellow" />
           </div>
         </div>
         <div class="mt-6 flex flex-wrap gap-6 lg:gap-10">
-          <div>
-            <p class="text-xs font-medium uppercase tracking-wider text-white/50">Всего баллов</p>
-            <p class="mt-1 text-3xl font-bold">{{ totalPoints ?? 0 }}</p>
-          </div>
-          <div class="h-12 w-px bg-white/20" />
+          <template v-if="gamificationEnabled">
+            <div>
+              <p class="text-xs font-medium uppercase tracking-wider text-white/50">Всего баллов</p>
+              <p class="mt-1 text-3xl font-bold">{{ totalPoints ?? 0 }}</p>
+            </div>
+            <div class="h-12 w-px bg-white/20" />
+          </template>
           <div>
             <p class="text-xs font-medium uppercase tracking-wider text-white/50">Курсов пройдено</p>
             <p class="mt-1 text-3xl font-bold">
@@ -30,11 +32,23 @@
               <span class="text-base font-normal text-white/50">/ {{ courses?.length || 0 }}</span>
             </p>
           </div>
-          <div class="h-12 w-px bg-white/20" />
-          <div>
-            <p class="text-xs font-medium uppercase tracking-wider text-white/50">Ранг</p>
-            <p class="mt-1 text-3xl font-bold">{{ profile?.rank ?? '–' }}</p>
-          </div>
+          <template v-if="gamificationEnabled">
+            <div class="h-12 w-px bg-white/20" />
+            <div>
+              <p class="text-xs font-medium uppercase tracking-wider text-white/50">Ваш ранг</p>
+              <p class="mt-1 text-3xl font-bold">#{{ userRank ?? '–' }}</p>
+            </div>
+            <template v-if="cityName && cityRank">
+              <div class="h-12 w-px bg-white/20" />
+              <Link :href="route('lms.gamification.leaderboard', { event: event?.slug }) + '?tab=cities'" class="group cursor-pointer">
+                <p class="text-xs font-medium uppercase tracking-wider text-white/50">Рейтинг города</p>
+                <p class="mt-1 text-3xl font-bold group-hover:text-accent-yellow">
+                  #{{ cityRank }}
+                  <span class="text-base font-normal text-white/50">{{ cityName }}</span>
+                </p>
+              </Link>
+            </template>
+          </template>
         </div>
       </div>
 
@@ -58,7 +72,7 @@
       </div>
 
       <!-- Stats cards -->
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid gap-4 sm:grid-cols-2" :class="gamificationEnabled ? 'lg:grid-cols-4' : 'lg:grid-cols-2'">
         <RCard elevation="raised">
           <div class="flex items-center gap-4">
             <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rosatom-50">
@@ -81,7 +95,7 @@
             </div>
           </div>
         </RCard>
-        <RCard elevation="raised">
+        <RCard v-if="gamificationEnabled" elevation="raised">
           <div class="flex items-center gap-4">
             <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-yellow/10">
               <StarIcon class="h-5 w-5 text-accent-yellow" />
@@ -92,18 +106,42 @@
             </div>
           </div>
         </RCard>
-        <RCard elevation="raised">
+        <RCard v-if="gamificationEnabled" elevation="raised">
           <div class="flex items-center gap-4">
             <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-magenta/10">
               <TrophyIcon class="h-5 w-5 text-accent-magenta" />
             </div>
             <div>
-              <p class="text-sm text-gray-500">Ранг</p>
-              <p class="text-2xl font-bold text-gray-900">{{ profile?.rank ?? '–' }}</p>
+              <p class="text-sm text-gray-500">Ваш ранг</p>
+              <p class="text-2xl font-bold text-gray-900">#{{ userRank ?? '–' }}</p>
             </div>
           </div>
         </RCard>
       </div>
+
+      <!-- City rank card -->
+      <Link
+        v-if="gamificationEnabled && cityName && cityRank"
+        :href="route('lms.gamification.leaderboard', { event: event?.slug }) + '?tab=cities'"
+        class="block"
+      >
+        <RCard elevation="raised" class="cursor-pointer transition hover:shadow-md">
+          <div class="flex items-center gap-4">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+              <MapPinIcon class="h-5 w-5 text-blue-600" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm text-gray-500">Рейтинг моего города</p>
+              <p class="truncate text-lg font-bold text-gray-900">{{ cityName }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-2xl font-bold text-blue-600">#{{ cityRank }}</p>
+              <p class="text-xs text-gray-400">место</p>
+            </div>
+            <svg class="h-5 w-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+          </div>
+        </RCard>
+      </Link>
 
       <!-- My Courses -->
       <section>
@@ -134,7 +172,7 @@
         </div>
       </section>
 
-      <div class="grid gap-8 lg:grid-cols-2">
+      <div class="grid gap-8" :class="gamificationEnabled ? 'lg:grid-cols-2' : ''">
         <!-- Upcoming Deadlines -->
         <section>
           <h2 class="mb-4 text-lg font-bold text-gray-900">Ближайшие дедлайны</h2>
@@ -162,7 +200,7 @@
         </section>
 
         <!-- Recent Activity -->
-        <section>
+        <section v-if="gamificationEnabled">
           <h2 class="mb-4 text-lg font-bold text-gray-900">Последняя активность</h2>
           <div class="space-y-3">
             <RCard
@@ -190,12 +228,13 @@
 </template>
 
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3'
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import {
   BookOpenIcon,
   CheckCircleIcon,
+  MapPinIcon,
   StarIcon,
   TrophyIcon,
   PlusIcon,
@@ -211,7 +250,12 @@ const props = defineProps({
   upcomingAssignments: { type: Array, default: () => [] },
   recentPoints: { type: Array, default: () => [] },
   totalPoints: { type: Number, default: 0 },
+  userRank: { type: Number, default: null },
+  cityRank: { type: Number, default: null },
+  cityName: { type: String, default: null },
 })
+
+const gamificationEnabled = computed(() => usePage().props.gamificationEnabled ?? false)
 
 const user = computed(() => props.user || props.event?.user || props.profile?.user || {})
 

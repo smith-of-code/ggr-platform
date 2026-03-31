@@ -84,6 +84,9 @@
           <div class="flex items-end">
             <RCheckbox v-model="form.is_mandatory" label="Обязательный курс (автозапись при регистрации)" />
           </div>
+          <div class="flex items-end">
+            <RCheckbox v-model="form.unlocks_gamification" label="Открывает геймификацию (баллы, рейтинг)" />
+          </div>
         </div>
       </RCard>
 
@@ -399,6 +402,7 @@ const form = useForm({
   is_active: props.course?.is_active ?? true,
   requires_approval: props.course?.requires_approval ?? false,
   is_mandatory: props.course?.is_mandatory ?? false,
+  unlocks_gamification: props.course?.unlocks_gamification ?? false,
   modules: buildModules(),
   stages: buildOrphanStages(),
 })

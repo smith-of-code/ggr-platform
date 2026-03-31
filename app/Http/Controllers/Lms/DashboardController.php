@@ -10,6 +10,8 @@ use App\Models\Lms\LmsGamificationPoint;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTrajectoryEnrollment;
+use App\Services\GamificationService;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -72,6 +74,37 @@ class DashboardController extends Controller
             ->where('user_id', $user->id)
             ->sum('points');
 
+        $userRank = app(GamificationService::class)->getUserRank($event, $user);
+
+        $cityRank = null;
+        $cityName = $profile?->city;
+        if ($cityName) {
+            $cityAvgs = DB::table('lms_profiles')
+                ->leftJoin('lms_gamification_points', function ($join) use ($event) {
+                    $join->on('lms_profiles.user_id', '=', 'lms_gamification_points.user_id')
+                         ->where('lms_gamification_points.lms_event_id', '=', $event->id);
+                })
+                ->where('lms_profiles.lms_event_id', $event->id)
+                ->whereNotNull('lms_profiles.city')
+                ->where('lms_profiles.city', '!=', '')
+                ->select(
+                    'lms_profiles.city',
+                    DB::raw('ROUND(COALESCE(SUM(lms_gamification_points.points), 0)::numeric / GREATEST(COUNT(DISTINCT lms_profiles.user_id), 1), 1) as avg_points')
+                )
+                ->groupBy('lms_profiles.city')
+                ->orderByDesc('avg_points')
+                ->pluck('avg_points', 'city');
+
+            $rank = 1;
+            foreach ($cityAvgs as $city => $avg) {
+                if ($city === $cityName) {
+                    $cityRank = $rank;
+                    break;
+                }
+                $rank++;
+            }
+        }
+
         return Inertia::render('Lms/Dashboard', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'last_name', 'first_name', 'patronymic', 'email']),
@@ -82,6 +115,9 @@ class DashboardController extends Controller
             'upcomingAssignments' => $upcomingAssignments,
             'recentPoints' => $recentPoints,
             'totalPoints' => (int) $totalPoints,
+            'userRank' => $userRank,
+            'cityRank' => $cityRank,
+            'cityName' => $cityName,
         ]);
     }
 }

@@ -25,8 +25,13 @@ class CourseController extends Controller
             ->where('lms_event_id', $event->id)
             ->first();
 
+        $enrolledCourseIds = LmsCourseEnrollment::where('user_id', $user->id)
+            ->whereIn('status', ['enrolled', 'in_progress', 'completed', 'pending'])
+            ->pluck('lms_course_id');
+
         $query = LmsCourse::where('lms_event_id', $event->id)
             ->where('is_active', true)
+            ->orderByRaw('CASE WHEN is_mandatory = true THEN 0 WHEN id IN (' . ($enrolledCourseIds->isNotEmpty() ? $enrolledCourseIds->implode(',') : '0') . ') THEN 1 ELSE 2 END')
             ->orderBy('position')
             ->with('stages');
 
