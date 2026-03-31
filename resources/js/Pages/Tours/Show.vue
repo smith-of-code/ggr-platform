@@ -139,7 +139,7 @@
                 <div class="absolute left-[11px] top-7 bottom-0 w-px bg-gray-200 last:hidden" />
                 <div class="absolute left-0 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#003274] text-xs font-bold text-white">{{ di + 1 }}</div>
                 <h3 class="text-base font-semibold text-gray-900">{{ day.title }}</h3>
-                <p v-if="day.description" class="mt-1.5 text-sm leading-relaxed text-gray-600">{{ day.description }}</p>
+                <p v-if="day.description" class="mt-1.5 text-sm leading-relaxed text-gray-600 whitespace-pre-line">{{ day.description }}</p>
               </div>
             </div>
           </section>
