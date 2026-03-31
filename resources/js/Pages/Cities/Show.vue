@@ -60,43 +60,24 @@
       <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
         <!-- 2. Key stats bar -->
         <div
-          class="reveal -mt-6 mb-10 grid gap-4 rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm sm:-mt-8"
-          :class="hasPopulationStat ? 'sm:grid-cols-3' : 'sm:grid-cols-2'"
+          v-if="hasStatsBar"
+          class="reveal -mt-6 mb-10 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm sm:-mt-8"
         >
-          <div
-            v-if="hasPopulationStat"
-            class="flex items-center gap-4"
-          >
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#003274]/10">
-              <svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.813-2.882M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-              </svg>
+          <div class="h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500" />
+          <div class="grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0 divide-gray-200/70">
+            <div v-if="city.founded_year" class="px-6 py-6 text-center sm:py-8">
+              <p class="text-3xl font-extrabold tabular-nums text-[#C91E5B] sm:text-4xl">{{ city.founded_year }}</p>
+              <p class="mt-2 text-sm font-medium text-gray-500">год основания</p>
             </div>
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Население</p>
-              <p class="text-xl font-bold text-gray-900">{{ formatPopulation(city.population) }}</p>
+            <div v-if="city.population != null && city.population !== ''" class="px-6 py-6 text-center sm:py-8">
+              <p class="text-3xl font-extrabold tabular-nums text-[#3D5A80] sm:text-4xl">{{ formatPopulation(city.population) }}</p>
+              <p class="mt-2 text-sm font-medium text-gray-500">
+                жителей<template v-if="city.population_year"> (по сост. на {{ city.population_year }}&nbsp;год)</template>
+              </p>
             </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#003274]/10">
-              <svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Достопримечательности</p>
-              <p class="text-xl font-bold text-gray-900">{{ attractionsCount }}</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#003274]/10">
-              <svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V6.741c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 5.698a1.125 1.125 0 0 0-1.006 0L3.622 7.632c-.548.274-1.087-.306-1.006-1.006V17.25c0 .414.336.75.75.75Z" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Туры</p>
-              <p class="text-xl font-bold text-gray-900">{{ toursCount }}</p>
+            <div v-if="city.timezone" class="px-6 py-6 text-center sm:py-8">
+              <p class="text-3xl font-extrabold tabular-nums text-[#2E8B7A] sm:text-4xl">{{ city.timezone }}</p>
+              <p class="mt-2 text-sm font-medium text-gray-500">часовой пояс</p>
             </div>
           </div>
         </div>
@@ -534,7 +515,11 @@ const galleryModalIndex = ref(null)
 const attractionsCount = computed(() => props.city.attractions?.length ?? 0)
 const toursCount = computed(() => props.city.tours?.length ?? 0)
 
-const hasPopulationStat = computed(() => props.city.population != null && props.city.population !== '')
+const hasStatsBar = computed(() =>
+  !!props.city.founded_year ||
+  (props.city.population != null && props.city.population !== '') ||
+  !!props.city.timezone,
+)
 
 function formatPopulation(v) {
   const n = Number(v)
@@ -666,9 +651,6 @@ const hasSocialObjects = computed(() =>
 
 const aboutInfographicRows = computed(() => {
   const rows = []
-  if (props.city.population != null && props.city.population !== '') {
-    rows.push({ key: 'pop', label: 'Население', value: formatPopulation(props.city.population) })
-  }
   if (attractionsCount.value > 0) {
     rows.push({ key: 'attr', label: 'Объектов для туристов', value: String(attractionsCount.value) })
   }

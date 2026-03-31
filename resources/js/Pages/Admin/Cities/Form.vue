@@ -27,6 +27,11 @@
                 <RInput v-model="form.region" label="Регион" placeholder="Ленинградская область" :error="form.errors.region" />
                 <RInput v-model="form.population" label="Население" type="number" placeholder="68000" :error="form.errors.population" />
               </div>
+              <div class="grid gap-4 sm:grid-cols-3">
+                <RInput v-model="form.founded_year" label="Год основания" type="number" placeholder="1954" :error="form.errors.founded_year" />
+                <RInput v-model="form.population_year" label="Население на год" type="number" placeholder="2021" :error="form.errors.population_year" />
+                <RInput v-model="form.timezone" label="Часовой пояс" placeholder="UTC+7" :error="form.errors.timezone" />
+              </div>
               <RichTextEditor v-model="form.description" label="Описание города" :upload-url="route('admin.upload.image')" />
             </div>
           </RCard>
@@ -294,6 +299,9 @@ const form = useForm({
   is_active: props.city?.is_active ?? true,
   region: props.city?.region ?? '',
   population: props.city?.population ?? null,
+  founded_year: props.city?.founded_year ?? null,
+  population_year: props.city?.population_year ?? null,
+  timezone: props.city?.timezone ?? '',
   lat: props.city?.lat ?? null,
   lng: props.city?.lng ?? null,
   infrastructure: { ...defaultInfrastructure(), ...(props.city?.infrastructure ?? {}) },
