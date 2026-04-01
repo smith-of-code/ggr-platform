@@ -123,7 +123,7 @@
               <span class="mt-0.5 shrink-0 text-[#003274]" aria-hidden="true">
                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
               </span>
-              <span v-if="fact.description" class="html-content" v-html="fact.description"></span>
+              <div v-if="fact.description" class="fact-html html-content min-w-0" v-html="fact.description"></div>
               <span v-else>{{ fact.title }}</span>
             </component>
           </div>
@@ -435,6 +435,54 @@
 .html-content :deep(ol) {
   margin: 0.75rem 0 1rem;
   padding-left: 1.25rem;
+}
+.fact-html :deep(h1),
+.fact-html :deep(h2),
+.fact-html :deep(h3) {
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+}
+.fact-html :deep(h1) { font-size: 1.125rem; }
+.fact-html :deep(h2) { font-size: 1rem; }
+.fact-html :deep(h3) { font-size: 0.9375rem; }
+.fact-html :deep(p) {
+  margin-bottom: 0.35rem;
+}
+.fact-html :deep(p:last-child),
+.fact-html :deep(*:last-child) {
+  margin-bottom: 0;
+}
+.fact-html :deep(strong) {
+  font-weight: 600;
+}
+.fact-html :deep(em) {
+  font-style: italic;
+}
+.fact-html :deep(u) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.fact-html :deep(a) {
+  color: #003274;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.fact-html :deep(ul) {
+  list-style-type: disc;
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+.fact-html :deep(ol) {
+  list-style-type: decimal;
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+.fact-html :deep(blockquote) {
+  border-left: 3px solid #003274;
+  padding-left: 0.75rem;
+  margin: 0.25rem 0;
+  color: #4b5563;
 }
 .gallery-masonry__item img {
   display: block;

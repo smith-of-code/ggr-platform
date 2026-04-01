@@ -68,7 +68,7 @@
               <div class="flex items-center justify-between">
                 <div>
                   <h2 class="text-base font-bold text-gray-900">Факты о городе</h2>
-                  <p class="mt-1 text-sm text-gray-500">Короткие факты, отображаются как чипсы. Можно добавить ссылку и развёрнутое описание.</p>
+                  <p class="mt-1 text-sm text-gray-500">На сайте выводится <strong>описание</strong> (если заполнено), иначе — <strong>заголовок</strong>. Ссылка делает факт кликабельным.</p>
                 </div>
                 <button type="button" class="rounded-lg bg-[#003274] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[#003274]/90" @click="addFact">+ Добавить</button>
               </div>
