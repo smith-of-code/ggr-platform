@@ -174,7 +174,7 @@
               </div>
             </div>
             <div class="mt-8 text-center">
-              <button type="button" class="inline-flex cursor-pointer items-center rounded-xl bg-amber-500 px-8 py-3.5 font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-xl" @click="scrollToTours">
+              <button type="button" class="inline-flex cursor-pointer items-center rounded-xl bg-amber-500 px-8 py-3.5 font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-xl" @click="paidForm ? (showFormModal = true) : scrollToTours()">
                 Оставить заявку
                 <svg class="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
               </button>
@@ -450,6 +450,10 @@
         </div>
       </section>
     </div>
+
+    <Modal :show="showFormModal" max-width="2xl" @close="showFormModal = false">
+      <FormRenderer v-if="paidForm" :form="paidForm" :fields="paidForm.fields" @submitted="showFormModal = false" />
+    </Modal>
   </MainLayout>
 </template>
 
@@ -457,6 +461,8 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import Modal from '@/Components/Modal.vue'
+import FormRenderer from '@/Components/FormRenderer.vue'
 
 const props = defineProps({
   direction: { type: Object, required: true },
@@ -466,7 +472,10 @@ const props = defineProps({
   recipeCities: { type: Array, default: () => [] },
   news: { type: Array, default: () => [] },
   recipeFilters: { type: Object, default: () => ({}) },
+  paidForm: { type: Object, default: null },
 })
+
+const showFormModal = ref(false)
 
 const recipeCity = ref(props.recipeFilters?.recipe_city ?? '')
 const applicationSent = ref(false)

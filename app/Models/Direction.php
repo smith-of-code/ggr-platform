@@ -20,6 +20,7 @@ class Direction extends Model
         'free_participation_steps',
         'free_participation_details',
         'paid_participation_steps',
+        'paid_form_slug',
         'featured_tour_ids',
         'is_active',
         'position',

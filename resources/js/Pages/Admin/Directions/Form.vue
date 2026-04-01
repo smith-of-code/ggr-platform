@@ -145,6 +145,15 @@
             </div>
           </div>
           <button type="button" @click="form.paid_participation_steps.push({ title: '', description: '' })" class="text-sm font-medium text-[#003274] hover:text-[#025ea1]">+ Добавить шаг</button>
+
+          <div v-if="lmsForms.length" class="pt-2">
+            <label class="mb-2 block text-sm font-semibold text-gray-700">Форма для кнопки «Оставить заявку»</label>
+            <select v-model="form.paid_form_slug" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
+              <option value="">— Нет (скролл к турам)</option>
+              <option v-for="f in lmsForms" :key="f.slug" :value="f.slug">{{ f.title }}</option>
+            </select>
+            <p class="mt-1 text-xs text-gray-400">Если выбрана форма, кнопка «Оставить заявку» откроет её в модальном окне</p>
+          </div>
         </div>
       </RCard>
 
@@ -183,6 +192,7 @@ const props = defineProps({
   direction: { type: Object, default: null },
   tours: { type: Array, default: () => [] },
   projectKeys: { type: Object, default: () => ({}) },
+  lmsForms: { type: Array, default: () => [] },
 })
 
 const form = useForm({
@@ -199,6 +209,7 @@ const form = useForm({
   free_participation_steps: props.direction?.free_participation_steps ?? [],
   free_participation_details: props.direction?.free_participation_details ?? { questions: [], challenge_title: '', challenge_description: '' },
   paid_participation_steps: props.direction?.paid_participation_steps ?? [],
+  paid_form_slug: props.direction?.paid_form_slug ?? '',
   featured_tour_ids: props.direction?.featured_tour_ids ?? [],
   is_active: props.direction?.is_active ?? true,
   position: props.direction?.position ?? 0,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Direction;
+use App\Models\Lms\LmsForm;
 use App\Models\Tour;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class DirectionController extends Controller
         return Inertia::render('Admin/Directions/Form', [
             'tours' => Tour::where('is_active', true)->orderBy('title')->get(['id', 'title', 'project']),
             'projectKeys' => Tour::PROJECTS,
+            'lmsForms' => $this->getActiveForms(),
         ]);
     }
 
@@ -47,6 +49,7 @@ class DirectionController extends Controller
             'direction' => $direction,
             'tours' => Tour::where('is_active', true)->orderBy('title')->get(['id', 'title', 'project']),
             'projectKeys' => Tour::PROJECTS,
+            'lmsForms' => $this->getActiveForms(),
         ]);
     }
 
@@ -75,6 +78,13 @@ class DirectionController extends Controller
         return redirect()->back()->with('success', $direction->is_active ? 'Направление активировано' : 'Направление скрыто');
     }
 
+    private function getActiveForms(): \Illuminate\Support\Collection
+    {
+        return LmsForm::where('is_active', true)
+            ->orderBy('title')
+            ->get(['title', 'slug']);
+    }
+
     private function validateDirection(Request $request): array
     {
         return $request->validate([
@@ -100,6 +110,7 @@ class DirectionController extends Controller
             'paid_participation_steps' => 'nullable|array',
             'paid_participation_steps.*.title' => 'required|string|max:255',
             'paid_participation_steps.*.description' => 'required|string',
+            'paid_form_slug' => 'nullable|string|max:255|exists:lms_forms,slug',
             'featured_tour_ids' => 'nullable|array',
             'featured_tour_ids.*' => 'integer|exists:tours,id',
             'position' => 'nullable|integer',

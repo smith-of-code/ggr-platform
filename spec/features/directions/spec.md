@@ -73,6 +73,7 @@
 | free_participation_steps | JSON, nullable | [{title, description}] — шаги бесплатного участия |
 | free_participation_details | JSON, nullable | {questions: [], challenge_title, challenge_description} |
 | paid_participation_steps | JSON, nullable | [{title, description}] — шаги платного участия |
+| paid_form_slug | string, nullable | Slug LMS-формы для кнопки «Оставить заявку» (см. form-id-button) |
 | featured_tour_ids | JSON, nullable | [tour_id, ...] — ID туров для слайдшоу |
 | is_active | boolean, default true | Активность |
 | position | integer, default 0 | Порядок сортировки |

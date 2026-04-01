@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AtomsVkusaContent;
 use App\Models\City;
 use App\Models\Direction;
+use App\Models\Lms\LmsForm;
 use App\Models\Post;
 use App\Models\Recipe;
 use App\Models\Tour;
@@ -30,17 +31,20 @@ class DirectionController extends Controller
                 ->get();
         }
 
+        $paidForm = $this->loadPaidForm($direction);
+
         if ($direction->project_key === 'atoms_vkusa') {
-            return $this->showAtomsVkusa($request, $direction, $featuredTours);
+            return $this->showAtomsVkusa($request, $direction, $featuredTours, $paidForm);
         }
 
         return Inertia::render('Directions/Show', [
             'direction' => $direction,
             'featuredTours' => $featuredTours,
+            'paidForm' => $paidForm,
         ]);
     }
 
-    private function showAtomsVkusa(Request $request, Direction $direction, $featuredTours): Response
+    private function showAtomsVkusa(Request $request, Direction $direction, $featuredTours, ?array $paidForm): Response
     {
         $content = AtomsVkusaContent::content();
 
@@ -69,6 +73,38 @@ class DirectionController extends Controller
             'recipeCities' => $recipeCities,
             'news' => $news,
             'recipeFilters' => $request->only(['recipe_city']),
+            'paidForm' => $paidForm,
         ]);
+    }
+
+    private function loadPaidForm(Direction $direction): ?array
+    {
+        if (!$direction->paid_form_slug) {
+            return null;
+        }
+
+        $form = LmsForm::where('slug', $direction->paid_form_slug)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$form) {
+            return null;
+        }
+
+        return [
+            'title' => $form->title,
+            'description' => $form->description,
+            'slug' => $form->slug,
+            'thank_you_message' => $form->thank_you_message,
+            'fields' => $form->fields->map(fn ($f) => [
+                'id' => $f->id,
+                'key' => $f->key,
+                'label' => $f->label,
+                'type' => $f->type,
+                'required' => $f->required,
+                'placeholder' => $f->placeholder,
+                'options' => $f->options,
+            ])->toArray(),
+        ];
     }
 }
