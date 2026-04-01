@@ -1,137 +1,104 @@
 <template>
   <MainLayout>
     <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <!-- Header: Title + Meta + Button -->
+      <div class="reveal mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0 flex-1">
+          <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">{{ tour.title }}</h1>
+          <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-gray-600">
+            <span v-if="tour.start_city" class="flex items-center gap-1.5">
+              <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
+              Старт программы: {{ tour.start_city }}
+            </span>
+            <span class="hidden text-gray-300 sm:inline">|</span>
+            <span v-if="tour.duration" class="flex items-center gap-1.5">
+              <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+              {{ tour.duration }}
+            </span>
+            <span class="hidden text-gray-300 sm:inline">|</span>
+            <span v-if="tour.price_from > 0" class="flex items-center gap-1.5 font-semibold text-gray-900">
+              от {{ formatPrice(tour.price_from) }} &#8381; за человека
+            </span>
+          </div>
+        </div>
+        <RButton variant="primary" size="lg" class="shrink-0" @click="openApplicationModal()">
+          Оставить заявку
+        </RButton>
+      </div>
+
+      <!-- Gallery -->
+      <div v-if="allMedia.length > 1" class="reveal mb-8">
+        <div class="grid gap-2" :class="allMedia.length >= 3 ? 'grid-cols-4 grid-rows-2' : 'grid-cols-2'">
+          <button
+            type="button"
+            class="group relative overflow-hidden rounded-xl bg-gray-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]"
+            :class="allMedia.length >= 3 ? 'col-span-2 row-span-2' : ''"
+            @click="openLightbox(0)"
+          >
+            <div :class="allMedia.length >= 3 ? 'aspect-[4/3]' : 'aspect-video'" class="overflow-hidden">
+              <img :src="allMedia[0]" :alt="tour.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+            </div>
+            <div class="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
+          </button>
+          <button
+            v-for="(img, mi) in allMedia.slice(1, allMedia.length >= 3 ? 5 : 2)"
+            :key="mi"
+            type="button"
+            class="group relative overflow-hidden rounded-xl bg-gray-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]"
+            @click="openLightbox(mi + 1)"
+          >
+            <div class="aspect-video overflow-hidden">
+              <img :src="img" :alt="`Фото ${mi + 2}`" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+            </div>
+            <div class="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
+            <div
+              v-if="mi === (allMedia.length >= 3 ? 3 : 1) && allMedia.length > (allMedia.length >= 3 ? 5 : 2)"
+              class="absolute inset-0 flex items-center justify-center bg-black/50 text-xl font-bold text-white"
+            >
+              +{{ allMedia.length - (allMedia.length >= 3 ? 5 : 2) }} фото
+            </div>
+          </button>
+        </div>
+      </div>
+      <div v-else-if="tour.image" class="reveal mb-8 overflow-hidden rounded-xl bg-gray-200 shadow-sm">
+        <button type="button" class="group w-full focus:outline-none" @click="openLightbox(0)">
+          <div class="aspect-video overflow-hidden">
+            <img :src="tour.image" :alt="tour.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+          </div>
+        </button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <nav class="reveal mb-8 overflow-x-auto border-b border-gray-200">
+        <div class="flex gap-0">
+          <button
+            v-for="tab in visibleTabs"
+            :key="tab.id"
+            type="button"
+            class="cursor-pointer whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition"
+            :class="activeTab === tab.id ? 'border-[#003274] text-[#003274]' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+            @click="scrollToSection(tab.id)"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
+      </nav>
+
+      <!-- Content grid -->
       <div class="lg:grid lg:grid-cols-3 lg:gap-10">
         <div class="lg:col-span-2">
-          <!-- Hero image / Gallery -->
-          <div v-if="allMedia.length > 1" class="reveal">
-            <div class="grid gap-2" :class="allMedia.length >= 3 ? 'grid-cols-4 grid-rows-2' : 'grid-cols-2'">
-              <button
-                type="button"
-                class="group relative overflow-hidden rounded-xl bg-gray-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]"
-                :class="allMedia.length >= 3 ? 'col-span-2 row-span-2' : ''"
-                @click="openLightbox(0)"
-              >
-                <div :class="allMedia.length >= 3 ? 'aspect-[4/3]' : 'aspect-video'" class="overflow-hidden">
-                  <img :src="allMedia[0]" :alt="tour.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                </div>
-                <div class="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
-              </button>
-              <button
-                v-for="(img, mi) in allMedia.slice(1, allMedia.length >= 3 ? 5 : 2)"
-                :key="mi"
-                type="button"
-                class="group relative overflow-hidden rounded-xl bg-gray-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]"
-                @click="openLightbox(mi + 1)"
-              >
-                <div class="aspect-video overflow-hidden">
-                  <img :src="img" :alt="`Фото ${mi + 2}`" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                </div>
-                <div class="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
-                <div
-                  v-if="mi === (allMedia.length >= 3 ? 3 : 1) && allMedia.length > (allMedia.length >= 3 ? 5 : 2)"
-                  class="absolute inset-0 flex items-center justify-center bg-black/50 text-xl font-bold text-white"
-                >
-                  +{{ allMedia.length - (allMedia.length >= 3 ? 5 : 2) }}
-                </div>
-              </button>
-            </div>
-            <button
-              type="button"
-              class="mt-3 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-              @click="openLightbox(0)"
-            >
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 3h18a1.5 1.5 0 0 1 1.5 1.5v15a1.5 1.5 0 0 1-1.5 1.5H3a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 3 3Z" />
-              </svg>
-              Все фото ({{ allMedia.length }})
-            </button>
-          </div>
-          <div v-else-if="tour.image" class="reveal overflow-hidden rounded-xl bg-gray-200 shadow-sm">
-            <button type="button" class="group w-full focus:outline-none" @click="openLightbox(0)">
-              <div class="aspect-video overflow-hidden">
-                <img :src="tour.image" :alt="tour.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-              </div>
-            </button>
-          </div>
-
-          <!-- Videos -->
-          <div v-if="videoEmbeds.length" class="reveal mt-6 space-y-4">
-            <div v-for="(src, vi) in videoEmbeds" :key="vi" class="overflow-hidden rounded-xl border border-gray-200 bg-black shadow-md">
-              <div class="aspect-video w-full">
-                <iframe :src="src" class="h-full w-full" :title="`Видео ${vi + 1}`" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen />
-              </div>
-            </div>
-          </div>
-
-          <h1 class="reveal mt-8 text-3xl font-bold text-gray-900 sm:text-4xl">{{ tour.title }}</h1>
-
-          <div class="reveal mt-4 flex flex-wrap gap-2">
-            <RBadge variant="primary">{{ tour.start_city }}</RBadge>
-            <RBadge variant="neutral">{{ tour.duration }}</RBadge>
-            <RBadge v-if="tour.project" variant="info">{{ projectLabel(tour.project) }}</RBadge>
-            <RBadge v-if="tour.closed_city" variant="warning">Закрытый город</RBadge>
-          </div>
-
-          <!-- Participation options -->
-          <div v-if="tour.bchp_participant || tour.participation_type" class="reveal mt-6">
-            <h2 class="mb-3 text-lg font-bold text-gray-900">Варианты участия</h2>
-            <div class="flex flex-wrap gap-3">
-              <button v-if="tour.bchp_participant" type="button" class="flex items-center gap-2 rounded-xl border-2 border-[#003274]/20 bg-[#003274]/5 px-5 py-3 text-sm font-semibold text-[#003274] transition hover:border-[#003274]/40 hover:bg-[#003274]/10" @click="openApplicationModal(null, 'bchp')">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" /></svg>
-                Есть сертификат «Больше, чем путешествие»
-              </button>
-              <button v-if="tour.participation_type === 'contest' || !tour.participation_type" type="button" class="flex items-center gap-2 rounded-xl border-2 border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-800 transition hover:border-amber-300 hover:bg-amber-100" @click="openApplicationModal(null, 'contest')">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0 1 16.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 0 1-2.77.852m0 0a6.023 6.023 0 0 1-2.77-.852" /></svg>
-                Принять участие в конкурсе
-              </button>
-              <button v-if="tour.participation_type === 'paid' || !tour.participation_type" type="button" class="flex items-center gap-2 rounded-xl border-2 border-green-200 bg-green-50 px-5 py-3 text-sm font-semibold text-green-800 transition hover:border-green-300 hover:bg-green-100" @click="openApplicationModal(null, 'paid')">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" /></svg>
-                Поехать за свой счёт
-              </button>
-            </div>
-          </div>
-
-          <!-- Reactions -->
-          <div class="reveal mt-6">
-            <p class="mb-3 text-sm font-medium text-gray-500">Как вам тур?</p>
-            <div v-if="isAuthed" class="flex flex-wrap gap-2 sm:gap-3">
-              <button
-                v-for="item in reactionItems"
-                :key="item.key"
-                type="button"
-                :disabled="reactionSending"
-                class="group flex min-w-[4.25rem] flex-col items-center gap-1 rounded-xl border px-3 py-2.5 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#003274]/35 hover:shadow-md active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]/40 disabled:cursor-wait disabled:opacity-60 disabled:active:scale-100"
-                :class="currentUserReaction === item.key ? 'border-[#003274] bg-[#003274]/[0.08] ring-2 ring-[#003274]/25 shadow-sm' : 'border-gray-200 bg-white'"
-                :title="item.label"
-                @click="sendReaction(item.key)"
-              >
-                <span class="text-xl leading-none transition-transform duration-200 group-hover:scale-110" aria-hidden="true">{{ item.emoji }}</span>
-                <span class="tabular-nums text-xs font-semibold text-gray-700">
-                  <Transition name="count-pop" mode="out-in">
-                    <span :key="reactionsDisplay[item.key]">{{ reactionsDisplay[item.key] }}</span>
-                  </Transition>
-                </span>
-              </button>
-            </div>
-            <div v-else class="flex flex-wrap items-center gap-2">
-              <div v-for="item in reactionItems" :key="item.key" class="flex min-w-[4.25rem] flex-col items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">
-                <span class="text-xl leading-none" aria-hidden="true">{{ item.emoji }}</span>
-                <span class="tabular-nums text-xs font-semibold text-gray-700">{{ reactionsDisplay[item.key] }}</span>
-              </div>
-              <Link :href="route('login')" class="ml-2 text-sm font-medium text-[#003274] transition hover:underline">Войдите, чтобы оценить</Link>
-            </div>
-          </div>
-
-          <div class="reveal mt-8 text-lg leading-relaxed text-gray-600" v-html="tour.description" />
+          <!-- Description -->
+          <section id="section-description" class="reveal">
+            <div class="text-lg leading-relaxed text-gray-600" v-html="tour.description" />
+          </section>
 
           <!-- Program -->
-          <section v-if="tour.program_days?.length || tour.program_pdf" class="reveal mt-10">
+          <section id="section-program" v-if="tour.program_days?.length || tour.program_pdf" class="reveal mt-10">
             <div class="flex items-center justify-between">
               <h2 class="text-xl font-bold text-gray-900">Программа тура</h2>
               <a v-if="tour.program_pdf" :href="tour.program_pdf" target="_blank" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[#003274] shadow-sm transition hover:bg-gray-50">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                Скачать PDF
+                Скачать программу тура
               </a>
             </div>
             <div v-if="tour.program_days?.length" class="mt-6 space-y-0">
@@ -144,9 +111,27 @@
             </div>
           </section>
 
-          <!-- Accommodations -->
-          <section v-if="tour.accommodations?.length" class="reveal mt-10">
+          <!-- Город отправления -->
+          <section id="section-departure" v-if="tour.start_city || tour.departure_info" class="reveal mt-10">
+            <h2 class="text-xl font-bold text-gray-900">Город отправления</h2>
+            <div class="mt-4 space-y-3">
+              <div v-if="tour.start_city" class="flex items-start gap-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                  <svg class="h-4 w-4 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-500">Точка сбора</p>
+                  <p class="font-medium text-gray-900">{{ tour.start_city }}</p>
+                </div>
+              </div>
+              <div v-if="tour.departure_info" class="html-content text-base leading-relaxed text-gray-700" v-html="tour.departure_info" />
+            </div>
+          </section>
+
+          <!-- Accommodations / Проживание -->
+          <section id="section-accommodation" v-if="tour.accommodations?.length || tour.accommodation_info" class="reveal mt-10">
             <h2 class="text-xl font-bold text-gray-900">Проживание</h2>
+            <div v-if="tour.accommodation_info" class="html-content mt-4 text-base leading-relaxed text-gray-700" v-html="tour.accommodation_info" />
             <div class="mt-6 grid gap-5 sm:grid-cols-2">
               <div v-for="(acc, ai) in tour.accommodations" :key="ai" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div v-if="acc.images?.length" class="aspect-video overflow-hidden bg-gray-100">
@@ -169,7 +154,7 @@
           </section>
 
           <!-- Memo -->
-          <section v-if="tour.memo_text || tour.memo_pdf || tour.closed_city" class="reveal mt-10">
+          <section id="section-memo" v-if="tour.memo_text || tour.memo_pdf || tour.closed_city" class="reveal mt-10">
             <div class="flex items-center justify-between">
               <h2 class="text-xl font-bold text-gray-900">Памятка участника</h2>
               <a v-if="tour.memo_pdf" :href="tour.memo_pdf" target="_blank" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[#003274] shadow-sm transition hover:bg-gray-50">
@@ -189,42 +174,8 @@
             <div v-if="tour.memo_text" class="html-content mt-4 text-base leading-relaxed text-gray-700" v-html="tour.memo_text" />
           </section>
 
-          <section v-if="tour.target_audience" class="reveal mt-10">
-            <h2 class="text-xl font-bold text-gray-900">Для кого этот тур</h2>
-            <div class="html-content mt-4 text-base leading-relaxed text-gray-700" v-html="tour.target_audience" />
-          </section>
-
-          <section v-if="tour.organizer_info" class="reveal mt-10">
-            <h2 class="text-xl font-bold text-gray-900">Организатор</h2>
-            <div class="html-content mt-4 text-base leading-relaxed text-gray-700" v-html="tour.organizer_info" />
-          </section>
-
-          <section v-if="tour.cities?.length" class="reveal mt-12">
-            <h2 class="text-xl font-bold text-gray-900">Города</h2>
-            <div class="mt-6 grid gap-4 sm:grid-cols-2">
-              <Link
-                v-for="city in tour.cities"
-                :key="city.id"
-                :href="route('cities.show', city.slug)"
-                class="group flex gap-4 overflow-hidden rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-[#003274]/30 hover:shadow-md"
-              >
-                <div class="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                  <img v-if="city.image" :src="city.image" :alt="city.name" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                </div>
-                <div class="flex min-w-0 flex-1 flex-col justify-center">
-                  <span class="font-semibold text-gray-900 transition-colors group-hover:text-[#003274]">{{ city.name }}</span>
-                  <span v-if="city.region" class="mt-0.5 text-sm text-gray-500">{{ city.region }}</span>
-                  <span class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#003274]">
-                    Подробнее
-                    <svg class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                  </span>
-                </div>
-              </Link>
-            </div>
-          </section>
-
           <!-- Departures -->
-          <section v-if="tour.departures?.length" class="reveal mt-12">
+          <section id="section-dates" v-if="tour.departures?.length" class="reveal mt-12">
             <h2 class="text-xl font-bold text-gray-900">Даты заездов</h2>
             <div class="mt-6 space-y-4">
               <div v-for="dep in tour.departures" :key="dep.id" class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 transition hover:shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -245,11 +196,31 @@
           </section>
 
           <!-- Reviews -->
-          <section class="reveal mt-12">
-            <h2 class="text-xl font-bold text-gray-900">Отзывы</h2>
+          <section id="section-reviews" class="reveal mt-12">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <h2 class="text-xl font-bold text-gray-900">Отзывы</h2>
+                <div v-if="reviews?.length" class="flex items-center gap-2 text-sm text-gray-500">
+                  <span>{{ reviews.length }} {{ reviewsWord(reviews.length) }}</span>
+                  <span class="text-gray-300">•</span>
+                  <span class="flex items-center gap-1 text-amber-500">
+                    <span class="text-base">&#9733;</span>
+                    <span class="font-semibold text-gray-900">{{ avgRating }}</span>
+                  </span>
+                </div>
+              </div>
+              <button
+                v-if="isAuthed && !userReviewExists && !reviewSent"
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+                @click="showReviewForm = !showReviewForm"
+              >
+                Написать отзыв
+              </button>
+            </div>
 
             <!-- Review form -->
-            <div v-if="isAuthed && !userReviewExists && !reviewSent" class="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+            <div v-if="showReviewForm && isAuthed && !userReviewExists && !reviewSent" class="mt-6 rounded-xl border border-gray-200 bg-white p-5">
               <h3 class="mb-4 font-semibold text-gray-900">Оставить отзыв</h3>
               <div class="space-y-4">
                 <div>
@@ -341,6 +312,15 @@
             <dl class="mt-5 space-y-5">
               <div class="flex items-start gap-3">
                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50">
+                  <svg class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium uppercase tracking-wider text-gray-400">Тур</dt>
+                  <dd class="mt-0.5 font-medium text-gray-900">{{ tour.title }}</dd>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50">
                   <svg class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                 </div>
                 <div>
@@ -395,11 +375,103 @@
                   <dd v-if="tour.cost_info" class="html-content mt-1.5 text-sm leading-relaxed text-gray-600" v-html="tour.cost_info" />
                 </div>
               </div>
+              <div v-if="tour.project" class="flex items-start gap-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                  <svg class="h-4 w-4 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium uppercase tracking-wider text-gray-400">Проект</dt>
+                  <dd class="mt-0.5 font-medium text-gray-900">{{ projectLabel(tour.project) }}</dd>
+                </div>
+              </div>
             </dl>
+
+            <!-- Sidebar departures -->
+            <div v-if="tour.departures?.length" class="mt-6 border-t border-gray-100 pt-5">
+              <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-400">Даты заезда</p>
+              <div class="space-y-2">
+                <div v-for="dep in tour.departures.slice(0, 3)" :key="dep.id" class="cursor-pointer rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 transition hover:border-[#003274]/20 hover:bg-blue-50/50" @click="scrollToSection('dates')">
+                  <p class="text-sm font-medium text-gray-900">{{ formatDateShort(dep.start_date) }}–{{ formatDateShort(dep.end_date) }}</p>
+                  <p v-if="dep.price_per_person" class="text-xs text-gray-500">{{ formatPrice(dep.price_per_person) }} &#8381; за человека</p>
+                </div>
+                <button v-if="tour.departures.length > 3" type="button" class="w-full cursor-pointer rounded-lg border border-gray-200 bg-white py-2 text-center text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="scrollToSection('dates')">
+                  смотреть все даты
+                </button>
+              </div>
+            </div>
+
             <RButton variant="primary" size="lg" block class="mt-6" @click="openApplicationModal()">
               Оставить заявку
             </RButton>
           </RCard>
+        </div>
+      </div>
+
+      <!-- Videos -->
+      <div v-if="videoEmbeds.length" class="reveal mt-10 space-y-4">
+        <h2 class="text-xl font-bold text-gray-900">Видео</h2>
+        <div v-for="(src, vi) in videoEmbeds" :key="vi" class="overflow-hidden rounded-xl border border-gray-200 bg-black shadow-md">
+          <div class="aspect-video w-full">
+            <iframe :src="src" class="h-full w-full" :title="`Видео ${vi + 1}`" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen />
+          </div>
+        </div>
+      </div>
+
+      <!-- Reactions -->
+      <div class="reveal mt-10">
+        <p class="mb-3 text-sm font-medium text-gray-500">Как вам тур?</p>
+        <div v-if="isAuthed" class="flex flex-wrap gap-2 sm:gap-3">
+          <button
+            v-for="item in reactionItems"
+            :key="item.key"
+            type="button"
+            :disabled="reactionSending"
+            class="group flex min-w-[4.25rem] flex-col items-center gap-1 rounded-xl border px-3 py-2.5 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#003274]/35 hover:shadow-md active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]/40 disabled:cursor-wait disabled:opacity-60 disabled:active:scale-100"
+            :class="currentUserReaction === item.key ? 'border-[#003274] bg-[#003274]/[0.08] ring-2 ring-[#003274]/25 shadow-sm' : 'border-gray-200 bg-white'"
+            :title="item.label"
+            @click="sendReaction(item.key)"
+          >
+            <span class="text-xl leading-none transition-transform duration-200 group-hover:scale-110" aria-hidden="true">{{ item.emoji }}</span>
+            <span class="tabular-nums text-xs font-semibold text-gray-700">
+              <Transition name="count-pop" mode="out-in">
+                <span :key="reactionsDisplay[item.key]">{{ reactionsDisplay[item.key] }}</span>
+              </Transition>
+            </span>
+          </button>
+        </div>
+        <div v-else class="flex flex-wrap items-center gap-2">
+          <div v-for="item in reactionItems" :key="item.key" class="flex min-w-[4.25rem] flex-col items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm">
+            <span class="text-xl leading-none" aria-hidden="true">{{ item.emoji }}</span>
+            <span class="tabular-nums text-xs font-semibold text-gray-700">{{ reactionsDisplay[item.key] }}</span>
+          </div>
+          <Link :href="route('login')" class="ml-2 text-sm font-medium text-[#003274] transition hover:underline">Войдите, чтобы оценить</Link>
+        </div>
+      </div>
+
+      <!-- BChP banner -->
+      <div v-if="tour.bchp_participant" class="reveal mt-10 rounded-2xl border border-[#003274]/10 bg-[#003274]/5 px-6 py-5 text-center">
+        <p class="text-base font-medium text-gray-800">
+          Данный тур участвует в программе «Больше, чем путешествие». Вы можете принять участие в конкурсе, если хотите отправиться в тур бесплатно.
+        </p>
+        <p class="mt-2 text-sm text-gray-600">
+          Об условиях участия можно узнать на странице проекта или в личном кабинете
+        </p>
+      </div>
+
+      <!-- CTA: Варианты участия -->
+      <div v-if="tour.bchp_participant || tour.participation_type" class="reveal mt-10 rounded-2xl bg-gray-900 px-6 py-10 text-center">
+        <h2 class="text-2xl font-bold text-white sm:text-3xl">Готовы отправиться в тур?</h2>
+        <p class="mt-2 text-lg text-gray-300">Выбирайте способ участия:</p>
+        <div class="mt-6 flex flex-wrap justify-center gap-4">
+          <button v-if="tour.bchp_participant" type="button" class="cursor-pointer rounded-xl bg-[#003274] px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#004090]" @click="openApplicationModal(null, 'bchp')">
+            Забронировать
+          </button>
+          <button v-if="tour.participation_type === 'paid' || !tour.participation_type" type="button" class="cursor-pointer rounded-xl bg-green-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-green-700" @click="openApplicationModal(null, 'paid')">
+            Купить тур
+          </button>
+          <button v-if="tour.participation_type === 'contest' || !tour.participation_type" type="button" class="cursor-pointer rounded-xl border-2 border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-white/20" @click="openApplicationModal(null, 'contest')">
+            Участвовать в конкурсе
+          </button>
         </div>
       </div>
 
@@ -489,6 +561,33 @@ import { useScrollReveal } from '@/composables/useScrollReveal'
 useScrollReveal()
 
 const lightboxIndex = ref(null)
+const activeTab = ref('description')
+const showReviewForm = ref(false)
+
+const allTabs = [
+  { id: 'description', label: 'Описание' },
+  { id: 'program', label: 'Программа тура' },
+  { id: 'departure', label: 'Город отправления' },
+  { id: 'accommodation', label: 'Проживание' },
+  { id: 'dates', label: 'Даты тура' },
+  { id: 'memo', label: 'Памятка участника' },
+  { id: 'reviews', label: 'Отзывы' },
+]
+
+function scrollToSection(id) {
+  activeTab.value = id
+  const el = document.getElementById(`section-${id}`)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function reviewsWord(count) {
+  const n = Math.abs(count) % 100
+  const n1 = n % 10
+  if (n > 10 && n < 20) return 'отзывов'
+  if (n1 > 1 && n1 < 5) return 'отзыва'
+  if (n1 === 1) return 'отзыв'
+  return 'отзывов'
+}
 
 const REACTION_KEYS = ['love', 'wow', 'fire', 'cool', 'star']
 const REACTION_META = {
@@ -508,6 +607,25 @@ const props = defineProps({
 
 const page = usePage()
 const isAuthed = computed(() => !!page.props.auth?.user)
+
+const visibleTabs = computed(() => {
+  return allTabs.filter(tab => {
+    if (tab.id === 'description') return true
+    if (tab.id === 'program') return props.tour.program_days?.length || props.tour.program_pdf
+    if (tab.id === 'departure') return props.tour.start_city || props.tour.departure_info
+    if (tab.id === 'accommodation') return props.tour.accommodations?.length || props.tour.accommodation_info
+    if (tab.id === 'dates') return props.tour.departures?.length
+    if (tab.id === 'memo') return props.tour.memo_text || props.tour.memo_pdf || props.tour.closed_city
+    if (tab.id === 'reviews') return true
+    return false
+  })
+})
+
+const avgRating = computed(() => {
+  if (!props.reviews?.length) return '0'
+  const sum = props.reviews.reduce((acc, r) => acc + (r.rating || 0), 0)
+  return (sum / props.reviews.length).toFixed(1)
+})
 
 const allMedia = computed(() => {
   const imgs = []
@@ -671,5 +789,9 @@ function formatPrice(value) {
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function formatDateShort(date) {
+  return new Date(date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 </script>
