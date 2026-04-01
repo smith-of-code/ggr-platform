@@ -245,6 +245,7 @@ const seasonOptions = [
 
 const participationOptions = [
   { value: '', label: 'Любое' },
+  { value: 'bchp', label: 'Сертификат БЧП', icon: '🎓' },
   { value: 'contest', label: 'Конкурс', icon: '🏆' },
   { value: 'paid', label: 'За свой счёт', icon: '💳' },
 ]
@@ -291,7 +292,7 @@ function seasonLabel(key) {
 }
 
 function participationLabel(key) {
-  const labels = { contest: 'Конкурс', paid: 'За свой счёт' }
+  const labels = { bchp: 'Сертификат БЧП', contest: 'Конкурс', paid: 'За свой счёт' }
   return labels[key] || key
 }
 

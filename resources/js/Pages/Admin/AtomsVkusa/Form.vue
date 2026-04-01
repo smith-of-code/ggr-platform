@@ -32,7 +32,7 @@
               <label class="mb-1.5 block text-sm font-medium text-gray-700">Описание</label>
               <textarea v-model="form.hero_description" rows="4" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" />
             </div>
-            <RInput v-model="form.hero_image" label="Фоновое изображение (URL)" />
+            <ImageUploadCrop v-model="form.hero_image" label="Фоновое изображение" :upload-url="route('admin.upload.image')" preview-class="h-48 w-full object-cover" />
           </div>
         </div>
       </div>
@@ -122,14 +122,13 @@
             <h3 class="font-bold text-gray-900">Фотографии</h3>
             <button type="button" class="rounded-lg bg-[#003274] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#004090]" @click="addItem('results_gallery', {url:'', caption:''})">+ Добавить</button>
           </div>
-          <div v-for="(item, i) in form.results_gallery" :key="i" class="mb-3 flex items-start gap-3">
-            <div class="flex-1 space-y-2">
-              <RInput v-model="item.url" label="URL изображения" />
-              <RInput v-model="item.caption" label="Подпись" />
+          <div v-for="(item, i) in form.results_gallery" :key="i" class="mb-4 rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <div class="mb-2 flex items-center justify-between">
+              <span class="text-xs font-semibold text-gray-500">Фото {{ i + 1 }}</span>
+              <button type="button" class="text-xs text-red-500 hover:text-red-700" @click="removeItem('results_gallery', i)">Удалить</button>
             </div>
-            <button type="button" class="mt-6 text-red-500 hover:text-red-700" @click="removeItem('results_gallery', i)">
-              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
-            </button>
+            <ImageUploadCrop v-model="item.url" :upload-url="route('admin.upload.image')" preview-class="h-32 w-full object-cover" :skip-crop="true" />
+            <RInput v-model="item.caption" label="Подпись" class="mt-2" />
           </div>
         </div>
 
@@ -169,7 +168,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-600">Описание</label>
               <textarea v-model="item.text" rows="2" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" />
             </div>
-            <RInput v-model="item.image" label="Фото (URL)" class="mt-2" />
+            <ImageUploadCrop v-model="item.image" label="Фото" :upload-url="route('admin.upload.image')" preview-class="h-32 w-full object-cover" :skip-crop="true" class="mt-2" />
           </div>
         </div>
       </div>
@@ -215,10 +214,8 @@
               <RInput v-model.number="item.lat" label="Широта" type="number" step="any" />
               <RInput v-model.number="item.lng" label="Долгота" type="number" step="any" />
             </div>
-            <div class="mt-2 grid gap-3 sm:grid-cols-2">
-              <RInput v-model="item.recipe_title" label="Рецепт победителя" />
-              <RInput v-model="item.recipe_image" label="Фото рецепта (URL)" />
-            </div>
+            <RInput v-model="item.recipe_title" label="Рецепт победителя" class="mt-2" />
+            <ImageUploadCrop v-model="item.recipe_image" label="Фото рецепта" :upload-url="route('admin.upload.image')" preview-class="h-28 w-full object-cover" :skip-crop="true" class="mt-2" />
           </div>
           <p v-if="!form.map_cities.length" class="text-sm text-gray-400">Нет городов</p>
         </div>
@@ -245,15 +242,16 @@
             <h2 class="text-lg font-bold text-gray-900">Партнёры и спонсоры</h2>
             <button type="button" class="rounded-lg bg-[#003274] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#004090]" @click="addItem('partners', {name:'', logo:'', url:''})">+ Добавить</button>
           </div>
-          <div v-for="(item, i) in form.partners" :key="i" class="mb-3 flex items-start gap-3">
-            <div class="flex-1 grid gap-3 sm:grid-cols-3">
+          <div v-for="(item, i) in form.partners" :key="i" class="mb-4 rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <div class="mb-2 flex items-center justify-between">
+              <span class="text-xs font-semibold text-gray-500">{{ item.name || `Партнёр ${i + 1}` }}</span>
+              <button type="button" class="text-xs text-red-500 hover:text-red-700" @click="removeItem('partners', i)">Удалить</button>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
               <RInput v-model="item.name" label="Название" />
-              <RInput v-model="item.logo" label="Логотип (URL)" />
               <RInput v-model="item.url" label="Ссылка" />
             </div>
-            <button type="button" class="mt-6 text-red-500 hover:text-red-700" @click="removeItem('partners', i)">
-              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
-            </button>
+            <ImageUploadCrop v-model="item.logo" label="Логотип" :upload-url="route('admin.upload.image')" preview-class="h-20 w-full object-contain" :skip-crop="true" class="mt-2" />
           </div>
           <p v-if="!form.partners.length" class="text-sm text-gray-400">Нет партнёров</p>
         </div>
@@ -280,7 +278,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-600">Текст отзыва</label>
               <textarea v-model="item.text" rows="3" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" />
             </div>
-            <RInput v-model="item.avatar" label="Аватар (URL)" class="mt-2" />
+            <ImageUploadCrop v-model="item.avatar" label="Аватар" :upload-url="route('admin.upload.image')" :aspect-ratio="1" preview-class="h-24 w-24 rounded-full object-cover" class="mt-2" />
           </div>
           <p v-if="!form.reviews.length" class="text-sm text-gray-400">Нет отзывов</p>
         </div>
@@ -310,7 +308,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-600">Описание</label>
               <textarea v-model="item.description" rows="2" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" />
             </div>
-            <RInput v-model="item.image" label="Изображение (URL)" class="mt-2" />
+            <ImageUploadCrop v-model="item.image" label="Изображение" :upload-url="route('admin.upload.image')" preview-class="h-32 w-full object-cover" :skip-crop="true" class="mt-2" />
           </div>
         </div>
       </div>
@@ -327,6 +325,7 @@
 import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 
 const props = defineProps({
   content: { type: Object, required: true },
