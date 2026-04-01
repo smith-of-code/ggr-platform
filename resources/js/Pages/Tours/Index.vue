@@ -235,18 +235,27 @@ const projectOptions = [
   { value: 'llr', label: 'Лучшие люди Росатома' },
 ]
 
+const iconSnowflake = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-sky-500"><path d="M10 2a.75.75 0 0 1 .75.75v2.69l1.72-1.72a.75.75 0 1 1 1.06 1.06L11.81 6.5H14.5a.75.75 0 0 1 0 1.5h-3.75v1.75h3.75a.75.75 0 0 1 0 1.5H11.81l1.72 1.72a.75.75 0 1 1-1.06 1.06l-1.72-1.72v2.69a.75.75 0 0 1-1.5 0v-2.69l-1.72 1.72a.75.75 0 0 1-1.06-1.06L8.19 11.25H5.5a.75.75 0 0 1 0-1.5h3.75V8H5.5a.75.75 0 0 1 0-1.5h2.69L6.47 4.78a.75.75 0 0 1 1.06-1.06l1.72 1.72V2.75A.75.75 0 0 1 10 2Z"/></svg>'
+const iconLeaf = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-emerald-500"><path fill-rule="evenodd" d="M13.5 3A3.5 3.5 0 0 0 10 6.5V8h6.5A3.5 3.5 0 0 0 20 4.5V3h-6.5ZM10 9.5v2A3.5 3.5 0 0 1 6.5 15H0v1.5A3.5 3.5 0 0 0 3.5 20H10v-2a3.5 3.5 0 0 1 3.5-3.5H20V13h-6.5A3.5 3.5 0 0 1 10 9.5Z" clip-rule="evenodd"/></svg>'
+const iconSun = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-amber-500"><path d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM10 15a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15ZM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM15.657 5.404a.75.75 0 1 0-1.06-1.06l-1.061 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM6.464 14.596a.75.75 0 1 0-1.06-1.06l-1.06 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM18 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 18 10ZM5 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 5 10ZM14.596 15.657a.75.75 0 0 0 1.06-1.06l-1.06-1.061a.75.75 0 1 0-1.06 1.06l1.06 1.06ZM5.404 6.464a.75.75 0 0 0 1.06-1.06l-1.06-1.06a.75.75 0 1 0-1.06 1.06l1.06 1.06Z"/></svg>'
+const iconMaple = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-orange-500"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/></svg>'
+const iconCert = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-indigo-500"><path fill-rule="evenodd" d="M1 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V6Zm4 1.5a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm2 3a4 4 0 0 0-3.665 2.395.75.75 0 0 0 .416 1A8.98 8.98 0 0 0 7 14.5a8.98 8.98 0 0 0 3.249-.605.75.75 0 0 0 .416-1A4 4 0 0 0 7 10.5Zm5-3.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Zm0 2.5a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/></svg>'
+const iconTrophy = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-yellow-500"><path fill-rule="evenodd" d="M10 1c-1.716 0-3.408.106-5.07.31C3.806 1.45 3 2.414 3 3.517V5h-.5A1.5 1.5 0 0 0 1 6.5v1A2.5 2.5 0 0 0 3.5 10H4a6 6 0 0 0 5.25 5.944V17.5H7A.75.75 0 0 0 7 19h6a.75.75 0 0 0 0-1.5h-2.25v-1.556A6 6 0 0 0 16 10h.5A2.5 2.5 0 0 0 19 7.5v-1A1.5 1.5 0 0 0 17.5 5H17V3.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 1Z" clip-rule="evenodd"/></svg>'
+const iconCard = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-teal-500"><path fill-rule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clip-rule="evenodd"/></svg>'
+
 const seasonOptions = [
   { value: '', label: 'Любой сезон' },
-  { value: 'winter', label: 'Зима', icon: '❄' },
-  { value: 'spring', label: 'Весна', icon: '🌿' },
-  { value: 'summer', label: 'Лето', icon: '☀' },
-  { value: 'autumn', label: 'Осень', icon: '🍂' },
+  { value: 'winter', label: 'Зима', icon: iconSnowflake },
+  { value: 'spring', label: 'Весна', icon: iconLeaf },
+  { value: 'summer', label: 'Лето', icon: iconSun },
+  { value: 'autumn', label: 'Осень', icon: iconMaple },
 ]
 
 const participationOptions = [
   { value: '', label: 'Любое' },
-  { value: 'contest', label: 'Конкурс', icon: '🏆' },
-  { value: 'paid', label: 'За свой счёт', icon: '💳' },
+  { value: 'bchp', label: 'Сертификат БЧП', icon: iconCert },
+  { value: 'contest', label: 'Конкурс', icon: iconTrophy },
+  { value: 'paid', label: 'За свой счёт', icon: iconCard },
 ]
 
 const cityOptions = computed(() => [
@@ -291,7 +300,7 @@ function seasonLabel(key) {
 }
 
 function participationLabel(key) {
-  const labels = { contest: 'Конкурс', paid: 'За свой счёт' }
+  const labels = { bchp: 'Сертификат БЧП', contest: 'Конкурс', paid: 'За свой счёт' }
   return labels[key] || key
 }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\UploadedMedia;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -72,6 +73,16 @@ class UploadController extends Controller
                 \Artisan::call('storage:link');
             }
 
+            UploadedMedia::create([
+                'filename' => $filename,
+                'original_name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'url' => $url,
+                'disk' => $disk,
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+            ]);
+
             return response()->json([
                 'url' => $url,
                 'path' => $path,
@@ -90,8 +101,20 @@ class UploadController extends Controller
                         \Artisan::call('storage:link');
                     }
 
+                    $fallbackUrl = Storage::disk('public')->url($fallbackPath);
+
+                    UploadedMedia::create([
+                        'filename' => $filename,
+                        'original_name' => $file->getClientOriginalName(),
+                        'path' => $fallbackPath,
+                        'url' => $fallbackUrl,
+                        'disk' => 'public',
+                        'mime_type' => $file->getMimeType(),
+                        'size' => $file->getSize(),
+                    ]);
+
                     return response()->json([
-                        'url' => Storage::disk('public')->url($fallbackPath),
+                        'url' => $fallbackUrl,
                         'path' => $fallbackPath,
                     ]);
                 } catch (\Throwable $fallbackError) {
@@ -105,5 +128,16 @@ class UploadController extends Controller
                 'message' => 'Не удалось загрузить изображение. Попробуйте ещё раз.',
             ], 500);
         }
+    }
+
+    public function mediaIndex(Request $request): JsonResponse
+    {
+        $query = UploadedMedia::latest();
+
+        if ($request->filled('search')) {
+            $query->where('original_name', 'ilike', '%' . $request->search . '%');
+        }
+
+        return response()->json($query->paginate(24));
     }
 }

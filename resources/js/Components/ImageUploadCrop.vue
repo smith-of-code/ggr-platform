@@ -21,6 +21,14 @@
             Заменить
           </button>
           <button
+            v-if="mediaPickerUrl"
+            type="button"
+            class="rounded-lg bg-[#003274] px-3 py-2 text-xs font-medium text-white shadow transition hover:bg-[#004090]"
+            @click="showMediaPicker = true"
+          >
+            Библиотека
+          </button>
+          <button
             type="button"
             class="rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white shadow transition hover:bg-red-600"
             @click="removeImage"
@@ -29,12 +37,25 @@
           </button>
         </div>
       </div>
-      <div v-else class="flex flex-col items-center justify-center px-6 py-10" @click="openPicker">
-        <svg class="mb-3 h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-        </svg>
-        <p class="mb-1 text-sm font-medium text-gray-600">Нажмите или перетащите изображение</p>
-        <p class="text-xs text-gray-400">PNG, JPG, WEBP до 5 МБ</p>
+      <div v-else class="flex flex-col items-center justify-center px-6 py-10">
+        <div class="cursor-pointer text-center" @click="openPicker">
+          <svg class="mx-auto mb-3 h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+          </svg>
+          <p class="mb-1 text-sm font-medium text-gray-600">Нажмите или перетащите изображение</p>
+          <p class="text-xs text-gray-400">PNG, JPG, WEBP до 5 МБ</p>
+        </div>
+        <button
+          v-if="mediaPickerUrl"
+          type="button"
+          class="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#003274]/30 hover:text-[#003274]"
+          @click="showMediaPicker = true"
+        >
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+          </svg>
+          Из библиотеки
+        </button>
       </div>
     </div>
 
@@ -88,6 +109,16 @@
         </div>
       </div>
     </teleport>
+
+    <!-- Media Picker -->
+    <MediaPickerModal
+      v-if="mediaPickerUrl"
+      :show="showMediaPicker"
+      :api-url="mediaPickerUrl"
+      :upload-url="uploadUrl"
+      @close="showMediaPicker = false"
+      @select="onMediaSelect"
+    />
   </div>
 </template>
 
@@ -96,6 +127,7 @@ import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
 import axios from 'axios'
+import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -105,6 +137,7 @@ const props = defineProps({
   aspectRatio: { type: Number, default: 16 / 9 },
   previewClass: { type: String, default: 'h-48 w-full object-cover' },
   skipCrop: { type: Boolean, default: false },
+  mediaPickerUrl: { type: String, default: '' },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -115,6 +148,7 @@ const uploading = ref(false)
 const uploadError = ref('')
 const previewUrl = ref(props.modelValue || '')
 
+const showMediaPicker = ref(false)
 const showCropper = ref(false)
 const cropSrc = ref('')
 const cropImage = ref(null)
@@ -256,6 +290,11 @@ async function applyCrop() {
 function removeImage() {
   previewUrl.value = ''
   emit('update:modelValue', '')
+}
+
+function onMediaSelect(url) {
+  previewUrl.value = url
+  emit('update:modelValue', url)
 }
 
 onBeforeUnmount(() => {

@@ -36,7 +36,7 @@ class TourController extends Controller
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['is_featured'] = $request->boolean('is_featured', false);
-        $validated['bchp_participant'] = $request->boolean('bchp_participant', false);
+        $validated['bchp_participant'] = ($validated['participation_type'] ?? '') === 'bchp';
         $validated['for_children'] = $request->boolean('for_children', false);
         $validated['for_foreigners'] = $request->boolean('for_foreigners', false);
         $validated['closed_city'] = $request->boolean('closed_city', false);
@@ -68,7 +68,7 @@ class TourController extends Controller
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['is_featured'] = $request->boolean('is_featured', false);
-        $validated['bchp_participant'] = $request->boolean('bchp_participant', false);
+        $validated['bchp_participant'] = ($validated['participation_type'] ?? '') === 'bchp';
         $validated['for_children'] = $request->boolean('for_children', false);
         $validated['for_foreigners'] = $request->boolean('for_foreigners', false);
         $validated['closed_city'] = $request->boolean('closed_city', false);
@@ -105,7 +105,7 @@ class TourController extends Controller
             'start_city' => 'nullable|string|max:255',
             'duration' => 'nullable|string|max:100',
             'project' => 'nullable|string|in:start_atomgrad,atoms_vkusa,llr',
-            'participation_type' => 'nullable|string|in:contest,paid',
+            'participation_type' => 'nullable|string|in:contest,paid,bchp',
             'season' => 'nullable|string|in:winter,spring,summer,autumn',
             'group_size' => 'nullable|string|max:100',
             'min_age' => 'nullable|integer|min:0',

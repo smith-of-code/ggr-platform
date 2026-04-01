@@ -83,6 +83,17 @@
         </Link>
 
         <Link
+          :href="route('admin.atoms-vkusa.edit')"
+          :class="[isActive('admin.atoms-vkusa') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
+        >
+          <svg :class="[isActive('admin.atoms-vkusa') ? 'text-[#003274]' : 'text-gray-400 group-hover:text-gray-600']" class="h-5 w-5 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z" />
+          </svg>
+          Атомы вкуса
+        </Link>
+
+        <Link
           :href="route('admin.blog.index')"
           :class="[isActive('admin.blog') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
         >
@@ -232,6 +243,7 @@ function isActive(routePrefix) {
   if (routePrefix === 'admin.blog') return url.startsWith('/admin/blog')
   if (routePrefix === 'admin.education-products') return url.startsWith('/admin/education-products')
   if (routePrefix === 'admin.recipes') return url.startsWith('/admin/recipes')
+  if (routePrefix === 'admin.atoms-vkusa') return url.startsWith('/admin/atoms-vkusa')
   if (routePrefix === 'admin.vacancies') return url.startsWith('/admin/vacancies')
   if (routePrefix === 'admin.opportunity-tours-page') return url.startsWith('/admin/opportunity-tours-page')
   if (routePrefix === 'admin.research-page') return url.startsWith('/admin/research-page')

@@ -449,7 +449,7 @@
       </div>
 
       <!-- BChP banner -->
-      <div v-if="tour.bchp_participant" class="reveal mt-10 rounded-2xl border border-[#003274]/10 bg-[#003274]/5 px-6 py-5 text-center">
+      <div v-if="tour.participation_type === 'bchp'" class="reveal mt-10 rounded-2xl border border-[#003274]/10 bg-[#003274]/5 px-6 py-5 text-center">
         <p class="text-base font-medium text-gray-800">
           Данный тур участвует в программе «Больше, чем путешествие». Вы можете принять участие в конкурсе, если хотите отправиться в тур бесплатно.
         </p>
@@ -459,17 +459,17 @@
       </div>
 
       <!-- CTA: Варианты участия -->
-      <div v-if="tour.bchp_participant || tour.participation_type" class="reveal mt-10 rounded-2xl bg-gray-900 px-6 py-10 text-center">
+      <div v-if="tour.participation_type" class="reveal mt-10 rounded-2xl bg-gray-900 px-6 py-10 text-center">
         <h2 class="text-2xl font-bold text-white sm:text-3xl">Готовы отправиться в тур?</h2>
         <p class="mt-2 text-lg text-gray-300">Выбирайте способ участия:</p>
         <div class="mt-6 flex flex-wrap justify-center gap-4">
-          <button v-if="tour.bchp_participant" type="button" class="cursor-pointer rounded-xl bg-[#003274] px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#004090]" @click="openApplicationModal(null, 'bchp')">
+          <button v-if="tour.participation_type === 'bchp'" type="button" class="cursor-pointer rounded-xl bg-[#003274] px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#004090]" @click="openApplicationModal(null, 'bchp')">
             Забронировать
           </button>
-          <button v-if="tour.participation_type === 'paid' || !tour.participation_type" type="button" class="cursor-pointer rounded-xl bg-green-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-green-700" @click="openApplicationModal(null, 'paid')">
+          <button v-if="tour.participation_type === 'paid'" type="button" class="cursor-pointer rounded-xl bg-green-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-green-700" @click="openApplicationModal(null, 'paid')">
             Купить тур
           </button>
-          <button v-if="tour.participation_type === 'contest' || !tour.participation_type" type="button" class="cursor-pointer rounded-xl border-2 border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-white/20" @click="openApplicationModal(null, 'contest')">
+          <button v-if="tour.participation_type === 'contest'" type="button" class="cursor-pointer rounded-xl border-2 border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-white/20" @click="openApplicationModal(null, 'contest')">
             Участвовать в конкурсе
           </button>
         </div>
