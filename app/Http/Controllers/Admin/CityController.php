@@ -56,6 +56,20 @@ class CityController extends Controller
             'facts.*.title' => 'required|string|max:5000',
             'facts.*.url' => 'nullable|string|max:2048',
             'facts.*.description' => 'nullable|string',
+            'energy_cities_block' => 'nullable|array',
+            'energy_cities_block.video_url' => 'nullable|string|max:2048',
+            'energy_cities_block.video_title' => 'nullable|string|max:500',
+            'energy_cities_block.video_subtitle' => 'nullable|string|max:1000',
+            'energy_cities_block.description' => 'nullable|string',
+            'energy_cities_block.button_text' => 'nullable|string|max:255',
+            'energy_cities_block.button_url' => 'nullable|string|max:2048',
+            'block_visibility' => 'nullable|array',
+            'block_visibility.facts' => 'boolean',
+            'block_visibility.infrastructure' => 'boolean',
+            'block_visibility.video' => 'boolean',
+            'block_visibility.attractions' => 'boolean',
+            'block_visibility.social_objects' => 'boolean',
+            'block_visibility.energy_cities_block' => 'boolean',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
@@ -103,6 +117,20 @@ class CityController extends Controller
             'facts.*.title' => 'required|string|max:5000',
             'facts.*.url' => 'nullable|string|max:2048',
             'facts.*.description' => 'nullable|string',
+            'energy_cities_block' => 'nullable|array',
+            'energy_cities_block.video_url' => 'nullable|string|max:2048',
+            'energy_cities_block.video_title' => 'nullable|string|max:500',
+            'energy_cities_block.video_subtitle' => 'nullable|string|max:1000',
+            'energy_cities_block.description' => 'nullable|string',
+            'energy_cities_block.button_text' => 'nullable|string|max:255',
+            'energy_cities_block.button_url' => 'nullable|string|max:2048',
+            'block_visibility' => 'nullable|array',
+            'block_visibility.facts' => 'boolean',
+            'block_visibility.infrastructure' => 'boolean',
+            'block_visibility.video' => 'boolean',
+            'block_visibility.attractions' => 'boolean',
+            'block_visibility.social_objects' => 'boolean',
+            'block_visibility.energy_cities_block' => 'boolean',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);

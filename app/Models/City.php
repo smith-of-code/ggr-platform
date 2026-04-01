@@ -30,6 +30,8 @@ class City extends Model
         'gallery',
         'video_url',
         'facts',
+        'energy_cities_block',
+        'block_visibility',
     ];
 
     protected $casts = [
@@ -39,6 +41,8 @@ class City extends Model
         'social_objects' => 'array',
         'gallery' => 'array',
         'facts' => 'array',
+        'energy_cities_block' => 'array',
+        'block_visibility' => 'array',
     ];
 
     /**
@@ -66,6 +70,40 @@ class City extends Model
             }
             return ['title' => '', 'url' => null, 'description' => null];
         }, $facts);
+    }
+
+    public function getEnergyCitiesBlockAttribute($value): array
+    {
+        $block = is_string($value) ? json_decode($value, true) : $value;
+
+        return [
+            'video_url' => $block['video_url'] ?? null,
+            'video_title' => $block['video_title'] ?? null,
+            'video_subtitle' => $block['video_subtitle'] ?? null,
+            'description' => $block['description'] ?? null,
+            'button_text' => $block['button_text'] ?? null,
+            'button_url' => $block['button_url'] ?? null,
+        ];
+    }
+
+    public function getBlockVisibilityAttribute($value): array
+    {
+        $data = is_string($value) ? json_decode($value, true) : $value;
+
+        $defaults = [
+            'facts' => true,
+            'infrastructure' => true,
+            'video' => true,
+            'attractions' => true,
+            'social_objects' => true,
+            'energy_cities_block' => true,
+        ];
+
+        if (! is_array($data)) {
+            return $defaults;
+        }
+
+        return array_merge($defaults, array_intersect_key($data, $defaults));
     }
 
     public function tours(): BelongsToMany

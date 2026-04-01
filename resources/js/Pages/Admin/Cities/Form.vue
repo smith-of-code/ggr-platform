@@ -162,6 +162,24 @@
               </div>
             </div>
           </RCard>
+
+          <!-- Energy Cities block -->
+          <RCard elevation="raised">
+            <div class="space-y-5 p-6">
+              <div>
+                <h2 class="text-base font-bold text-gray-900">Город в объективе «Энергии городов»</h2>
+                <p class="mt-1 text-sm text-gray-500">Блок с видео и описанием проекта «Энергия городов»</p>
+              </div>
+              <RInput v-model="form.energy_cities_block.video_url" label="Ссылка на видео" placeholder="https://youtube.com/watch?v=..." :error="form.errors['energy_cities_block.video_url']" />
+              <RInput v-model="form.energy_cities_block.video_title" label="Заголовок видео" placeholder="«Энергия городов». Железногорск" :error="form.errors['energy_cities_block.video_title']" />
+              <RInput v-model="form.energy_cities_block.video_subtitle" label="Подзаголовок видео" placeholder="Проект Госкорпорации «Росатом» о гостеприимных атомных городах" :error="form.errors['energy_cities_block.video_subtitle']" />
+              <RichTextEditor v-model="form.energy_cities_block.description" label="Текст описания" :upload-url="route('admin.upload.image')" />
+              <div class="grid gap-4 sm:grid-cols-2">
+                <RInput v-model="form.energy_cities_block.button_text" label="Текст кнопки" placeholder="Все серии «Энергии городов»" :error="form.errors['energy_cities_block.button_text']" />
+                <RInput v-model="form.energy_cities_block.button_url" label="Ссылка кнопки" placeholder="https://..." :error="form.errors['energy_cities_block.button_url']" />
+              </div>
+            </div>
+          </RCard>
         </div>
 
         <!-- Right column -->
@@ -185,6 +203,22 @@
                 <input v-model.number="form.position" type="number" class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-2 focus:ring-[#003274]/10" />
               </div>
               <RCheckbox v-model="form.is_active" label="Активен" />
+            </div>
+          </RCard>
+
+          <!-- Block visibility -->
+          <RCard elevation="raised">
+            <div class="space-y-4 p-6">
+              <div>
+                <h2 class="text-base font-bold text-gray-900">Видимость блоков</h2>
+                <p class="mt-1 text-sm text-gray-500">Управление отображением секций на странице города</p>
+              </div>
+              <RCheckbox v-model="form.block_visibility.facts" label="Факты о городе" />
+              <RCheckbox v-model="form.block_visibility.infrastructure" label="Инфраструктура" />
+              <RCheckbox v-model="form.block_visibility.video" label="Видео" />
+              <RCheckbox v-model="form.block_visibility.attractions" label="Достопримечательности" />
+              <RCheckbox v-model="form.block_visibility.social_objects" label="Социальная сфера" />
+              <RCheckbox v-model="form.block_visibility.energy_cities_block" label="Город в объективе «Энергии городов»" />
             </div>
           </RCard>
 
@@ -323,6 +357,22 @@ const form = useForm({
   social_objects: { ...defaultSocialObjects(), ...(props.city?.social_objects ?? {}) },
   gallery: props.city?.gallery ?? [],
   video_url: props.city?.video_url ?? '',
+  energy_cities_block: {
+    video_url: props.city?.energy_cities_block?.video_url ?? '',
+    video_title: props.city?.energy_cities_block?.video_title ?? '',
+    video_subtitle: props.city?.energy_cities_block?.video_subtitle ?? '',
+    description: props.city?.energy_cities_block?.description ?? '',
+    button_text: props.city?.energy_cities_block?.button_text ?? '',
+    button_url: props.city?.energy_cities_block?.button_url ?? '',
+  },
+  block_visibility: {
+    facts: props.city?.block_visibility?.facts ?? true,
+    infrastructure: props.city?.block_visibility?.infrastructure ?? true,
+    video: props.city?.block_visibility?.video ?? true,
+    attractions: props.city?.block_visibility?.attractions ?? true,
+    social_objects: props.city?.block_visibility?.social_objects ?? true,
+    energy_cities_block: props.city?.block_visibility?.energy_cities_block ?? true,
+  },
 })
 
 function addFact() {

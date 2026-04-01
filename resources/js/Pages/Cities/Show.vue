@@ -92,7 +92,7 @@
         </div>
 
         <!-- 3. About -->
-        <section v-if="city.description || (city.facts?.length) || aboutInfographicRows.length" class="reveal mb-16">
+        <section v-if="city.description || (blockVisible.facts && city.facts?.length) || aboutInfographicRows.length" class="reveal mb-16">
           <h2 class="text-2xl font-bold text-gray-900">О городе</h2>
           <div
             v-if="city.description"
@@ -109,7 +109,7 @@
               <p class="mt-1 text-sm font-medium text-gray-600">{{ row.label }}</p>
             </div>
           </div>
-          <div v-if="city.facts?.length" class="mt-8 flex flex-wrap gap-3">
+          <div v-if="blockVisible.facts && city.facts?.length" class="mt-8 flex flex-wrap gap-3">
             <component
               v-for="(fact, i) in normalizedFacts"
               :key="i"
@@ -128,9 +128,62 @@
             </component>
           </div>
         </section>
+      </div>
 
+      <!-- 3.5 Energy Cities block (full-width) -->
+      <section v-if="hasEnergyCitiesBlock" class="reveal relative overflow-hidden bg-[#003274] py-16 sm:py-20">
+        <div class="energy-cities-decor pointer-events-none absolute inset-0" aria-hidden="true">
+          <div class="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-white/[0.04]" />
+          <div class="absolute -bottom-16 -right-16 h-56 w-56 rounded-full bg-white/[0.04]" />
+          <div class="absolute left-1/3 top-1/4 h-40 w-40 rounded-full bg-white/[0.03]" />
+        </div>
+        <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 class="mb-10 text-center text-2xl font-extrabold uppercase tracking-wide text-white sm:mb-12 sm:text-3xl">
+            Город в объективе «Энергии городов»
+          </h2>
+          <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-12">
+            <div>
+              <div v-if="energyCitiesVideoSrc" class="overflow-hidden rounded-2xl bg-black shadow-xl">
+                <div class="aspect-video w-full">
+                  <iframe
+                    :src="energyCitiesVideoSrc"
+                    class="h-full w-full"
+                    title="Энергия городов"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen
+                  />
+                </div>
+              </div>
+              <p v-if="energyCitiesBlock.video_title" class="mt-4 text-lg font-bold text-white">
+                {{ energyCitiesBlock.video_title }}
+              </p>
+              <p v-if="energyCitiesBlock.video_subtitle" class="mt-1 text-sm text-white/60">
+                {{ energyCitiesBlock.video_subtitle }}
+              </p>
+            </div>
+            <div class="flex flex-col">
+              <div
+                v-if="energyCitiesBlock.description"
+                class="energy-cities-html text-base leading-relaxed text-white/90"
+                v-html="energyCitiesBlock.description"
+              />
+              <a
+                v-if="energyCitiesBlock.button_text && energyCitiesBlock.button_url"
+                :href="energyCitiesBlock.button_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="mt-8 inline-flex self-start items-center gap-2 rounded-xl border-2 border-white/80 px-7 py-3.5 text-sm font-bold text-white transition hover:bg-white hover:text-[#003274]"
+              >
+                {{ energyCitiesBlock.button_text }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" :class="{ 'pt-10 sm:pt-12': hasEnergyCitiesBlock }">
         <!-- 4. Infrastructure -->
-        <section v-if="hasInfrastructureContent" class="reveal mb-16">
+        <section v-if="blockVisible.infrastructure && hasInfrastructureContent" class="reveal mb-16">
           <h2 class="text-2xl font-bold text-gray-900">Инфраструктура</h2>
           <p v-if="infrastructureScores" class="mt-2 max-w-2xl text-gray-600">Оценка развития ключевых сфер (условные баллы).</p>
           <p v-else class="mt-2 max-w-2xl text-gray-600">Ключевые объекты и направления развития города.</p>
@@ -173,7 +226,7 @@
         </section>
 
         <!-- 5. Attractions -->
-        <section v-if="city.attractions?.length" class="reveal mb-16">
+        <section v-if="blockVisible.attractions && city.attractions?.length" class="reveal mb-16">
           <h2 class="text-2xl font-bold text-gray-900">Достопримечательности</h2>
           <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <article
@@ -204,7 +257,7 @@
         </section>
 
         <!-- 6. Social objects -->
-        <section v-if="hasSocialObjects" class="reveal mb-16">
+        <section v-if="blockVisible.social_objects && hasSocialObjects" class="reveal mb-16">
           <h2 class="text-2xl font-bold text-gray-900">Социальная сфера</h2>
           <div class="mt-8 grid gap-8 lg:grid-cols-3">
             <div v-if="socialColumnEducation.length">
@@ -275,7 +328,7 @@
         </section>
 
         <!-- 8. Video -->
-        <section v-if="videoEmbedSrc" class="reveal mb-16">
+        <section v-if="blockVisible.video && videoEmbedSrc" class="reveal mb-16">
           <h2 class="text-2xl font-bold text-gray-900">Видео</h2>
           <div class="mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-black shadow-lg">
             <div class="aspect-video w-full">
@@ -486,6 +539,64 @@
 }
 .gallery-masonry__item img {
   display: block;
+}
+.energy-cities-html :deep(h1) {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+.energy-cities-html :deep(h2) {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-bottom: 0.75rem;
+  color: #fff;
+}
+.energy-cities-html :deep(h3) {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+.energy-cities-html :deep(p) {
+  margin-bottom: 1rem;
+}
+.energy-cities-html :deep(p:last-child),
+.energy-cities-html :deep(h1:last-child),
+.energy-cities-html :deep(h2:last-child),
+.energy-cities-html :deep(h3:last-child) {
+  margin-bottom: 0;
+}
+.energy-cities-html :deep(a) {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.energy-cities-html :deep(ul),
+.energy-cities-html :deep(ol) {
+  margin: 0.75rem 0 1rem;
+  padding-left: 1.25rem;
+}
+.energy-cities-html :deep(ul) {
+  list-style-type: disc;
+}
+.energy-cities-html :deep(ol) {
+  list-style-type: decimal;
+}
+.energy-cities-html :deep(strong) {
+  font-weight: 700;
+  color: #fff;
+}
+.energy-cities-html :deep(em) {
+  font-style: italic;
+}
+.energy-cities-html :deep(br) {
+  content: '';
+  display: block;
+  margin-top: 0.5rem;
 }
 </style>
 
@@ -705,23 +816,36 @@ const aboutInfographicRows = computed(() => {
   return rows
 })
 
-const videoEmbedSrc = computed(() => {
-  const url = props.city.video_url
-  if (!url || typeof url !== 'string') {
-    return null
-  }
+function parseVideoEmbedUrl(url) {
+  if (!url || typeof url !== 'string') return null
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/)
-  if (yt) {
-    return `https://www.youtube.com/embed/${yt[1]}`
-  }
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`
   const rt = url.match(/rutube\.ru\/(?:video\/|play\/embed\/)([a-zA-Z0-9_-]+)/)
-  if (rt) {
-    return `https://rutube.ru/play/embed/${rt[1]}`
-  }
-  if (url.includes('youtube.com/embed/') || url.includes('rutube.ru/play/embed/')) {
-    return url
-  }
+  if (rt) return `https://rutube.ru/play/embed/${rt[1]}`
+  if (url.includes('youtube.com/embed/') || url.includes('rutube.ru/play/embed/')) return url
   return null
+}
+
+const blockVisible = computed(() => {
+  const v = props.city.block_visibility
+  return {
+    facts: v?.facts !== false,
+    infrastructure: v?.infrastructure !== false,
+    video: v?.video !== false,
+    attractions: v?.attractions !== false,
+    social_objects: v?.social_objects !== false,
+    energy_cities_block: v?.energy_cities_block !== false,
+  }
+})
+
+const videoEmbedSrc = computed(() => parseVideoEmbedUrl(props.city.video_url))
+
+const energyCitiesBlock = computed(() => props.city.energy_cities_block)
+const energyCitiesVideoSrc = computed(() => parseVideoEmbedUrl(energyCitiesBlock.value?.video_url))
+const hasEnergyCitiesBlock = computed(() => {
+  if (!blockVisible.value.energy_cities_block) return false
+  const b = energyCitiesBlock.value
+  return b && (b.video_url || b.description)
 })
 
 function toggleFavorite() {
