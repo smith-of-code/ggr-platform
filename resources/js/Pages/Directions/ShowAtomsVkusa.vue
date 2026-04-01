@@ -58,9 +58,9 @@
       <!-- Этапы конкурса -->
       <section v-if="content.competition_stages?.length" id="section-stages" class="py-16">
         <h2 class="text-center text-2xl font-bold text-gray-900 sm:text-3xl">Этапы конкурса</h2>
-        <div class="relative mx-auto mt-12 max-w-3xl">
-          <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-[#003274]/20 sm:left-1/2 sm:-translate-x-px" />
-          <div v-for="(stage, i) in content.competition_stages" :key="i" class="relative mb-10 pl-16 sm:mb-12 sm:pl-0" :class="i % 2 === 0 ? 'sm:pr-[calc(50%+2rem)]' : 'sm:pl-[calc(50%+2rem)]'">
+        <div ref="stagesContainer" class="relative mx-auto mt-12 max-w-3xl">
+          <div class="absolute left-6 top-0 w-0.5 bg-[#003274]/20 sm:left-1/2 sm:-translate-x-px" :style="{ height: stagesLineHeight }" />
+          <div v-for="(stage, i) in content.competition_stages" :key="i" class="relative pl-16 sm:pl-0" :class="[i % 2 === 0 ? 'sm:pr-[calc(50%+2rem)]' : 'sm:pl-[calc(50%+2rem)]', i < content.competition_stages.length - 1 ? 'mb-10 sm:mb-12' : '']">
             <div class="absolute left-0 top-0 flex h-12 w-12 items-center justify-center rounded-full bg-[#003274] text-lg font-bold text-white shadow-lg sm:left-1/2 sm:-translate-x-1/2">
               {{ i + 1 }}
             </div>
@@ -481,6 +481,8 @@ const appForm = reactive({
 const toursSlider = ref(null)
 const toursSection = ref(null)
 const mapContainer = ref(null)
+const stagesContainer = ref(null)
+const stagesLineHeight = ref('100%')
 
 const details = computed(() => props.direction.free_participation_details)
 
@@ -560,8 +562,17 @@ function scrollTours(direction) {
   toursSlider.value.scrollBy({ left: direction * (cardWidth + 24), behavior: 'smooth' })
 }
 
-// Yandex Maps
+function calcStagesLineHeight() {
+  if (!stagesContainer.value) return
+  const children = stagesContainer.value.querySelectorAll(':scope > div:not(:first-child)')
+  if (!children.length) return
+  const last = children[children.length - 1]
+  const circleCenter = last.offsetTop + 24
+  stagesLineHeight.value = circleCenter + 'px'
+}
+
 onMounted(async () => {
+  nextTick(calcStagesLineHeight)
   if (!props.content.map_cities?.length || !mapContainer.value) return
 
   const YANDEX_API_KEY = window.__YANDEX_MAPS_KEY || ''

@@ -106,6 +106,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::post('/upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
     Route::post('/upload/file', [AdminUploadController::class, 'file'])->name('upload.file');
+    Route::get('/media', [AdminUploadController::class, 'mediaIndex'])->name('media.index');
 
     Route::get('/tour-reviews', [AdminTourReviewController::class, 'index'])->name('tour-reviews.index');
     Route::patch('/tour-reviews/{tourReview}/approve', [AdminTourReviewController::class, 'approve'])->name('tour-reviews.approve');

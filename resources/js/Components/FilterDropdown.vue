@@ -12,7 +12,7 @@
       @click="open = !open"
     >
       <span class="flex items-center gap-2 truncate">
-        <span v-if="selectedOption?.icon" class="text-base leading-none">{{ selectedOption.icon }}</span>
+        <span v-if="selectedOption?.icon" class="flex h-5 w-5 shrink-0 items-center justify-center text-base leading-none" v-html="selectedOption.icon" />
         <span :class="modelValue ? 'text-[#003274]' : 'text-gray-500'">{{ selectedOption?.label || placeholder }}</span>
       </span>
       <svg
@@ -46,7 +46,7 @@
             : 'text-gray-700 hover:bg-gray-50'"
           @click="select(opt.value)"
         >
-          <span v-if="opt.icon" class="text-base leading-none">{{ opt.icon }}</span>
+          <span v-if="opt.icon" class="flex h-5 w-5 shrink-0 items-center justify-center text-base leading-none" v-html="opt.icon" />
           <span class="flex-1 truncate">{{ opt.label }}</span>
           <svg
             v-if="String(modelValue) === String(opt.value)"
