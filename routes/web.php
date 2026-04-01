@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TimelineEventController as AdminTimelineController;
 use App\Http\Controllers\Admin\DirectionController as AdminDirectionController;
+use App\Http\Controllers\Admin\AtomsVkusaController as AdminAtomsVkusaController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlogController;
@@ -96,6 +97,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::resource('directions', AdminDirectionController::class)->except(['show']);
     Route::patch('/directions/{direction}/toggle-active', [AdminDirectionController::class, 'toggleActive'])->name('directions.toggleActive');
+
+    Route::get('/atoms-vkusa', [AdminAtomsVkusaController::class, 'edit'])->name('atoms-vkusa.edit');
+    Route::put('/atoms-vkusa', [AdminAtomsVkusaController::class, 'update'])->name('atoms-vkusa.update');
 
     Route::resource('timeline', AdminTimelineController::class)->except(['show']);
     Route::patch('/timeline/{timeline}/toggle-active', [AdminTimelineController::class, 'toggleActive'])->name('timeline.toggleActive');

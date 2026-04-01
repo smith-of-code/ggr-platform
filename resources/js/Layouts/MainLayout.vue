@@ -76,7 +76,7 @@
           <Link :href="route('opportunity-tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Туры возможностей</Link>
           <Link :href="route('education.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">ВШГР</Link>
           <Link :href="route('research.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Исследования</Link>
-          <Link :href="route('recipes.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Атомы вкуса</Link>
+          <Link :href="route('directions.show', 'atomy-vkusa')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Атомы вкуса</Link>
           <Link :href="route('blog.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Блог</Link>
           <Link :href="route('vacancies.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Вакансии</Link>
           <div class="my-2 border-t border-gray-100" />
@@ -124,7 +124,7 @@
               <Link :href="route('opportunity-tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Туры возможностей</Link>
               <Link :href="route('education.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">ВШГР</Link>
               <Link :href="route('research.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Исследования</Link>
-              <Link :href="route('recipes.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Атомы вкуса</Link>
+              <Link :href="route('directions.show', 'atomy-vkusa')" class="text-sm text-gray-500 transition hover:text-[#003274]">Атомы вкуса</Link>
               <Link :href="route('blog.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Блог</Link>
               <Link :href="route('vacancies.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Вакансии</Link>
             </div>
@@ -134,6 +134,7 @@
             <div class="mt-4 flex flex-col gap-3">
               <Link href="/privacy" class="text-sm text-gray-500 transition hover:text-[#003274]">Политика обработки персональных данных</Link>
               <Link href="/consent" class="text-sm text-gray-500 transition hover:text-[#003274]">Согласие на обработку данных</Link>
+              <Link href="/consent-third-party" class="text-sm text-gray-500 transition hover:text-[#003274]">Согласие на передачу данных третьим лицам</Link>
             </div>
           </div>
         </div>
@@ -162,7 +163,7 @@ const navItems = computed(() => [
   { label: 'Туры возможностей', href: route('opportunity-tours.index'), active: page.url.startsWith('/opportunity-tours') },
   { label: 'ВШГР', href: route('education.index'), active: page.url.startsWith('/vshgr') },
   { label: 'Исследования', href: route('research.index'), active: page.url.startsWith('/research') },
-  { label: 'Атомы вкуса', href: route('recipes.index'), active: page.url.startsWith('/recipes') },
+  { label: 'Атомы вкуса', href: route('directions.show', 'atomy-vkusa'), active: page.url.startsWith('/directions/atomy-vkusa') },
   { label: 'Блог', href: route('blog.index'), active: page.url.startsWith('/blog') },
   { label: 'Вакансии', href: route('vacancies.index'), active: page.url.startsWith('/vacancies') },
 ])

@@ -41,11 +41,12 @@
                   </select>
                 </div>
                 <div>
-                  <label class="mb-2 block text-sm font-semibold text-gray-700">Участие</label>
+                  <label class="mb-2 block text-sm font-semibold text-gray-700">Варианты участия</label>
                   <select v-model="form.participation_type" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
                     <option value="">—</option>
-                    <option value="contest">Конкурс</option>
-                    <option value="paid">За свой счёт</option>
+                    <option value="bchp">Есть сертификат «Больше, чем путешествие»</option>
+                    <option value="contest">Принять участие в конкурсе</option>
+                    <option value="paid">Поехать за свой счёт</option>
                   </select>
                 </div>
                 <div>
@@ -381,7 +382,6 @@ const checkboxOptions = [
   { key: 'for_children', label: 'С детьми' },
   { key: 'for_foreigners', label: 'Иностранцам' },
   { key: 'closed_city', label: 'Закрытый город' },
-  { key: 'bchp_participant', label: 'Участник программы БЧП' },
 ]
 
 const tourMeta = computed(() => {
@@ -484,7 +484,6 @@ const form = useForm({
   for_children: props.tour?.for_children ?? false,
   for_foreigners: props.tour?.for_foreigners ?? false,
   closed_city: props.tour?.closed_city ?? false,
-  bchp_participant: props.tour?.bchp_participant ?? false,
   program_days: props.tour?.program_days ?? [],
   program_pdf: props.tour?.program_pdf ?? '',
   accommodations: props.tour?.accommodations ?? [],

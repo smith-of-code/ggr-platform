@@ -13,7 +13,7 @@ class ApplicationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'type' => 'required|in:tour,research,program_info',
+            'type' => 'required|in:tour,research,program_info,atoms_vkusa',
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'phone' => 'nullable|string|max:50',
