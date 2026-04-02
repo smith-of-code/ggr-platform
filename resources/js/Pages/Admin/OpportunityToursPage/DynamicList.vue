@@ -331,7 +331,9 @@ function extractIframeSrc(value) {
 function toRelativeUrl(url) {
   if (!url) return url
   try {
-    return new URL(url).pathname
+    const parsed = new URL(url)
+    if (parsed.origin === window.location.origin) return parsed.pathname
+    return url
   } catch {
     return url
   }

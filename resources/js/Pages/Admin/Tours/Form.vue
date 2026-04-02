@@ -286,7 +286,7 @@
             <div class="space-y-3">
               <div v-for="(vid, vi) in form.videos" :key="vi" class="space-y-2">
                 <div class="flex gap-2">
-                  <input v-model="form.videos[vi]" type="text" placeholder="https://youtube.com/watch?v=... или rutube.ru/video/..." class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
+                  <input v-model="form.videos[vi]" type="text" placeholder="Ссылка на YouTube, RuTube или VK Video" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
                   <button type="button" class="shrink-0 rounded-xl border border-red-200 bg-white p-2.5 text-red-500 transition hover:bg-red-50" title="Удалить видео" @click="form.videos.splice(vi, 1)">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                   </button>
@@ -302,7 +302,7 @@
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               Добавить видео
             </button>
-            <p class="mt-2 text-xs text-gray-400">Поддерживается YouTube и RuTube</p>
+            <p class="mt-2 text-xs text-gray-400">Поддерживается YouTube, RuTube и VK Video. Для фотографий используйте «Галерею фото» выше.</p>
           </RCard>
 
           <!-- Cities -->
@@ -439,11 +439,14 @@ const galleryUploading = ref(false)
 const galleryError = ref('')
 
 function parseVideoEmbed(url) {
-  if (!url) return null
+  if (!url || typeof url !== 'string') return null
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/)
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`
   const rt = url.match(/rutube\.ru\/(?:video\/|play\/embed\/)([a-zA-Z0-9_-]+)/)
   if (rt) return `https://rutube.ru/play/embed/${rt[1]}`
+  if (url.includes('vk.com/video_ext.php')) return url
+  const vk = url.match(/(?:vk\.com|vkvideo\.ru)\/(?:video|clip)(-?\d+_\d+)/)
+  if (vk) return `https://vk.com/video_ext.php?oid=${vk[1].split('_')[0]}&id=${vk[1].split('_')[1]}&hd=2`
   return null
 }
 

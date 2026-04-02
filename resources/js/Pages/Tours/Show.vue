@@ -644,6 +644,9 @@ function parseEmbed(url) {
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`
   const rt = url.match(/rutube\.ru\/(?:video\/|play\/embed\/)([a-zA-Z0-9_-]+)/)
   if (rt) return `https://rutube.ru/play/embed/${rt[1]}`
+  if (url.includes('vk.com/video_ext.php')) return url
+  const vk = url.match(/(?:vk\.com|vkvideo\.ru)\/(?:video|clip)(-?\d+_\d+)/)
+  if (vk) return `https://vk.com/video_ext.php?oid=${vk[1].split('_')[0]}&id=${vk[1].split('_')[1]}&hd=2`
   return null
 }
 
