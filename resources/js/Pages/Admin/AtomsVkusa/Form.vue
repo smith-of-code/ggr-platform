@@ -270,13 +270,14 @@
               <button type="button" class="text-xs text-red-500 hover:text-red-700" @click="removeItem('reviews', i)">Удалить</button>
             </div>
             <div class="grid gap-3 sm:grid-cols-3">
-              <RInput v-model="item.name" label="Имя" />
-              <RInput v-model="item.role" label="Роль / Должность" />
-              <RInput v-model.number="item.rating" label="Рейтинг (1-5)" type="number" min="1" max="5" />
+              <RInput v-model="item.name" label="Имя" :error="form.errors[`reviews.${i}.name`]" />
+              <RInput v-model="item.role" label="Роль / Должность" :error="form.errors[`reviews.${i}.role`]" />
+              <RInput v-model="item.rating" label="Рейтинг (1-5)" type="number" min="1" max="5" :error="form.errors[`reviews.${i}.rating`]" />
             </div>
             <div class="mt-2">
               <label class="mb-1 block text-xs font-medium text-gray-600">Текст отзыва</label>
-              <textarea v-model="item.text" rows="3" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" />
+              <textarea v-model="item.text" rows="3" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" :class="{ 'border-red-500': form.errors[`reviews.${i}.text`] }" />
+              <p v-if="form.errors[`reviews.${i}.text`]" class="mt-1 text-xs text-red-500">{{ form.errors[`reviews.${i}.text`] }}</p>
             </div>
             <ImageUploadCrop v-model="item.avatar" label="Аватар" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="atoms_vkusa" :aspect-ratio="1" preview-class="h-24 w-24 rounded-full object-cover" class="mt-2" />
           </div>
@@ -314,8 +315,14 @@
       </div>
 
       <!-- Submit -->
-      <div class="mt-8 flex justify-end border-t border-gray-200 pt-6">
-        <RButton type="submit" variant="primary" :disabled="form.processing">Сохранить</RButton>
+      <div class="mt-8 border-t border-gray-200 pt-6">
+        <div v-if="formError" class="mb-4 flex items-center gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+          {{ formError }}
+        </div>
+        <div class="flex justify-end">
+          <RButton type="submit" variant="primary" :disabled="form.processing">Сохранить</RButton>
+        </div>
       </div>
     </form>
   </AdminLayout>
@@ -378,9 +385,27 @@ function removeItem(field, index) {
   form[field].splice(index, 1)
 }
 
+const formError = ref('')
+
 function submit() {
-  form.put(route('admin.atoms-vkusa.update'), {
+  formError.value = ''
+
+  const data = form.data()
+  if (Array.isArray(data.reviews)) {
+    data.reviews = data.reviews.map(r => ({
+      ...r,
+      rating: r.rating === '' || r.rating === null ? null : Number(r.rating),
+    }))
+  }
+
+  form.transform(() => data).put(route('admin.atoms-vkusa.update'), {
     preserveScroll: true,
+    onError() {
+      formError.value = 'Не удалось сохранить. Проверьте правильность заполнения полей.'
+    },
+    onSuccess() {
+      formError.value = ''
+    },
   })
 }
 </script>

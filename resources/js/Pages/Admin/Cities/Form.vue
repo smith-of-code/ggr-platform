@@ -167,9 +167,11 @@
           <RCard elevation="raised">
             <div class="space-y-5 p-6">
               <div>
-                <h2 class="text-base font-bold text-gray-900">Город в объективе «Энергии городов»</h2>
-                <p class="mt-1 text-sm text-gray-500">Блок с видео и описанием проекта «Энергия городов»</p>
+                <h2 class="text-base font-bold text-gray-900">Блок «Энергия городов»</h2>
+                <p class="mt-1 text-sm text-gray-500">Настройка блока с видео и описанием проекта «Энергия городов»</p>
               </div>
+              <RInput v-model="form.energy_cities_block.section_title" label="Город в объективе «Энергии городов»" placeholder="Город в объективе «Энергии городов»" :error="form.errors['energy_cities_block.section_title']" />
+              <RInput v-model="form.energy_cities_block.section_subtitle" label="Блок с видео и описанием проекта «Энергия городов»" placeholder="Блок с видео и описанием проекта «Энергия городов»" :error="form.errors['energy_cities_block.section_subtitle']" />
               <RInput v-model="form.energy_cities_block.video_url" label="Ссылка на видео" placeholder="https://youtube.com/watch?v=..." :error="form.errors['energy_cities_block.video_url']" />
               <RInput v-model="form.energy_cities_block.video_title" label="Заголовок видео" placeholder="«Энергия городов». Железногорск" :error="form.errors['energy_cities_block.video_title']" />
               <RInput v-model="form.energy_cities_block.video_subtitle" label="Подзаголовок видео" placeholder="Проект Госкорпорации «Росатом» о гостеприимных атомных городах" :error="form.errors['energy_cities_block.video_subtitle']" />
@@ -386,6 +388,8 @@ const form = useForm({
   gallery: props.city?.gallery ?? [],
   video_url: props.city?.video_url ?? '',
   energy_cities_block: {
+    section_title: props.city?.energy_cities_block?.section_title ?? '',
+    section_subtitle: props.city?.energy_cities_block?.section_subtitle ?? '',
     video_url: props.city?.energy_cities_block?.video_url ?? '',
     video_title: props.city?.energy_cities_block?.video_title ?? '',
     video_subtitle: props.city?.energy_cities_block?.video_subtitle ?? '',

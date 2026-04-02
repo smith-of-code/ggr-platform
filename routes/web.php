@@ -85,7 +85,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::resource('tours', AdminTourController::class)->except(['show']);
     Route::patch('/tours/{tour}/toggle-active', [AdminTourController::class, 'toggleActive'])->name('tours.toggleActive');
 
-    Route::resource('blog', AdminBlogController::class)->except(['show']);
+    Route::resource('blog', AdminBlogController::class)->except(['show'])->parameters(['blog' => 'post']);
     Route::patch('/blog/{post}/toggle-publish', [AdminBlogController::class, 'togglePublish'])->name('blog.togglePublish');
 
     Route::resource('recipes', AdminRecipeController::class)->except(['show']);

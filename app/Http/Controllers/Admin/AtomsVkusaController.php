@@ -22,6 +22,16 @@ class AtomsVkusaController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        if ($request->has('reviews')) {
+            $reviews = $request->input('reviews', []);
+            foreach ($reviews as $i => $review) {
+                if (isset($review['rating']) && $review['rating'] === '') {
+                    $reviews[$i]['rating'] = null;
+                }
+            }
+            $request->merge(['reviews' => $reviews]);
+        }
+
         $validated = $request->validate([
             'hero_title' => 'nullable|string|max:500',
             'hero_description' => 'nullable|string|max:5000',

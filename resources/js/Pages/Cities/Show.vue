@@ -138,9 +138,13 @@
           <div class="absolute left-1/3 top-1/4 h-40 w-40 rounded-full bg-white/[0.03]" />
         </div>
         <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 class="mb-10 text-center text-2xl font-extrabold uppercase tracking-wide text-white sm:mb-12 sm:text-3xl">
-            Город в объективе «Энергии городов»
+          <h2 class="mb-2 text-center text-2xl font-extrabold uppercase tracking-wide text-white sm:text-3xl">
+            {{ energyCitiesBlock.section_title || 'Город в объективе «Энергии городов»' }}
           </h2>
+          <p v-if="energyCitiesBlock.section_subtitle" class="mb-10 text-center text-base text-white/70 sm:mb-12">
+            {{ energyCitiesBlock.section_subtitle }}
+          </p>
+          <div v-else class="mb-10 sm:mb-12" />
           <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-12">
             <div>
               <div v-if="energyCitiesVideoSrc" class="overflow-hidden rounded-2xl bg-black shadow-xl">

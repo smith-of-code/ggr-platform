@@ -16,6 +16,7 @@
 - T12. Админ-форма — карточка «Видимость блоков» с 6 RCheckbox в правой колонке, инициализация с дефолтами true (`resources/js/Pages/Admin/Cities/Form.vue`)
 - T13. Публичная страница — computed `blockVisible`, проверки `blockVisible.<key>` для Facts, Infrastructure, Video, Attractions, SocialObjects, EnergyCities (`resources/js/Pages/Cities/Show.vue`)
 - T14. Верификация — линтер чист, build успешен, progress обновлён
+- T15. Редактируемые заголовок/подзаголовок секции — добавлены ключи `section_title` и `section_subtitle` в JSON `energy_cities_block`: accessor модели, валидация в `store`/`update`, два поля RInput в админ-форме, динамический вывод на публичной странице вместо захардкоженного текста
 
 ## Частично выполнено
 

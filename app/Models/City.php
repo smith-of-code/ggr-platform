@@ -77,6 +77,8 @@ class City extends Model
         $block = is_string($value) ? json_decode($value, true) : $value;
 
         return [
+            'section_title' => $block['section_title'] ?? null,
+            'section_subtitle' => $block['section_subtitle'] ?? null,
             'video_url' => $block['video_url'] ?? null,
             'video_title' => $block['video_title'] ?? null,
             'video_subtitle' => $block['video_subtitle'] ?? null,
