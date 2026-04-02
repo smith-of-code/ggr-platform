@@ -84,33 +84,15 @@
             <RInput v-model="form.results_button_text" label="Текст кнопки" placeholder="Скачать альбом" />
             <RInput v-model="form.results_button_url" label="URL файла" placeholder="https://disk.yandex.ru/..." />
           </div>
-          <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500">Изображение</label>
-            <div class="flex items-center gap-2">
-              <input
-                v-model="form.results_image"
-                type="text"
-                placeholder="URL или загрузить"
-                class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm transition focus:border-[#003274] focus:ring-[#003274]/10"
-              />
-              <label class="shrink-0 cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition hover:border-[#003274] hover:text-[#003274]">
-                <input type="file" accept="image/*" class="hidden" @change="uploadResultsImage" />
-                Загрузить
-              </label>
-            </div>
-            <div v-if="form.results_image" class="mt-2 flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2">
-              <img :src="form.results_image" alt="Результаты" class="h-20 max-w-[200px] rounded-lg object-contain" />
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-xs text-gray-400">{{ form.results_image }}</p>
-              </div>
-              <button type="button" @click="form.results_image = ''" class="shrink-0 rounded-lg p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-500">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <p v-if="form.errors.results_image" class="mt-1 text-xs text-red-500">{{ form.errors.results_image }}</p>
-          </div>
+          <ImageUploadCrop
+            v-model="form.results_image"
+            label="Изображение"
+            :upload-url="route('admin.upload.image')"
+            :media-picker-url="route('admin.media.index')" collection="research_page"
+            :skip-crop="true"
+            preview-class="h-32 w-full object-contain"
+            :error="form.errors.results_image"
+          />
         </div>
       </RCard>
 
@@ -174,6 +156,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import SectionHeader from '../OpportunityToursPage/SectionHeader.vue'
 import DynamicList from '../OpportunityToursPage/DynamicList.vue'
 import CityPicker from './CityPicker.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 
 const props = defineProps({
   pageData: { type: Object, default: () => ({}) },
@@ -213,22 +196,6 @@ const form = useForm({
   program_cities_title: d.program_cities_title ?? 'ГОРОДА ПРОГРАММЫ 2025',
   program_cities: Array.isArray(d.program_cities) ? d.program_cities.filter(v => typeof v === 'number') : [],
 })
-
-async function uploadResultsImage(event) {
-  const file = event.target.files?.[0]
-  if (!file) return
-  const fd = new FormData()
-  fd.append('image', file)
-  try {
-    const { data } = await window.axios.post(route('admin.upload.image'), fd)
-    if (data.url) {
-      try { form.results_image = new URL(data.url).pathname } catch { form.results_image = data.url }
-    }
-  } catch (e) {
-    console.error('Upload error:', e)
-  }
-  event.target.value = ''
-}
 
 function submit() {
   form.put(route('admin.research-page.update'), {

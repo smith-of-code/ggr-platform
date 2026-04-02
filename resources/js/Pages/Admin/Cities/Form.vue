@@ -32,7 +32,7 @@
                 <RInput v-model="form.population_year" label="Население на год" type="number" placeholder="2021" :error="form.errors.population_year" />
                 <RInput v-model="form.timezone" label="Часовой пояс" placeholder="UTC+7" :error="form.errors.timezone" />
               </div>
-              <RichTextEditor v-model="form.description" label="Описание города" :upload-url="route('admin.upload.image')" />
+              <RichTextEditor v-model="form.description" label="Описание города" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="cities" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
             </div>
           </RCard>
 
@@ -82,7 +82,7 @@
                 <div class="space-y-3">
                   <input v-model="fact.title" type="text" placeholder="Заголовок факта *" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/10" />
                   <input v-model="fact.url" type="text" placeholder="Ссылка (необязательно)" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/10" />
-                  <RichTextEditor v-model="fact.description" label="Описание (необязательно)" :upload-url="route('admin.upload.image')" />
+                  <RichTextEditor v-model="fact.description" label="Описание (необязательно)" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="cities" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
                 </div>
               </div>
               <p v-if="!form.facts.length" class="text-sm text-gray-400">Фактов пока нет</p>
@@ -109,7 +109,7 @@
                 <div class="space-y-3">
                   <input v-model="attr.title" type="text" placeholder="Название" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/10" />
                   <textarea v-model="attr.description" placeholder="Описание (необязательно)" rows="2" class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition focus:border-[#003274] focus:ring-2 focus:ring-[#003274]/10" />
-                  <ImageUploadCrop v-model="attr.image" label="Фото" :upload-url="route('admin.upload.image')" />
+                  <ImageUploadCrop v-model="attr.image" label="Фото" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="cities" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
                 </div>
               </div>
               <p v-if="!form.attractions.length" class="text-sm text-gray-400">Достопримечательностей пока нет</p>
@@ -173,7 +173,7 @@
               <RInput v-model="form.energy_cities_block.video_url" label="Ссылка на видео" placeholder="https://youtube.com/watch?v=..." :error="form.errors['energy_cities_block.video_url']" />
               <RInput v-model="form.energy_cities_block.video_title" label="Заголовок видео" placeholder="«Энергия городов». Железногорск" :error="form.errors['energy_cities_block.video_title']" />
               <RInput v-model="form.energy_cities_block.video_subtitle" label="Подзаголовок видео" placeholder="Проект Госкорпорации «Росатом» о гостеприимных атомных городах" :error="form.errors['energy_cities_block.video_subtitle']" />
-              <RichTextEditor v-model="form.energy_cities_block.description" label="Текст описания" :upload-url="route('admin.upload.image')" />
+              <RichTextEditor v-model="form.energy_cities_block.description" label="Текст описания" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="cities" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
               <div class="grid gap-4 sm:grid-cols-2">
                 <RInput v-model="form.energy_cities_block.button_text" label="Текст кнопки" placeholder="Все серии «Энергии городов»" :error="form.errors['energy_cities_block.button_text']" />
                 <RInput v-model="form.energy_cities_block.button_url" label="Ссылка кнопки" placeholder="https://..." :error="form.errors['energy_cities_block.button_url']" />
@@ -186,12 +186,12 @@
         <div class="space-y-6">
           <!-- Image -->
           <RCard elevation="raised">
-            <ImageUploadCrop v-model="form.image" label="Фото города" :upload-url="route('admin.upload.image')" />
+            <ImageUploadCrop v-model="form.image" label="Фото города" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="cities" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
           </RCard>
 
           <!-- Coat of arms -->
           <RCard elevation="raised">
-            <ImageUploadCrop v-model="form.coat_of_arms" label="Герб города" :upload-url="route('admin.upload.image')" skip-crop preview-class="mx-auto h-48 w-auto object-contain p-4" />
+            <ImageUploadCrop v-model="form.coat_of_arms" label="Герб города" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="cities" :entity-type="mediaEntityType" :entity-id="mediaEntityId" skip-crop preview-class="mx-auto h-48 w-auto object-contain p-4" />
             <p class="px-6 pb-4 text-xs text-gray-400">PNG без фона — без рамки; JPEG — с декоративной окантовкой</p>
           </RCard>
 
@@ -246,15 +246,27 @@
                   </div>
                 </div>
               </div>
-              <div
-                class="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]"
-                @click="$refs.galleryInput.click()"
-              >
-                <svg class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 3h18a1.5 1.5 0 0 1 1.5 1.5v15a1.5 1.5 0 0 1-1.5 1.5H3a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 3 3Z" />
-                </svg>
-                <span v-if="!galleryUploading" class="text-sm font-medium text-gray-500">Добавить фото</span>
-                <span v-else class="text-sm font-medium text-[#003274]">Загрузка…</span>
+              <div class="flex gap-2">
+                <div
+                  class="flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]"
+                  @click="$refs.galleryInput.click()"
+                >
+                  <svg class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 3h18a1.5 1.5 0 0 1 1.5 1.5v15a1.5 1.5 0 0 1-1.5 1.5H3a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 3 3Z" />
+                  </svg>
+                  <span v-if="!galleryUploading" class="text-sm font-medium text-gray-500">Загрузить фото</span>
+                  <span v-else class="text-sm font-medium text-[#003274]">Загрузка…</span>
+                </div>
+                <button
+                  type="button"
+                  class="flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]"
+                  @click="showGalleryPicker = true"
+                >
+                  <svg class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                  </svg>
+                  <span class="text-sm font-medium text-gray-500">Из библиотеки</span>
+                </button>
               </div>
               <input ref="galleryInput" type="file" accept="image/*" multiple class="hidden" @change="uploadGalleryFiles" />
             </div>
@@ -294,6 +306,18 @@
       ]"
       @close="showPreview = false"
     />
+
+    <MediaPickerModal
+      :show="showGalleryPicker"
+      :api-url="route('admin.media.index')"
+      :upload-url="route('admin.upload.image')"
+      collection="cities"
+      :entity-type="mediaEntityType"
+      :entity-id="mediaEntityId"
+      multiple
+      @close="showGalleryPicker = false"
+      @select="onGalleryMediaSelect"
+    />
   </AdminLayout>
 </template>
 
@@ -305,10 +329,14 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 import ContentPreview from '@/Components/ContentPreview.vue'
+import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
 const props = defineProps({ city: Object })
 const showPreview = ref(false)
+const mediaEntityType = 'App\\Models\\City'
+const mediaEntityId = props.city?.id || null
 const galleryUploading = ref(false)
+const showGalleryPicker = ref(false)
 
 const infraFields = [
   { key: 'work', label: 'Работа' },
@@ -405,6 +433,12 @@ async function uploadGalleryFiles(e) {
   }
   galleryUploading.value = false
   e.target.value = ''
+}
+
+function onGalleryMediaSelect(urls) {
+  const list = Array.isArray(urls) ? urls : [urls]
+  form.gallery = [...form.gallery, ...list]
+  showGalleryPicker.value = false
 }
 
 function moveGalleryItem(index, direction) {

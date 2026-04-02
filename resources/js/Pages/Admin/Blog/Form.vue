@@ -61,6 +61,7 @@
             v-model="form.content"
             label="Содержание *"
             :upload-url="route('admin.upload.image')"
+            :media-picker-url="route('admin.media.index')" collection="blog" :entity-type="mediaEntityType" :entity-id="mediaEntityId"
           />
           <p v-if="form.errors.content" class="mt-1 text-sm text-red-600">{{ form.errors.content }}</p>
         </div>
@@ -69,6 +70,7 @@
           v-model="form.image"
           label="Изображение статьи"
           :upload-url="route('admin.upload.image')"
+          :media-picker-url="route('admin.media.index')" collection="blog" :entity-type="mediaEntityType" :entity-id="mediaEntityId"
           :error="form.errors.image"
         />
 
@@ -151,6 +153,8 @@ const props = defineProps({
 })
 
 const showPreview = ref(false)
+const mediaEntityType = 'App\\Models\\Post'
+const mediaEntityId = props.post?.id || null
 
 let slugManuallyEdited = false
 

@@ -87,7 +87,7 @@
           </div>
           <div class="p-6">
             <div class="mx-auto max-h-[60vh] overflow-hidden">
-              <img ref="cropImage" :src="cropSrc" class="max-w-full" />
+              <img ref="cropImage" :src="cropSrc" crossorigin="anonymous" class="max-w-full" />
             </div>
           </div>
           <div class="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
@@ -116,6 +116,9 @@
       :show="showMediaPicker"
       :api-url="mediaPickerUrl"
       :upload-url="uploadUrl"
+      :collection="collection"
+      :entity-type="entityType"
+      :entity-id="entityId"
       @close="showMediaPicker = false"
       @select="onMediaSelect"
     />
@@ -138,6 +141,9 @@ const props = defineProps({
   previewClass: { type: String, default: 'h-48 w-full object-cover' },
   skipCrop: { type: Boolean, default: false },
   mediaPickerUrl: { type: String, default: '' },
+  collection: { type: String, default: '' },
+  entityType: { type: String, default: '' },
+  entityId: { type: [Number, String], default: null },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -193,11 +199,18 @@ function handleFile(file) {
   reader.readAsDataURL(file)
 }
 
+function appendMediaContext(formData) {
+  if (props.collection) formData.append('collection', props.collection)
+  if (props.entityType) formData.append('entity_type', props.entityType)
+  if (props.entityId) formData.append('entity_id', props.entityId)
+}
+
 async function uploadOriginal(file) {
   uploading.value = true
   try {
     const formData = new FormData()
     formData.append('image', file)
+    appendMediaContext(formData)
     const { data } = await axios.post(props.uploadUrl, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
@@ -229,6 +242,7 @@ function initCropper() {
         autoCropArea: 0.9,
         responsive: true,
         background: true,
+        checkCrossOrigin: false,
       })
     }
   })
@@ -261,11 +275,13 @@ async function applyCrop() {
     if (!blob) return
     uploading.value = true
     try {
-      const ext = selectedFile?.name?.split('.').pop() || 'jpg'
-      const fileName = selectedFile?.name || `image.${ext}`
+      const origName = selectedFile?.name || cropSrc.value.split('/').pop()?.split('?')[0] || 'image.jpg'
+      const ext = origName.split('.').pop() || 'jpg'
+      const fileName = selectedFile ? origName : `cropped_${origName}`
       const file = new File([blob], fileName, { type: blob.type })
       const formData = new FormData()
       formData.append('image', file)
+      appendMediaContext(formData)
 
       const { data } = await axios.post(props.uploadUrl, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -293,8 +309,32 @@ function removeImage() {
 }
 
 function onMediaSelect(url) {
-  previewUrl.value = url
-  emit('update:modelValue', url)
+  if (props.skipCrop) {
+    previewUrl.value = url
+    emit('update:modelValue', url)
+    return
+  }
+  const img = new window.Image()
+  img.crossOrigin = 'anonymous'
+  img.onload = () => {
+    const currentRatio = img.naturalWidth / img.naturalHeight
+    const tolerance = 0.05
+    if (Math.abs(currentRatio - props.aspectRatio) / props.aspectRatio <= tolerance) {
+      previewUrl.value = url
+      emit('update:modelValue', url)
+      return
+    }
+    selectedFile = null
+    uploadError.value = ''
+    cropSrc.value = url
+    showCropper.value = true
+    nextTick(initCropper)
+  }
+  img.onerror = () => {
+    previewUrl.value = url
+    emit('update:modelValue', url)
+  }
+  img.src = url
 }
 
 onBeforeUnmount(() => {

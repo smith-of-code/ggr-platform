@@ -72,13 +72,16 @@
                   <input type="file" accept="image/*" class="hidden" @change="handleImageUpload($event, idx, field.key)" />
                   Загрузить
                 </label>
+                <button type="button" class="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-[#003274] transition hover:border-[#003274]/30" @click="openMediaPicker(idx, field.key)">
+                  Библиотека
+                </button>
               </div>
             </template>
             <template v-else>
               <label class="mb-1 block text-xs font-medium text-gray-500">{{ field.label }}</label>
               <FieldRenderer
                 :field="field" :item="item" :idx="idx"
-                @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload"
+                @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker"
               />
             </template>
           </div>
@@ -123,6 +126,9 @@
                   <input type="file" accept="image/*" class="hidden" @change="handleImageUpload($event, idx, field.key)" />
                   Загрузить
                 </label>
+                <button type="button" class="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-[#003274] transition hover:border-[#003274]/30" @click="openMediaPicker(idx, field.key)">
+                  Библиотека
+                </button>
               </div>
             </template>
 
@@ -166,7 +172,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-500">{{ field.label }}</label>
               <FieldRenderer
                 :field="field" :item="item" :idx="idx"
-                @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload"
+                @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker"
               />
               <button
                 v-if="!field.type && field.parseIframe && item[field.key]"
@@ -193,7 +199,7 @@
             <label class="mb-1 block text-xs font-medium text-gray-500">{{ field.label }}</label>
             <FieldRenderer
               :field="field" :item="item" :idx="idx"
-              @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload"
+              @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker"
             />
           </div>
         </div>
@@ -201,7 +207,7 @@
           <label class="mb-1 block text-xs font-medium text-gray-500">{{ field.label }}</label>
           <FieldRenderer
             :field="field" :item="item" :idx="idx"
-            @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload"
+            @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker"
           />
         </div>
       </div>
@@ -217,11 +223,20 @@
       </svg>
       {{ addLabel }}
     </button>
+
+    <MediaPickerModal
+      :show="mediaPicker.show"
+      :api-url="route('admin.media.index')"
+      :upload-url="route('admin.upload.image')"
+      @close="mediaPicker.show = false"
+      @select="onMediaPickerSelect"
+    />
   </div>
 </template>
 
 <script setup>
-import { h, computed, defineComponent } from 'vue'
+import { h, ref, computed, defineComponent } from 'vue'
+import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
 const FULL_WIDTH_TYPES = ['image-upload', 'file-upload', 'textarea']
 
@@ -233,6 +248,18 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'preview', 'lightbox'])
+
+const mediaPicker = ref({ show: false, idx: -1, key: '' })
+
+function openMediaPicker(idx, key) {
+  mediaPicker.value = { show: true, idx, key }
+}
+
+function onMediaPickerSelect(url) {
+  const { idx, key } = mediaPicker.value
+  if (idx >= 0 && key) updateField(idx, key, toRelativeUrl(url))
+  mediaPicker.value = { show: false, idx: -1, key: '' }
+}
 
 const hasTwoColumnLayout = computed(() =>
   props.fields.some(f => f.column === 'left' || f.column === 'right')
@@ -344,7 +371,7 @@ const FieldRenderer = defineComponent({
     item: { type: Object, required: true },
     idx: { type: Number, required: true },
   },
-  emits: ['update', 'image-upload', 'file-upload'],
+  emits: ['update', 'image-upload', 'file-upload', 'media-pick'],
   setup(props, { emit }) {
     const inputClass = 'w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm transition focus:border-[#003274] focus:ring-[#003274]/10'
 
@@ -383,6 +410,11 @@ const FieldRenderer = defineComponent({
               h('input', { type: 'file', accept: 'image/*', class: 'hidden', onChange: e => emit('image-upload', e, idx, field.key) }),
               'Загрузить',
             ]),
+            h('button', {
+              type: 'button',
+              class: 'shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-[#003274] transition hover:border-[#003274]/30',
+              onClick: () => emit('media-pick', idx, field.key),
+            }, 'Библиотека'),
           ]),
           val
             ? h('div', { class: 'flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2' }, [

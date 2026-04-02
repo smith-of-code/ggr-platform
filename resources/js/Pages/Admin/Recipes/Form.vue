@@ -133,6 +133,7 @@
             v-model="form.content"
             label="Пошаговый рецепт"
             :upload-url="route('admin.upload.image')"
+            :media-picker-url="route('admin.media.index')" collection="recipes" :entity-type="mediaEntityType" :entity-id="mediaEntityId"
           />
           <p v-if="form.errors.content" class="mt-1 text-sm text-red-600">{{ form.errors.content }}</p>
         </div>
@@ -141,6 +142,7 @@
           v-model="form.image"
           label="Фото блюда"
           :upload-url="route('admin.upload.image')"
+          :media-picker-url="route('admin.media.index')" collection="recipes" :entity-type="mediaEntityType" :entity-id="mediaEntityId"
           :aspect-ratio="4 / 3"
           :error="form.errors.image"
         />
@@ -207,6 +209,8 @@ const props = defineProps({
 })
 
 const showPreview = ref(false)
+const mediaEntityType = 'App\\Models\\Recipe'
+const mediaEntityId = props.recipe?.id || null
 let slugManuallyEdited = false
 
 function normalizeIngredients(raw) {

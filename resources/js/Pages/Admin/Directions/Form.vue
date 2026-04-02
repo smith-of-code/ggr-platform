@@ -25,7 +25,7 @@
                 <option v-for="(label, key) in projectKeys" :key="key" :value="key">{{ label }}</option>
               </select>
             </div>
-            <RInput v-model="form.image" label="Изображение (URL)" />
+            <ImageUploadCrop v-model="form.image" label="Изображение" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="directions" :entity-type="mediaEntityType" :entity-id="mediaEntityId" :skip-crop="true" preview-class="h-32 w-full object-cover" />
             <div class="sm:col-span-2">
               <label class="mb-2 block text-sm font-semibold text-gray-700">Описание</label>
               <textarea v-model="form.description" rows="4" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
@@ -187,6 +187,7 @@
 import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 
 const props = defineProps({
   direction: { type: Object, default: null },
@@ -194,6 +195,9 @@ const props = defineProps({
   projectKeys: { type: Object, default: () => ({}) },
   lmsForms: { type: Array, default: () => [] },
 })
+
+const mediaEntityType = 'App\\Models\\Direction'
+const mediaEntityId = props.direction?.id || null
 
 const form = useForm({
   title: props.direction?.title ?? '',
