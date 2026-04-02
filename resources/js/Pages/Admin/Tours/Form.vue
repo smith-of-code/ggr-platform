@@ -276,6 +276,7 @@
                 </button>
               </div>
               <input ref="galleryInput" type="file" accept="image/*" multiple class="hidden" @change="uploadGalleryFiles" />
+              <p v-if="galleryError" class="text-xs text-red-500">{{ galleryError }}</p>
             </div>
           </RCard>
 
@@ -435,6 +436,7 @@ const tourMeta = computed(() => {
 })
 
 const galleryUploading = ref(false)
+const galleryError = ref('')
 
 function parseVideoEmbed(url) {
   if (!url) return null
@@ -449,13 +451,21 @@ async function uploadGalleryFiles(e) {
   const files = Array.from(e.target.files || [])
   if (!files.length) return
   galleryUploading.value = true
+  galleryError.value = ''
+  const failed = []
   for (const file of files) {
     try {
       const fd = new FormData()
       fd.append('image', file)
       const { data } = await axios.post(route('admin.upload.image'), fd)
       if (data.url) form.gallery.push(data.url)
-    } catch { /* skip */ }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.response?.data?.errors?.image?.[0]
+      failed.push(file.name + (msg ? `: ${msg}` : ''))
+    }
+  }
+  if (failed.length) {
+    galleryError.value = `Не удалось загрузить: ${failed.join('; ')}`
   }
   galleryUploading.value = false
   e.target.value = ''

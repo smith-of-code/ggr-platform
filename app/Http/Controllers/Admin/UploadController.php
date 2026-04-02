@@ -51,7 +51,7 @@ class UploadController extends Controller
     public function image(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,jpg,png,gif,webp,svg|max:5120',
+            'image' => 'required|image|mimes:jpeg,jpg,png,gif,webp,svg|max:10240',
         ]);
 
         $disk = config('filesystems.upload_disk', 'public');
