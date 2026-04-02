@@ -20,8 +20,8 @@
       </div>
     </section>
 
-    <!-- Поднаправления -->
-    <section v-if="direction.sub_directions?.length" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
+    <!-- Поднаправления (скрыт по запросу заказчика) -->
+    <section v-if="false && direction.sub_directions?.length" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-7xl">
         <h2 v-if="direction.sub_directions_title" class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ direction.sub_directions_title }}</h2>
         <p v-if="direction.sub_directions_description" class="mt-2 max-w-2xl text-gray-500">{{ direction.sub_directions_description }}</p>
@@ -35,8 +35,8 @@
       </div>
     </section>
 
-    <!-- Для кого -->
-    <section v-if="direction.target_audiences?.length" class="bg-gradient-to-b from-sky-50 to-white px-4 py-16 sm:px-6 lg:px-8">
+    <!-- Для кого (скрыт по запросу заказчика) -->
+    <section v-if="false && direction.target_audiences?.length" class="bg-gradient-to-b from-sky-50 to-white px-4 py-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-7xl">
         <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Для кого</h2>
         <div class="mt-10 grid gap-8 lg:grid-cols-3">
@@ -104,8 +104,8 @@
 
     </div>
 
-    <!-- Твой билет в атомный город -->
-    <section v-if="direction.free_participation_steps?.length || direction.paid_participation_steps?.length" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
+    <!-- Твой билет в атомный город (скрыт по запросу заказчика) -->
+    <section v-if="false" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-7xl">
         <h2 class="text-center text-2xl font-bold text-gray-900 sm:text-3xl">Твой билет в атомный город</h2>
         <div class="mt-12 grid gap-8 lg:grid-cols-2">
@@ -351,22 +351,27 @@
         <h2 class="text-center text-2xl font-bold text-gray-900 sm:text-3xl">Книга атомных рецептов</h2>
         <p class="mt-2 text-center text-gray-500">Кулинарное наследие атомных городов России</p>
 
-        <div class="mt-8 flex flex-wrap items-end gap-4">
-          <div class="w-full sm:w-64">
-            <label class="mb-1.5 block text-sm font-medium text-gray-700">Город</label>
-            <select v-model="recipeCity" class="w-full rounded-xl border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]">
+        <div class="mx-auto mt-8 flex max-w-md items-center gap-3">
+          <div class="relative flex-1">
+            <label class="absolute -top-2 left-3 bg-white px-1 text-xs font-medium text-gray-500">Город</label>
+            <select v-model="recipeCity" class="w-full cursor-pointer appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 transition focus:border-[#003274] focus:ring-[#003274]/20" @change="filterRecipes">
               <option value="">Все города</option>
               <option v-for="c in recipeCities" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
+            <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
           </div>
-          <RButton variant="primary" @click="filterRecipes">Показать</RButton>
-          <button v-if="recipeCity" type="button" class="text-sm text-gray-500 hover:text-gray-700" @click="recipeCity = ''; filterRecipes()">Сбросить</button>
+          <button v-if="recipeCity" type="button" class="shrink-0 rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-500 transition hover:border-gray-300 hover:text-gray-700" @click="recipeCity = ''; filterRecipes()">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+          </button>
         </div>
 
         <div v-if="recipes?.data?.length" class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <Link v-for="recipe in recipes.data" :key="recipe.id" :href="route('recipes.show', recipe.slug)" class="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md">
-            <div v-if="recipe.image" class="aspect-video overflow-hidden bg-gray-100">
-              <img :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+            <div class="aspect-video overflow-hidden bg-gray-100">
+              <img v-if="recipe.image" :src="recipe.image" :alt="recipe.title" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+              <div v-else class="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#003274]/5 to-[#003274]/10">
+                <svg class="h-12 w-12 text-[#003274]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
+              </div>
             </div>
             <div class="p-5">
               <h3 class="text-lg font-bold text-gray-900 transition group-hover:text-[#003274]">{{ recipe.title }}</h3>
@@ -395,6 +400,13 @@
             :class="link.active ? 'border-[#003274] bg-[#003274] text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-50'"
             v-html="link.label"
           />
+        </div>
+
+        <div class="mt-10 text-center">
+          <Link href="/recipes" class="inline-flex items-center gap-2 rounded-xl border border-[#003274]/20 bg-[#003274]/5 px-6 py-3 text-sm font-semibold text-[#003274] transition hover:border-[#003274]/40 hover:bg-[#003274]/10">
+            Все рецепты
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+          </Link>
         </div>
       </section>
 

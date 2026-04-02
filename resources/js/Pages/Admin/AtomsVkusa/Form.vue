@@ -379,6 +379,8 @@ function removeItem(field, index) {
 }
 
 function submit() {
-  form.put(route('admin.atoms-vkusa.update'))
+  form.put(route('admin.atoms-vkusa.update'), {
+    preserveScroll: true,
+  })
 }
 </script>
