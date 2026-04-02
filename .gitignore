@@ -81,3 +81,4 @@ scorm-examples/
 vshgr-platform-nginx_log/
 vshgr-platform-data/
 /app/node_modules/
+/docker/dumps

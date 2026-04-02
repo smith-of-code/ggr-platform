@@ -16,7 +16,7 @@
           required
           :error="form.errors.title"
         />
-        <RichTextEditor v-model="form.content" label="Контент" :upload-url="route('lms.admin.upload.image', event.slug)" />
+        <RichTextEditor v-model="form.content" label="Контент" :upload-url="route('lms.admin.upload.image', event.slug)" :media-picker-url="route('admin.media.index')" collection="lms_materials" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700">Группы</label>
           <div class="space-y-2">
@@ -99,6 +99,8 @@ import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 
 const props = defineProps({ event: Object, material: Object, groups: Array })
+const mediaEntityType = 'App\\Models\\Lms\\LmsMaterialSection'
+const mediaEntityId = props.material?.id || null
 
 function buildFiles() {
   if (props.material?.files?.length) {

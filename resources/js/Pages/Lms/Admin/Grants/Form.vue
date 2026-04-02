@@ -33,7 +33,7 @@
 
           <div>
             <label class="mb-2 block text-sm font-medium text-gray-500">Описание</label>
-            <RichTextEditor v-model="form.description" />
+            <RichTextEditor v-model="form.description" :media-picker-url="route('admin.media.index')" collection="lms_grants" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
             <p v-if="form.errors.description" class="mt-1 text-sm text-red-600">{{ form.errors.description }}</p>
           </div>
 
@@ -101,6 +101,8 @@ const props = defineProps({
   event: Object,
   grant: { type: Object, default: null },
 })
+const mediaEntityType = 'App\\Models\\Lms\\LmsGrant'
+const mediaEntityId = props.grant?.id || null
 
 const typeOptions = {
   grant: 'Грант',

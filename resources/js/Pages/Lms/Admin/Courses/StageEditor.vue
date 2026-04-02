@@ -70,7 +70,7 @@
 
           <div class="mt-2">
             <div v-if="block.type === 'content'">
-              <RichTextEditor v-model="block.content" label="Контент" :upload-url="route('lms.admin.upload.image', eventSlug)" />
+              <RichTextEditor v-model="block.content" label="Контент" :upload-url="route('lms.admin.upload.image', eventSlug)" :media-picker-url="route('admin.media.index')" collection="lms_courses" />
             </div>
 
             <div v-else-if="block.type === 'scorm'" class="space-y-3">

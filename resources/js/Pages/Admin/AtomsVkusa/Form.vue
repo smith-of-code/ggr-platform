@@ -32,7 +32,7 @@
               <label class="mb-1.5 block text-sm font-medium text-gray-700">Описание</label>
               <textarea v-model="form.hero_description" rows="4" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" />
             </div>
-            <ImageUploadCrop v-model="form.hero_image" label="Фоновое изображение" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" preview-class="h-48 w-full object-cover" />
+            <ImageUploadCrop v-model="form.hero_image" label="Фоновое изображение" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="atoms_vkusa" preview-class="h-48 w-full object-cover" />
           </div>
         </div>
       </div>
@@ -127,7 +127,7 @@
               <span class="text-xs font-semibold text-gray-500">Фото {{ i + 1 }}</span>
               <button type="button" class="text-xs text-red-500 hover:text-red-700" @click="removeItem('results_gallery', i)">Удалить</button>
             </div>
-            <ImageUploadCrop v-model="item.url" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" preview-class="h-32 w-full object-cover" :skip-crop="true" />
+            <ImageUploadCrop v-model="item.url" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="atoms_vkusa" preview-class="h-32 w-full object-cover" :skip-crop="true" />
             <RInput v-model="item.caption" label="Подпись" class="mt-2" />
           </div>
         </div>
@@ -168,7 +168,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-600">Описание</label>
               <textarea v-model="item.text" rows="2" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" />
             </div>
-            <ImageUploadCrop v-model="item.image" label="Фото" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" preview-class="h-32 w-full object-cover" :skip-crop="true" class="mt-2" />
+            <ImageUploadCrop v-model="item.image" label="Фото" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="atoms_vkusa" preview-class="h-32 w-full object-cover" :skip-crop="true" class="mt-2" />
           </div>
         </div>
       </div>
@@ -215,7 +215,7 @@
               <RInput v-model.number="item.lng" label="Долгота" type="number" step="any" />
             </div>
             <RInput v-model="item.recipe_title" label="Рецепт победителя" class="mt-2" />
-            <ImageUploadCrop v-model="item.recipe_image" label="Фото рецепта" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" preview-class="h-28 w-full object-cover" :skip-crop="true" class="mt-2" />
+            <ImageUploadCrop v-model="item.recipe_image" label="Фото рецепта" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="atoms_vkusa" preview-class="h-28 w-full object-cover" :skip-crop="true" class="mt-2" />
           </div>
           <p v-if="!form.map_cities.length" class="text-sm text-gray-400">Нет городов</p>
         </div>
@@ -251,7 +251,7 @@
               <RInput v-model="item.name" label="Название" />
               <RInput v-model="item.url" label="Ссылка" />
             </div>
-            <ImageUploadCrop v-model="item.logo" label="Логотип" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" preview-class="h-20 w-full object-contain" :skip-crop="true" class="mt-2" />
+            <ImageUploadCrop v-model="item.logo" label="Логотип" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="atoms_vkusa" preview-class="h-20 w-full object-contain" :skip-crop="true" class="mt-2" />
           </div>
           <p v-if="!form.partners.length" class="text-sm text-gray-400">Нет партнёров</p>
         </div>
@@ -278,7 +278,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-600">Текст отзыва</label>
               <textarea v-model="item.text" rows="3" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" />
             </div>
-            <ImageUploadCrop v-model="item.avatar" label="Аватар" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" :aspect-ratio="1" preview-class="h-24 w-24 rounded-full object-cover" class="mt-2" />
+            <ImageUploadCrop v-model="item.avatar" label="Аватар" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="atoms_vkusa" :aspect-ratio="1" preview-class="h-24 w-24 rounded-full object-cover" class="mt-2" />
           </div>
           <p v-if="!form.reviews.length" class="text-sm text-gray-400">Нет отзывов</p>
         </div>
@@ -308,7 +308,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-600">Описание</label>
               <textarea v-model="item.description" rows="2" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" />
             </div>
-            <ImageUploadCrop v-model="item.image" label="Изображение" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" preview-class="h-32 w-full object-cover" :skip-crop="true" class="mt-2" />
+            <ImageUploadCrop v-model="item.image" label="Изображение" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="atoms_vkusa" preview-class="h-32 w-full object-cover" :skip-crop="true" class="mt-2" />
           </div>
         </div>
       </div>

@@ -16,5 +16,8 @@ class UploadedMedia extends Model
         'disk',
         'mime_type',
         'size',
+        'collection',
+        'entity_type',
+        'entity_id',
     ];
 }

@@ -51,10 +51,10 @@
                 </div>
               </div>
 
-              <RichTextEditor v-model="form.description" label="Описание вакансии" />
-              <RichTextEditor v-model="form.responsibilities" label="Обязанности" />
-              <RichTextEditor v-model="form.requirements" label="Требования" />
-              <RichTextEditor v-model="form.conditions" label="Условия" />
+              <RichTextEditor v-model="form.description" label="Описание вакансии" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="vacancies" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
+              <RichTextEditor v-model="form.responsibilities" label="Обязанности" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="vacancies" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
+              <RichTextEditor v-model="form.requirements" label="Требования" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="vacancies" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
+              <RichTextEditor v-model="form.conditions" label="Условия" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="vacancies" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
             </div>
           </RCard>
         </div>
@@ -62,7 +62,7 @@
         <div class="space-y-6">
           <RCard elevation="raised">
             <div class="space-y-5 p-6">
-              <ImageUploadCrop v-model="form.image" label="Изображение" :upload-url="route('admin.upload.image')" />
+              <ImageUploadCrop v-model="form.image" label="Изображение" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="vacancies" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
               <div>
                 <RInput v-model="form.contact_email" label="Контактный email" type="email" />
               </div>
@@ -123,6 +123,8 @@ import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 import ContentPreview from '@/Components/ContentPreview.vue'
 
 const props = defineProps({ vacancy: Object, cities: Array })
+const mediaEntityType = 'App\\Models\\Vacancy'
+const mediaEntityId = props.vacancy?.id || null
 
 const showPreview = ref(false)
 

@@ -22,7 +22,7 @@
                 <RInput v-model="form.slug" label="Slug" />
                 <RInput v-model="form.start_city" label="Город старта" />
                 <div class="sm:col-span-2">
-                  <RichTextEditor v-model="form.description" label="Описание тура" :upload-url="route('admin.upload.image')" />
+                  <RichTextEditor v-model="form.description" label="Описание тура" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
                 </div>
                 <RInput v-model="form.duration" label="Продолжительность" placeholder="2 дня, 1 ночь" />
                 <RInput v-model="form.group_size" label="Размер группы" placeholder="до 30 человек" />
@@ -152,8 +152,11 @@
                           <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                         </button>
                       </div>
-                      <button type="button" class="flex h-20 w-28 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-200 text-gray-400 transition hover:border-[#003274]/40 hover:text-[#003274]" @click="$refs[`accImgInput${ai}`][0].click()">
+                      <button type="button" class="flex h-20 w-28 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-200 text-gray-400 transition hover:border-[#003274]/40 hover:text-[#003274]" @click="$refs[`accImgInput${ai}`][0].click()" title="Загрузить">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                      </button>
+                      <button type="button" class="flex h-20 w-28 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-200 text-gray-400 transition hover:border-[#003274]/40 hover:text-[#003274]" title="Из библиотеки" @click="accPickerIndex = ai; showAccPicker = true">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
                       </button>
                       <input :ref="`accImgInput${ai}`" type="file" accept="image/*" multiple class="hidden" @change="e => uploadAccImages(e, ai)" />
                     </div>
@@ -180,7 +183,7 @@
                   </button>
                 </div>
               </div>
-              <RichTextEditor v-model="form.memo_text" label="Текст памятки" :upload-url="route('admin.upload.image')" />
+              <RichTextEditor v-model="form.memo_text" label="Текст памятки" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
               <button type="button" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="$refs.memoPdfInput.click()">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
                 {{ pdfUploading === 'memo' ? 'Загрузка…' : 'Загрузить PDF памятки' }}
@@ -194,7 +197,7 @@
             <div class="space-y-4">
               <h2 class="text-base font-bold text-gray-900">Оформление пропуска</h2>
               <p class="text-sm text-gray-500">Информация об оформлении пропуска в город или на объекты (отображается если «Закрытый город» включен)</p>
-              <RichTextEditor v-model="form.pass_info" label="Информация о пропуске" :upload-url="route('admin.upload.image')" />
+              <RichTextEditor v-model="form.pass_info" label="Информация о пропуске" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
             </div>
           </RCard>
 
@@ -202,7 +205,7 @@
           <RCard elevation="raised">
             <div class="space-y-4">
               <h2 class="text-base font-bold text-gray-900">Условия участия</h2>
-              <RichTextEditor v-model="form.conditions" label="Условия участия в туре" :upload-url="route('admin.upload.image')" />
+              <RichTextEditor v-model="form.conditions" label="Условия участия в туре" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
             </div>
           </RCard>
 
@@ -210,7 +213,7 @@
           <RCard elevation="raised">
             <div class="space-y-4">
               <h2 class="text-base font-bold text-gray-900">Стоимость и оплата</h2>
-              <RichTextEditor v-model="form.cost_info" label="Информация о стоимости" :upload-url="route('admin.upload.image')" />
+              <RichTextEditor v-model="form.cost_info" label="Информация о стоимости" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
             </div>
           </RCard>
 
@@ -218,7 +221,7 @@
           <RCard elevation="raised">
             <div class="space-y-4">
               <h2 class="text-base font-bold text-gray-900">Для кого этот тур</h2>
-              <RichTextEditor v-model="form.target_audience" label="Целевая аудитория" :upload-url="route('admin.upload.image')" />
+              <RichTextEditor v-model="form.target_audience" label="Целевая аудитория" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
             </div>
           </RCard>
 
@@ -226,7 +229,7 @@
           <RCard elevation="raised">
             <div class="space-y-4">
               <h2 class="text-base font-bold text-gray-900">Организатор</h2>
-              <RichTextEditor v-model="form.organizer_info" label="Информация об организаторе" :upload-url="route('admin.upload.image')" />
+              <RichTextEditor v-model="form.organizer_info" label="Информация об организаторе" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
             </div>
           </RCard>
         </div>
@@ -234,7 +237,7 @@
         <!-- Right column -->
         <div class="space-y-6">
           <RCard elevation="raised">
-            <ImageUploadCrop v-model="form.image" label="Изображение тура" :upload-url="route('admin.upload.image')" />
+            <ImageUploadCrop v-model="form.image" label="Изображение тура" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
           </RCard>
 
           <!-- Gallery -->
@@ -257,12 +260,20 @@
                   </div>
                 </div>
               </div>
-              <div class="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]" @click="$refs.galleryInput.click()">
-                <svg class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 3h18a1.5 1.5 0 0 1 1.5 1.5v15a1.5 1.5 0 0 1-1.5 1.5H3a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 3 3Z" />
-                </svg>
-                <span v-if="!galleryUploading" class="text-sm font-medium text-gray-500">Нажмите, чтобы добавить фото</span>
-                <span v-else class="text-sm font-medium text-[#003274]">Загрузка…</span>
+              <div class="flex gap-2">
+                <div class="flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]" @click="$refs.galleryInput.click()">
+                  <svg class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 3h18a1.5 1.5 0 0 1 1.5 1.5v15a1.5 1.5 0 0 1-1.5 1.5H3a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 3 3Z" />
+                  </svg>
+                  <span v-if="!galleryUploading" class="text-sm font-medium text-gray-500">Загрузить фото</span>
+                  <span v-else class="text-sm font-medium text-[#003274]">Загрузка…</span>
+                </div>
+                <button type="button" class="flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-4 py-6 text-center transition hover:border-[#003274]/40 hover:bg-[#003274]/[0.03]" @click="showGalleryPicker = true">
+                  <svg class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+                  </svg>
+                  <span class="text-sm font-medium text-gray-500">Из библиотеки</span>
+                </button>
               </div>
               <input ref="galleryInput" type="file" accept="image/*" multiple class="hidden" @change="uploadGalleryFiles" />
             </div>
@@ -360,6 +371,30 @@
       :meta="tourMeta"
       @close="showPreview = false"
     />
+
+    <MediaPickerModal
+      :show="showGalleryPicker"
+      :api-url="route('admin.media.index')"
+      :upload-url="route('admin.upload.image')"
+      collection="tours"
+      :entity-type="mediaEntityType"
+      :entity-id="mediaEntityId"
+      multiple
+      @close="showGalleryPicker = false"
+      @select="onGalleryMediaSelect"
+    />
+
+    <MediaPickerModal
+      :show="showAccPicker"
+      :api-url="route('admin.media.index')"
+      :upload-url="route('admin.upload.image')"
+      collection="tours"
+      :entity-type="mediaEntityType"
+      :entity-id="mediaEntityId"
+      multiple
+      @close="showAccPicker = false"
+      @select="onAccMediaSelect"
+    />
   </AdminLayout>
 </template>
 
@@ -371,10 +406,16 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 import ContentPreview from '@/Components/ContentPreview.vue'
+import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
 const props = defineProps({ tour: Object, cities: Array })
 const showPreview = ref(false)
+const mediaEntityType = 'App\\Models\\Tour'
+const mediaEntityId = props.tour?.id || null
 const pdfUploading = ref(null)
+const showGalleryPicker = ref(false)
+const showAccPicker = ref(false)
+let accPickerIndex = null
 
 const checkboxOptions = [
   { key: 'is_active', label: 'Активен' },
@@ -460,6 +501,24 @@ async function uploadAccImages(e, accIndex) {
   updated[accIndex] = { ...updated[accIndex], images: newImages }
   form.accommodations = updated
   e.target.value = ''
+}
+
+function onGalleryMediaSelect(urls) {
+  const list = Array.isArray(urls) ? urls : [urls]
+  form.gallery = [...form.gallery, ...list]
+  showGalleryPicker.value = false
+}
+
+function onAccMediaSelect(urls) {
+  const list = Array.isArray(urls) ? urls : [urls]
+  if (accPickerIndex !== null) {
+    const updated = [...form.accommodations]
+    const acc = { ...updated[accPickerIndex] }
+    acc.images = [...(acc.images || []), ...list]
+    updated[accPickerIndex] = acc
+    form.accommodations = updated
+  }
+  showAccPicker.value = false
 }
 
 const form = useForm({

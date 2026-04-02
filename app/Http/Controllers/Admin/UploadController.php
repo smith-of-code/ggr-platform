@@ -81,6 +81,9 @@ class UploadController extends Controller
                 'disk' => $disk,
                 'mime_type' => $file->getMimeType(),
                 'size' => $file->getSize(),
+                'collection' => $request->input('collection'),
+                'entity_type' => $request->input('entity_type'),
+                'entity_id' => $request->input('entity_id'),
             ]);
 
             return response()->json([
@@ -111,6 +114,9 @@ class UploadController extends Controller
                         'disk' => 'public',
                         'mime_type' => $file->getMimeType(),
                         'size' => $file->getSize(),
+                        'collection' => $request->input('collection'),
+                        'entity_type' => $request->input('entity_type'),
+                        'entity_id' => $request->input('entity_id'),
                     ]);
 
                     return response()->json([
@@ -132,12 +138,48 @@ class UploadController extends Controller
 
     public function mediaIndex(Request $request): JsonResponse
     {
-        $query = UploadedMedia::latest();
+        $collection = $request->input('collection');
+        $entityType = $request->input('entity_type');
+        $entityId = $request->input('entity_id');
+        $scope = $request->input('scope', $entityId ? 'entity' : ($collection ? 'collection' : 'all'));
 
+        $baseQuery = UploadedMedia::latest();
         if ($request->filled('search')) {
-            $query->where('original_name', 'ilike', '%' . $request->search . '%');
+            $baseQuery->where('original_name', 'ilike', '%' . $request->search . '%');
         }
 
-        return response()->json($query->paginate(24));
+        $query = clone $baseQuery;
+        if ($scope === 'entity' && $entityType && $entityId) {
+            $query->where('entity_type', $entityType)->where('entity_id', $entityId);
+        } elseif ($scope === 'collection' && $collection) {
+            $query->where('collection', $collection);
+        }
+
+        $paginated = $query->paginate(24);
+        $result = $paginated->toArray();
+
+        $counts = [
+            'all' => (clone $baseQuery)->count(),
+        ];
+        if ($collection) {
+            $counts['collection'] = (clone $baseQuery)->where('collection', $collection)->count();
+        }
+        if ($entityType && $entityId) {
+            $counts['entity'] = (clone $baseQuery)->where('entity_type', $entityType)->where('entity_id', $entityId)->count();
+        }
+
+        $entityLabel = null;
+        if ($entityType && $entityId) {
+            try {
+                $model = $entityType::find($entityId);
+                $entityLabel = $model?->name ?? $model?->title ?? null;
+            } catch (\Throwable) {
+            }
+        }
+
+        $result['counts'] = $counts;
+        $result['entity_label'] = $entityLabel;
+
+        return response()->json($result);
     }
 }

@@ -98,15 +98,25 @@
             />
           </div>
 
-          <div v-if="!thumbnailPreview && !currentThumbnail" class="mt-2">
+          <div v-if="!thumbnailPreview && !currentThumbnail" class="mt-2 flex flex-wrap items-center gap-3">
             <button
               type="button"
               class="text-xs font-medium text-rosatom-600 hover:underline"
               @click="showUrlInput = !showUrlInput"
             >
-              {{ showUrlInput ? 'Скрыть' : 'Или вставить URL изображения' }}
+              {{ showUrlInput ? 'Скрыть URL' : 'Вставить URL изображения' }}
             </button>
-            <div v-if="showUrlInput" class="mt-2">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#003274]/30 hover:text-[#003274]"
+              @click="showMediaPicker = true"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+              </svg>
+              Из библиотеки
+            </button>
+            <div v-if="showUrlInput" class="w-full mt-2">
               <RInput
                 v-model="thumbnailUrl"
                 placeholder="https://example.com/image.jpg"
@@ -116,6 +126,13 @@
               />
             </div>
           </div>
+
+          <MediaPickerModal
+            :show="showMediaPicker"
+            :api-url="route('admin.media.index')"
+            @close="showMediaPicker = false"
+            @select="onMediaSelect"
+          />
 
           <div v-if="form.errors.thumbnail_file" class="mt-1 text-sm text-red-600">{{ form.errors.thumbnail_file }}</div>
         </div>
@@ -148,11 +165,13 @@
 import { ref, computed } from 'vue'
 import { Link, useForm, router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
 const props = defineProps({ event: Object, video: Object, groups: Array })
 
 const isDragging = ref(false)
 const showUrlInput = ref(false)
+const showMediaPicker = ref(false)
 const thumbnailUrl = ref('')
 const thumbnailPreview = ref(null)
 const currentThumbnail = ref(props.video?.thumbnail ?? null)
@@ -198,6 +217,13 @@ function applyThumbnailUrl() {
   form.thumbnail_file = null
   form.remove_thumbnail = false
   showUrlInput.value = false
+}
+
+function onMediaSelect(url) {
+  currentThumbnail.value = url
+  thumbnailPreview.value = null
+  form.thumbnail_file = null
+  form.remove_thumbnail = false
 }
 
 function removeThumbnail() {
