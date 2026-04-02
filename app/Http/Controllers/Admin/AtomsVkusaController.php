@@ -88,7 +88,8 @@ class AtomsVkusaController extends Controller
         ]);
 
         $content = AtomsVkusaContent::content();
-        $content->update($validated);
+        $content->fill($validated);
+        $content->save();
 
         return back()->with('success', 'Контент «Атомы вкуса» сохранён.');
     }

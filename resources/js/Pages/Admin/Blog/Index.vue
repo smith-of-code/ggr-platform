@@ -134,6 +134,7 @@ const CATEGORIES = {
   news: 'Новости',
   announcements: 'Анонсы',
   partner_articles: 'Статьи партнёров',
+  atoms_vkusa: 'Атомы вкуса',
 }
 
 defineProps({ posts: Object })
