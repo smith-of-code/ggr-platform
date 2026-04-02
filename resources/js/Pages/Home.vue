@@ -88,7 +88,7 @@
                   <span class="text-xs text-gray-400">{{ tour.duration }}</span>
                 </div>
                 <h3 class="mt-3 text-lg font-semibold text-gray-900 transition group-hover:text-[#003274]">{{ tour.title }}</h3>
-                <p class="mt-2 line-clamp-2 text-sm text-gray-500">{{ tour.description }}</p>
+                <p class="mt-2 line-clamp-2 text-sm text-gray-500">{{ stripHtml(tour.description) }}</p>
                 <div class="mt-4 flex items-center justify-between">
                   <p class="text-lg font-bold text-[#003274]">
                     <template v-if="tour.price_from > 0">от {{ formatPrice(tour.price_from) }} &#8381;</template>
@@ -531,6 +531,11 @@ function submitContact() {
       contactForm.reset()
     },
   })
+}
+
+function stripHtml(html) {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
 }
 
 function formatPrice(value) {
