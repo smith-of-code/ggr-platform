@@ -3,13 +3,29 @@ import { onMounted, onUnmounted, nextTick } from 'vue'
 export function useScrollReveal() {
   let intersectionObserver = null
   let mutationObserver = null
+  let fallbackTimer = null
 
   function observeNewElements() {
     if (!intersectionObserver) return
-    document.querySelectorAll('.reveal:not(.revealed):not([data-reveal-observed])').forEach((el) => {
+    const fresh = document.querySelectorAll('.reveal:not(.revealed):not([data-reveal-observed])')
+    fresh.forEach((el) => {
       el.setAttribute('data-reveal-observed', '')
       intersectionObserver.observe(el)
     })
+    if (fresh.length) scheduleFallback()
+  }
+
+  function scheduleFallback() {
+    clearTimeout(fallbackTimer)
+    fallbackTimer = setTimeout(() => {
+      document.querySelectorAll('.reveal:not(.revealed)').forEach((el) => {
+        const rect = el.getBoundingClientRect()
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          el.classList.add('revealed')
+          if (intersectionObserver) intersectionObserver.unobserve(el)
+        }
+      })
+    }, 300)
   }
 
   onMounted(() => {
@@ -22,7 +38,7 @@ export function useScrollReveal() {
           }
         })
       },
-      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.05, rootMargin: '0px 0px -20px 0px' }
     )
 
     nextTick(() => observeNewElements())
@@ -36,5 +52,6 @@ export function useScrollReveal() {
   onUnmounted(() => {
     if (intersectionObserver) intersectionObserver.disconnect()
     if (mutationObserver) mutationObserver.disconnect()
+    clearTimeout(fallbackTimer)
   })
 }

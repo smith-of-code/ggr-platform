@@ -143,7 +143,7 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, watch, nextTick } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
@@ -154,6 +154,14 @@ const props = defineProps({
   cities: Array,
   regions: { type: Array, default: () => [] },
   filters: { type: Object, default: () => ({}) },
+})
+
+watch(() => props.cities, () => {
+  nextTick(() => {
+    document.querySelectorAll('.reveal:not(.revealed)').forEach(el => {
+      el.classList.add('revealed')
+    })
+  })
 })
 
 const localFilters = reactive({
