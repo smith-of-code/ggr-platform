@@ -79,7 +79,7 @@ class CourseController extends Controller
             abort(404);
         }
         $user = auth()->user();
-        $course->load(['stages', 'modules.stages']);
+        $course->load(['stages.blocks', 'modules.stages.blocks']);
 
         $enrollment = LmsCourseEnrollment::where('lms_course_id', $course->id)
             ->where('user_id', $user->id)
@@ -108,15 +108,20 @@ class CourseController extends Controller
             $prevCompleted = $progress?->status === 'completed';
         }
 
-        $modules = $course->modules->map(function ($module) use ($stageProgress, $stageAvailability) {
-            $moduleStages = $module->stages->sortBy('position')->map(function ($stage) use ($stageProgress, $stageAvailability) {
-                $progress = $stageProgress->get($stage->id);
-                return [
-                    'stage' => $stage->only(['id', 'title', 'description', 'type', 'position', 'is_locked', 'available_from', 'duration_minutes']),
-                    'progress' => $progress?->only(['status', 'completed_at', 'score']),
-                    'is_available' => $stageAvailability[$stage->id] ?? true,
-                ];
-            })->values();
+        $mapStage = function ($stage) use ($stageProgress, $stageAvailability) {
+            $progress = $stageProgress->get($stage->id);
+            $scheduledAt = $stage->blocks->whereNotNull('scheduled_at')->first()?->scheduled_at;
+            $data = $stage->only(['id', 'title', 'description', 'type', 'position', 'is_locked', 'available_from', 'duration_minutes']);
+            $data['scheduled_at'] = $scheduledAt?->toIso8601String();
+            return [
+                'stage' => $data,
+                'progress' => $progress?->only(['status', 'completed_at', 'score']),
+                'is_available' => $stageAvailability[$stage->id] ?? true,
+            ];
+        };
+
+        $modules = $course->modules->map(function ($module) use ($mapStage) {
+            $moduleStages = $module->stages->sortBy('position')->map($mapStage)->values();
 
             return [
                 'module' => $module->only(['id', 'title', 'description', 'position', 'available_from', 'available_to', 'unlock_type']),
@@ -125,14 +130,7 @@ class CourseController extends Controller
             ];
         });
 
-        $orphanStages = $course->stages->whereNull('lms_course_module_id')->sortBy('position')->map(function ($stage) use ($stageProgress, $stageAvailability) {
-            $progress = $stageProgress->get($stage->id);
-            return [
-                'stage' => $stage->only(['id', 'title', 'description', 'type', 'position', 'is_locked', 'available_from', 'duration_minutes']),
-                'progress' => $progress?->only(['status', 'completed_at', 'score']),
-                'is_available' => $stageAvailability[$stage->id] ?? true,
-            ];
-        })->values();
+        $orphanStages = $course->stages->whereNull('lms_course_module_id')->sortBy('position')->map($mapStage)->values();
 
         $profile = LmsProfile::where('user_id', $user->id)
             ->where('lms_event_id', $event->id)

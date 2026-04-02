@@ -163,8 +163,12 @@
 
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-medium text-gray-900">{{ item.stage.title }}</p>
-                  <div class="flex items-center gap-3 text-xs text-gray-400">
+                  <div class="flex flex-wrap items-center gap-3 text-xs text-gray-400">
                     <span>{{ stageTypeLabel(item.stage.type) }}</span>
+                    <span v-if="item.stage.scheduled_at" class="flex items-center gap-1">
+                      <CalendarIcon class="h-3 w-3" />
+                      {{ formatScheduleDate(item.stage.scheduled_at) }}
+                    </span>
                     <span v-if="item.stage.duration_minutes">~{{ item.stage.duration_minutes }} мин</span>
                     <span v-if="item.stage.available_from && !item.is_available">
                       Откроется {{ formatDateFull(item.stage.available_from) }}
@@ -201,8 +205,12 @@
               </div>
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-gray-900">{{ item.stage.title }}</p>
-                <div class="flex items-center gap-3 text-xs text-gray-400">
+                <div class="flex flex-wrap items-center gap-3 text-xs text-gray-400">
                   <span>{{ stageTypeLabel(item.stage.type) }}</span>
+                  <span v-if="item.stage.scheduled_at" class="flex items-center gap-1">
+                    <CalendarIcon class="h-3 w-3" />
+                    {{ formatScheduleDate(item.stage.scheduled_at) }}
+                  </span>
                   <span v-if="item.stage.duration_minutes">~{{ item.stage.duration_minutes }} мин</span>
                 </div>
               </div>
@@ -328,5 +336,18 @@ function stageWord(n) {
 function formatDateFull(d) {
   if (!d) return ''
   return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function formatScheduleDate(d) {
+  if (!d) return ''
+  const date = new Date(d)
+  const opts = { day: 'numeric', month: 'long' }
+  const h = date.getHours()
+  const m = date.getMinutes()
+  if (h || m) {
+    opts.hour = '2-digit'
+    opts.minute = '2-digit'
+  }
+  return date.toLocaleDateString('ru-RU', opts)
 }
 </script>
