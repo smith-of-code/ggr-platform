@@ -79,6 +79,60 @@
               </div>
             </div>
 
+            <!-- workshop / city_meeting / curator_meeting -->
+            <div v-else-if="['workshop', 'city_meeting', 'curator_meeting'].includes(block.type)">
+              <div class="overflow-hidden rounded-xl border"
+                :class="{
+                  'border-purple-200 bg-purple-50/50': block.type === 'workshop',
+                  'border-teal-200 bg-teal-50/50': block.type === 'city_meeting',
+                  'border-amber-200 bg-amber-50/50': block.type === 'curator_meeting',
+                }"
+              >
+                <div class="flex items-center gap-3 px-5 py-4"
+                  :class="{
+                    'bg-purple-100/60': block.type === 'workshop',
+                    'bg-teal-100/60': block.type === 'city_meeting',
+                    'bg-amber-100/60': block.type === 'curator_meeting',
+                  }"
+                >
+                  <div class="flex h-10 w-10 items-center justify-center rounded-lg"
+                    :class="{
+                      'bg-purple-200': block.type === 'workshop',
+                      'bg-teal-200': block.type === 'city_meeting',
+                      'bg-amber-200': block.type === 'curator_meeting',
+                    }"
+                  >
+                    <svg class="h-5 w-5" :class="{
+                      'text-purple-700': block.type === 'workshop',
+                      'text-teal-700': block.type === 'city_meeting',
+                      'text-amber-700': block.type === 'curator_meeting',
+                    }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-bold" :class="{
+                      'text-purple-800': block.type === 'workshop',
+                      'text-teal-800': block.type === 'city_meeting',
+                      'text-amber-800': block.type === 'curator_meeting',
+                    }">
+                      {{ typeLabel(block.type) }}
+                    </p>
+                    <p v-if="block.scheduled_at" class="text-xs font-medium" :class="{
+                      'text-purple-600': block.type === 'workshop',
+                      'text-teal-600': block.type === 'city_meeting',
+                      'text-amber-600': block.type === 'curator_meeting',
+                    }">
+                      {{ formatScheduleDate(block.scheduled_at) }}
+                    </p>
+                  </div>
+                </div>
+                <div
+                  v-if="block.content"
+                  class="prose max-w-none px-5 py-4 text-gray-700 prose-headings:text-gray-900 prose-a:text-rosatom-600"
+                  v-html="block.content"
+                />
+              </div>
+            </div>
+
             <!-- video -->
             <div v-else-if="block.type === 'video'">
               <div v-if="getVideoEmbedUrl(block)" class="relative aspect-video w-full overflow-hidden rounded-lg">
@@ -422,12 +476,27 @@ onUnmounted(() => {
 })
 
 function typeLabel(type) {
-  const map = { content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео' }
+  const map = {
+    content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео',
+    workshop: 'Живой воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
+  }
   return map[type] || type || 'Контент'
 }
 
+function formatScheduleDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return d.toLocaleString('ru-RU', {
+    day: '2-digit', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  }).replace(',', ' в')
+}
+
 function typeBadgeVariant(type) {
-  return { content: 'neutral', scorm: 'primary', test: 'warning', assignment: 'info', video: 'error' }[type] || 'neutral'
+  return {
+    content: 'neutral', scorm: 'primary', test: 'warning', assignment: 'info', video: 'error',
+    workshop: 'primary', city_meeting: 'success', curator_meeting: 'warning',
+  }[type] || 'neutral'
 }
 
 function markComplete() {

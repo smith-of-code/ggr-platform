@@ -283,9 +283,10 @@ class CourseController extends Controller
         ];
 
         $blockRules = [
-            'type' => ['required', 'string', 'in:content,scorm,test,assignment,video'],
+            'type' => ['required', 'string', 'in:content,scorm,test,assignment,video,workshop,city_meeting,curator_meeting'],
             'content' => ['nullable', 'string'],
             'position' => ['nullable', 'integer'],
+            'scheduled_at' => ['nullable', 'date'],
         ];
 
         $rules = [
@@ -392,6 +393,7 @@ class CourseController extends Controller
                     'type' => $block['type'] ?? 'content',
                     'content' => $block['content'] ?? null,
                     'position' => $block['position'] ?? $bIndex,
+                    'scheduled_at' => $block['scheduled_at'] ?? null,
                 ];
                 $this->applyBlockTypeFields($blockData, $block['type'] ?? 'content', $block['content'] ?? null);
                 LmsStageBlock::create($blockData);

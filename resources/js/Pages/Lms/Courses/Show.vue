@@ -305,11 +305,18 @@ function stageStatusClass(item) {
 }
 
 function stageTypeIcon(type) {
-  return { content: DocumentTextIcon, video: PlayIcon, test: ClipboardDocumentListIcon, assignment: PencilSquareIcon, scorm: BookOpenIcon }[type] || DocumentTextIcon
+  return {
+    content: DocumentTextIcon, video: PlayIcon, test: ClipboardDocumentListIcon,
+    assignment: PencilSquareIcon, scorm: BookOpenIcon,
+    workshop: CalendarIcon, city_meeting: CalendarIcon, curator_meeting: CalendarIcon,
+  }[type] || DocumentTextIcon
 }
 
 function stageTypeLabel(type) {
-  return { content: 'Теория', video: 'Видео', test: 'Тест', assignment: 'Задание', scorm: 'SCORM' }[type] || 'Урок'
+  return {
+    content: 'Теория', video: 'Видео', test: 'Тест', assignment: 'Задание', scorm: 'SCORM',
+    workshop: 'Живой воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
+  }[type] || 'Урок'
 }
 
 function stageWord(n) {

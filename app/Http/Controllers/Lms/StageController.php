@@ -65,6 +65,7 @@ class StageController extends Controller
                 'lms_assignment_id' => $block->lms_assignment_id,
                 'lms_video_id' => $block->lms_video_id,
                 'position' => $block->position,
+                'scheduled_at' => $block->scheduled_at,
                 'test' => $block->test?->only(['id', 'title']),
                 'assignment' => $block->assignment?->only(['id', 'title']),
                 'video' => $block->video?->only(['id', 'title', 'url', 'source', 'duration_seconds']),

@@ -18,7 +18,15 @@ class LmsStageBlock extends Model
         'lms_assignment_id',
         'lms_video_id',
         'position',
+        'scheduled_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'scheduled_at' => 'datetime',
+        ];
+    }
 
     public function stage(): BelongsTo
     {
