@@ -276,7 +276,7 @@
             </div>
             <div class="mt-2">
               <label class="mb-1 block text-xs font-medium text-gray-600">Текст отзыва</label>
-              <textarea v-model="item.text" rows="3" class="w-full rounded-lg border-gray-300 text-sm focus:border-[#003274] focus:ring-[#003274]" :class="{ 'border-red-500': form.errors[`reviews.${i}.text`] }" />
+              <textarea v-model="item.text" rows="3" class="w-full rounded-lg border-gray-300 bg-white text-sm focus:border-[#003274] focus:ring-[#003274]" :class="{ 'border-red-500': form.errors[`reviews.${i}.text`] }" />
               <p v-if="form.errors[`reviews.${i}.text`]" class="mt-1 text-xs text-red-500">{{ form.errors[`reviews.${i}.text`] }}</p>
             </div>
             <ImageUploadCrop v-model="item.avatar" label="Аватар" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="atoms_vkusa" :aspect-ratio="1" preview-class="h-24 w-24 rounded-full object-cover" class="mt-2" />
