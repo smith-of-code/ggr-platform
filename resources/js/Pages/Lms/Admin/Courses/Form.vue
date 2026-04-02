@@ -303,8 +303,13 @@ function handleBlockSelect(block) {
     type: block.type || 'content',
     content: block.content ?? '',
     position: target.blocks.length,
-    scheduled_at: block.scheduled_at ? block.scheduled_at.slice(0, 16) : '',
+    scheduled_at: normalizeScheduledAt(block.scheduled_at),
   })
+}
+
+function normalizeScheduledAt(val) {
+  if (!val) return ''
+  return val.length > 16 ? val.slice(0, 16) : val
 }
 
 function emptyBlock() {
@@ -325,7 +330,7 @@ function stageBlocksFromServer(s) {
       type: b.type || 'content',
       content: b.content ?? '',
       position: b.position ?? 0,
-      scheduled_at: b.scheduled_at ? b.scheduled_at.slice(0, 16) : '',
+      scheduled_at: normalizeScheduledAt(b.scheduled_at),
     }))
   }
   return [{ type: s.type || 'content', content: s.content ?? '', position: 0, scheduled_at: '' }]

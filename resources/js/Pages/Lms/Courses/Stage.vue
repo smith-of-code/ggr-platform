@@ -485,11 +485,15 @@ function typeLabel(type) {
 
 function formatScheduleDate(dateStr) {
   if (!dateStr) return ''
+  const hasTime = dateStr.length > 10 && dateStr.includes('T')
   const d = new Date(dateStr)
-  return d.toLocaleString('ru-RU', {
-    day: '2-digit', month: 'long', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  }).replace(',', ' в')
+  const opts = { day: '2-digit', month: 'long', year: 'numeric' }
+  if (hasTime) {
+    opts.hour = '2-digit'
+    opts.minute = '2-digit'
+  }
+  const formatted = d.toLocaleString('ru-RU', opts)
+  return hasTime ? formatted.replace(',', ' в') : formatted
 }
 
 function typeBadgeVariant(type) {
