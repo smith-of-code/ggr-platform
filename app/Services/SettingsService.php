@@ -56,6 +56,31 @@ class SettingsService
         Cache::forget("settings.{$group}");
     }
 
+    public function getHiddenPages(): array
+    {
+        $settings = $this->getGroup('page_visibility');
+
+        $hidden = [];
+        foreach ($settings as $slug => $value) {
+            $decoded = is_string($value) ? json_decode($value, true) : $value;
+            if (is_array($decoded) && !empty($decoded['hidden'])) {
+                $hidden[] = $slug;
+            }
+        }
+
+        return $hidden;
+    }
+
+    public function setPageVisibility(array $visibility): void
+    {
+        $values = [];
+        foreach ($visibility as $slug => $hidden) {
+            $values[$slug] = json_encode(['hidden' => (bool) $hidden]);
+        }
+
+        $this->setGroup('page_visibility', $values);
+    }
+
     public function applyMailConfig(): void
     {
         if (! $this->tableExists()) {

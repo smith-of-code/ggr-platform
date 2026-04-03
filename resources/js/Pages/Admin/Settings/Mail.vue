@@ -81,6 +81,18 @@
         </RCard>
 
         <RCard elevation="raised" class="mt-4">
+          <h3 class="mb-1 text-sm font-bold text-gray-900">Прямая отправка (без очереди)</h3>
+          <p class="mb-4 text-xs text-gray-500">Отправляет письмо синхронно — сразу покажет ошибку SMTP, если настройки неверные</p>
+
+          <form @submit.prevent="submitDirectTest" class="space-y-4">
+            <RInput v-model="directTestForm.email" label="Email получателя" placeholder="test@example.com" :error="directTestForm.errors.email" autocomplete="off" />
+            <RButton variant="primary" :loading="directTestForm.processing" :disabled="directTestForm.processing" class="w-full">
+              Отправить напрямую
+            </RButton>
+          </form>
+        </RCard>
+
+        <RCard elevation="raised" class="mt-4">
           <h3 class="mb-3 text-sm font-bold text-gray-900">Текущая конфигурация</h3>
           <dl class="space-y-2 text-xs">
             <div class="flex justify-between">
@@ -128,6 +140,10 @@ const testForm = useForm({
   count: 1,
 })
 
+const directTestForm = useForm({
+  email: '',
+})
+
 function submitSettings() {
   form.put(route('admin.settings.mail.update'), {
     preserveScroll: true,
@@ -136,6 +152,12 @@ function submitSettings() {
 
 function submitTest() {
   testForm.post(route('admin.settings.mail.test'), {
+    preserveScroll: true,
+  })
+}
+
+function submitDirectTest() {
+  directTestForm.post(route('admin.settings.mail.test-direct'), {
     preserveScroll: true,
   })
 }

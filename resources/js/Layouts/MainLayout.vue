@@ -70,15 +70,12 @@
         leave-to-class="-translate-y-2 opacity-0"
       >
         <div v-if="mobileOpen" class="border-t border-gray-200 bg-white px-4 pb-4 pt-2 lg:hidden">
-          <Link :href="route('home')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Главная</Link>
-          <Link :href="route('cities.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Города</Link>
-          <Link :href="route('tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Каталог туров</Link>
-          <Link :href="route('opportunity-tours.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Туры возможностей</Link>
-          <Link :href="route('education.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">ВШГР</Link>
-          <Link :href="route('research.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Исследования</Link>
-          <Link :href="route('directions.show', 'atomy-vkusa')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Атомы вкуса</Link>
-          <Link :href="route('blog.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Блог</Link>
-          <Link :href="route('vacancies.index')" class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100">Вакансии</Link>
+          <Link
+            v-for="item in navItems"
+            :key="item.href"
+            :href="item.href"
+            class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
+          >{{ item.label }}</Link>
           <div class="my-2 border-t border-gray-100" />
           <Link
             v-if="$page.props.auth?.user"
@@ -118,15 +115,12 @@
           <div>
             <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-900">Навигация</h3>
             <div class="mt-4 flex flex-col gap-3">
-              <Link :href="route('home')" class="text-sm text-gray-500 transition hover:text-[#003274]">Главная</Link>
-              <Link :href="route('cities.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Города</Link>
-              <Link :href="route('tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Каталог туров</Link>
-              <Link :href="route('opportunity-tours.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Туры возможностей</Link>
-              <Link :href="route('education.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">ВШГР</Link>
-              <Link :href="route('research.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Исследования</Link>
-              <Link :href="route('directions.show', 'atomy-vkusa')" class="text-sm text-gray-500 transition hover:text-[#003274]">Атомы вкуса</Link>
-              <Link :href="route('blog.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Блог</Link>
-              <Link :href="route('vacancies.index')" class="text-sm text-gray-500 transition hover:text-[#003274]">Вакансии</Link>
+              <Link
+                v-for="item in navItems"
+                :key="item.href"
+                :href="item.href"
+                class="text-sm text-gray-500 transition hover:text-[#003274]"
+              >{{ item.label }}</Link>
             </div>
           </div>
           <div>
@@ -156,17 +150,23 @@ const page = usePage()
 const mobileOpen = ref(false)
 const scrolled = ref(false)
 
-const navItems = computed(() => [
-  { label: 'Главная', href: route('home'), active: page.url === '/' },
-  { label: 'Города', href: route('cities.index'), active: page.url.startsWith('/cities') },
-  { label: 'Каталог туров', href: route('tours.index'), active: page.url.startsWith('/tours') },
-  { label: 'Туры возможностей', href: route('opportunity-tours.index'), active: page.url.startsWith('/opportunity-tours') },
-  { label: 'ВШГР', href: route('education.index'), active: page.url.startsWith('/vshgr') },
-  { label: 'Исследования', href: route('research.index'), active: page.url.startsWith('/research') },
-  { label: 'Атомы вкуса', href: route('directions.show', 'atomy-vkusa'), active: page.url.startsWith('/directions/atomy-vkusa') },
-  { label: 'Блог', href: route('blog.index'), active: page.url.startsWith('/blog') },
-  { label: 'Вакансии', href: route('vacancies.index'), active: page.url.startsWith('/vacancies') },
+const hiddenPages = computed(() => page.props.hiddenPages || [])
+
+const allNavItems = computed(() => [
+  { slug: null, label: 'Главная', href: route('home'), active: page.url === '/' },
+  { slug: 'cities', label: 'Города', href: route('cities.index'), active: page.url.startsWith('/cities') },
+  { slug: 'tours', label: 'Каталог туров', href: route('tours.index'), active: page.url.startsWith('/tours') },
+  { slug: 'opportunity-tours', label: 'Туры возможностей', href: route('opportunity-tours.index'), active: page.url.startsWith('/opportunity-tours') },
+  { slug: 'education', label: 'ВШГР', href: route('education.index'), active: page.url.startsWith('/vshgr') },
+  { slug: 'research', label: 'Исследования', href: route('research.index'), active: page.url.startsWith('/research') },
+  { slug: 'atomy-vkusa', label: 'Атомы вкуса', href: route('directions.show', 'atomy-vkusa'), active: page.url.startsWith('/directions/atomy-vkusa') },
+  { slug: 'blog', label: 'Блог', href: route('blog.index'), active: page.url.startsWith('/blog') },
+  { slug: 'vacancies', label: 'Вакансии', href: route('vacancies.index'), active: page.url.startsWith('/vacancies') },
 ])
+
+const navItems = computed(() =>
+  allNavItems.value.filter(item => !item.slug || !hiddenPages.value.includes(item.slug))
+)
 
 function onScroll() {
   scrolled.value = window.scrollY > 10

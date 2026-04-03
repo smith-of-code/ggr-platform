@@ -7,6 +7,7 @@ use App\Jobs\SendMailJob;
 use App\Services\SettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -72,6 +73,30 @@ class SettingsController extends Controller
             'success',
             "{$count} {$word} добавлено в очередь на отправку ({$validated['email']})"
         );
+    }
+
+    public function testMailDirect(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $appName = config('app.name');
+        $now = now()->format('d.m.Y H:i:s');
+
+        try {
+            Mail::raw(
+                "Прямое тестовое письмо от {$appName}\nОтправлено: {$now}\n\nЕсли вы видите это письмо — SMTP настроен корректно.",
+                function ($message) use ($validated, $appName) {
+                    $message->to($validated['email'])
+                        ->subject("[{$appName}] Прямой тест SMTP");
+                }
+            );
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Ошибка SMTP: '.$e->getMessage());
+        }
+
+        return redirect()->back()->with('success', "Письмо успешно отправлено напрямую на {$validated['email']}");
     }
 
     private function pluralizeEmails(int $count): string

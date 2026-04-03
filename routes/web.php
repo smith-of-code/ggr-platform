@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\RecipeController as AdminRecipeController;
 use App\Http\Controllers\Admin\EducationProductController as AdminEducationProductController;
 use App\Http\Controllers\Admin\OpportunityToursPageController as AdminOpportunityToursPageController;
 use App\Http\Controllers\Admin\ResearchPageController as AdminResearchPageController;
+use App\Http\Controllers\Admin\PageVisibilityController as AdminPageVisibilityController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
@@ -123,6 +124,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/settings/mail', [AdminSettingsController::class, 'mail'])->name('settings.mail');
     Route::put('/settings/mail', [AdminSettingsController::class, 'updateMail'])->name('settings.mail.update');
     Route::post('/settings/mail/test', [AdminSettingsController::class, 'testMail'])->name('settings.mail.test');
+    Route::post('/settings/mail/test-direct', [AdminSettingsController::class, 'testMailDirect'])->name('settings.mail.test-direct');
+
+    Route::get('/settings/page-visibility', [AdminPageVisibilityController::class, 'index'])->name('settings.page-visibility');
+    Route::put('/settings/page-visibility', [AdminPageVisibilityController::class, 'update'])->name('settings.page-visibility.update');
 });
 
 // Social OAuth (global)

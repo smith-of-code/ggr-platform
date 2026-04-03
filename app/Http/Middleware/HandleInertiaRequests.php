@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Lms\LmsProfile;
 use App\Services\GamificationService;
+use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -62,6 +63,9 @@ class HandleInertiaRequests extends Middleware
                     ->with('lmsRole:id,name,slug')
                     ->first();
             },
+            'hiddenPages' => fn () => $request->user()
+                ? []
+                : app(SettingsService::class)->getHiddenPages(),
             'gamificationEnabled' => function () use ($request) {
                 $user = $request->user();
                 if (!$user) return false;
