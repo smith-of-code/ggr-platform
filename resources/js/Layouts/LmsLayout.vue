@@ -1,5 +1,6 @@
 <template>
   <div class="flex min-h-screen bg-gray-50 font-sans">
+    <ToastNotifications />
     <!-- Mobile overlay -->
     <div
       v-if="sidebarOpen"
@@ -118,6 +119,7 @@ import {
   WrenchScrewdriverIcon,
   Cog6ToothIcon,
 } from '@heroicons/vue/24/outline'
+import ToastNotifications from '@/Components/ToastNotifications.vue'
 
 const props = defineProps({
   event: { type: Object, required: true },

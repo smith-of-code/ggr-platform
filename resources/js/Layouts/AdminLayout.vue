@@ -1,5 +1,6 @@
 <template>
   <div class="flex min-h-screen bg-gray-50">
+    <ToastNotifications />
     <!-- Sidebar -->
     <aside class="fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-gray-200 bg-white">
       <!-- Logo -->
@@ -232,6 +233,7 @@
 
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3'
+import ToastNotifications from '@/Components/ToastNotifications.vue'
 
 function isActive(routePrefix) {
   const url = usePage().url
