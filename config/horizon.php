@@ -22,6 +22,7 @@ return [
     'waits' => [
         'redis:default' => 60,
         'redis:emails' => 30,
+        'redis:blog-notifications' => 60,
     ],
 
     'trim' => [
@@ -79,6 +80,19 @@ return [
             'timeout' => 30,
             'nice' => 0,
         ],
+        'supervisor-blog-notifications' => [
+            'connection' => 'redis',
+            'queue' => ['blog-notifications'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 1,
+            'timeout' => 120,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
@@ -93,6 +107,11 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
+            'supervisor-blog-notifications' => [
+                'maxProcesses' => 2,
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 3,
+            ],
         ],
 
         'local' => [
@@ -101,6 +120,9 @@ return [
             ],
             'supervisor-emails' => [
                 'maxProcesses' => 2,
+            ],
+            'supervisor-blog-notifications' => [
+                'maxProcesses' => 1,
             ],
         ],
     ],

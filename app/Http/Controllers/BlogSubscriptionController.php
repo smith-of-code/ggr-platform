@@ -11,7 +11,7 @@ class BlogSubscriptionController extends Controller
     public function subscribe(Request $request): RedirectResponse
     {
         $request->validate([
-            'email' => 'required|email|max:255',
+            'email' => 'required|email:rfc,dns|max:255',
         ]);
 
         $subscriber = BlogSubscriber::where('email', $request->input('email'))->first();
