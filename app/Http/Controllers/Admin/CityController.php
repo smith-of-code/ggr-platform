@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\GeneratesUniqueSlug;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CityController extends Controller
 {
+    use GeneratesUniqueSlug;
+
     public function index(): Response
     {
         $cities = City::orderBy('position')->orderBy('name')->paginate(15);
@@ -30,7 +32,7 @@ class CityController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:cities,slug',
+            'slug' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|string',
             'coat_of_arms' => 'nullable|string|max:2048',
@@ -74,7 +76,7 @@ class CityController extends Controller
             'block_visibility.energy_cities_block' => 'boolean',
         ]);
 
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
+        $validated['slug'] = $this->uniqueSlug(City::class, $validated['name'], $validated['slug'] ?? null);
         $validated['is_active'] = $request->boolean('is_active', true);
 
         City::create($validated);
@@ -93,7 +95,7 @@ class CityController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:cities,slug,' . $city->id,
+            'slug' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|string',
             'coat_of_arms' => 'nullable|string|max:2048',
@@ -137,7 +139,7 @@ class CityController extends Controller
             'block_visibility.energy_cities_block' => 'boolean',
         ]);
 
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
+        $validated['slug'] = $this->uniqueSlug(City::class, $validated['name'], $validated['slug'] ?? null, $city->id);
         $validated['is_active'] = $request->boolean('is_active', true);
 
         $city->update($validated);

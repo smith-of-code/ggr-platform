@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\GeneratesUniqueSlug;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Vacancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class VacancyController extends Controller
 {
+    use GeneratesUniqueSlug;
     public function index(): Response
     {
         $vacancies = Vacancy::with('city')
@@ -37,7 +38,7 @@ class VacancyController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:vacancies,slug',
+            'slug' => 'nullable|string|max:255',
             'city_id' => 'nullable|exists:cities,id',
             'company' => 'nullable|string|max:255',
             'employment_type' => 'nullable|string|max:50',
@@ -53,9 +54,7 @@ class VacancyController extends Controller
             'position' => 'nullable|integer',
         ]);
 
-        if (empty($validated['slug'])) {
-            $validated['slug'] = Str::slug($validated['title']);
-        }
+        $validated['slug'] = $this->uniqueSlug(Vacancy::class, $validated['title'], $validated['slug'] ?? null);
         $validated['is_published'] = $request->boolean('is_published');
         $validated['published_at'] = $validated['is_published'] ? now() : null;
 
@@ -76,7 +75,7 @@ class VacancyController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:vacancies,slug,' . $vacancy->id,
+            'slug' => 'nullable|string|max:255',
             'city_id' => 'nullable|exists:cities,id',
             'company' => 'nullable|string|max:255',
             'employment_type' => 'nullable|string|max:50',
@@ -92,6 +91,7 @@ class VacancyController extends Controller
             'position' => 'nullable|integer',
         ]);
 
+        $validated['slug'] = $this->uniqueSlug(Vacancy::class, $validated['title'], $validated['slug'] ?? null, $vacancy->id);
         $validated['is_published'] = $request->boolean('is_published');
         $validated['published_at'] = $validated['is_published']
             ? ($vacancy->published_at ?? now())
