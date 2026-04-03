@@ -5,6 +5,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     git \
     curl \
+    ca-certificates \
+    openssl \
     libpng-dev \
     libonig-dev \
     libxml2-dev \

@@ -89,13 +89,19 @@ class SettingsService
 
         $settings = $this->getMailSettings();
 
+        $scheme = match ($settings['encryption'] ?? null) {
+            'ssl' => 'smtps',
+            'tls' => null,
+            default => null,
+        };
+
         config([
             'mail.default' => $settings['mailer'],
             'mail.mailers.smtp.host' => $settings['host'],
             'mail.mailers.smtp.port' => (int) $settings['port'],
             'mail.mailers.smtp.username' => $settings['username'],
             'mail.mailers.smtp.password' => $settings['password'],
-            'mail.mailers.smtp.encryption' => $settings['encryption'],
+            'mail.mailers.smtp.scheme' => $scheme,
             'mail.from.address' => $settings['from_address'],
             'mail.from.name' => $settings['from_name'],
         ]);
