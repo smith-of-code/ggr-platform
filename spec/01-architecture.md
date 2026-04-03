@@ -4,19 +4,18 @@
 
 | Компонент | Версия / Технология |
 |-----------|---------------------|
-| PHP | 8.3 (Fpm.Dockerfile) |
-| Laravel | 12.x |
-| Vue | 3.5.28 |
-| Inertia.js | @inertiajs/vue3 2.3.15 |
-| Tailwind CSS | 4.x |
-| Vite | 7.x |
+| PHP | ^8.2 (Fpm.Dockerfile) |
+| Laravel | ^12.0 |
+| Vue | ^3.5.28 |
+| Inertia.js | @inertiajs/vue3 |
+| Tailwind CSS | ^4.0.0 |
+| Vite | ^7.0.7 |
 | PostgreSQL | 16 |
 | Redis | (queue, cache, session) |
 | Laravel Horizon | очереди (supervisor-default, supervisor-emails) |
 | Nginx | reverse proxy |
 | Docker | docker-compose (local + prod) |
 | Node.js | 22.x (установлен в fpm-контейнере) |
-| UI Kit | @rosatom-ggr/ui-kit ^1.0.16 |
 
 ## Ключевые пакеты
 
@@ -34,25 +33,35 @@
 
 - `@heroicons/vue` ^2.2.0
 - `@tiptap/starter-kit` ^2.11.0 + расширения (image, link, underline) — WYSIWYG-редактор
-- `@rosatom-ggr/ui-kit` ^1.0.16
+- `tailwindcss` ^4.0.0
 
 ## Структура директорий
 
 ```
 app/
 ├── Http/Controllers/
-│   ├── Admin/          # Админка основного сайта
-│   ├── Auth/           # Breeze auth
-│   ├── Lms/            # LMS для участников
-│   │   └── Admin/      # Админка LMS
+│   ├── Admin/          # Админка основного сайта (13 контроллеров)
+│   ├── Auth/           # Breeze auth (8 контроллеров)
+│   ├── Lms/            # LMS для участников (14 контроллеров)
+│   │   └── Admin/      # Админка LMS (15 контроллеров)
 │   ├── ApplicationController.php
+│   ├── BlogController.php
+│   ├── BlogSubscriptionController.php
 │   ├── CityController.php
+│   ├── DirectionController.php
+│   ├── EducationController.php
+│   ├── FavoriteController.php
 │   ├── HomeController.php
+│   ├── OpportunityToursController.php
 │   ├── ProfileController.php
-│   └── TourController.php
+│   ├── RecipeController.php
+│   ├── ResearchPageController.php
+│   ├── TourController.php
+│   ├── TourReviewController.php
+│   └── VacancyController.php
 ├── Models/
-│   ├── Lms/            # Все LMS-модели
-│   └── ...             # Корневые модели (User, Tour, City, etc.)
+│   ├── Lms/            # 41 LMS-модель
+│   └── ...             # 21 корневая модель (User, Tour, City, Direction, Post, Recipe, Vacancy, etc.)
 ├── Services/
 │   ├── SettingsService.php
 │   └── GamificationService.php
@@ -63,11 +72,20 @@ app/
 
 resources/js/
 ├── Pages/
-│   ├── Admin/          # Админка основного сайта
+│   ├── Admin/          # Админка основного сайта (13 подпапок)
 │   ├── Auth/           # Аутентификация (Breeze)
+│   ├── Blog/           # Блог (публичный)
 │   ├── Cities/         # Публичные страницы городов
-│   ├── Tours/          # Публичные страницы туров
+│   ├── Directions/     # Направления (публичный)
+│   ├── Education/      # Образование / ВШГР (публичный)
+│   ├── Favorites/      # Избранное
+│   ├── Forms/          # Публичные формы
+│   ├── OpportunityTours/ # Возможности для туров
 │   ├── Profile/        # Профиль пользователя
+│   ├── Recipes/        # Рецепты (публичный)
+│   ├── Research/       # Исследования (публичный)
+│   ├── Tours/          # Публичные страницы туров
+│   ├── Vacancies/      # Вакансии (публичный)
 │   ├── Lms/            # LMS
 │   │   ├── Admin/      # Админка LMS
 │   │   ├── Auth/       # Аутентификация LMS
@@ -76,22 +94,30 @@ resources/js/
 │   │   ├── Tests/
 │   │   ├── Assignments/
 │   │   ├── Trajectories/
+│   │   ├── Grants/     # Гранты
 │   │   ├── Videos/
 │   │   ├── KnowledgeBase/
 │   │   ├── Materials/
 │   │   ├── Gamification/
+│   │   ├── Reports/    # Отчёты
 │   │   └── Profile/
 │   ├── Dashboard.vue
 │   ├── Home.vue
 │   └── Welcome.vue
-├── Components/         # Общие Vue-компоненты (16 шт.)
+├── Components/         # 22 общих Vue-компонента
 ├── composables/        # useScrollReveal
 └── Layouts/
+    ├── AdminLayout.vue
+    ├── AuthenticatedLayout.vue
+    ├── GuestLayout.vue
+    ├── LmsAdminLayout.vue
+    ├── LmsLayout.vue
+    └── MainLayout.vue
 
-database/migrations/    # 15 миграций
+database/migrations/    # 56 миграций
 routes/
-├── web.php             # Основной сайт + админка
-├── lms.php             # LMS + LMS Admin
+├── web.php             # Публичный сайт + админка + social auth
+├── lms.php             # LMS Auth + LMS Participant + LMS Admin + Forms public
 ├── auth.php            # Breeze auth
 └── console.php
 
@@ -107,14 +133,15 @@ docker/
 
 ## Аутентификация
 
-- **Основной сайт**: Laravel Breeze (session-based), middleware `auth`
-- **LMS**: Отдельная auth-система через `Lms\AuthController` с поддержкой:
-  - Email-регистрации
-  - Инвайт-токенов (LmsInvitation)
-  - Активации профиля (invite_token в LmsProfile)
+- **Основной сайт**: Laravel Breeze (session-based), middleware `auth` (только для профиля и избранного)
+- **Публичные страницы** (города, туры, блог, рецепты, вакансии, образование, направления, исследования): без аутентификации
+- **LMS**: Вход через глобальную страницу `/auth/social/{provider}/login` или `/login` (Breeze). Отдельного LMS-логина нет, `AuthController::redirectToGlobalLogin` перенаправляет на основную страницу входа.
+  - Инвайт-токены (LmsInvitation, invite_token в LmsProfile)
+  - Активация профиля
   - OAuth SSO через ВКонтакте и Яндекс (`Lms\SocialAuthController`, `laravel/socialite` + кастомный `App\Socialite\VkIdProvider` для VK ID + `socialiteproviders/yandex`)
     - Регистрация через SSO невозможна — только привязка существующего аккаунта из профиля
     - Глобальный callback: `/auth/social/{provider}/callback`
+    - Глобальный login redirect: `/auth/social/{provider}/login`
     - Данные привязок: таблица `social_accounts`
 - Guard: стандартный `web` (session)
 

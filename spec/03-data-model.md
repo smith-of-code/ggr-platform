@@ -18,7 +18,7 @@
 | remember_token | string | |
 | timestamps | | |
 
-**Связи**: `socialAccounts()` HasMany SocialAccount (LmsProfile привязан через user_id)
+**Связи**: `socialAccounts()` HasMany SocialAccount
 
 ---
 
@@ -51,11 +51,26 @@
 | description | text | |
 | infrastructure | json | cast: array |
 | image | string | |
+| coat_of_arms | string | nullable |
+| region | string | nullable |
+| population | integer | nullable |
+| population_year | integer | nullable |
+| founded_year | integer | nullable |
+| timezone | string | nullable |
+| lat | decimal | nullable |
+| lng | decimal | nullable |
+| attractions | json | cast: array |
+| social_objects | json | cast: array |
+| gallery | json | cast: array |
+| video_url | string | nullable |
+| facts | json | cast: array |
+| energy_cities_block | json | cast: array |
+| block_visibility | json | cast: array |
 | position | integer | |
 | is_active | boolean | cast: boolean |
 | timestamps | | |
 
-**Связи**: `tours()` BelongsToMany Tour через city_tour
+**Связи**: `tours()` BelongsToMany Tour через city_tour, `favorites()` MorphMany Favorite, `recipes()` HasMany Recipe, `vacancies()` HasMany Vacancy
 
 ---
 
@@ -72,9 +87,9 @@
 | project | string | PROJECTS — константы модели |
 | participation_type | string | PARTICIPATION_TYPES — константы модели |
 | season | string | SEASONS — константы модели |
-| for_children | boolean | |
-| for_foreigners | boolean | |
-| closed_city | boolean | |
+| for_children | boolean | cast: boolean |
+| for_foreigners | boolean | cast: boolean |
+| closed_city | boolean | cast: boolean |
 | group_size | string | |
 | min_age | integer | |
 | price_from | decimal(10,2) | cast: decimal:2 |
@@ -85,14 +100,23 @@
 | conditions | text | |
 | cost_info | text | |
 | application_info | text | |
-| bchp_participant | boolean | |
-| is_featured | boolean | |
+| program_days | json | cast: array |
+| memo_text | text | nullable |
+| pass_info | text | nullable |
+| accommodations | json | cast: array |
+| gallery | json | cast: array |
+| videos | json | cast: array |
+| target_audience | text | nullable |
+| organizer_info | text | nullable |
+| reactions_count | integer | cast: integer |
+| bchp_participant | boolean | cast: boolean |
+| is_featured | boolean | cast: boolean |
 | image | string | |
 | position | integer | |
-| is_active | boolean | |
+| is_active | boolean | cast: boolean |
 | timestamps | | |
 
-**Связи**: `cities()` BelongsToMany City, `departures()` HasMany TourDeparture, `media()` morphMany Media
+**Связи**: `cities()` BelongsToMany City, `departures()` HasMany TourDeparture, `media()` morphMany Media, `reactions()` HasMany TourReaction, `reviews()` HasMany TourReview, `favorites()` MorphMany Favorite
 
 ---
 
@@ -109,6 +133,38 @@
 | timestamps | | |
 
 **Связи**: `tour()` BelongsTo Tour
+
+---
+
+### TourReaction
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| tour_id | FK → tours | |
+| user_id | FK → users | |
+| ip_address | string | |
+| emoji | string | |
+| timestamps | | |
+
+**Связи**: `tour()` BelongsTo Tour, `user()` BelongsTo User
+**Константы**: `EMOJIS` — массив (love, wow, fire, cool, star)
+
+---
+
+### TourReview
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| tour_id | FK → tours | |
+| user_id | FK → users | |
+| rating | integer | cast: integer |
+| text | text | |
+| is_approved | boolean | cast: boolean |
+| timestamps | | |
+
+**Связи**: `tour()` BelongsTo Tour, `user()` BelongsTo User
 
 ---
 
@@ -141,10 +197,205 @@
 | excerpt | text | |
 | content | text | |
 | image | string | |
-| category | string | CATEGORIES: news, announcements, partner_articles |
+| category | string | CATEGORIES — константа модели (news, announcements, partner_articles) |
 | tags | json | cast: array |
+| videos | json | cast: array |
 | is_published | boolean | cast: boolean |
 | published_at | datetime | cast: datetime |
+| timestamps | | |
+
+**Связи**: нет
+
+---
+
+### Direction
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| title | string | |
+| slug | string unique | |
+| description | text | |
+| image | string | |
+| project_key | string | |
+| sub_directions_title | string | nullable |
+| sub_directions_description | text | nullable |
+| sub_directions | json | cast: array |
+| target_audiences | json | cast: array |
+| target_audience_note | text | nullable |
+| free_participation_steps | json | cast: array |
+| free_participation_details | json | cast: array |
+| paid_participation_steps | json | cast: array |
+| paid_form_slug | string | nullable |
+| featured_tour_ids | json | cast: array |
+| is_active | boolean | cast: boolean |
+| position | integer | |
+| timestamps | | |
+
+**Связи**: `featuredTours()` — метод (не Eloquent relation), возвращает Builder → Tour::whereIn по featured_tour_ids
+
+---
+
+### AtomsVkusaContent
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| hero_title | string | |
+| hero_description | text | |
+| hero_image | string | |
+| competition_stages | json | cast: array |
+| participation_conditions | json | cast: array |
+| selection_criteria | json | cast: array |
+| results_year | string | |
+| results_content | text | |
+| results_gallery | json | cast: array |
+| results_videos | json | cast: array |
+| results_cases | json | cast: array |
+| why_important_content | text | |
+| why_important_stats | json | cast: array |
+| map_cities | json | cast: array |
+| application_form_title | string | |
+| application_form_text | text | |
+| partners | json | cast: array |
+| reviews | json | cast: array |
+| tourism_help_content | text | |
+| tourism_help_items | json | cast: array |
+| timestamps | | |
+
+**Таблица**: `atoms_vkusa_content` (singleton — `firstOrCreate` через static method `content()`)
+
+---
+
+### BlogSubscriber
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| email | string | |
+| is_active | boolean | cast: boolean |
+| token | string | |
+| timestamps | | |
+
+**Связи**: нет
+
+---
+
+### Recipe
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| title | string | |
+| slug | string unique | |
+| description | text | |
+| content | text | |
+| image | string | |
+| city_id | FK → cities | nullable |
+| cooking_time | string | |
+| difficulty | string | |
+| servings | string | |
+| ingredients | json | cast: array |
+| is_published | boolean | cast: boolean |
+| published_at | datetime | cast: datetime |
+| timestamps | | |
+
+**Связи**: `city()` BelongsTo City
+
+---
+
+### EducationProduct
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| title | string | |
+| slug | string unique | |
+| description | text | |
+| content | text | |
+| image | string | |
+| duration | string | |
+| format | string | |
+| target_audience | text | |
+| price_info | text | |
+| position | integer | |
+| is_active | boolean | cast: boolean |
+| timestamps | | |
+
+**Связи**: нет
+
+---
+
+### Vacancy
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| title | string | |
+| slug | string unique | |
+| city_id | FK → cities | nullable |
+| company | string | |
+| employment_type | string | |
+| salary | string | nullable |
+| description | text | |
+| requirements | text | |
+| conditions | text | |
+| responsibilities | text | |
+| contact_email | string | |
+| contact_phone | string | nullable |
+| image | string | nullable |
+| is_published | boolean | cast: boolean |
+| published_at | datetime | cast: datetime |
+| position | integer | |
+| timestamps | | |
+
+**Связи**: `city()` BelongsTo City
+**Константы**: `EMPLOYMENT_TYPES` — массив (full_time, part_time, remote, internship, contract)
+
+---
+
+### TimelineEvent
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| title | string | |
+| description | text | |
+| event_date | date | cast: date |
+| link | string | nullable |
+| type | string | |
+| is_active | boolean | cast: boolean |
+| timestamps | | |
+
+**Связи**: нет
+
+---
+
+### Favorite
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| user_id | FK → users | |
+| favorable_type | string | polymorphic |
+| favorable_id | bigint | polymorphic |
+| timestamps | | |
+
+**Связи**: `user()` BelongsTo User, `favorable()` MorphTo
+
+---
+
+### ContactSubmission
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| name | string | |
+| email | string | |
+| phone | string | nullable |
+| message | text | |
+| source | string | |
+| status | string | |
 | timestamps | | |
 
 **Связи**: нет
@@ -167,6 +418,28 @@
 | timestamps | | |
 
 **Связи**: `mediable()` MorphTo
+
+---
+
+### UploadedMedia
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| filename | string | |
+| original_name | string | |
+| path | string | |
+| url | string | |
+| disk | string | |
+| mime_type | string | |
+| size | integer | |
+| collection | string | nullable |
+| entity_type | string | nullable |
+| entity_id | bigint | nullable |
+| timestamps | | |
+
+**Таблица**: `uploaded_media`
+**Связи**: нет
 
 ---
 
@@ -196,7 +469,8 @@
 | description | text | |
 | auth_method | enum(email, sso) | |
 | sso_provider_url | string | nullable |
-| is_active | boolean | |
+| menu_config | json | cast: array, с дефолтным значением DEFAULT_MENU_CONFIG |
+| is_active | boolean | cast: boolean |
 | timestamps | | |
 
 **Связи**: HasMany — profiles, groups, courses, kbSections, tests, assignments, trajectories, videos, materialSections, gamificationRules
@@ -214,17 +488,37 @@
 | lms_role_id | FK → lms_roles | nullable, nullOnDelete |
 | status | string | nullable |
 | invite_token | string | unique, nullable |
-| invited_at | datetime | nullable |
-| activated_at | datetime | nullable |
+| invited_at | datetime | cast: datetime, nullable |
+| activated_at | datetime | cast: datetime, nullable |
 | position | string | nullable |
 | phone | string | nullable |
 | city | string | nullable |
+| city_id | FK → cities | nullable |
+| organization | string | nullable |
+| project_description | text | nullable |
+| preferred_channel | string | nullable |
 | avatar | string | nullable |
 | timestamps | | |
 | **unique** | (user_id, lms_event_id) | |
 
-**Связи**: `user()` BelongsTo User, `event()` BelongsTo LmsEvent, `lmsRole()` BelongsTo LmsRole
-**Методы**: `generateInviteToken()`
+**Связи**: `user()` BelongsTo User, `event()` BelongsTo LmsEvent, `lmsRole()` BelongsTo LmsRole, `cityRelation()` BelongsTo City, `documents()` HasMany LmsProfileDocument
+**Методы**: `generateInviteToken()`, `isProfileComplete()`, `getMissingFields()`
+
+---
+
+### LmsProfileDocument
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_profile_id | FK → lms_profiles | |
+| type | string | |
+| file_path | string | |
+| original_name | string | |
+| timestamps | | |
+
+**Связи**: `profile()` BelongsTo LmsProfile
+**Константы**: `TYPE_ENROLLMENT_APPLICATION`, `TYPE_SNILS`, `TYPE_DIPLOMA`, `TYPE_PERSONAL_DATA_CONSENT`, `TYPE_NAME_CHANGE_CERTIFICATE`, `TYPES`, `TYPES_WITH_TEMPLATE`
 
 ---
 
@@ -270,6 +564,8 @@
 | sequential | boolean | |
 | is_active | boolean | |
 | requires_approval | boolean | |
+| is_mandatory | boolean | |
+| unlocks_gamification | boolean | |
 | position | integer | |
 | starts_at | datetime | nullable |
 | ends_at | datetime | nullable |
@@ -313,13 +609,34 @@
 | lms_test_id | bigint | nullable |
 | lms_assignment_id | bigint | nullable |
 | lms_video_id | bigint | nullable |
-| is_locked | boolean | |
+| source_stage_id | bigint | nullable, FK → self |
+| is_locked | boolean | cast: boolean |
 | position | integer | |
-| available_from | datetime | nullable |
-| duration_minutes | integer | nullable |
+| available_from | datetime | cast: datetime, nullable |
+| duration_minutes | integer | cast: integer, nullable |
 | timestamps | | |
 
-**Связи**: `course()` BelongsTo LmsCourse, `module()` BelongsTo LmsCourseModule, `test()` BelongsTo LmsTest, `assignment()` BelongsTo LmsAssignment, `video()` BelongsTo LmsVideo, `progress()` HasMany LmsStageProgress
+**Связи**: `course()` BelongsTo LmsCourse, `module()` BelongsTo LmsCourseModule, `test()` BelongsTo LmsTest, `assignment()` BelongsTo LmsAssignment, `video()` BelongsTo LmsVideo, `progress()` HasMany LmsStageProgress, `sourceStage()` BelongsTo self, `blocks()` HasMany LmsStageBlock
+
+---
+
+### LmsStageBlock
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_course_stage_id | FK → lms_course_stages | |
+| type | string | |
+| content | text | nullable |
+| scorm_package | string | nullable |
+| lms_test_id | FK → lms_tests | nullable |
+| lms_assignment_id | FK → lms_assignments | nullable |
+| lms_video_id | FK → lms_videos | nullable |
+| position | integer | |
+| scheduled_at | datetime | cast: datetime, nullable |
+| timestamps | | |
+
+**Связи**: `stage()` BelongsTo LmsCourseStage, `test()` BelongsTo LmsTest, `assignment()` BelongsTo LmsAssignment, `video()` BelongsTo LmsVideo
 
 ---
 
@@ -330,7 +647,7 @@
 | id | bigint PK | |
 | lms_course_id | FK → lms_courses | cascade |
 | user_id | FK → users | cascade |
-| status | varchar(20) | enum: enrolled, in_progress, completed + pending, rejected |
+| status | varchar(20) | enum: enrolled, in_progress, completed, pending, rejected |
 | completed_at | datetime | nullable |
 | reviewed_at | datetime | nullable |
 | reviewed_by | FK → users | nullable, nullOnDelete |
@@ -422,7 +739,7 @@
 | id | bigint PK | |
 | lms_test_id | FK → lms_tests | |
 | user_id | FK → users | |
-| status | string | в fillable модели, колонка в миграции не обнаружена (см. open-questions) |
+| status | string | добавлено миграцией 2026_03_24 |
 | score | decimal | |
 | max_score | decimal | |
 | percentage | decimal | |
@@ -461,12 +778,31 @@
 | title | string | |
 | description | text | |
 | template_file | string | nullable |
+| template_file_name | string | nullable |
 | completion_mode | enum(on_submit, on_review) | |
 | deadline | datetime | nullable, cast: datetime |
-| is_active | boolean | |
+| is_active | boolean | cast: boolean |
 | timestamps | | |
 
-**Связи**: `event()` BelongsTo LmsEvent, `submissions()` HasMany LmsAssignmentSubmission
+**Связи**: `event()` BelongsTo LmsEvent, `submissions()` HasMany LmsAssignmentSubmission, `tasks()` HasMany LmsAssignmentTask
+
+---
+
+### LmsAssignmentTask
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_assignment_id | FK → lms_assignments | |
+| title | string | |
+| description | text | nullable |
+| response_type | string | |
+| template_file | string | nullable |
+| template_file_name | string | nullable |
+| position | integer | |
+| timestamps | | |
+
+**Связи**: `assignment()` BelongsTo LmsAssignment
 
 ---
 
@@ -487,6 +823,22 @@
 
 ---
 
+### LmsSubmissionAnswer
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_assignment_submission_id | FK → lms_assignment_submissions | |
+| lms_assignment_task_id | FK → lms_assignment_tasks | |
+| text_content | text | nullable |
+| link | string | nullable |
+| files | json | cast: array |
+| timestamps | | |
+
+**Связи**: `submission()` BelongsTo LmsAssignmentSubmission, `task()` BelongsTo LmsAssignmentTask
+
+---
+
 ### LmsAssignmentReview
 
 | Поле | Тип | Примечание |
@@ -503,6 +855,21 @@
 
 ---
 
+### LmsAssignmentComment
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_assignment_submission_id | FK → lms_assignment_submissions | |
+| user_id | FK → users | |
+| text | text | |
+| files | json | cast: array |
+| timestamps | | |
+
+**Связи**: `submission()` BelongsTo LmsAssignmentSubmission, `user()` BelongsTo User
+
+---
+
 ### LmsTrajectory
 
 | Поле | Тип | Примечание |
@@ -511,10 +878,10 @@
 | lms_event_id | FK → lms_events | |
 | title | string | |
 | description | text | |
-| is_active | boolean | |
+| is_active | boolean | cast: boolean |
 | timestamps | | |
 
-**Связи**: `event()` BelongsTo LmsEvent, `steps()` HasMany LmsTrajectoryStep, `enrollments()` HasMany LmsTrajectoryEnrollment
+**Связи**: `event()` BelongsTo LmsEvent, `steps()` HasMany LmsTrajectoryStep, `enrollments()` HasMany LmsTrajectoryEnrollment, `blocks()` HasMany LmsTrajectoryBlock
 
 ---
 
@@ -534,6 +901,26 @@
 
 ---
 
+### LmsTrajectoryBlock
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_trajectory_id | FK → lms_trajectories | |
+| type | string | |
+| title | string | |
+| description | text | nullable |
+| date_label | string | nullable |
+| date_start | date | cast: date, nullable |
+| date_end | date | cast: date, nullable |
+| lms_assignment_id | FK → lms_assignments | nullable |
+| position | integer | |
+| timestamps | | |
+
+**Связи**: `trajectory()` BelongsTo LmsTrajectory, `assignment()` BelongsTo LmsAssignment
+
+---
+
 ### LmsTrajectoryEnrollment
 
 | Поле | Тип | Примечание |
@@ -547,6 +934,55 @@
 | **unique** | (lms_trajectory_id, user_id) | |
 
 **Связи**: `trajectory()` BelongsTo LmsTrajectory, `user()` BelongsTo User
+
+---
+
+### LmsGrant
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_event_id | FK → lms_events | |
+| title | string | |
+| type | string | |
+| city | json | cast: array |
+| description | text | |
+| application_start | datetime | cast: datetime, nullable |
+| application_end | datetime | cast: datetime, nullable |
+| is_active | boolean | cast: boolean |
+| position | integer | |
+| timestamps | | |
+
+**Связи**: `event()` BelongsTo LmsEvent, `documents()` HasMany LmsGrantDocument, `enrollments()` HasMany LmsGrantEnrollment
+**Константы**: `TYPE_GRANT`, `TYPE_SUBSIDY`, `TYPE_CREDIT`, `TYPES`
+
+---
+
+### LmsGrantDocument
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_grant_id | FK → lms_grants | |
+| file_path | string | |
+| original_name | string | |
+| position | integer | |
+| timestamps | | |
+
+**Связи**: `grant()` BelongsTo LmsGrant
+
+---
+
+### LmsGrantEnrollment
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_grant_id | FK → lms_grants | |
+| user_id | FK → users | |
+| timestamps | | |
+
+**Связи**: `grant()` BelongsTo LmsGrant, `user()` BelongsTo User
 
 ---
 
@@ -614,11 +1050,101 @@
 | lms_event_id | FK → lms_events | |
 | title | string | |
 | content | text | |
-| in_menu | boolean | |
+| in_menu | boolean | cast: boolean |
 | position | integer | |
 | timestamps | | |
 
-**Связи**: `event()` BelongsTo LmsEvent, `groups()` BelongsToMany LmsGroup через lms_material_access
+**Связи**: `event()` BelongsTo LmsEvent, `groups()` BelongsToMany LmsGroup через lms_material_access, `files()` HasMany LmsMaterialFile
+
+---
+
+### LmsMaterialFile
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_material_section_id | FK → lms_material_sections | |
+| title | string | |
+| file_path | string | |
+| file_name | string | |
+| file_size | integer | |
+| position | integer | |
+| timestamps | | |
+
+**Связи**: `section()` BelongsTo LmsMaterialSection
+
+---
+
+### LmsForm
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_event_id | FK → lms_events | |
+| title | string | |
+| description | text | nullable |
+| slug | string | |
+| is_active | boolean | cast: boolean |
+| is_anonymous | boolean | cast: boolean |
+| allow_embed | boolean | cast: boolean |
+| create_users | boolean | cast: boolean |
+| fio_field_key | string | nullable |
+| email_field_key | string | nullable |
+| phone_field_key | string | nullable |
+| position_field_key | string | nullable |
+| thank_you_message | text | nullable |
+| timestamps | | |
+
+**Связи**: `event()` BelongsTo LmsEvent, `fields()` HasMany LmsFormField, `submissions()` HasMany LmsFormSubmission
+
+---
+
+### LmsFormField
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_form_id | FK → lms_forms | |
+| key | string | |
+| label | string | |
+| type | string | |
+| required | boolean | cast: boolean |
+| placeholder | string | nullable |
+| options | json | cast: array |
+| position | integer | |
+| timestamps | | |
+
+**Связи**: `form()` BelongsTo LmsForm, `responses()` HasMany LmsFormResponse
+
+---
+
+### LmsFormSubmission
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_form_id | FK → lms_forms | |
+| user_id | FK → users | nullable |
+| ip_address | string | nullable |
+| user_agent | string | nullable |
+| user_created | boolean | cast: boolean |
+| timestamps | | |
+
+**Связи**: `form()` BelongsTo LmsForm, `user()` BelongsTo User, `responses()` HasMany LmsFormResponse
+
+---
+
+### LmsFormResponse
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| id | bigint PK | |
+| lms_form_submission_id | FK → lms_form_submissions | |
+| lms_form_field_id | FK → lms_form_fields | |
+| value | text | nullable |
+| timestamps | | |
+
+**Связи**: `submission()` BelongsTo LmsFormSubmission, `field()` BelongsTo LmsFormField
 
 ---
 
