@@ -34,6 +34,13 @@ class BackfillMediaCollections extends Command
         $this->backfillDirect('directions', 'App\\Models\\Direction', 'directions', ['image'], $dryRun);
         $this->backfillDirect('lms_courses', 'App\\Models\\Lms\\LmsCourse', 'lms_courses', ['image'], $dryRun);
 
+        $this->backfillRelated('lms_grants', 'App\\Models\\Lms\\LmsGrant', 'lms_grant_documents', 'lms_grant_id', ['file_path'], $dryRun);
+        $this->backfillRelated('lms_materials', 'App\\Models\\Lms\\LmsMaterialSection', 'lms_material_files', 'lms_material_section_id', ['file_path'], $dryRun);
+        $this->backfillDirect('lms_assignments', 'App\\Models\\Lms\\LmsAssignment', 'lms_assignments', ['template_file'], $dryRun);
+        $this->backfillDirect('lms_assignments', 'App\\Models\\Lms\\LmsAssignmentTask', 'lms_assignment_tasks', ['template_file'], $dryRun);
+        $this->backfillDirect('lms_kb', 'App\\Models\\Lms\\LmsKbItem', 'lms_kb_items', ['file_path'], $dryRun);
+        $this->backfillDirect('lms_videos', 'App\\Models\\Lms\\LmsVideo', 'lms_videos', ['file_path', 'thumbnail'], $dryRun);
+
         $this->backfillAtomsVkusa($dryRun);
         $this->backfillSettings('research_page', 'results_image', $dryRun);
 
@@ -54,6 +61,21 @@ class BackfillMediaCollections extends Command
                     continue;
                 }
                 $this->linkMedia($url, $collection, $entityType, $row->id, $dryRun);
+            }
+        }
+    }
+
+    private function backfillRelated(string $collection, string $entityType, string $table, string $fkColumn, array $columns, bool $dryRun): void
+    {
+        $rows = DB::table($table)->select(array_merge([$fkColumn], $columns))->get();
+
+        foreach ($rows as $row) {
+            foreach ($columns as $col) {
+                $url = $row->$col;
+                if (empty($url)) {
+                    continue;
+                }
+                $this->linkMedia($url, $collection, $entityType, $row->$fkColumn, $dryRun);
             }
         }
     }
