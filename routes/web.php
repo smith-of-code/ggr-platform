@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TimelineEventController as AdminTimelineController;
 use App\Http\Controllers\Admin\DirectionController as AdminDirectionController;
 use App\Http\Controllers\Admin\AtomsVkusaController as AdminAtomsVkusaController;
+use App\Http\Controllers\Admin\BlogSubscriberController as AdminBlogSubscriberController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlogController;
@@ -88,6 +89,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::resource('blog', AdminBlogController::class)->except(['show'])->parameters(['blog' => 'post']);
     Route::patch('/blog/{post}/toggle-publish', [AdminBlogController::class, 'togglePublish'])->name('blog.togglePublish');
+
+    Route::resource('blog-subscribers', AdminBlogSubscriberController::class)->only(['index', 'store', 'destroy']);
+    Route::patch('/blog-subscribers/{blog_subscriber}/toggle-active', [AdminBlogSubscriberController::class, 'toggleActive'])->name('blog-subscribers.toggleActive');
 
     Route::resource('recipes', AdminRecipeController::class)->except(['show']);
     Route::resource('education-products', AdminEducationProductController::class)->except(['show']);

@@ -105,6 +105,16 @@
         </Link>
 
         <Link
+          :href="route('admin.blog-subscribers.index')"
+          :class="[isActive('admin.blog-subscribers') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
+        >
+          <svg :class="[isActive('admin.blog-subscribers') ? 'text-[#003274]' : 'text-gray-400 group-hover:text-gray-600']" class="h-5 w-5 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+          </svg>
+          Подписчики
+        </Link>
+
+        <Link
           :href="route('admin.education-products.index')"
           :class="[isActive('admin.education-products') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
         >
@@ -242,7 +252,8 @@ function isActive(routePrefix) {
   if (routePrefix === 'admin.cities') return url.startsWith('/admin/cities')
   if (routePrefix === 'admin.tours') return url.startsWith('/admin/tours')
   if (routePrefix === 'admin.tour-reviews') return url.startsWith('/admin/tour-reviews')
-  if (routePrefix === 'admin.blog') return url.startsWith('/admin/blog')
+  if (routePrefix === 'admin.blog') return url.startsWith('/admin/blog') && !url.startsWith('/admin/blog-subscribers')
+  if (routePrefix === 'admin.blog-subscribers') return url.startsWith('/admin/blog-subscribers')
   if (routePrefix === 'admin.education-products') return url.startsWith('/admin/education-products')
   if (routePrefix === 'admin.recipes') return url.startsWith('/admin/recipes')
   if (routePrefix === 'admin.atoms-vkusa') return url.startsWith('/admin/atoms-vkusa')
