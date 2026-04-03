@@ -1,10 +1,12 @@
 <?php
 
+use App\Services\ActivityLogService;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \App\Http\Middleware\CheckPageVisibility::class,
+            \App\Http\Middleware\LogUserActivity::class,
         ]);
 
         $middleware->alias([
@@ -41,5 +44,13 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->reportable(function (\Throwable $e) {
+            if ($e instanceof ValidationException && ! config('activity-logging.log_422')) {
+                return;
+            }
+
+            $request = request();
+
+            app(ActivityLogService::class)->logException($e, $request);
+        });
     })->create();
