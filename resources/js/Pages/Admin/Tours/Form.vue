@@ -108,6 +108,10 @@
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
                   {{ pdfUploading === 'program' ? 'Загрузка…' : 'Загрузить PDF' }}
                 </button>
+                <button type="button" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-[#003274] transition hover:bg-gray-50" @click="openPdfPicker('program_pdf')">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                  Из библиотеки
+                </button>
                 <input ref="programPdfInput" type="file" accept=".pdf" class="hidden" @change="e => uploadPdf(e, 'program_pdf')" />
               </div>
             </div>
@@ -184,10 +188,16 @@
                 </div>
               </div>
               <RichTextEditor v-model="form.memo_text" label="Текст памятки" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
-              <button type="button" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="$refs.memoPdfInput.click()">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
-                {{ pdfUploading === 'memo' ? 'Загрузка…' : 'Загрузить PDF памятки' }}
-              </button>
+              <div class="flex gap-2">
+                <button type="button" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="$refs.memoPdfInput.click()">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+                  {{ pdfUploading === 'memo' ? 'Загрузка…' : 'Загрузить PDF памятки' }}
+                </button>
+                <button type="button" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-[#003274] transition hover:bg-gray-50" @click="openPdfPicker('memo_pdf')">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                  Из библиотеки
+                </button>
+              </div>
               <input ref="memoPdfInput" type="file" accept=".pdf" class="hidden" @change="e => uploadPdf(e, 'memo_pdf')" />
             </div>
           </RCard>
@@ -326,7 +336,7 @@
                   <input v-model="dep.end_date" type="date" class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm" />
                   <div class="flex gap-2">
                     <input v-model.number="dep.price_per_person" type="number" placeholder="Цена ₽" class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm" />
-                    <RButton v-if="form.departures.length > 1" variant="danger" size="sm" icon-only @click="form.departures.splice(i, 1)">
+                    <RButton v-if="form.departures.length > 1" type="button" variant="danger" size="sm" icon-only @click="form.departures.splice(i, 1)">
                       <template #icon>
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                       </template>
@@ -335,7 +345,7 @@
                 </div>
               </div>
             </div>
-            <RButton variant="outline" block class="mt-3" @click="form.departures.push({ start_date: '', end_date: '', price_per_person: '' })">
+            <RButton type="button" variant="outline" block class="mt-3" @click="form.departures.push({ start_date: '', end_date: '', price_per_person: '' })">
               <template #icon>
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               </template>
@@ -396,6 +406,20 @@
       @close="showAccPicker = false"
       @select="onAccMediaSelect"
     />
+
+    <MediaPickerModal
+      :show="showPdfPicker"
+      :api-url="route('admin.media.index')"
+      :upload-url="route('admin.upload.file')"
+      collection="tours"
+      :entity-type="mediaEntityType"
+      :entity-id="mediaEntityId"
+      accept=".pdf,application/pdf"
+      file-type="document"
+      upload-field="file"
+      @close="showPdfPicker = false"
+      @select="onPdfMediaSelect"
+    />
   </AdminLayout>
 </template>
 
@@ -417,6 +441,8 @@ const pdfUploading = ref(null)
 const showGalleryPicker = ref(false)
 const showAccPicker = ref(false)
 let accPickerIndex = null
+const showPdfPicker = ref(false)
+let pdfPickerField = null
 
 const checkboxOptions = [
   { key: 'is_active', label: 'Активен' },
@@ -532,6 +558,16 @@ function onAccMediaSelect(urls) {
     form.accommodations = updated
   }
   showAccPicker.value = false
+}
+
+function openPdfPicker(field) {
+  pdfPickerField = field
+  showPdfPicker.value = true
+}
+
+function onPdfMediaSelect(url) {
+  if (pdfPickerField) form[pdfPickerField] = url
+  showPdfPicker.value = false
 }
 
 const form = useForm({

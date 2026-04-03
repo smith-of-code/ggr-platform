@@ -9,31 +9,48 @@ use Illuminate\Support\Facades\Storage;
 class IndexExistingMedia extends Command
 {
     protected $signature = 'media:index';
-    protected $description = 'Scan uploads/images and create Media records for files not yet tracked';
+    protected $description = 'Scan uploads/images, uploads/files, uploads/kb and create Media records for files not yet tracked';
+
+    private const MIME_MAP = [
+        'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png', 'gif' => 'image/gif',
+        'webp' => 'image/webp', 'svg' => 'image/svg+xml',
+        'mp4' => 'video/mp4', 'webm' => 'video/webm',
+        'mov' => 'video/quicktime', 'avi' => 'video/x-msvideo',
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'zip' => 'application/zip',
+    ];
 
     public function handle(): int
     {
         $disk = config('filesystems.upload_disk', 'public');
-        $files = Storage::disk($disk)->allFiles('uploads/images');
+
+        $directories = ['uploads/images', 'uploads/files', 'uploads/kb'];
+        $allFiles = [];
+        foreach ($directories as $dir) {
+            try {
+                $allFiles = array_merge($allFiles, Storage::disk($disk)->allFiles($dir));
+            } catch (\Throwable) {
+            }
+        }
 
         $existingPaths = UploadedMedia::pluck('path')->flip();
         $created = 0;
 
-        foreach ($files as $filePath) {
+        foreach ($allFiles as $filePath) {
             if ($existingPaths->has($filePath)) {
                 continue;
             }
 
             $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'])) {
+            $mime = self::MIME_MAP[$ext] ?? null;
+            if (!$mime) {
                 continue;
             }
-
-            $mimeMap = [
-                'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
-                'png' => 'image/png', 'gif' => 'image/gif',
-                'webp' => 'image/webp', 'svg' => 'image/svg+xml',
-            ];
 
             $size = 0;
             try {
@@ -47,7 +64,7 @@ class IndexExistingMedia extends Command
                 'path' => $filePath,
                 'url' => Storage::disk($disk)->url($filePath),
                 'disk' => $disk,
-                'mime_type' => $mimeMap[$ext] ?? 'image/' . $ext,
+                'mime_type' => $mime,
                 'size' => $size,
             ]);
 

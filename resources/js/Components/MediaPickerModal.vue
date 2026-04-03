@@ -31,7 +31,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
             </svg>
             {{ uploading ? 'Загрузка...' : 'Загрузить' }}
-            <input type="file" accept="image/*" class="hidden" :disabled="uploading" @change="uploadFile" />
+            <input type="file" :accept="accept" :multiple="multiple" class="hidden" :disabled="uploading" @change="uploadFile" />
           </label>
         </div>
 
@@ -74,7 +74,7 @@
             </svg>
           </div>
           <div v-else-if="!items.length" class="py-16 text-center text-sm text-gray-400">
-            {{ search ? 'Ничего не найдено' : 'Библиотека пуста. Загрузите первое изображение.' }}
+            {{ search ? 'Ничего не найдено' : `Библиотека пуста. Загрузите первый ${typeLabel}.` }}
           </div>
           <div v-else class="grid grid-cols-4 gap-3 sm:grid-cols-5 lg:grid-cols-6">
             <button
@@ -86,7 +86,16 @@
               @click="toggleItem(item.url)"
               @dblclick="confirmSelect"
             >
-              <img :src="item.url" :alt="item.original_name" class="h-full w-full object-cover" loading="lazy" />
+              <img v-if="isImage(item.mime_type)" :src="item.url" :alt="item.original_name" class="h-full w-full object-cover" loading="lazy" />
+              <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 bg-gray-50 p-2">
+                <svg v-if="isVideo(item.mime_type)" class="h-10 w-10 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+                <svg v-else class="h-10 w-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                <span class="max-w-full truncate text-[10px] text-gray-500">{{ item.original_name }}</span>
+              </div>
               <div class="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
               <div v-if="isSelected(item.url)" class="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#003274] text-xs font-bold text-white">
                 <template v-if="multiple">{{ selectionOrder(item.url) }}</template>
@@ -119,7 +128,7 @@
           </p>
           <p v-else-if="!multiple && selected" class="truncate text-sm text-gray-500">{{ selectedName }}</p>
           <p v-else class="text-sm text-gray-400">
-            {{ multiple ? 'Выберите одно или несколько изображений' : 'Выберите изображение или загрузите новое' }}
+            {{ multiple ? `Выберите один или несколько файлов` : `Выберите ${typeLabel} или загрузите новый` }}
           </p>
           <div class="flex gap-3">
             <button
@@ -172,6 +181,9 @@ const props = defineProps({
   entityType: { type: String, default: '' },
   entityId: { type: [Number, String], default: null },
   multiple: { type: Boolean, default: false },
+  accept: { type: String, default: 'image/*' },
+  fileType: { type: String, default: 'image' },
+  uploadField: { type: String, default: 'image' },
 })
 
 const emit = defineEmits(['close', 'select'])
@@ -210,6 +222,16 @@ function selectionOrder(url) {
 }
 
 const canConfirm = computed(() => props.multiple ? multiSelected.value.length > 0 : !!selected.value)
+
+function isImage(mime) { return mime && mime.startsWith('image/') }
+function isVideo(mime) { return mime && mime.startsWith('video/') }
+
+const typeLabel = computed(() => {
+  if (props.fileType === 'video') return 'видео'
+  if (props.fileType === 'document') return 'документ'
+  if (props.fileType === 'all') return 'файл'
+  return 'изображение'
+})
 
 const hasTabs = computed(() => !!(props.entityId || props.collection))
 const activeScope = ref('all')
@@ -253,6 +275,7 @@ async function fetchMedia() {
     if (props.collection) params.collection = props.collection
     if (props.entityType) params.entity_type = props.entityType
     if (props.entityId) params.entity_id = props.entityId
+    if (props.fileType && props.fileType !== 'all') params.type = props.fileType
     const { data } = await axios.get(props.apiUrl, { params })
     items.value = data.data
     lastPage.value = data.last_page
@@ -271,23 +294,25 @@ function goToPage(p) {
 }
 
 async function uploadFile(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
   e.target.value = ''
 
   uploading.value = true
   try {
-    const fd = new FormData()
-    fd.append('image', file)
-    if (props.collection) fd.append('collection', props.collection)
-    if (props.entityType) fd.append('entity_type', props.entityType)
-    if (props.entityId) fd.append('entity_id', props.entityId)
-    const { data } = await axios.post(props.uploadUrl, fd)
-    if (props.multiple) {
-      multiSelected.value.push(data.url)
-    } else {
-      selected.value = data.url
-      selectedName.value = file.name
+    for (const file of files) {
+      const fd = new FormData()
+      fd.append(props.uploadField, file)
+      if (props.collection) fd.append('collection', props.collection)
+      if (props.entityType) fd.append('entity_type', props.entityType)
+      if (props.entityId) fd.append('entity_id', props.entityId)
+      const { data } = await axios.post(props.uploadUrl, fd)
+      if (props.multiple) {
+        multiSelected.value.push(data.url)
+      } else {
+        selected.value = data.url
+        selectedName.value = file.name
+      }
     }
     page.value = 1
     await fetchMedia()
@@ -301,11 +326,16 @@ async function uploadFile(e) {
 function confirmSelect() {
   if (props.multiple) {
     if (multiSelected.value.length) {
-      emit('select', [...multiSelected.value])
+      const urls = [...multiSelected.value]
+      const names = multiSelected.value.map(url => {
+        const item = items.value.find(i => i.url === url)
+        return item?.original_name || url.split('/').pop()
+      })
+      emit('select', urls, names)
       emit('close')
     }
   } else if (selected.value) {
-    emit('select', selected.value)
+    emit('select', selected.value, selectedName.value)
     emit('close')
   }
 }

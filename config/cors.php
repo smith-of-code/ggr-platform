@@ -22,6 +22,7 @@ return [
     'allowed_origins' => [
         'https://lms.rosatom-travel.ru',
         'https://main.rosatom-travel.ru',
+        'https://rosatom-travel.ru',
     ],
 
     'allowed_origins_patterns' => [

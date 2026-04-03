@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\GeneratesUniqueSlug;
 use App\Http\Controllers\Controller;
 use App\Models\Direction;
 use App\Models\Lms\LmsForm;
 use App\Models\Tour;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DirectionController extends Controller
 {
+    use GeneratesUniqueSlug;
     public function index(): Response
     {
         $directions = Direction::orderBy('position')->orderBy('title')->paginate(15);
@@ -35,7 +36,7 @@ class DirectionController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateDirection($request);
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
+        $validated['slug'] = $this->uniqueSlug(Direction::class, $validated['title'], $validated['slug'] ?? null);
         $validated['is_active'] = $request->boolean('is_active', true);
 
         Direction::create($validated);
@@ -56,7 +57,7 @@ class DirectionController extends Controller
     public function update(Request $request, Direction $direction): RedirectResponse
     {
         $validated = $this->validateDirection($request);
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
+        $validated['slug'] = $this->uniqueSlug(Direction::class, $validated['title'], $validated['slug'] ?? null, $direction->id);
         $validated['is_active'] = $request->boolean('is_active', true);
 
         $direction->update($validated);

@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\GeneratesUniqueSlug;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Tour;
 use App\Models\TourDeparture;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TourController extends Controller
 {
+    use GeneratesUniqueSlug;
     public function index(): Response
     {
         $tours = Tour::with('cities')->orderBy('position')->orderBy('title')->paginate(15);
@@ -33,7 +34,7 @@ class TourController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateTour($request);
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
+        $validated['slug'] = $this->uniqueSlug(Tour::class, $validated['title'], $validated['slug'] ?? null);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['is_featured'] = $request->boolean('is_featured', false);
         $validated['bchp_participant'] = ($validated['participation_type'] ?? '') === 'bchp';
@@ -65,7 +66,7 @@ class TourController extends Controller
     public function update(Request $request, Tour $tour): RedirectResponse
     {
         $validated = $this->validateTour($request);
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
+        $validated['slug'] = $this->uniqueSlug(Tour::class, $validated['title'], $validated['slug'] ?? null, $tour->id);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['is_featured'] = $request->boolean('is_featured', false);
         $validated['bchp_participant'] = ($validated['participation_type'] ?? '') === 'bchp';

@@ -37,15 +37,10 @@
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            <div v-else-if="templateUploading" class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
-              <svg class="h-4 w-4 animate-spin text-rosatom-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-              <span class="text-sm text-gray-500">Загрузка…</span>
-            </div>
-            <label v-else class="group flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-3 transition hover:border-rosatom-400 hover:bg-rosatom-50/30">
+            <button v-else type="button" class="group flex w-full cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-3 transition hover:border-rosatom-400 hover:bg-rosatom-50/30" @click="openTplPicker('main')">
               <svg class="h-5 w-5 text-gray-400 group-hover:text-rosatom-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
               <span class="text-sm text-gray-500 group-hover:text-gray-700">Выберите файл шаблона</span>
-              <input type="file" class="hidden" @change="uploadTemplate" />
-            </label>
+            </button>
           </div>
 
           <div>
@@ -116,15 +111,10 @@
                         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                       </button>
                     </div>
-                    <div v-else-if="task._uploading" class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
-                      <svg class="h-3.5 w-3.5 animate-spin text-rosatom-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                      <span class="text-xs text-gray-500">Загрузка…</span>
-                    </div>
-                    <label v-else class="group flex cursor-pointer items-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 bg-white px-3 py-2 text-xs transition hover:border-rosatom-400">
+                    <button v-else type="button" class="group flex w-full cursor-pointer items-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 bg-white px-3 py-2 text-xs transition hover:border-rosatom-400 hover:bg-rosatom-50/30" @click="openTplPicker('task', idx)">
                       <svg class="h-4 w-4 text-gray-400 group-hover:text-rosatom-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
                       <span class="text-gray-500">Загрузить шаблон</span>
-                      <input type="file" class="hidden" @change="e => uploadTaskTemplate(e, idx)" />
-                    </label>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -151,19 +141,30 @@
         <Link :href="route('lms.admin.assignments.index', event.slug)" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Отмена</Link>
       </div>
     </form>
+
+    <MediaPickerModal
+      :show="tplPicker.show"
+      :api-url="route('admin.media.index')"
+      :upload-url="route('admin.upload.file')"
+      accept="*"
+      file-type="all"
+      upload-field="file"
+      @close="tplPicker.show = false"
+      @select="onTplPickerSelect"
+    />
   </LmsAdminLayout>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import axios from 'axios'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 import { ChevronUpIcon, ChevronDownIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({ event: Object, assignment: Object })
 
-const templateUploading = ref(false)
+const tplPicker = ref({ show: false, target: 'main', idx: -1 })
 
 function emptyTask() {
   return { title: '', description: '', response_type: 'file', template_file: '', template_file_name: '', position: 0, _uploading: false }
@@ -213,39 +214,21 @@ function removeTemplate() {
   form.template_file_name = ''
 }
 
-async function uploadTemplate(e) {
-  const file = e.target.files[0]
-  if (!file) return
-  templateUploading.value = true
-  try {
-    const fd = new FormData()
-    fd.append('file', file)
-    const { data } = await axios.post(route('lms.admin.upload.file', props.event.slug), fd)
-    form.template_file = data.url
-    form.template_file_name = data.name
-  } catch (err) {
-    alert('Ошибка загрузки: ' + (err.response?.data?.message ?? err.message))
-  } finally {
-    templateUploading.value = false
-  }
+function openTplPicker(target, idx = -1) {
+  tplPicker.value = { show: true, target, idx }
 }
 
-async function uploadTaskTemplate(e, idx) {
-  const file = e.target.files[0]
-  if (!file) return
-  const task = form.tasks[idx]
-  task._uploading = true
-  try {
-    const fd = new FormData()
-    fd.append('file', file)
-    const { data } = await axios.post(route('lms.admin.upload.file', props.event.slug), fd)
-    task.template_file = data.url
-    task.template_file_name = data.name
-  } catch (err) {
-    alert('Ошибка загрузки: ' + (err.response?.data?.message ?? err.message))
-  } finally {
-    task._uploading = false
+function onTplPickerSelect(url, name) {
+  const resolvedName = name || url.split('/').pop()
+  if (tplPicker.value.target === 'main') {
+    form.template_file = url
+    form.template_file_name = resolvedName
+  } else if (tplPicker.value.idx >= 0) {
+    const task = form.tasks[tplPicker.value.idx]
+    task.template_file = url
+    task.template_file_name = resolvedName
   }
+  tplPicker.value = { show: false, target: 'main', idx: -1 }
 }
 
 function submit() {

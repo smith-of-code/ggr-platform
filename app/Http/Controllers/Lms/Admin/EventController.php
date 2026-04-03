@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Lms\Admin;
 
+use App\Http\Controllers\Concerns\GeneratesUniqueSlug;
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class EventController extends Controller
 {
+    use GeneratesUniqueSlug;
     public function index(): Response
     {
         $events = LmsEvent::orderBy('created_at', 'desc')->paginate(15);
@@ -30,13 +31,13 @@ class EventController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:lms_events,slug'],
+            'slug' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'menu_config' => ['nullable', 'array'],
             'menu_config.*' => ['boolean'],
         ]);
 
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
+        $validated['slug'] = $this->uniqueSlug(LmsEvent::class, $validated['title'], $validated['slug'] ?? null);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['auth_method'] = 'email';
 
@@ -63,13 +64,13 @@ class EventController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:lms_events,slug,' . $event->id],
+            'slug' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'menu_config' => ['nullable', 'array'],
             'menu_config.*' => ['boolean'],
         ]);
 
-        $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']);
+        $validated['slug'] = $this->uniqueSlug(LmsEvent::class, $validated['title'], $validated['slug'] ?? null, $event->id);
         $validated['is_active'] = $request->boolean('is_active', true);
 
         $event->update($validated);

@@ -39,36 +39,14 @@
         <div class="mx-1 h-5 w-px bg-gray-200" />
 
         <button
-          type="button"
-          class="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
-          title="Вставить изображение"
-          @click="openImagePicker"
-        >
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
-        </button>
-
-        <button
           v-if="mediaPickerUrl"
           type="button"
           class="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
-          title="Из библиотеки"
+          title="Вставить изображение"
           @click="showMediaPicker = true"
         >
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
         </button>
-
-        <input
-          ref="fileInput"
-          type="file"
-          accept="image/*"
-          class="hidden"
-          @change="handleFileUpload"
-        />
-      </div>
-
-      <div v-if="uploading" class="flex items-center gap-2 border-b border-gray-100 bg-gray-50 px-4 py-2 text-xs text-gray-500">
-        <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-        Загрузка изображения...
       </div>
 
       <EditorContent :editor="editor" class="prose prose-sm max-w-none px-4 py-3 [&_.ProseMirror:focus]:outline-none [&_.ProseMirror]:min-h-[120px] [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded-lg" />
@@ -95,7 +73,6 @@ import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Underline from '@tiptap/extension-underline'
 import Image from '@tiptap/extension-image'
-import axios from 'axios'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
 const props = defineProps({
@@ -110,8 +87,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const fileInput = ref(null)
-const uploading = ref(false)
 const showMediaPicker = ref(false)
 
 const editor = useEditor({
@@ -204,46 +179,9 @@ function setLink() {
   editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
 }
 
-function openImagePicker() {
-  if (props.uploadUrl) {
-    fileInput.value?.click()
-  } else {
-    const url = window.prompt('URL изображения', 'https://')
-    if (url) {
-      editor.value?.chain().focus().setImage({ src: url }).run()
-    }
-  }
-}
-
 function onMediaSelect(url) {
   if (url) {
     editor.value?.chain().focus().setImage({ src: url }).run()
-  }
-}
-
-async function handleFileUpload(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
-
-  uploading.value = true
-  try {
-    const formData = new FormData()
-    formData.append('image', file)
-    if (props.collection) formData.append('collection', props.collection)
-    if (props.entityType) formData.append('entity_type', props.entityType)
-    if (props.entityId) formData.append('entity_id', props.entityId)
-    const { data } = await axios.post(props.uploadUrl, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-    if (data.url) {
-      editor.value?.chain().focus().setImage({ src: data.url }).run()
-    }
-  } catch (err) {
-    const msg = err.response?.data?.message || 'Ошибка загрузки'
-    alert(msg)
-  } finally {
-    uploading.value = false
-    if (fileInput.value) fileInput.value.value = ''
   }
 }
 

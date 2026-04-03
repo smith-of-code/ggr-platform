@@ -1,5 +1,6 @@
 <template>
   <div class="flex min-h-screen bg-gray-50 font-sans">
+    <ToastNotifications />
     <RSidebar
       :items="sidebarItems"
       :active-item="activeItemId"
@@ -74,6 +75,7 @@
 import { usePage, router } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import { CheckCircleIcon } from '@heroicons/vue/24/outline'
+import ToastNotifications from '@/Components/ToastNotifications.vue'
 
 const props = defineProps({
   event: { type: Object, default: null },

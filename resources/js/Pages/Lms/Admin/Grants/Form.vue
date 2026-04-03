@@ -66,16 +66,18 @@
           </div>
         </div>
 
-        <div>
-          <input
-            type="file"
-            multiple
-            ref="fileInput"
-            class="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-200 file:px-4 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-300"
-            @change="onFilesChange"
-          />
-          <p class="mt-1 text-xs text-gray-400">PDF, DOC, DOCX, JPG, PNG — до 10 МБ каждый</p>
+        <div v-if="mediaDocItems.length" class="mb-4 space-y-2">
+          <div v-for="(item, mi) in mediaDocItems" :key="mi" class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+            <span class="truncate text-sm text-gray-700">{{ item.name }}</span>
+            <button type="button" class="text-sm text-red-500 hover:underline" @click="removeMediaDoc(mi)">Удалить</button>
+          </div>
         </div>
+
+        <button type="button" class="flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-5 py-3 text-sm font-medium text-gray-600 transition hover:border-rosatom-400 hover:bg-rosatom-50/30 hover:text-rosatom-600" @click="showDocPicker = true">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          Добавить документы
+        </button>
+        <p class="mt-2 text-xs text-gray-400">PDF, DOC, DOCX, JPG, PNG — до 10 МБ. Загрузка и выбор через медиа-библиотеку.</p>
       </RCard>
 
       <div class="flex gap-3">
@@ -87,6 +89,21 @@
         </Link>
       </div>
     </form>
+
+    <MediaPickerModal
+      :show="showDocPicker"
+      :api-url="route('admin.media.index')"
+      :upload-url="route('admin.upload.file')"
+      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf"
+      file-type="all"
+      upload-field="file"
+      collection="lms_grants"
+      :entity-type="mediaEntityType"
+      :entity-id="mediaEntityId"
+      multiple
+      @close="showDocPicker = false"
+      @select="onDocPickerSelect"
+    />
   </LmsAdminLayout>
 </template>
 
@@ -96,6 +113,7 @@ import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import MultiSelect from '@/Components/MultiSelect.vue'
+import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
 const props = defineProps({
   event: Object,
@@ -121,6 +139,9 @@ const CITY_NAMES = [
 ]
 const cityOptions = CITY_NAMES.map(name => ({ value: name, label: name }))
 
+const showDocPicker = ref(false)
+const mediaDocItems = ref([])
+
 const form = useForm({
   title: props.grant?.title ?? '',
   type: props.grant?.type ?? 'grant',
@@ -130,7 +151,8 @@ const form = useForm({
   application_end: props.grant?.application_end?.substring(0, 10) ?? '',
   is_active: props.grant?.is_active ?? true,
   keep_document_ids: (props.grant?.documents || []).map(d => d.id),
-  new_documents: [],
+  media_document_urls: [],
+  media_document_names: [],
 })
 
 const existingDocs = ref([...(props.grant?.documents || [])])
@@ -140,8 +162,24 @@ function removeExistingDoc(id) {
   form.keep_document_ids = existingDocs.value.map(d => d.id)
 }
 
-function onFilesChange(e) {
-  form.new_documents = Array.from(e.target.files || [])
+function onDocPickerSelect(urls, names) {
+  const urlList = Array.isArray(urls) ? urls : [urls]
+  const nameList = Array.isArray(names) ? names : [names || urlList[0]?.split('/').pop() || '']
+  urlList.forEach((url, i) => {
+    mediaDocItems.value.push({ url, name: nameList[i] || url.split('/').pop() })
+  })
+  syncMediaDocs()
+  showDocPicker.value = false
+}
+
+function removeMediaDoc(idx) {
+  mediaDocItems.value.splice(idx, 1)
+  syncMediaDocs()
+}
+
+function syncMediaDocs() {
+  form.media_document_urls = mediaDocItems.value.map(d => d.url)
+  form.media_document_names = mediaDocItems.value.map(d => d.name)
 }
 
 function submit() {
