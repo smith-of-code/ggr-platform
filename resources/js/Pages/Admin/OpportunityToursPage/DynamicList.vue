@@ -81,7 +81,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-500">{{ field.label }}</label>
               <FieldRenderer
                 :field="field" :item="item" :idx="idx"
-                @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker"
+                @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker" @file-pick="openFilePicker"
               />
             </template>
           </div>
@@ -164,6 +164,7 @@
                   <input type="file" :accept="field.accept || '*'" class="hidden" @change="handleFileUpload($event, idx, field.key)" />
                   Заменить
                 </label>
+                <button type="button" class="shrink-0 text-xs font-medium text-[#003274] hover:underline" @click="openFilePicker(idx, field.key, field.accept || '*', field.accept === 'video/*' ? 'video' : 'all')">Библиотека</button>
               </div>
             </template>
 
@@ -172,7 +173,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-500">{{ field.label }}</label>
               <FieldRenderer
                 :field="field" :item="item" :idx="idx"
-                @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker"
+                @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker" @file-pick="openFilePicker"
               />
               <button
                 v-if="!field.type && field.parseIframe && item[field.key]"
@@ -199,7 +200,7 @@
             <label class="mb-1 block text-xs font-medium text-gray-500">{{ field.label }}</label>
             <FieldRenderer
               :field="field" :item="item" :idx="idx"
-              @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker"
+              @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker" @file-pick="openFilePicker"
             />
           </div>
         </div>
@@ -207,7 +208,7 @@
           <label class="mb-1 block text-xs font-medium text-gray-500">{{ field.label }}</label>
           <FieldRenderer
             :field="field" :item="item" :idx="idx"
-            @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker"
+            @update="updateField" @image-upload="handleImageUpload" @file-upload="handleFileUpload" @media-pick="openMediaPicker" @file-pick="openFilePicker"
           />
         </div>
       </div>
@@ -231,6 +232,17 @@
       @close="mediaPicker.show = false"
       @select="onMediaPickerSelect"
     />
+
+    <MediaPickerModal
+      :show="filePicker.show"
+      :api-url="route('admin.media.index')"
+      :upload-url="route('admin.upload.file')"
+      :accept="filePicker.accept"
+      :file-type="filePicker.fileType"
+      upload-field="file"
+      @close="filePicker.show = false"
+      @select="onFilePickerSelect"
+    />
   </div>
 </template>
 
@@ -250,6 +262,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'preview', 'lightbox'])
 
 const mediaPicker = ref({ show: false, idx: -1, key: '' })
+const filePicker = ref({ show: false, idx: -1, key: '', accept: '*', fileType: 'all' })
 
 function openMediaPicker(idx, key) {
   mediaPicker.value = { show: true, idx, key }
@@ -259,6 +272,16 @@ function onMediaPickerSelect(url) {
   const { idx, key } = mediaPicker.value
   if (idx >= 0 && key) updateField(idx, key, toRelativeUrl(url))
   mediaPicker.value = { show: false, idx: -1, key: '' }
+}
+
+function openFilePicker(idx, key, accept, fileType) {
+  filePicker.value = { show: true, idx, key, accept: accept || '*', fileType: fileType || 'all' }
+}
+
+function onFilePickerSelect(url) {
+  const { idx, key } = filePicker.value
+  if (idx >= 0 && key) updateField(idx, key, toRelativeUrl(url))
+  filePicker.value = { show: false, idx: -1, key: '', accept: '*', fileType: 'all' }
 }
 
 const hasTwoColumnLayout = computed(() =>
@@ -373,7 +396,7 @@ const FieldRenderer = defineComponent({
     item: { type: Object, required: true },
     idx: { type: Number, required: true },
   },
-  emits: ['update', 'image-upload', 'file-upload', 'media-pick'],
+  emits: ['update', 'image-upload', 'file-upload', 'media-pick', 'file-pick'],
   setup(props, { emit }) {
     const inputClass = 'w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm transition focus:border-[#003274] focus:ring-[#003274]/10'
 
@@ -432,6 +455,7 @@ const FieldRenderer = defineComponent({
       }
 
       if (field.type === 'file-upload') {
+        const fileType = field.accept === 'video/*' ? 'video' : (field.accept === '.pdf' ? 'document' : 'all')
         return h('div', { class: 'space-y-2' }, [
           h('div', { class: 'flex items-center gap-2' }, [
             h('input', {
@@ -444,6 +468,11 @@ const FieldRenderer = defineComponent({
               h('input', { type: 'file', accept: field.accept || '*', class: 'hidden', onChange: e => emit('file-upload', e, idx, field.key) }),
               'Загрузить',
             ]),
+            h('button', {
+              type: 'button',
+              class: 'shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-[#003274] transition hover:border-[#003274]/30',
+              onClick: () => emit('file-pick', idx, field.key, field.accept || '*', fileType),
+            }, 'Библиотека'),
           ]),
           val
             ? h('div', { class: 'flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2' }, [

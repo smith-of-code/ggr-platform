@@ -109,21 +109,16 @@
                 <div v-if="item.file_path && !item._uploading" class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
                   <svg class="h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                   <span class="flex-1 truncate text-sm text-gray-700">{{ item._fileName || item.file_path }}</span>
+                  <button type="button" class="text-xs font-medium text-rosatom-600 hover:underline" @click="openKbFilePicker(idx)">Заменить</button>
                   <button type="button" class="text-gray-400 hover:text-red-500" @click="item.file_path = ''; item._fileName = ''">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
 
-                <div v-else-if="item._uploading" class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
-                  <svg class="h-4 w-4 animate-spin text-rosatom-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                  <span class="text-sm text-gray-500">Загрузка…</span>
-                </div>
-
-                <label v-else class="group flex cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-3 transition hover:border-rosatom-400 hover:bg-rosatom-50/30">
+                <button v-else type="button" class="group flex w-full cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-3 transition hover:border-rosatom-400 hover:bg-rosatom-50/30" @click="openKbFilePicker(idx)">
                   <svg class="h-5 w-5 text-gray-400 group-hover:text-rosatom-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
                   <span class="text-sm text-gray-500 group-hover:text-gray-700">Выберите файл</span>
-                  <input type="file" class="hidden" :accept="item.type === 'video' ? 'video/*' : '*'" @change="e => uploadFile(e, idx)" />
-                </label>
+                </button>
               </div>
             </div>
           </div>
@@ -142,15 +137,28 @@
         <Link :href="route('lms.admin.kb.index', event.slug)" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">Отмена</Link>
       </div>
     </form>
+
+    <MediaPickerModal
+      :show="kbFilePicker.show"
+      :api-url="route('admin.media.index')"
+      :upload-url="route('admin.upload.file')"
+      :accept="form.items[kbFilePicker.idx]?.type === 'video' ? 'video/*' : '*'"
+      :file-type="form.items[kbFilePicker.idx]?.type === 'video' ? 'video' : 'all'"
+      upload-field="file"
+      @close="kbFilePicker.show = false"
+      @select="onKbFilePickerSelect"
+    />
   </LmsAdminLayout>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import axios from 'axios'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
 const props = defineProps({ event: Object, section: Object, parentSections: Array, groups: Array })
+const kbFilePicker = ref({ show: false, idx: -1 })
 
 function makeItem(overrides = {}) {
   return {
@@ -190,25 +198,18 @@ function addItem() {
   form.items.push(makeItem({ position: form.items.length }))
 }
 
-async function uploadFile(e, idx) {
-  const file = e.target.files[0]
-  if (!file) return
+function openKbFilePicker(idx) {
+  kbFilePicker.value = { show: true, idx }
+}
 
-  const item = form.items[idx]
-  item._uploading = true
-
-  const fd = new FormData()
-  fd.append('file', file)
-
-  try {
-    const { data } = await axios.post(route('lms.admin.upload.file', props.event.slug), fd)
-    item.file_path = data.url
-    item._fileName = data.name
-  } catch (err) {
-    alert('Ошибка загрузки: ' + (err.response?.data?.message ?? err.message))
-  } finally {
-    item._uploading = false
+function onKbFilePickerSelect(url, name) {
+  const { idx } = kbFilePicker.value
+  if (idx >= 0) {
+    const item = form.items[idx]
+    item.file_path = url
+    item._fileName = name || url.split('/').pop()
   }
+  kbFilePicker.value = { show: false, idx: -1 }
 }
 
 function submit() {

@@ -32,8 +32,23 @@ class UploadController extends Controller
                 throw new \RuntimeException("putFileAs returned empty path (disk: {$disk})");
             }
 
+            $url = Storage::disk($disk)->url($path);
+
+            UploadedMedia::create([
+                'filename' => $filename,
+                'original_name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'url' => $url,
+                'disk' => $disk,
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'collection' => $request->input('collection'),
+                'entity_type' => $request->input('entity_type'),
+                'entity_id' => $request->input('entity_id'),
+            ]);
+
             return response()->json([
-                'url' => Storage::disk($disk)->url($path),
+                'url' => $url,
                 'name' => $file->getClientOriginalName(),
             ]);
         } catch (\Throwable $e) {
@@ -146,6 +161,18 @@ class UploadController extends Controller
         $baseQuery = UploadedMedia::latest();
         if ($request->filled('search')) {
             $baseQuery->where('original_name', 'ilike', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('type') && $request->type !== 'all') {
+            $mimePrefix = match ($request->type) {
+                'image' => 'image/',
+                'video' => 'video/',
+                'document' => 'application/',
+                default => null,
+            };
+            if ($mimePrefix) {
+                $baseQuery->where('mime_type', 'like', $mimePrefix . '%');
+            }
         }
 
         $query = clone $baseQuery;

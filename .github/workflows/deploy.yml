@@ -61,5 +61,6 @@ jobs:
           echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USER" --password-stdin
 
           cd "$DOCKER_COMPOSE_DIR"
+          bash db.sh prod dump
           bash run.sh prod
           EOF

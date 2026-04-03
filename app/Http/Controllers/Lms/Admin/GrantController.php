@@ -122,15 +122,27 @@ class GrantController extends Controller
                 $doc->delete();
             });
 
+        $maxPos = $grant->documents()->max('position') ?? -1;
+
         if ($request->hasFile('new_documents')) {
             $disk = config('filesystems.upload_disk');
-            $maxPos = $grant->documents()->max('position') ?? -1;
 
             foreach ($request->file('new_documents') as $file) {
                 $path = $file->store('grant-documents/' . $grant->id, $disk);
                 $grant->documents()->create([
                     'file_path' => $path,
                     'original_name' => $file->getClientOriginalName(),
+                    'position' => ++$maxPos,
+                ]);
+            }
+        }
+
+        if ($request->filled('media_document_urls')) {
+            $names = $request->input('media_document_names', []);
+            foreach ($request->input('media_document_urls') as $i => $url) {
+                $grant->documents()->create([
+                    'file_path' => $url,
+                    'original_name' => $names[$i] ?? basename(parse_url($url, PHP_URL_PATH) ?: $url),
                     'position' => ++$maxPos,
                 ]);
             }
