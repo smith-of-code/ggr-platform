@@ -387,16 +387,19 @@
             </dl>
 
             <!-- Sidebar departures -->
-            <div v-if="tour.departures?.length" class="mt-6 border-t border-gray-100 pt-5">
+            <div v-if="tour.departures?.length || tour.departure_text_blocks?.length" class="mt-6 border-t border-gray-100 pt-5">
               <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-400">Даты заезда</p>
               <div class="space-y-2">
-                <div v-for="dep in tour.departures.slice(0, 3)" :key="dep.id" class="cursor-pointer rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 transition hover:border-[#003274]/20 hover:bg-blue-50/50" @click="scrollToSection('dates')">
-                  <p class="text-sm font-medium text-gray-900">{{ formatDateShort(dep.start_date) }}–{{ formatDateShort(dep.end_date) }}</p>
-                  <p v-if="dep.price_per_person" class="text-xs text-gray-500">{{ formatPrice(dep.price_per_person) }} &#8381; за человека</p>
-                </div>
-                <button v-if="tour.departures.length > 3" type="button" class="w-full cursor-pointer rounded-lg border border-gray-200 bg-white py-2 text-center text-sm font-medium text-gray-600 transition hover:bg-gray-50" @click="scrollToSection('dates')">
-                  смотреть все даты
-                </button>
+                <template v-for="item in sidebarDepartureItems" :key="item._key">
+                  <div v-if="item._type === 'text'" class="rounded-lg border border-[#003274]/10 bg-[#003274]/[0.03] px-3 py-2.5">
+                    <p class="text-sm font-semibold text-gray-900">{{ item.title }}</p>
+                    <p v-if="item.subtitle" class="mt-0.5 text-xs text-gray-500">{{ item.subtitle }}</p>
+                  </div>
+                  <div v-else class="cursor-pointer rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 transition hover:border-[#003274]/20 hover:bg-blue-50/50" @click="scrollToSection('dates')">
+                    <p class="text-sm font-medium text-gray-900">{{ formatDateShort(item.start_date) }}–{{ formatDateShort(item.end_date) }}</p>
+                    <p v-if="item.price_per_person" class="text-xs text-gray-500">{{ formatPrice(item.price_per_person) }} &#8381; за человека</p>
+                  </div>
+                </template>
               </div>
             </div>
 
@@ -654,6 +657,25 @@ const videoEmbeds = computed(() => {
   const vids = props.tour.videos
   if (!Array.isArray(vids)) return []
   return vids.map(parseEmbed).filter(Boolean)
+})
+
+const sidebarDepartureItems = computed(() => {
+  const items = []
+  const textBlocks = (props.tour.departure_text_blocks || []).map((b, i) => ({
+    ...b,
+    _type: 'text',
+    _key: `text-${i}`,
+    _pos: b.position ?? 0,
+  }))
+  const deps = (props.tour.departures || []).slice(0, 3).map((d, i) => ({
+    ...d,
+    _type: 'departure',
+    _key: `dep-${d.id || i}`,
+    _pos: i + 1,
+  }))
+  items.push(...textBlocks, ...deps)
+  items.sort((a, b) => a._pos - b._pos)
+  return items
 })
 
 function openLightbox(index) { lightboxIndex.value = index }

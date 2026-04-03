@@ -32,6 +32,7 @@ class Tour extends Model
         'departure_info',
         'accommodation_info',
         'accommodations',
+        'departure_text_blocks',
         'conditions',
         'cost_info',
         'application_info',
@@ -60,6 +61,7 @@ class Tour extends Model
         'videos' => 'array',
         'program_days' => 'array',
         'accommodations' => 'array',
+        'departure_text_blocks' => 'array',
     ];
 
     public function cities(): BelongsToMany

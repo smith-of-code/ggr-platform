@@ -330,7 +330,7 @@
           <RCard elevation="raised">
             <h2 class="mb-4 text-base font-bold text-gray-900">Даты заездов</h2>
             <div class="space-y-3">
-              <div v-for="(dep, i) in form.departures" :key="i" class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <div v-for="(dep, i) in form.departures" :key="'dep-' + i" class="rounded-xl border border-gray-200 bg-gray-50 p-3">
                 <div class="space-y-2">
                   <input v-model="dep.start_date" type="date" class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm" />
                   <input v-model="dep.end_date" type="date" class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm" />
@@ -350,6 +350,36 @@
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               </template>
               Добавить дату
+            </RButton>
+
+            <!-- Departure text blocks -->
+            <div v-if="form.departure_text_blocks.length" class="mt-5 border-t border-gray-200 pt-5">
+              <p class="mb-3 text-sm font-semibold text-gray-600">Текстовые блоки</p>
+              <div class="space-y-3">
+                <div v-for="(block, bi) in form.departure_text_blocks" :key="'tb-' + bi" class="rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+                  <div class="mb-2 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-blue-600">Блок {{ bi + 1 }}</span>
+                    <button type="button" class="text-red-400 hover:text-red-600" @click="form.departure_text_blocks.splice(bi, 1)">
+                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                  <div class="space-y-2">
+                    <input v-model="block.title" type="text" placeholder="Заголовок" class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm" />
+                    <input v-model="block.subtitle" type="text" placeholder="Подзаголовок" class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm" />
+                    <div class="flex items-center gap-2">
+                      <label class="text-xs text-gray-500">Позиция</label>
+                      <input v-model.number="block.position" type="number" min="0" placeholder="0" class="w-20 rounded-lg border-gray-200 bg-white px-2 py-1.5 text-xs" />
+                      <span class="text-xs text-gray-400">0 = перед датами, 999 = после</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <RButton type="button" variant="outline" block class="mt-3" @click="form.departure_text_blocks.push({ title: '', subtitle: '', position: form.departure_text_blocks.length })">
+              <template #icon>
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>
+              </template>
+              Добавить текстовый блок
             </RButton>
           </RCard>
         </div>
@@ -609,6 +639,9 @@ const form = useForm({
         price_per_person: d.price_per_person ?? '',
       }))
     : [{ start_date: '', end_date: '', price_per_person: '' }],
+  departure_text_blocks: props.tour?.departure_text_blocks?.length
+    ? props.tour.departure_text_blocks.map(b => ({ title: b.title ?? '', subtitle: b.subtitle ?? '', position: b.position ?? 0 }))
+    : [],
 })
 
 function submit() {
