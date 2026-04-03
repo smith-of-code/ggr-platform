@@ -153,7 +153,7 @@ const scrolled = ref(false)
 const hiddenPages = computed(() => page.props.hiddenPages || [])
 
 const allNavItems = computed(() => [
-  { slug: null, label: 'Главная', href: route('home'), active: page.url === '/' },
+  { slug: 'home', label: 'Главная', href: route('home'), active: page.url === '/' },
   { slug: 'cities', label: 'Города', href: route('cities.index'), active: page.url.startsWith('/cities') },
   { slug: 'tours', label: 'Каталог туров', href: route('tours.index'), active: page.url.startsWith('/tours') },
   { slug: 'opportunity-tours', label: 'Туры возможностей', href: route('opportunity-tours.index'), active: page.url.startsWith('/opportunity-tours') },
@@ -165,7 +165,7 @@ const allNavItems = computed(() => [
 ])
 
 const navItems = computed(() =>
-  allNavItems.value.filter(item => !item.slug || !hiddenPages.value.includes(item.slug))
+  allNavItems.value.filter(item => !hiddenPages.value.includes(item.slug))
 )
 
 function onScroll() {

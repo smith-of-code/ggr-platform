@@ -4,6 +4,11 @@ return [
 
     'pages' => [
         [
+            'slug' => 'home',
+            'label' => 'Главная',
+            'route_prefix' => '/',
+        ],
+        [
             'slug' => 'cities',
             'label' => 'Города',
             'route_prefix' => '/cities',
