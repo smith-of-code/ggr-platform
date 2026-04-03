@@ -75,7 +75,7 @@
 
     <!-- Crop Modal -->
     <teleport to="body">
-      <div v-if="showCropper" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @click.self="cancelCrop">
+      <div v-if="showCropper" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" @mousedown.self="cancelCrop">
         <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
           <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
             <h3 class="text-lg font-semibold text-gray-900">Обрезать изображение</h3>
