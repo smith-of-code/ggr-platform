@@ -5,12 +5,10 @@
       <div class="reveal mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div class="min-w-0 flex-1">
           <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">{{ tour.title }}</h1>
+          <div v-if="tour.cities?.length" class="mt-3 flex flex-wrap gap-2">
+            <RBadge v-for="city in tour.cities" :key="city.id" variant="info" size="md">{{ city.name }}</RBadge>
+          </div>
           <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-gray-600">
-            <span v-if="tour.start_city" class="flex items-center gap-1.5">
-              <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
-              Старт программы: {{ tour.start_city }}
-            </span>
-            <span class="hidden text-gray-300 sm:inline">|</span>
             <span v-if="tour.duration" class="flex items-center gap-1.5">
               <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
               {{ tour.duration }}
@@ -111,21 +109,11 @@
             </div>
           </section>
 
-          <!-- Город отправления -->
+          <!-- Логистические точки -->
           <section id="section-departure" v-if="tour.start_city || tour.departure_info" class="reveal mt-10">
-            <h2 class="text-xl font-bold text-gray-900">Город отправления</h2>
-            <div class="mt-4 space-y-3">
-              <div v-if="tour.start_city" class="flex items-start gap-3">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-                  <svg class="h-4 w-4 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-500">Точка сбора</p>
-                  <p class="font-medium text-gray-900">{{ tour.start_city }}</p>
-                </div>
-              </div>
-              <div v-if="tour.departure_info" class="html-content text-base leading-relaxed text-gray-700" v-html="tour.departure_info" />
-            </div>
+            <h2 class="text-xl font-bold text-gray-900">Логистические точки</h2>
+            <p v-if="tour.start_city" class="mt-4 text-base leading-relaxed text-gray-700">{{ tour.start_city }}</p>
+            <div v-if="tour.departure_info" class="html-content mt-4 text-base leading-relaxed text-gray-700" v-html="tour.departure_info" />
           </section>
 
           <!-- Accommodations / Проживание -->
@@ -570,7 +558,7 @@ const showReviewForm = ref(false)
 const allTabs = [
   { id: 'description', label: 'Описание' },
   { id: 'program', label: 'Программа тура' },
-  { id: 'departure', label: 'Город отправления' },
+  { id: 'departure', label: 'Логистические точки' },
   { id: 'accommodation', label: 'Проживание' },
   { id: 'dates', label: 'Даты тура' },
   { id: 'memo', label: 'Памятка участника' },

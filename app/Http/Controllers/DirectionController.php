@@ -27,6 +27,7 @@ class DirectionController extends Controller
         if (!empty($ids)) {
             $featuredTours = Tour::whereIn('id', $ids)
                 ->where('is_active', true)
+                ->with('cities')
                 ->orderBy('position')
                 ->get();
         }

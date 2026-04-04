@@ -84,11 +84,16 @@
               </template>
               <div>
                 <div class="flex items-center gap-2">
-                  <RBadge variant="info" size="sm">{{ tour.start_city }}</RBadge>
-                  <span class="text-xs text-gray-400">{{ tour.duration }}</span>
+                  <RBadge variant="primary" size="sm">{{ tour.duration }}</RBadge>
                 </div>
                 <h3 class="mt-3 text-lg font-semibold text-gray-900 transition group-hover:text-[#003274]">{{ tour.title }}</h3>
-                <p class="mt-2 line-clamp-2 text-sm text-gray-500">{{ stripHtml(tour.description) }}</p>
+                <div v-if="tour.cities?.length" class="mt-1.5 flex flex-wrap gap-1.5">
+                  <RBadge v-for="city in tour.cities" :key="city.id" variant="info" size="md">{{ city.name }}</RBadge>
+                </div>
+                <p v-if="tour.start_city" class="mt-1.5 text-sm text-gray-500">
+                  <span class="font-medium text-gray-600">Логистические точки:</span> {{ tour.start_city }}
+                </p>
+                <p v-if="!tour.cities?.length && !tour.start_city" class="mt-2 line-clamp-2 text-sm text-gray-500">{{ stripHtml(tour.description) }}</p>
                 <div class="mt-4 flex items-center justify-between">
                   <p class="text-lg font-bold text-[#003274]">
                     <template v-if="tour.price_from > 0">от {{ formatPrice(tour.price_from) }} &#8381;</template>

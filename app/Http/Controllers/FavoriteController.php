@@ -66,6 +66,8 @@ class FavoriteController extends Controller
             ->filter()
             ->values();
 
+        $tours->load('cities');
+
         return Inertia::render('Favorites/Index', [
             'favorites' => [
                 'cities' => $cities,

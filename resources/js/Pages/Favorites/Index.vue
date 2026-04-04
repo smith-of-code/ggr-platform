@@ -69,7 +69,12 @@
               </div>
               <div class="p-4">
                 <h3 class="font-semibold text-gray-900 transition hover:text-[#003274]">{{ tour.title }}</h3>
-                <p v-if="tour.start_city" class="mt-1 text-sm text-gray-500">{{ tour.start_city }}</p>
+                <div v-if="tour.cities?.length" class="mt-1.5 flex flex-wrap gap-1.5">
+                  <RBadge v-for="city in tour.cities" :key="city.id" variant="info" size="md">{{ city.name }}</RBadge>
+                </div>
+                <p v-if="tour.start_city" class="mt-1 text-sm text-gray-500">
+                  <span class="font-medium text-gray-600">Логистические точки:</span> {{ tour.start_city }}
+                </p>
               </div>
             </Link>
             <div class="border-t border-gray-50 px-4 py-3">

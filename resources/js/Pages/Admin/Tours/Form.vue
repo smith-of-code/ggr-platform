@@ -20,7 +20,7 @@
                   <RInput v-model="form.title" label="Название *" :error="form.errors.title" required />
                 </div>
                 <RInput v-model="form.slug" label="Slug" />
-                <RInput v-model="form.start_city" label="Город старта" />
+                <RInput v-model="form.start_city" label="Логистические точки" placeholder="г. Волгодонск, г. Ростов-на-Дону, г. Волгоград" />
                 <div class="sm:col-span-2">
                   <RichTextEditor v-model="form.description" label="Описание тура" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="tours" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
                 </div>

@@ -16,7 +16,7 @@
         <thead>
           <tr class="border-b border-gray-100 bg-gray-50/50">
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Тур</th>
-            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Город старта</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Логистические точки</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Проект</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Цена</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Статус</th>
