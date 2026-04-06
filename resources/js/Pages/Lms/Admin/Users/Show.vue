@@ -40,20 +40,6 @@
               <p v-if="facultyLabel" class="text-xs text-gray-500">
                 <span class="font-medium text-gray-700">Факультет:</span> {{ facultyLabel }}
               </p>
-              <div class="mt-2 flex items-center gap-2">
-                <RBadge v-if="profile.direction_approved_at" variant="success" size="sm">Одобрено</RBadge>
-                <template v-else>
-                  <RBadge variant="warning" size="sm">Ожидает одобрения</RBadge>
-                </template>
-              </div>
-              <div class="mt-2 flex gap-2">
-                <RButton v-if="!profile.direction_approved_at" variant="primary" size="sm" @click="approveDir">
-                  Одобрить
-                </RButton>
-                <RButton v-else variant="outline" size="sm" @click="rejectDir">
-                  Отменить одобрение
-                </RButton>
-              </div>
             </div>
           </div>
         </RCard>
@@ -229,18 +215,6 @@ function unenrollFromCourse(enrollment) {
   const courseName = enrollment.course?.title || 'курса'
   if (!confirm(`Отписать участника от «${courseName}»? Прогресс обучения будет удалён.`)) return
   router.delete(route('lms.admin.enrollments.destroy', [props.event.slug, enrollment.id]))
-}
-
-function approveDir() {
-  router.post(route('lms.admin.users.approve-direction', [props.event.slug, props.profile.user_id]), {}, {
-    preserveScroll: true,
-  })
-}
-
-function rejectDir() {
-  router.post(route('lms.admin.users.reject-direction', [props.event.slug, props.profile.user_id]), {}, {
-    preserveScroll: true,
-  })
 }
 
 function downloadDocuments() {

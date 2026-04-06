@@ -10,6 +10,11 @@ class LmsAssignment extends Model
 {
     protected $table = 'lms_assignments';
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return $date->format('Y-m-d\TH:i:s');
+    }
+
     protected $fillable = [
         'lms_event_id',
         'title',

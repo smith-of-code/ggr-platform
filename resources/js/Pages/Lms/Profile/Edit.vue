@@ -125,28 +125,6 @@
               />
             </div>
 
-            <SearchSelect
-              v-model="form.direction"
-              :options="directionOptions"
-              value-key="value"
-              label-key="label"
-              label="Выберите своё направление *"
-              placeholder="Выберите направление"
-              :error="form.errors.direction"
-            />
-
-            <SearchSelect
-              v-if="form.direction"
-              v-model="form.faculty"
-              :options="facultyOptions"
-              value-key="value"
-              label-key="label"
-              label="Выберите факультет в рамках направления *"
-              placeholder="Выберите факультет"
-              :error="form.errors.faculty"
-              :disabled="facultyOptions.length === 1"
-            />
-
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-500">Описание проекта или идеи *</label>
               <textarea
@@ -212,61 +190,74 @@
         <template #default>
           <h2 class="mb-5 text-lg font-semibold text-gray-900">Документы</h2>
 
-          <div v-if="form.direction && form.faculty && !directionApproved"
-            class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
-          >
-            <p class="text-sm text-amber-800">
-              Ваше направление и факультет ожидают одобрения администратором.
-              После одобрения станет доступна загрузка заявления на зачисление.
-            </p>
-          </div>
-
           <div class="space-y-4">
             <div
-              v-for="dt in visibleDocConfig"
+              v-for="dt in docConfig"
               :key="dt.type"
-              class="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+              class="rounded-lg border border-gray-200 p-4"
             >
-              <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900">{{ dt.label }}</p>
-                <p v-if="uploadedDoc(dt.type)" class="mt-1 text-xs text-green-600">
-                  Загружен: {{ uploadedDoc(dt.type).original_name }}
-                </p>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <a
-                  v-if="dt.hasTemplate"
-                  :href="route('lms.profile.templates.download', { event: event?.slug, type: dt.type })"
-                  class="inline-flex items-center gap-1.5 rounded-lg bg-rosatom-50 px-3 py-1.5 text-sm font-medium text-rosatom-700 transition hover:bg-rosatom-100"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                  </svg>
-                  Скачать шаблон
-                </a>
-                <label class="cursor-pointer">
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    @change="(e) => uploadDoc(dt.type, e)"
-                  />
-                  <span class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-900">{{ dt.label }}</p>
+                  <p v-if="uploadedDoc(dt.type)" class="mt-1 text-xs text-green-600">
+                    Загружен: {{ uploadedDoc(dt.type).original_name }}
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <a
+                    v-if="dt.hasTemplate"
+                    :href="route('lms.profile.templates.download', { event: event?.slug, type: dt.type })"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-rosatom-50 px-3 py-1.5 text-sm font-medium text-rosatom-700 transition hover:bg-rosatom-100"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
-                    {{ uploadedDoc(dt.type) ? 'Заменить' : 'Загрузить' }}
-                  </span>
-                </label>
-                <button
-                  v-if="uploadedDoc(dt.type)"
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100"
-                  :disabled="docDeleteProcessing"
-                  @click="deleteDoc(uploadedDoc(dt.type).id)"
-                >
-                  Удалить
-                </button>
+                    Скачать шаблон
+                  </a>
+                  <label class="cursor-pointer">
+                    <input
+                      type="file"
+                      class="hidden"
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      @change="(e) => uploadDoc(dt.type, e)"
+                    />
+                    <span class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                      </svg>
+                      {{ uploadedDoc(dt.type) ? 'Заменить' : 'Загрузить' }}
+                    </span>
+                  </label>
+                  <button
+                    v-if="uploadedDoc(dt.type)"
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100"
+                    :disabled="docDeleteProcessing"
+                    @click="deleteDoc(uploadedDoc(dt.type).id)"
+                  >
+                    Удалить
+                  </button>
+                </div>
+              </div>
+
+              <!-- Enrollment templates block -->
+              <div v-if="dt.type === 'enrollment_application' && enrollmentTemplates.length" class="mt-3 border-t border-gray-100 pt-3">
+                <p class="mb-2 text-xs font-medium text-amber-700">
+                  Скачайте шаблон заявления строго в соответствии с выбранным направлением обучения
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <a
+                    v-for="tpl in enrollmentTemplates"
+                    :key="tpl.key"
+                    :href="route('lms.profile.templates.download', { event: event?.slug, type: 'enrollment_' + tpl.key })"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-rosatom-50 px-3 py-1.5 text-xs font-medium text-rosatom-700 transition hover:bg-rosatom-100"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    {{ tpl.label }}
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -379,10 +370,7 @@ const props = defineProps({
   missingFields: { type: Array, default: () => [] },
   documentTypes: { type: Array, default: () => [] },
   documentTypesWithTemplate: { type: Array, default: () => [] },
-  directions: { type: Object, default: () => ({}) },
-  directionFaculties: { type: Object, default: () => ({}) },
-  facultyLabels: { type: Object, default: () => ({}) },
-  directionApproved: { type: Boolean, default: false },
+  enrollmentTemplates: { type: Array, default: () => [] },
 })
 
 const page = usePage()
@@ -486,41 +474,8 @@ const form = useForm({
   position: props.profile?.position ?? '',
   project_description: props.profile?.project_description ?? '',
   preferred_channel: props.profile?.preferred_channel || 'max',
-  direction: props.profile?.direction ?? '',
-  faculty: props.profile?.faculty ?? '',
   avatar: null,
 })
-
-const directionOptions = computed(() =>
-  Object.entries(props.directions).map(([value, label]) => ({ value, label }))
-)
-
-const facultyOptions = computed(() => {
-  const dir = form.direction
-  if (!dir || !props.directionFaculties[dir]) return []
-  return props.directionFaculties[dir].map(key => ({
-    value: key,
-    label: props.facultyLabels[key] || key,
-  }))
-})
-
-watch(() => form.direction, (newDir, oldDir) => {
-  if (oldDir && newDir !== oldDir) {
-    const allowed = props.directionFaculties[newDir] || []
-    if (allowed.length === 1) {
-      form.faculty = allowed[0]
-    } else if (!allowed.includes(form.faculty)) {
-      form.faculty = ''
-    }
-  } else if (newDir && !oldDir) {
-    const allowed = props.directionFaculties[newDir] || []
-    if (allowed.length === 1) {
-      form.faculty = allowed[0]
-    }
-  }
-})
-
-const hasFacultySelected = computed(() => !!form.faculty)
 
 const avatarPreview = ref(null)
 
@@ -549,16 +504,12 @@ function submit() {
 
 // Documents
 const docConfig = [
-  { type: 'enrollment_application', label: 'Заявление на зачисление *', hasTemplate: true },
+  { type: 'enrollment_application', label: 'Заявление на зачисление *', hasTemplate: false },
   { type: 'snils', label: 'Скан СНИЛС *', hasTemplate: false },
   { type: 'diploma', label: 'Скан диплома о высшем или среднем образовании *', hasTemplate: false },
   { type: 'personal_data_consent', label: 'Согласие на обработку персональных данных *', hasTemplate: true },
   { type: 'name_change_certificate', label: 'Свидетельство о перемене фамилии (при наличии)', hasTemplate: false },
 ]
-
-const visibleDocConfig = computed(() =>
-  docConfig.filter(dt => dt.type !== 'enrollment_application' || props.directionApproved)
-)
 
 const docDeleteProcessing = ref(false)
 

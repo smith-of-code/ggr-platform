@@ -10,6 +10,11 @@ class LmsGrant extends Model
 {
     protected $table = 'lms_grants';
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return $date->format('Y-m-d\TH:i:s');
+    }
+
     public const TYPE_GRANT = 'grant';
     public const TYPE_SUBSIDY = 'subsidy';
     public const TYPE_CREDIT = 'credit';

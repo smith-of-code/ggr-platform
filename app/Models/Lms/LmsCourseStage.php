@@ -10,6 +10,11 @@ class LmsCourseStage extends Model
 {
     protected $table = 'lms_course_stages';
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return $date->format('Y-m-d\TH:i:s');
+    }
+
     protected $fillable = [
         'lms_course_id',
         'lms_course_module_id',

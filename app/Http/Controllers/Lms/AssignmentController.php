@@ -26,16 +26,24 @@ class AssignmentController extends Controller
             ->whereHas('course', fn($q) => $q->where('lms_event_id', $event->id))
             ->pluck('lms_course_id');
 
-        $assignmentIds = DB::table('lms_stage_blocks')
+        $courseAssignmentIds = DB::table('lms_stage_blocks')
             ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
             ->whereIn('lms_course_stages.lms_course_id', $enrolledCourseIds)
             ->whereNotNull('lms_stage_blocks.lms_assignment_id')
             ->distinct()
             ->pluck('lms_stage_blocks.lms_assignment_id');
 
+        $allLinkedAssignmentIds = DB::table('lms_stage_blocks')
+            ->whereNotNull('lms_assignment_id')
+            ->distinct()
+            ->pluck('lms_assignment_id');
+
         $assignmentsQuery = LmsAssignment::where('lms_event_id', $event->id)
             ->where('is_active', true)
-            ->whereIn('id', $assignmentIds);
+            ->where(function ($q) use ($courseAssignmentIds, $allLinkedAssignmentIds) {
+                $q->whereIn('id', $courseAssignmentIds)
+                  ->orWhereNotIn('id', $allLinkedAssignmentIds);
+            });
 
         if ($search = $request->get('search')) {
             $assignmentsQuery->where('title', 'ilike', '%' . $search . '%');
@@ -73,17 +81,23 @@ class AssignmentController extends Controller
         }
         $user = auth()->user();
 
-        $hasAccess = DB::table('lms_stage_blocks')
-            ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
-            ->join('lms_course_enrollments', function ($join) use ($user) {
-                $join->on('lms_course_enrollments.lms_course_id', '=', 'lms_course_stages.lms_course_id')
-                     ->where('lms_course_enrollments.user_id', '=', $user->id);
-            })
-            ->where('lms_stage_blocks.lms_assignment_id', $assignment->id)
+        $isLinkedToCourse = DB::table('lms_stage_blocks')
+            ->where('lms_assignment_id', $assignment->id)
             ->exists();
 
-        if (!$hasAccess) {
-            abort(403);
+        if ($isLinkedToCourse) {
+            $hasAccess = DB::table('lms_stage_blocks')
+                ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
+                ->join('lms_course_enrollments', function ($join) use ($user) {
+                    $join->on('lms_course_enrollments.lms_course_id', '=', 'lms_course_stages.lms_course_id')
+                         ->where('lms_course_enrollments.user_id', '=', $user->id);
+                })
+                ->where('lms_stage_blocks.lms_assignment_id', $assignment->id)
+                ->exists();
+
+            if (!$hasAccess) {
+                abort(403);
+            }
         }
 
         $assignment->load('tasks');

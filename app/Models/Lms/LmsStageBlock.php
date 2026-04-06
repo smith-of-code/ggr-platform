@@ -9,6 +9,11 @@ class LmsStageBlock extends Model
 {
     protected $table = 'lms_stage_blocks';
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return $date->format('Y-m-d\TH:i:s');
+    }
+
     protected $fillable = [
         'lms_course_stage_id',
         'type',

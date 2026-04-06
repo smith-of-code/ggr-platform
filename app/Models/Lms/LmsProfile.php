@@ -206,12 +206,6 @@ class LmsProfile extends Model
         if (! $this->position) {
             $missing[] = 'Должность';
         }
-        if (! $this->direction) {
-            $missing[] = 'Направление';
-        }
-        if (! $this->faculty) {
-            $missing[] = 'Факультет';
-        }
 
         $docLabels = [
             LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION => 'Заявление на зачисление',

@@ -113,7 +113,7 @@ class CourseController extends Controller
             $progress = $stageProgress->get($stage->id);
             $scheduledAt = $stage->blocks->whereNotNull('scheduled_at')->first()?->scheduled_at;
             $data = $stage->only(['id', 'title', 'description', 'type', 'position', 'is_locked', 'available_from', 'duration_minutes']);
-            $data['scheduled_at'] = $scheduledAt?->toIso8601String();
+            $data['scheduled_at'] = $scheduledAt?->format('Y-m-d\TH:i:s');
             return [
                 'stage' => $data,
                 'progress' => $progress?->only(['status', 'completed_at', 'score']),
