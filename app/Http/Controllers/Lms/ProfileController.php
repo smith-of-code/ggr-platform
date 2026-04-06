@@ -41,6 +41,10 @@ class ProfileController extends Controller
             'missingFields' => $profile->getMissingFields(),
             'documentTypes' => LmsProfileDocument::TYPES,
             'documentTypesWithTemplate' => LmsProfileDocument::TYPES_WITH_TEMPLATE,
+            'directions' => LmsProfile::DIRECTION_LABELS,
+            'directionFaculties' => LmsProfile::DIRECTION_FACULTIES,
+            'facultyLabels' => LmsProfile::FACULTY_LABELS,
+            'directionApproved' => $profile->isDirectionApproved(),
         ]);
     }
 
@@ -58,6 +62,8 @@ class ProfileController extends Controller
             'position' => ['nullable', 'string', 'max:255'],
             'project_description' => ['nullable', 'string', 'max:5000'],
             'preferred_channel' => ['nullable', Rule::in(['telegram', 'max'])],
+            'direction' => ['nullable', Rule::in(LmsProfile::DIRECTIONS)],
+            'faculty' => ['nullable', Rule::in(LmsProfile::FACULTIES)],
             'avatar' => ['nullable', 'image', 'max:2048'],
         ]);
 
@@ -84,6 +90,14 @@ class ProfileController extends Controller
         }
 
         unset($validated['avatar']);
+
+        if (
+            isset($validated['direction'], $validated['faculty']) &&
+            ($validated['direction'] !== $profile->direction || $validated['faculty'] !== $profile->faculty)
+        ) {
+            $validated['direction_approved_at'] = null;
+        }
+
         $profile->update($validated);
 
         if ($avatarUrl) {
@@ -157,14 +171,29 @@ class ProfileController extends Controller
             abort(404);
         }
 
-        $templatePath = resource_path("templates/profile/{$type}.docx");
+        if ($type === LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION) {
+            $profile = LmsProfile::where('lms_event_id', $event->id)
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
+
+            $faculty = $profile->faculty;
+            $templateFile = LmsProfile::FACULTY_ENROLLMENT_TEMPLATES[$faculty] ?? null;
+
+            if (! $templateFile) {
+                abort(404, 'Сначала выберите направление и факультет');
+            }
+
+            $templatePath = resource_path("templates/profile/enrollment/{$templateFile}");
+        } else {
+            $templatePath = resource_path("templates/profile/{$type}.docx");
+        }
 
         if (! file_exists($templatePath)) {
             abort(404, 'Шаблон пока не загружен');
         }
 
         $names = [
-            LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION => 'Заявление_на_зачисление.docx',
+            LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION => 'Заявление_на_зачисление.doc',
             LmsProfileDocument::TYPE_PERSONAL_DATA_CONSENT => 'Согласие_на_обработку_ПД.docx',
         ];
 

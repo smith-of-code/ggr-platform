@@ -10,12 +10,14 @@ use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsInvitation;
 use App\Models\Lms\LmsProfile;
+use App\Models\Lms\LmsProfileDocument;
 use App\Models\Lms\LmsRole;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -82,6 +84,8 @@ class UserController extends Controller
             'cities' => $cities,
             'filters' => $request->only(['role_id', 'group', 'search', 'status', 'city']),
             'invitations' => $invitations,
+            'directionLabels' => LmsProfile::DIRECTION_LABELS,
+            'facultyLabels' => LmsProfile::FACULTY_LABELS,
         ]);
     }
 
@@ -171,7 +175,7 @@ class UserController extends Controller
     {
         $profile = LmsProfile::where('lms_event_id', $event->id)
             ->where('user_id', $user->id)
-            ->with('lmsRole:id,name,slug')
+            ->with(['lmsRole:id,name,slug', 'documents'])
             ->firstOrFail();
 
         $profile->load('user:id,name,last_name,first_name,patronymic,email,phone,created_at');
@@ -184,12 +188,31 @@ class UserController extends Controller
         $roles = LmsRole::where('lms_event_id', $event->id)->orderBy('name')->get(['id', 'name', 'slug']);
         $courses = LmsCourse::where('lms_event_id', $event->id)->orderBy('title')->get(['id', 'title']);
 
+        $typeLabels = [
+            LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION => 'Заявление на зачисление',
+            LmsProfileDocument::TYPE_SNILS => 'СНИЛС',
+            LmsProfileDocument::TYPE_DIPLOMA => 'Диплом',
+            LmsProfileDocument::TYPE_PERSONAL_DATA_CONSENT => 'Согласие на обработку ПД',
+            LmsProfileDocument::TYPE_NAME_CHANGE_CERTIFICATE => 'Свидетельство о смене фамилии',
+        ];
+
+        $documents = $profile->documents->map(fn($doc) => [
+            'id' => $doc->id,
+            'type' => $doc->type,
+            'type_label' => $typeLabels[$doc->type] ?? $doc->type,
+            'original_name' => $doc->original_name,
+            'created_at' => $doc->created_at,
+        ]);
+
         return Inertia::render('Lms/Admin/Users/Show', [
             'event' => $event->only(['id', 'slug', 'title']),
             'profile' => $profile,
             'enrollments' => $enrollments,
             'roles' => $roles,
+            'directionLabels' => LmsProfile::DIRECTION_LABELS,
+            'facultyLabels' => LmsProfile::FACULTY_LABELS,
             'courses' => $courses,
+            'documents' => $documents,
         ]);
     }
 
@@ -367,11 +390,24 @@ class UserController extends Controller
                 $fullName = explode('@', $email)[0];
             }
 
+            $systemRolesMap = [
+                'admin' => 'admin', 'админ' => 'admin', 'администратор' => 'admin',
+                'curator' => 'curator', 'куратор' => 'curator',
+                'leader' => 'leader', 'лидер' => 'leader', 'тимлид' => 'leader',
+            ];
+
+            $profileRole = 'participant';
             $roleId = null;
+
             if ($roleName) {
-                $roleId = $rolesMap[mb_strtolower($roleName)] ?? null;
-                if (!$roleId) {
-                    $errors[] = "Строка {$rowNum}: роль «{$roleName}» не найдена";
+                $lowerRole = mb_strtolower($roleName);
+                if (isset($systemRolesMap[$lowerRole])) {
+                    $profileRole = $systemRolesMap[$lowerRole];
+                } else {
+                    $roleId = $rolesMap[$lowerRole] ?? null;
+                    if (!$roleId) {
+                        $errors[] = "Строка {$rowNum}: роль «{$roleName}» не найдена";
+                    }
                 }
             }
             $roleId = $roleId ?: ($request->default_role_id ?: null);
@@ -401,7 +437,7 @@ class UserController extends Controller
             $profile = LmsProfile::firstOrCreate(
                 ['user_id' => $user->id, 'lms_event_id' => $event->id],
                 [
-                    'role'       => 'participant',
+                    'role'       => $profileRole,
                     'lms_role_id' => $roleId,
                     'position'   => $position ?: null,
                     'city'       => $city ?: null,
@@ -410,6 +446,7 @@ class UserController extends Controller
             );
 
             $profile->update(array_filter([
+                'role'        => $profileRole,
                 'lms_role_id' => $roleId,
                 'position'    => $position ?: null,
                 'city'        => $city ?: null,
@@ -470,16 +507,29 @@ class UserController extends Controller
         if (!$sheetXml) { $zip->close(); return $rows; }
 
         $xml = simplexml_load_string($sheetXml);
+        $colIndex = function (string $ref): int {
+            $letters = preg_replace('/[0-9]/', '', $ref);
+            $index = 0;
+            for ($k = 0; $k < strlen($letters); $k++) {
+                $index = $index * 26 + (ord(strtoupper($letters[$k])) - ord('A') + 1);
+            }
+            return $index - 1;
+        };
+
         $allRows = [];
+        $maxCols = 0;
         foreach ($xml->sheetData->row as $row) {
             $cells = [];
             foreach ($row->c as $c) {
+                $ref = (string) $c->attributes()->r;
+                $ci = $colIndex($ref);
                 $val = (string) $c->v;
                 $type = (string) $c->attributes()->t;
                 if ($type === 's') {
                     $val = $strings[(int) $val] ?? $val;
                 }
-                $cells[] = $val;
+                $cells[$ci] = $val;
+                if ($ci >= $maxCols) $maxCols = $ci + 1;
             }
             $allRows[] = $cells;
         }
@@ -487,7 +537,11 @@ class UserController extends Controller
 
         if (count($allRows) < 2) return $rows;
 
-        $headers = $allRows[0];
+        $headers = [];
+        for ($j = 0; $j < $maxCols; $j++) {
+            $headers[$j] = $allRows[0][$j] ?? "col_{$j}";
+        }
+
         for ($i = 1; $i < count($allRows); $i++) {
             $row = [];
             foreach ($headers as $j => $h) {
@@ -496,6 +550,68 @@ class UserController extends Controller
             $rows[] = $row;
         }
         return $rows;
+    }
+
+    public function downloadUserDocuments(LmsEvent $event, User $user)
+    {
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->with('documents')
+            ->firstOrFail();
+
+        $documents = $profile->documents;
+
+        if ($documents->isEmpty()) {
+            return redirect()->back()->with('success', 'У пользователя нет загруженных документов');
+        }
+
+        $typeLabels = [
+            LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION => 'Заявление',
+            LmsProfileDocument::TYPE_SNILS => 'СНИЛС',
+            LmsProfileDocument::TYPE_DIPLOMA => 'Диплом',
+            LmsProfileDocument::TYPE_PERSONAL_DATA_CONSENT => 'Согласие_ПД',
+            LmsProfileDocument::TYPE_NAME_CHANGE_CERTIFICATE => 'Смена_фамилии',
+        ];
+
+        if ($documents->count() === 1) {
+            $doc = $documents->first();
+            $disk = config('filesystems.upload_disk');
+            if (! Storage::disk($disk)->exists($doc->file_path)) {
+                return redirect()->back()->with('success', 'Файл не найден на диске');
+            }
+            $typeLabel = $typeLabels[$doc->type] ?? $doc->type;
+            $ext = pathinfo($doc->original_name, PATHINFO_EXTENSION);
+            $fileName = $typeLabel . ($ext ? '.' . $ext : '');
+
+            return Storage::disk($disk)->download($doc->file_path, $fileName);
+        }
+
+        $disk = config('filesystems.upload_disk');
+        $tmpFile = tempnam(sys_get_temp_dir(), 'docs');
+        $zip = new \ZipArchive();
+        $zip->open($tmpFile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+
+        foreach ($documents as $doc) {
+            if (! Storage::disk($disk)->exists($doc->file_path)) {
+                continue;
+            }
+            $typeLabel = $typeLabels[$doc->type] ?? $doc->type;
+            $ext = pathinfo($doc->original_name, PATHINFO_EXTENSION);
+            $fileName = $typeLabel . ($ext ? '.' . $ext : '');
+
+            $zip->addFromString($fileName, Storage::disk($disk)->get($doc->file_path));
+        }
+
+        $zip->close();
+        $content = file_get_contents($tmpFile);
+        unlink($tmpFile);
+
+        $userName = Str::slug($user->last_name . ' ' . $user->first_name) ?: $user->id;
+
+        return response($content, 200, [
+            'Content-Type' => 'application/zip',
+            'Content-Disposition' => "attachment; filename=\"documents-{$userName}.zip\"",
+        ]);
     }
 
     public function downloadTemplate(LmsEvent $event)
@@ -514,6 +630,32 @@ class UserController extends Controller
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="import_template.xlsx"',
         ]);
+    }
+
+    public function approveDirection(LmsEvent $event, User $user): RedirectResponse
+    {
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        if (! $profile->direction || ! $profile->faculty) {
+            return redirect()->back()->with('error', 'Участник ещё не выбрал направление и факультет');
+        }
+
+        $profile->update(['direction_approved_at' => now()]);
+
+        return redirect()->back()->with('success', 'Направление и факультет одобрены');
+    }
+
+    public function rejectDirection(LmsEvent $event, User $user): RedirectResponse
+    {
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $profile->update(['direction_approved_at' => null]);
+
+        return redirect()->back()->with('success', 'Одобрение направления отменено');
     }
 
     private function buildXlsx(array $headers, array $rows): string

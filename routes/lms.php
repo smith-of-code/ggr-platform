@@ -158,6 +158,9 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(func
         Route::post('users-send-invitations', [AdminUserController::class, 'sendInvitations'])->name('users.send-invitations');
         Route::post('users-bulk-enroll', [AdminUserController::class, 'bulkEnroll'])->name('users.bulk-enroll');
         Route::get('users-template', [AdminUserController::class, 'downloadTemplate'])->name('users.template');
+        Route::get('users/{user}/documents', [AdminUserController::class, 'downloadUserDocuments'])->name('users.download-documents');
+        Route::post('users/{user}/approve-direction', [AdminUserController::class, 'approveDirection'])->name('users.approve-direction');
+        Route::post('users/{user}/reject-direction', [AdminUserController::class, 'rejectDirection'])->name('users.reject-direction');
         Route::post('invitations', [AdminInvitationController::class, 'store'])->name('invitations.store');
         Route::post('invitations/{invitation}/toggle', [AdminInvitationController::class, 'toggle'])->name('invitations.toggle');
         Route::delete('invitations/{invitation}', [AdminInvitationController::class, 'destroy'])->name('invitations.destroy');

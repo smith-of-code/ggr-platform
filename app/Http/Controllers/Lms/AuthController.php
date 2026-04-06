@@ -66,6 +66,9 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'consent' => ['accepted'],
+        ], [
+            'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
         ]);
 
         $fullName = trim($validated['last_name'] . ' ' . $validated['first_name']);

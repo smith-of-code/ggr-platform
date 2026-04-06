@@ -30,7 +30,10 @@
             <RInput v-model.number="form.time_limit_minutes" label="Лимит времени (мин)" type="number" />
           </div>
           <div>
-            <RInput v-model.number="form.passing_score" label="Проходной балл (%)" type="number" placeholder="60" />
+            <RInput v-model.number="requiredCorrect" label="Правильных для сдачи" type="number" :min="0" :max="form.questions.length" placeholder="1" />
+            <p class="mt-1 text-xs text-gray-400">
+              {{ requiredCorrect ?? 0 }} из {{ form.questions.length }} = {{ calculatedPercent }}%
+            </p>
           </div>
           <div>
             <RInput v-model.number="form.max_attempts" label="Макс. попыток" type="number" placeholder="0 = без ограничений" />
@@ -113,6 +116,7 @@
 </template>
 
 <script setup>
+import { ref, computed, watch } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
@@ -131,6 +135,15 @@ const buildQuestions = () => {
   return [{ question: '', type: 'single', points: 1, answers: [{ answer: '', is_correct: false }] }]
 }
 
+const initialQuestions = buildQuestions()
+
+const initRequiredCorrect = () => {
+  const total = initialQuestions.length
+  const score = props.test?.passing_score ?? 60
+  if (!total) return 1
+  return Math.ceil(score * total / 100)
+}
+
 const form = useForm({
   title: props.test?.title ?? '',
   description: props.test?.description ?? '',
@@ -141,7 +154,19 @@ const form = useForm({
   in_menu: props.test?.in_menu ?? false,
   passing_score: props.test?.passing_score ?? 60,
   max_attempts: props.test?.max_attempts ?? null,
-  questions: buildQuestions(),
+  questions: initialQuestions,
+})
+
+const requiredCorrect = ref(initRequiredCorrect())
+
+const calculatedPercent = computed(() => {
+  const total = form.questions.length
+  if (!total || !requiredCorrect.value) return 0
+  return Math.round(requiredCorrect.value / total * 100)
+})
+
+watch(calculatedPercent, (val) => {
+  form.passing_score = val
 })
 
 function addQuestion() {

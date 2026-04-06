@@ -42,6 +42,7 @@ class TrajectoryController extends Controller
                     'date_label' => $block->date_label,
                     'date_start' => $block->date_start?->toDateString(),
                     'date_end' => $block->date_end?->toDateString(),
+                    'material_url' => $block->material_url,
                 ];
 
                 if ($block->type === 'task' && $block->assignment) {

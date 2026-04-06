@@ -74,6 +74,11 @@
                   <label class="mb-1 block text-xs font-medium text-gray-500">Описание</label>
                   <textarea v-model="block.description" rows="2" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" placeholder="Описание блока" />
                 </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-500">Ссылка на материал</label>
+                  <input v-model="block.material_url" type="url" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" placeholder="https://..." />
+                </div>
               </div>
               <div class="flex flex-col gap-1 pt-5">
                 <button v-if="idx > 0" type="button" class="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600" @click="moveBlock(idx, -1)">
@@ -162,6 +167,7 @@ const buildBlocks = () => {
       date_start: b.date_start?.substring(0, 10) ?? '',
       date_end: b.date_end?.substring(0, 10) ?? '',
       lms_assignment_id: b.lms_assignment_id ?? null,
+      material_url: b.material_url ?? '',
     }))
   }
   return []
@@ -180,7 +186,7 @@ function addStep() {
 }
 
 function addBlock() {
-  form.blocks.push({ type: 'static', title: '', description: '', date_label: '', date_start: '', date_end: '', lms_assignment_id: null })
+  form.blocks.push({ type: 'static', title: '', description: '', date_label: '', date_start: '', date_end: '', lms_assignment_id: null, material_url: '' })
 }
 
 function moveBlock(idx, direction) {

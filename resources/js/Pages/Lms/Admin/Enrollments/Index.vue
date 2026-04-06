@@ -15,6 +15,41 @@
       </div>
     </div>
 
+    <!-- Filters -->
+    <div class="mb-5 flex flex-wrap items-end gap-3">
+      <div class="w-64">
+        <input
+          :value="filters?.search ?? ''"
+          @input="debouncedSearch"
+          type="text"
+          placeholder="Поиск по ФИО..."
+          class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
+        />
+      </div>
+      <div v-if="!course" class="w-48">
+        <SearchSelect
+          :model-value="filters?.course_id ? Number(filters.course_id) : null"
+          @update:model-value="v => applyFilter('course_id', v ?? '')"
+          :options="courses"
+          value-key="id"
+          label-key="title"
+          placeholder="Все курсы"
+          :searchable="true"
+        />
+      </div>
+      <div class="w-48">
+        <SearchSelect
+          :model-value="filters?.city ?? null"
+          @update:model-value="v => applyFilter('city', v ?? '')"
+          :options="cityOptions"
+          value-key="value"
+          label-key="label"
+          placeholder="Все города"
+          :searchable="true"
+        />
+      </div>
+    </div>
+
     <!-- View toggle + Status tabs -->
     <div class="mb-4 flex items-center justify-end gap-1">
       <button
@@ -251,6 +286,7 @@
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import SearchSelect from '@/Components/SearchSelect.vue'
 import { ArrowLeftIcon, TableCellsIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -258,11 +294,17 @@ const props = defineProps({
   enrollments: Object,
   course: { type: Object, default: null },
   courses: Array,
+  cities: Array,
   currentStatus: String,
+  filters: Object,
   counts: Object,
 })
 
 const viewMode = ref('table')
+
+const cityOptions = computed(() =>
+  (props.cities || []).map(c => ({ value: c, label: c }))
+)
 
 const enrollmentsList = computed(() => {
   const raw = props.enrollments?.data || props.enrollments || []
@@ -276,7 +318,13 @@ const statusTabs = computed(() => [
   { value: 'all', label: `Все (${props.counts?.all ?? 0})` },
 ])
 
-function filterByStatus(status) {
+function buildQuery(overrides = {}) {
+  const current = { status: props.currentStatus, ...(props.filters || {}), ...overrides }
+  Object.keys(current).forEach(k => { if (!current[k]) delete current[k] })
+  return current
+}
+
+function navigateWithFilters(query) {
   const routeName = props.course
     ? 'lms.admin.enrollments.course'
     : 'lms.admin.enrollments.index'
@@ -284,7 +332,23 @@ function filterByStatus(status) {
     ? [props.event.slug, props.course.id]
     : [props.event.slug]
 
-  router.get(route(routeName, params), { status }, { preserveState: true })
+  router.get(route(routeName, params), query, { preserveState: true })
+}
+
+function filterByStatus(status) {
+  navigateWithFilters(buildQuery({ status }))
+}
+
+function applyFilter(key, value) {
+  navigateWithFilters(buildQuery({ [key]: value || undefined }))
+}
+
+let searchTimeout = null
+function debouncedSearch(e) {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    applyFilter('search', e.target.value)
+  }, 400)
 }
 
 function approve(id) {

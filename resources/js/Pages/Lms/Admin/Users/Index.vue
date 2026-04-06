@@ -185,6 +185,7 @@
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Телефон</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Должность</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Роль</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Направление</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Статус</th>
             <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Действия</th>
           </tr>
@@ -217,6 +218,22 @@
                 {{ profile.lms_role.name }}
               </RBadge>
               <span v-else class="text-xs text-gray-400">{{ roleLabel(profile.role) }}</span>
+            </td>
+            <td class="px-5 py-3.5">
+              <div v-if="profile.direction" class="space-y-0.5">
+                <p class="text-xs font-medium text-gray-700">{{ directionLabels[profile.direction] || '—' }}</p>
+                <p class="text-[11px] text-gray-400">{{ facultyLabels[profile.faculty] || '—' }}</p>
+                <div class="mt-1">
+                  <RBadge v-if="profile.direction_approved_at" variant="success" size="sm">Одобрено</RBadge>
+                  <button v-else type="button"
+                    class="inline-flex cursor-pointer items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 transition hover:bg-amber-100"
+                    @click="approveDirection(profile)"
+                  >
+                    Одобрить
+                  </button>
+                </div>
+              </div>
+              <span v-else class="text-xs text-gray-400">—</span>
             </td>
             <td class="px-5 py-3.5">
               <div class="relative">
@@ -487,6 +504,8 @@ const props = defineProps({
   cities: Array,
   filters: Object,
   invitations: Array,
+  directionLabels: { type: Object, default: () => ({}) },
+  facultyLabels: { type: Object, default: () => ({}) },
 })
 
 const showImportModal = ref(false)
@@ -690,6 +709,12 @@ function copyActivateLink(profile) {
   navigator.clipboard.writeText(url).then(() => {
     copiedProfileId.value = profile.id
     setTimeout(() => { copiedProfileId.value = null }, 2000)
+  })
+}
+
+function approveDirection(profile) {
+  router.post(route('lms.admin.users.approve-direction', [props.event.slug, profile.user_id]), {}, {
+    preserveScroll: true,
   })
 }
 

@@ -20,8 +20,8 @@
             <p class="font-medium text-gray-900">{{ test?.time_limit_minutes ? `${test.time_limit_minutes} мин` : 'Без ограничения' }}</p>
           </RCard>
           <RCard flush class="rounded-lg bg-gray-50 p-4">
-            <p class="text-sm text-gray-500">Проходной балл</p>
-            <p class="font-medium text-gray-900">{{ test?.passing_score ?? 0 }}%</p>
+            <p class="text-sm text-gray-500">Правильных для сдачи</p>
+            <p class="font-medium text-gray-900">{{ requiredCorrect }} из {{ test?.questions_count ?? '?' }}</p>
           </RCard>
           <RCard flush class="rounded-lg bg-gray-50 p-4">
             <p class="text-sm text-gray-500">Макс. попыток</p>
@@ -81,7 +81,7 @@
 
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import { ArrowLeftIcon, PlayIcon } from '@heroicons/vue/24/outline'
 
@@ -94,6 +94,13 @@ const props = defineProps({
 })
 
 const starting = ref(false)
+
+const requiredCorrect = computed(() => {
+  const total = props.test?.questions_count ?? 0
+  const passingScore = props.test?.passing_score ?? 0
+  if (!total) return 0
+  return Math.ceil(passingScore * total / 100)
+})
 
 function startTest() {
   starting.value = true

@@ -42,7 +42,22 @@
 
             <RInput v-model="form.password_confirmation" type="password" label="Подтвердите пароль" placeholder="Повторите пароль" :error="form.errors.password_confirmation" required id="password_confirmation" />
 
-            <RButton variant="primary" size="lg" block :loading="form.processing" :disabled="form.processing">
+            <div>
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input
+                  v-model="form.consent"
+                  type="checkbox"
+                  class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
+                />
+                <span class="text-sm text-gray-600">
+                  Даю согласие на обработку
+                  <a href="/privacy-policy" target="_blank" class="text-[#003274] underline hover:text-[#025ea1]">персональных данных</a>
+                </span>
+              </label>
+              <p v-if="form.errors.consent" class="mt-1 text-sm text-red-600">{{ form.errors.consent }}</p>
+            </div>
+
+            <RButton variant="primary" size="lg" block :loading="form.processing" :disabled="form.processing || !form.consent">
               Зарегистрироваться
             </RButton>
           </form>
@@ -66,6 +81,7 @@ const form = useForm({
   email: '',
   password: '',
   password_confirmation: '',
+  consent: false,
 })
 
 const submit = () => {

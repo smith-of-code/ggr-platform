@@ -125,6 +125,28 @@
               />
             </div>
 
+            <SearchSelect
+              v-model="form.direction"
+              :options="directionOptions"
+              value-key="value"
+              label-key="label"
+              label="Выберите своё направление *"
+              placeholder="Выберите направление"
+              :error="form.errors.direction"
+            />
+
+            <SearchSelect
+              v-if="form.direction"
+              v-model="form.faculty"
+              :options="facultyOptions"
+              value-key="value"
+              label-key="label"
+              label="Выберите факультет в рамках направления *"
+              placeholder="Выберите факультет"
+              :error="form.errors.faculty"
+              :disabled="facultyOptions.length === 1"
+            />
+
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-500">Описание проекта или идеи *</label>
               <textarea
@@ -189,9 +211,19 @@
       <RCard>
         <template #default>
           <h2 class="mb-5 text-lg font-semibold text-gray-900">Документы</h2>
+
+          <div v-if="form.direction && form.faculty && !directionApproved"
+            class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
+          >
+            <p class="text-sm text-amber-800">
+              Ваше направление и факультет ожидают одобрения администратором.
+              После одобрения станет доступна загрузка заявления на зачисление.
+            </p>
+          </div>
+
           <div class="space-y-4">
             <div
-              v-for="dt in docConfig"
+              v-for="dt in visibleDocConfig"
               :key="dt.type"
               class="flex flex-col gap-3 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between"
             >
@@ -347,6 +379,10 @@ const props = defineProps({
   missingFields: { type: Array, default: () => [] },
   documentTypes: { type: Array, default: () => [] },
   documentTypesWithTemplate: { type: Array, default: () => [] },
+  directions: { type: Object, default: () => ({}) },
+  directionFaculties: { type: Object, default: () => ({}) },
+  facultyLabels: { type: Object, default: () => ({}) },
+  directionApproved: { type: Boolean, default: false },
 })
 
 const page = usePage()
@@ -450,8 +486,41 @@ const form = useForm({
   position: props.profile?.position ?? '',
   project_description: props.profile?.project_description ?? '',
   preferred_channel: props.profile?.preferred_channel || 'max',
+  direction: props.profile?.direction ?? '',
+  faculty: props.profile?.faculty ?? '',
   avatar: null,
 })
+
+const directionOptions = computed(() =>
+  Object.entries(props.directions).map(([value, label]) => ({ value, label }))
+)
+
+const facultyOptions = computed(() => {
+  const dir = form.direction
+  if (!dir || !props.directionFaculties[dir]) return []
+  return props.directionFaculties[dir].map(key => ({
+    value: key,
+    label: props.facultyLabels[key] || key,
+  }))
+})
+
+watch(() => form.direction, (newDir, oldDir) => {
+  if (oldDir && newDir !== oldDir) {
+    const allowed = props.directionFaculties[newDir] || []
+    if (allowed.length === 1) {
+      form.faculty = allowed[0]
+    } else if (!allowed.includes(form.faculty)) {
+      form.faculty = ''
+    }
+  } else if (newDir && !oldDir) {
+    const allowed = props.directionFaculties[newDir] || []
+    if (allowed.length === 1) {
+      form.faculty = allowed[0]
+    }
+  }
+})
+
+const hasFacultySelected = computed(() => !!form.faculty)
 
 const avatarPreview = ref(null)
 
@@ -486,6 +555,10 @@ const docConfig = [
   { type: 'personal_data_consent', label: 'Согласие на обработку персональных данных *', hasTemplate: true },
   { type: 'name_change_certificate', label: 'Свидетельство о перемене фамилии (при наличии)', hasTemplate: false },
 ]
+
+const visibleDocConfig = computed(() =>
+  docConfig.filter(dt => dt.type !== 'enrollment_application' || props.directionApproved)
+)
 
 const docDeleteProcessing = ref(false)
 

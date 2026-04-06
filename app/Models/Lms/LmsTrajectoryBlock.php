@@ -18,6 +18,7 @@ class LmsTrajectoryBlock extends Model
         'date_start',
         'date_end',
         'lms_assignment_id',
+        'material_url',
         'position',
     ];
 

@@ -60,6 +60,7 @@ class TrajectoryController extends Controller
             'blocks.*.date_start' => ['nullable', 'date'],
             'blocks.*.date_end' => ['nullable', 'date'],
             'blocks.*.lms_assignment_id' => ['nullable', 'exists:lms_assignments,id'],
+            'blocks.*.material_url' => ['nullable', 'url', 'max:500'],
             'blocks.*.position' => ['nullable', 'integer'],
         ]);
 
@@ -110,6 +111,7 @@ class TrajectoryController extends Controller
             'blocks.*.date_start' => ['nullable', 'date'],
             'blocks.*.date_end' => ['nullable', 'date'],
             'blocks.*.lms_assignment_id' => ['nullable', 'exists:lms_assignments,id'],
+            'blocks.*.material_url' => ['nullable', 'url', 'max:500'],
             'blocks.*.position' => ['nullable', 'integer'],
         ]);
 
@@ -164,6 +166,7 @@ class TrajectoryController extends Controller
                 'date_start' => $block['date_start'] ?? null,
                 'date_end' => $block['date_end'] ?? null,
                 'lms_assignment_id' => $block['lms_assignment_id'] ?? null,
+                'material_url' => $block['material_url'] ?? null,
                 'position' => $block['position'] ?? $index,
             ]);
         }

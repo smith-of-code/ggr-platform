@@ -13,6 +13,76 @@ class LmsProfile extends Model
 {
     protected $table = 'lms_profiles';
 
+    public const DIRECTION_MANAGEMENT = 'management';
+    public const DIRECTION_SPECIALISTS = 'specialists';
+    public const DIRECTION_ENTREPRENEURS = 'entrepreneurs';
+
+    public const DIRECTIONS = [
+        self::DIRECTION_MANAGEMENT,
+        self::DIRECTION_SPECIALISTS,
+        self::DIRECTION_ENTREPRENEURS,
+    ];
+
+    public const DIRECTION_LABELS = [
+        self::DIRECTION_MANAGEMENT => 'Управленческая команда города',
+        self::DIRECTION_SPECIALISTS => 'Специалисты',
+        self::DIRECTION_ENTREPRENEURS => 'Предприниматели',
+    ];
+
+    public const FACULTY_MANAGEMENT_TEAM = 'management_team';
+    public const FACULTY_INDUSTRIAL_TOURISM_GUIDE = 'industrial_tourism_guide';
+    public const FACULTY_EXCURSION_ACTIVITY = 'excursion_activity';
+    public const FACULTY_TOURISM_PRODUCT = 'tourism_product';
+    public const FACULTY_SERVICE = 'service';
+    public const FACULTY_TOURISM_INFRASTRUCTURE = 'tourism_infrastructure';
+    public const FACULTY_MARKETING = 'marketing';
+
+    public const FACULTIES = [
+        self::FACULTY_MANAGEMENT_TEAM,
+        self::FACULTY_INDUSTRIAL_TOURISM_GUIDE,
+        self::FACULTY_EXCURSION_ACTIVITY,
+        self::FACULTY_TOURISM_PRODUCT,
+        self::FACULTY_SERVICE,
+        self::FACULTY_TOURISM_INFRASTRUCTURE,
+        self::FACULTY_MARKETING,
+    ];
+
+    public const FACULTY_LABELS = [
+        self::FACULTY_MANAGEMENT_TEAM => 'Управленческая команда города',
+        self::FACULTY_INDUSTRIAL_TOURISM_GUIDE => 'Гид-экскурсовод промышленного туризма',
+        self::FACULTY_EXCURSION_ACTIVITY => 'Экскурсионная деятельность',
+        self::FACULTY_TOURISM_PRODUCT => 'Турпродукт',
+        self::FACULTY_SERVICE => 'Сервис',
+        self::FACULTY_TOURISM_INFRASTRUCTURE => 'Инфраструктура для туризма',
+        self::FACULTY_MARKETING => 'Маркетинг',
+    ];
+
+    public const DIRECTION_FACULTIES = [
+        self::DIRECTION_MANAGEMENT => [
+            self::FACULTY_MANAGEMENT_TEAM,
+        ],
+        self::DIRECTION_SPECIALISTS => [
+            self::FACULTY_INDUSTRIAL_TOURISM_GUIDE,
+            self::FACULTY_EXCURSION_ACTIVITY,
+        ],
+        self::DIRECTION_ENTREPRENEURS => [
+            self::FACULTY_TOURISM_PRODUCT,
+            self::FACULTY_SERVICE,
+            self::FACULTY_TOURISM_INFRASTRUCTURE,
+            self::FACULTY_MARKETING,
+        ],
+    ];
+
+    public const FACULTY_ENROLLMENT_TEMPLATES = [
+        self::FACULTY_MANAGEMENT_TEAM => 'management_municipal_projects.doc',
+        self::FACULTY_INDUSTRIAL_TOURISM_GUIDE => 'industrial_tourism_guide.doc',
+        self::FACULTY_EXCURSION_ACTIVITY => 'excursion_activity.doc',
+        self::FACULTY_TOURISM_PRODUCT => 'entrepreneurial_projects.doc',
+        self::FACULTY_SERVICE => 'entrepreneurial_projects.doc',
+        self::FACULTY_TOURISM_INFRASTRUCTURE => 'entrepreneurial_projects.doc',
+        self::FACULTY_MARKETING => 'entrepreneurial_projects.doc',
+    ];
+
     protected static function booted(): void
     {
         static::created(function (LmsProfile $profile) {
@@ -47,6 +117,9 @@ class LmsProfile extends Model
         'organization',
         'project_description',
         'preferred_channel',
+        'direction',
+        'faculty',
+        'direction_approved_at',
     ];
 
     protected function casts(): array
@@ -54,7 +127,13 @@ class LmsProfile extends Model
         return [
             'invited_at' => 'datetime',
             'activated_at' => 'datetime',
+            'direction_approved_at' => 'datetime',
         ];
+    }
+
+    public function isDirectionApproved(): bool
+    {
+        return $this->direction && $this->faculty && $this->direction_approved_at !== null;
     }
 
     public function user(): BelongsTo
@@ -126,6 +205,12 @@ class LmsProfile extends Model
         }
         if (! $this->position) {
             $missing[] = 'Должность';
+        }
+        if (! $this->direction) {
+            $missing[] = 'Направление';
+        }
+        if (! $this->faculty) {
+            $missing[] = 'Факультет';
         }
 
         $docLabels = [

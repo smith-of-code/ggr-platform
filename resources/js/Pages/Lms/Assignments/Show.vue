@@ -81,24 +81,46 @@
 
           <!-- Show answers by tasks -->
           <template v-if="hasTasks && submission?.answers?.length">
-            <div v-for="task in assignment.tasks" :key="task.id" class="mt-4 rounded-lg bg-white p-3">
-              <p class="mb-1 text-xs font-semibold text-gray-500">{{ task.title }}</p>
-              <template v-for="answer in answersForTask(task.id)" :key="answer.id">
-                <p v-if="answer.text_content" class="text-sm text-gray-700">{{ answer.text_content }}</p>
-                <a v-if="answer.link" :href="answer.link" target="_blank" class="text-sm text-rosatom-600 hover:underline">{{ answer.link }}</a>
-                <div v-if="answer.files?.length" class="mt-1 flex flex-wrap gap-2">
-                  <a
-                    v-for="(f, fi) in answer.files"
-                    :key="fi"
-                    :href="fileUrl(typeof f === 'string' ? f : f.path)"
-                    target="_blank"
-                    class="inline-flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-100"
-                  >
-                    <PaperClipIcon class="h-3.5 w-3.5" />
-                    {{ typeof f === 'string' ? `Файл ${fi+1}` : (f.name || `Файл ${fi+1}`) }}
-                  </a>
+            <div v-for="(task, tIdx) in assignment.tasks" :key="task.id" class="mt-4 rounded-lg bg-white p-3">
+              <div class="mb-2 flex items-start gap-2">
+                <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-500">{{ tIdx + 1 }}</span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-gray-900">{{ task.title }}</p>
+                  <p v-if="task.description" class="mt-1 whitespace-pre-line text-xs text-gray-500">{{ task.description }}</p>
                 </div>
-              </template>
+              </div>
+              <div class="ml-8">
+                <template v-for="answer in answersForTask(task.id)" :key="answer.id">
+                  <p v-if="answer.text_content" class="text-sm text-gray-700">{{ answer.text_content }}</p>
+                  <a v-if="answer.link" :href="answer.link" target="_blank" class="text-sm text-rosatom-600 hover:underline">{{ answer.link }}</a>
+                  <div v-if="answer.files?.length" class="mt-1 flex flex-wrap gap-2">
+                    <a
+                      v-for="(f, fi) in answer.files"
+                      :key="fi"
+                      :href="fileUrl(typeof f === 'string' ? f : f.path)"
+                      target="_blank"
+                      class="inline-flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-100"
+                    >
+                      <PaperClipIcon class="h-3.5 w-3.5" />
+                      {{ typeof f === 'string' ? `Файл ${fi+1}` : (f.name || `Файл ${fi+1}`) }}
+                    </a>
+                  </div>
+                </template>
+                <p v-if="!answersForTask(task.id)?.length" class="text-xs text-gray-400">Ответ не предоставлен</p>
+              </div>
+            </div>
+          </template>
+
+          <!-- Show tasks without answers (when no answers yet but tasks exist) -->
+          <template v-else-if="hasTasks">
+            <div v-for="(task, tIdx) in assignment.tasks" :key="task.id" class="mt-4 rounded-lg bg-white p-3">
+              <div class="flex items-start gap-2">
+                <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-500">{{ tIdx + 1 }}</span>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-gray-900">{{ task.title }}</p>
+                  <p v-if="task.description" class="mt-1 whitespace-pre-line text-xs text-gray-500">{{ task.description }}</p>
+                </div>
+              </div>
             </div>
           </template>
 

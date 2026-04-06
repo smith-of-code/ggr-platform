@@ -25,6 +25,28 @@
               {{ profile.lms_role.name }}
             </RBadge>
             <p v-if="profile.position" class="mt-2 text-xs text-gray-400">{{ profile.position }}</p>
+            <div v-if="profile.direction || profile.faculty" class="mt-3 w-full space-y-1 border-t border-gray-100 pt-3 text-left">
+              <p v-if="directionLabel" class="text-xs text-gray-500">
+                <span class="font-medium text-gray-700">Направление:</span> {{ directionLabel }}
+              </p>
+              <p v-if="facultyLabel" class="text-xs text-gray-500">
+                <span class="font-medium text-gray-700">Факультет:</span> {{ facultyLabel }}
+              </p>
+              <div class="mt-2 flex items-center gap-2">
+                <RBadge v-if="profile.direction_approved_at" variant="success" size="sm">Одобрено</RBadge>
+                <template v-else>
+                  <RBadge variant="warning" size="sm">Ожидает одобрения</RBadge>
+                </template>
+              </div>
+              <div class="mt-2 flex gap-2">
+                <RButton v-if="!profile.direction_approved_at" variant="primary" size="sm" @click="approveDir">
+                  Одобрить
+                </RButton>
+                <RButton v-else variant="outline" size="sm" @click="rejectDir">
+                  Отменить одобрение
+                </RButton>
+              </div>
+            </div>
           </div>
         </RCard>
 
@@ -98,6 +120,29 @@
               </RButton>
             </form>
           </RCard>
+
+          <!-- Documents -->
+          <RCard elevation="raised">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-gray-900">Документы</h3>
+              <RButton v-if="documents?.length" variant="outline" size="sm" @click="downloadDocuments">
+                <template #icon><ArrowDownTrayIcon class="h-4 w-4" /></template>
+                Скачать {{ documents.length > 1 ? 'все' : '' }}
+              </RButton>
+            </div>
+
+            <div v-if="documents?.length" class="space-y-2">
+              <div v-for="doc in documents" :key="doc.id" class="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3">
+                <DocumentIcon class="h-5 w-5 shrink-0 text-gray-400" />
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-medium text-gray-900">{{ doc.type_label }}</p>
+                  <p class="truncate text-xs text-gray-400">{{ doc.original_name }}</p>
+                </div>
+                <CheckCircleIcon class="h-5 w-5 shrink-0 text-green-500" />
+              </div>
+            </div>
+            <p v-else class="text-sm text-gray-400">Документы не загружены</p>
+          </RCard>
         </div>
       </div>
     </div>
@@ -110,7 +155,7 @@ import { router, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import SearchSelect from '@/Components/SearchSelect.vue'
 import MultiSelect from '@/Components/MultiSelect.vue'
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, ArrowDownTrayIcon, DocumentIcon, CheckCircleIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   event: Object,
@@ -118,7 +163,13 @@ const props = defineProps({
   enrollments: Array,
   roles: Array,
   courses: Array,
+  documents: Array,
+  directionLabels: { type: Object, default: () => ({}) },
+  facultyLabels: { type: Object, default: () => ({}) },
 })
+
+const directionLabel = computed(() => props.directionLabels[props.profile?.direction] || '')
+const facultyLabel = computed(() => props.facultyLabels[props.profile?.faculty] || '')
 
 
 const editForm = useForm({
@@ -163,6 +214,22 @@ function unenrollFromCourse(enrollment) {
   const courseName = enrollment.course?.title || 'курса'
   if (!confirm(`Отписать участника от «${courseName}»? Прогресс обучения будет удалён.`)) return
   router.delete(route('lms.admin.enrollments.destroy', [props.event.slug, enrollment.id]))
+}
+
+function approveDir() {
+  router.post(route('lms.admin.users.approve-direction', [props.event.slug, props.profile.user_id]), {}, {
+    preserveScroll: true,
+  })
+}
+
+function rejectDir() {
+  router.post(route('lms.admin.users.reject-direction', [props.event.slug, props.profile.user_id]), {}, {
+    preserveScroll: true,
+  })
+}
+
+function downloadDocuments() {
+  window.location.href = route('lms.admin.users.download-documents', [props.event.slug, props.profile.user_id])
 }
 
 function roleBadgeVariant(slug) {

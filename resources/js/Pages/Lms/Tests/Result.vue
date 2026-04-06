@@ -41,7 +41,7 @@
             size="md"
             :variant="attempt?.passed ? 'success' : 'error'"
           />
-          <p class="mt-1 text-xs text-gray-400">Проходной балл: {{ test?.passing_score ?? 0 }}%</p>
+          <p class="mt-1 text-xs text-gray-400">Для сдачи нужно: {{ requiredCorrect }} из {{ test?.questions_count ?? '?' }} правильных</p>
         </div>
 
         <div class="mt-8">
@@ -57,16 +57,23 @@
 
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3'
-
+import { computed } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 
-defineProps({
+const props = defineProps({
   event: { type: Object, required: true },
   user: { type: Object, default: () => ({}) },
   profile: { type: Object, default: () => ({}) },
   test: { type: Object, required: true },
   attempt: { type: Object, required: true },
   responses: { type: Array, default: () => [] },
+})
+
+const requiredCorrect = computed(() => {
+  const total = props.test?.questions_count ?? 0
+  const passingScore = props.test?.passing_score ?? 0
+  if (!total) return 0
+  return Math.ceil(passingScore * total / 100)
 })
 </script>

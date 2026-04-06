@@ -119,6 +119,21 @@
               :error="form.errors.password_confirmation"
             />
 
+            <div>
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input
+                  v-model="form.consent"
+                  type="checkbox"
+                  class="mt-0.5 h-4 w-4 rounded border-gray-300 text-rosatom-600 focus:ring-rosatom-500"
+                />
+                <span class="text-sm text-gray-600">
+                  Даю согласие на обработку
+                  <a href="/privacy-policy" target="_blank" class="text-rosatom-600 underline hover:text-rosatom-700">персональных данных</a>
+                </span>
+              </label>
+              <p v-if="form.errors.consent" class="mt-1 text-sm text-red-600">{{ form.errors.consent }}</p>
+            </div>
+
             <div v-if="form.errors.token" class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
               {{ form.errors.token }}
             </div>
@@ -129,7 +144,7 @@
               size="lg"
               block
               :loading="form.processing"
-              :disabled="form.processing"
+              :disabled="form.processing || !form.consent"
             >
               Зарегистрироваться
             </RButton>
@@ -165,6 +180,7 @@ const form = useForm({
   phone: '',
   password: '',
   password_confirmation: '',
+  consent: false,
 })
 
 function submit() {

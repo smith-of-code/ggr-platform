@@ -47,13 +47,18 @@ class TestController extends Controller
             ->orderByDesc('started_at')
             ->get(['id', 'score', 'max_score', 'percentage', 'passed', 'started_at', 'finished_at']);
 
+        $questionsCount = $test->questions()->count();
+
         return Inertia::render('Lms/Tests/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
-            'test' => $test->only([
-                'id', 'title', 'description',
-                'time_limit_minutes', 'shuffle_questions', 'shuffle_answers',
-                'passing_score', 'max_attempts',
-            ]),
+            'test' => array_merge(
+                $test->only([
+                    'id', 'title', 'description',
+                    'time_limit_minutes', 'shuffle_questions', 'shuffle_answers',
+                    'passing_score', 'max_attempts',
+                ]),
+                ['questions_count' => $questionsCount]
+            ),
             'attempts' => $attempts,
         ]);
     }
@@ -224,9 +229,14 @@ class TestController extends Controller
             abort(403);
         }
 
+        $questionsCount = $test->questions()->count();
+
         return Inertia::render('Lms/Tests/Result', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
-            'test' => $test->only(['id', 'title', 'passing_score', 'show_correct_answers']),
+            'test' => array_merge(
+                $test->only(['id', 'title', 'passing_score', 'show_correct_answers']),
+                ['questions_count' => $questionsCount]
+            ),
             'attempt' => $attempt->only(['id', 'score', 'max_score', 'percentage', 'passed', 'started_at', 'finished_at']),
         ]);
     }

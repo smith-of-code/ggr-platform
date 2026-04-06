@@ -26,6 +26,25 @@ class EnrollmentController extends Controller
             $query->where('status', $status);
         }
 
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', fn($q) => $q->where('name', 'ilike', "%{$search}%"));
+        }
+
+        if ($request->filled('course_id')) {
+            $query->where('lms_course_id', $request->course_id);
+        }
+
+        if ($request->filled('city')) {
+            $city = $request->city;
+            $query->whereIn('user_id', function ($q) use ($event, $city) {
+                $q->select('user_id')
+                    ->from('lms_profiles')
+                    ->where('lms_event_id', $event->id)
+                    ->where('city', 'ilike', "%{$city}%");
+            });
+        }
+
         $enrollments = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
 
         $userIds = collect($enrollments->items())->pluck('user_id')->unique();
@@ -42,11 +61,19 @@ class EnrollmentController extends Controller
                 'organization' => $profile->organization,
                 'position' => $profile->position,
                 'project_description' => $profile->project_description,
+                'city' => $profile->city,
             ] : null;
             return $enrollment;
         });
 
         $courses = $event->courses()->orderBy('title')->get(['id', 'title']);
+
+        $cities = LmsProfile::where('lms_event_id', $event->id)
+            ->whereNotNull('city')
+            ->where('city', '!=', '')
+            ->distinct()
+            ->orderBy('city')
+            ->pluck('city');
 
         $counts = LmsCourseEnrollment::whereHas('course', fn($q) => $q->where('lms_event_id', $event->id))
             ->selectRaw("
@@ -61,7 +88,9 @@ class EnrollmentController extends Controller
             'event' => $event->only(['id', 'slug', 'title']),
             'enrollments' => $enrollments,
             'courses' => $courses,
+            'cities' => $cities,
             'currentStatus' => $status,
+            'filters' => $request->only(['search', 'course_id', 'city']),
             'counts' => [
                 'all' => $counts->total ?? 0,
                 'pending' => $counts->pending ?? 0,
