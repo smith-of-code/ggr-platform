@@ -229,6 +229,8 @@ class UserController extends Controller
             'phone'      => ['nullable', 'string', 'max:50'],
             'position'   => ['nullable', 'string', 'max:255'],
             'city'       => ['nullable', 'string', 'max:255'],
+            'organization' => ['nullable', 'string', 'max:255'],
+            'project_description' => ['nullable', 'string', 'max:2000'],
             'role_id'    => ['nullable', 'exists:lms_roles,id'],
             'role'       => ['nullable', 'string', 'in:participant,curator,leader,admin'],
             'course_ids' => ['nullable', 'array'],
@@ -253,6 +255,8 @@ class UserController extends Controller
             'position' => $validated['position'] ?? $profile->position,
             'city' => $validated['city'] ?? $profile->city,
             'phone' => $validated['phone'] ?? $profile->phone,
+            'organization' => $validated['organization'] ?? $profile->organization,
+            'project_description' => $validated['project_description'] ?? $profile->project_description,
         ]);
 
         if (isset($validated['course_ids'])) {

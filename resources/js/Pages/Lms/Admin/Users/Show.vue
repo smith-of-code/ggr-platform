@@ -25,6 +25,14 @@
               {{ profile.lms_role.name }}
             </RBadge>
             <p v-if="profile.position" class="mt-2 text-xs text-gray-400">{{ profile.position }}</p>
+            <div v-if="profile.organization || profile.project_description" class="mt-3 w-full space-y-1 border-t border-gray-100 pt-3 text-left">
+              <p v-if="profile.organization" class="text-xs text-gray-500">
+                <span class="font-medium text-gray-700">Организация:</span> {{ profile.organization }}
+              </p>
+              <p v-if="profile.project_description" class="text-xs text-gray-500">
+                <span class="font-medium text-gray-700">Идея проекта:</span> {{ profile.project_description }}
+              </p>
+            </div>
             <div v-if="profile.direction || profile.faculty" class="mt-3 w-full space-y-1 border-t border-gray-100 pt-3 text-left">
               <p v-if="directionLabel" class="text-xs text-gray-500">
                 <span class="font-medium text-gray-700">Направление:</span> {{ directionLabel }}
@@ -62,6 +70,11 @@
                 <RInput v-model="editForm.phone" type="tel" label="Телефон" />
                 <RInput v-model="editForm.position" label="Должность" />
                 <RInput v-model="editForm.city" label="Город" />
+                <RInput v-model="editForm.organization" label="Организация" />
+                <div class="sm:col-span-2">
+                  <label class="mb-1 block text-sm font-medium text-gray-700">Идея проекта</label>
+                  <textarea v-model="editForm.project_description" rows="3" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" placeholder="Описание идеи проекта" />
+                </div>
                 <div class="sm:col-span-2">
                   <SearchSelect
                     v-model="editForm.role_id"
@@ -179,6 +192,8 @@ const editForm = useForm({
   phone: props.profile?.user?.phone || props.profile?.phone || '',
   position: props.profile?.position || '',
   city: props.profile?.city || '',
+  organization: props.profile?.organization || '',
+  project_description: props.profile?.project_description || '',
   role_id: props.profile?.lms_role_id || null,
 })
 
