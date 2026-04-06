@@ -69,7 +69,7 @@
       <!-- Submission form -->
       <RCard elevation="raised">
         <h2 class="font-brand text-lg font-bold text-gray-900">
-          {{ submission?.status === 'submitted' ? 'Ваша работа отправлена' : 'Отправка работы' }}
+          {{ (submission?.status === 'submitted' || submission?.status === 'approved') ? 'Ваша работа отправлена' : 'Отправка работы' }}
         </h2>
 
         <!-- Submitted summary (for approved/submitted) -->
@@ -424,16 +424,21 @@ const isOverdue = computed(() => {
   return new Date(props.assignment.deadline) < new Date()
 })
 
-const timelineSteps = [
-  { key: 'submit', label: 'Сдача' },
-  { key: 'review', label: 'Проверка' },
-  { key: 'revision', label: 'Доработка' },
-  { key: 'done', label: 'Принято' },
-]
+const isAutoAccept = computed(() => props.assignment?.completion_mode === 'on_submit')
+
+const timelineSteps = computed(() =>
+  isAutoAccept.value
+    ? [{ key: 'submit', label: 'Сдача' }, { key: 'done', label: 'Принято' }]
+    : [{ key: 'submit', label: 'Сдача' }, { key: 'review', label: 'Проверка' }, { key: 'revision', label: 'Доработка' }, { key: 'done', label: 'Принято' }]
+)
 
 const currentStepIndex = computed(() => {
   const status = props.submission?.status || 'not_submitted'
-  const map = { not_submitted: -1, submitted: 1, revision: 2, approved: 3, rejected: 2, resubmitted: 1 }
+  if (isAutoAccept.value) {
+    const map = { not_submitted: -1, draft: -1, approved: 1 }
+    return map[status] ?? -1
+  }
+  const map = { not_submitted: -1, draft: -1, submitted: 1, revision: 2, approved: 3, rejected: 2, resubmitted: 1 }
   return map[status] ?? -1
 })
 

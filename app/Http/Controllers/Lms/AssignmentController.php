@@ -67,7 +67,7 @@ class AssignmentController extends Controller
         return Inertia::render('Lms/Assignments/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'assignment' => array_merge(
-                $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline']),
+                $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline', 'completion_mode']),
                 ['tasks' => $assignment->tasks]
             ),
             'submission' => $submission,
@@ -105,13 +105,15 @@ class AssignmentController extends Controller
             }
         }
 
+        $status = $assignment->completion_mode === 'on_submit' ? 'approved' : 'submitted';
+
         $submission = LmsAssignmentSubmission::updateOrCreate(
             ['lms_assignment_id' => $assignment->id, 'user_id' => $user->id],
             [
                 'text_content' => $hasTasks ? null : ($validated['text_content'] ?? null),
                 'link' => $hasTasks ? null : ($validated['link'] ?? null),
                 'files' => $hasTasks ? null : $legacyFiles,
-                'status' => 'submitted',
+                'status' => $status,
             ]
         );
 
