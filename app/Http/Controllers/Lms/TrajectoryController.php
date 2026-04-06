@@ -7,6 +7,7 @@ use App\Models\Lms\LmsAssignmentSubmission;
 use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGrantEnrollment;
+use App\Models\Lms\LmsMaterialSection;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTrajectory;
@@ -75,12 +76,15 @@ class TrajectoryController extends Controller
             });
         }
 
+        $hasMaterials = LmsMaterialSection::where('lms_event_id', $event->id)->exists();
+
         return Inertia::render('Lms/Trajectories/Index', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'trajectory' => $trajectory?->only(['id', 'title', 'description']),
             'timeline' => $timeline,
+            'hasMaterials' => $hasMaterials,
         ]);
     }
 

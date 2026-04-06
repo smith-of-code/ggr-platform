@@ -97,30 +97,7 @@
               />
             </div>
 
-            <div>
-              <label class="mb-2 block text-sm font-medium text-gray-500">Удобный канал коммуникации</label>
-              <div class="flex items-center gap-6">
-                <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="radio"
-                    v-model="form.preferred_channel"
-                    value="telegram"
-                    class="h-4 w-4 border-gray-300 text-rosatom-500 focus:ring-rosatom-500"
-                  />
-                  Telegram
-                </label>
-                <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="radio"
-                    v-model="form.preferred_channel"
-                    value="max"
-                    class="h-4 w-4 border-gray-300 text-rosatom-500 focus:ring-rosatom-500"
-                  />
-                  MAX
-                </label>
-              </div>
-              <p v-if="form.errors.preferred_channel" class="mt-1 text-sm text-red-600">{{ form.errors.preferred_channel }}</p>
-            </div>
+            <input type="hidden" v-model="form.preferred_channel" />
 
             <SearchSelect
               v-model="form.city"
@@ -472,7 +449,7 @@ const form = useForm({
   organization: props.profile?.organization ?? '',
   position: props.profile?.position ?? '',
   project_description: props.profile?.project_description ?? '',
-  preferred_channel: props.profile?.preferred_channel ?? '',
+  preferred_channel: props.profile?.preferred_channel || 'max',
   avatar: null,
 })
 

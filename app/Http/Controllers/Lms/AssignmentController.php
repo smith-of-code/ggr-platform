@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsAssignment;
 use App\Models\Lms\LmsAssignmentComment;
 use App\Models\Lms\LmsAssignmentSubmission;
+use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsSubmissionAnswer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,8 +21,21 @@ class AssignmentController extends Controller
     public function index(Request $request, LmsEvent $event): Response
     {
         $user = auth()->user();
+
+        $enrolledCourseIds = LmsCourseEnrollment::where('user_id', $user->id)
+            ->whereHas('course', fn($q) => $q->where('lms_event_id', $event->id))
+            ->pluck('lms_course_id');
+
+        $assignmentIds = DB::table('lms_stage_blocks')
+            ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
+            ->whereIn('lms_course_stages.lms_course_id', $enrolledCourseIds)
+            ->whereNotNull('lms_stage_blocks.lms_assignment_id')
+            ->distinct()
+            ->pluck('lms_stage_blocks.lms_assignment_id');
+
         $assignmentsQuery = LmsAssignment::where('lms_event_id', $event->id)
-            ->where('is_active', true);
+            ->where('is_active', true)
+            ->whereIn('id', $assignmentIds);
 
         if ($search = $request->get('search')) {
             $assignmentsQuery->where('title', 'ilike', '%' . $search . '%');
@@ -57,6 +72,20 @@ class AssignmentController extends Controller
             abort(404);
         }
         $user = auth()->user();
+
+        $hasAccess = DB::table('lms_stage_blocks')
+            ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
+            ->join('lms_course_enrollments', function ($join) use ($user) {
+                $join->on('lms_course_enrollments.lms_course_id', '=', 'lms_course_stages.lms_course_id')
+                     ->where('lms_course_enrollments.user_id', '=', $user->id);
+            })
+            ->where('lms_stage_blocks.lms_assignment_id', $assignment->id)
+            ->exists();
+
+        if (!$hasAccess) {
+            abort(403);
+        }
+
         $assignment->load('tasks');
 
         $submission = LmsAssignmentSubmission::where('lms_assignment_id', $assignment->id)

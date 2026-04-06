@@ -143,7 +143,18 @@
             </button>
 
             <!-- Module description -->
-            <div v-if="mod.module.description && expandedModules[mi]" class="prose prose-sm max-w-none border-t border-gray-100 bg-gray-50/50 px-5 py-3 text-gray-500" v-html="mod.module.description" />
+            <div v-if="expandedModules[mi] && (mod.module.description || hasMaterials)" class="border-t border-gray-100 bg-gray-50/50 px-5 py-3">
+              <div v-if="mod.module.description" class="prose prose-sm max-w-none text-gray-500" v-html="mod.module.description" />
+              <Link
+                v-if="hasMaterials"
+                :href="route('lms.materials.index', { event: event?.slug })"
+                class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-rosatom-600 transition hover:text-rosatom-700"
+              >
+                <BookOpenIcon class="h-4 w-4" />
+                Материалы
+                <ChevronRightIcon class="h-3.5 w-3.5" />
+              </Link>
+            </div>
 
             <!-- Stages list -->
             <div v-if="expandedModules[mi]" class="divide-y divide-gray-50">
@@ -255,6 +266,7 @@ const props = defineProps({
   modules: Array,
   orphanStages: Array,
   stages: Array,
+  hasMaterials: { type: Boolean, default: false },
   isProfileComplete: { type: Boolean, default: false },
 })
 

@@ -8,6 +8,7 @@ use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsCourseModule;
 use App\Models\Lms\LmsCourseStage;
 use App\Models\Lms\LmsEvent;
+use App\Models\Lms\LmsMaterialSection;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsStageProgress;
 use Illuminate\Http\RedirectResponse;
@@ -155,6 +156,8 @@ class CourseController extends Controller
             }
         }
 
+        $hasMaterials = LmsMaterialSection::where('lms_event_id', $event->id)->exists();
+
         return Inertia::render('Lms/Courses/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'sequential', 'is_mandatory', 'starts_at', 'ends_at']),
@@ -163,6 +166,7 @@ class CourseController extends Controller
             'modules' => $modules,
             'orphanStages' => $orphanStages,
             'stages' => $course->stages->sortBy('position')->map(fn($s) => $s->only(['id', 'title', 'type', 'position']))->values(),
+            'hasMaterials' => $hasMaterials,
             'isProfileComplete' => $profile?->isProfileComplete() ?? false,
         ]);
     }
