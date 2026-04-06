@@ -68,4 +68,63 @@ class UploadController extends Controller
             'name' => $file->getClientOriginalName(),
         ]);
     }
+
+    public function mediaIndex(Request $request): JsonResponse
+    {
+        $collection = $request->input('collection');
+        $entityType = $request->input('entity_type');
+        $entityId = $request->input('entity_id');
+        $scope = $request->input('scope', $entityId ? 'entity' : ($collection ? 'collection' : 'all'));
+
+        $baseQuery = UploadedMedia::latest();
+        if ($request->filled('search')) {
+            $baseQuery->where('original_name', 'ilike', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('type') && $request->type !== 'all') {
+            $mimePrefix = match ($request->type) {
+                'image' => 'image/',
+                'video' => 'video/',
+                'document' => 'application/',
+                default => null,
+            };
+            if ($mimePrefix) {
+                $baseQuery->where('mime_type', 'like', $mimePrefix . '%');
+            }
+        }
+
+        $query = clone $baseQuery;
+        if ($scope === 'entity' && $entityType && $entityId) {
+            $query->where('entity_type', $entityType)->where('entity_id', $entityId);
+        } elseif ($scope === 'collection' && $collection) {
+            $query->where('collection', $collection);
+        }
+
+        $paginated = $query->paginate(24);
+        $result = $paginated->toArray();
+
+        $counts = [
+            'all' => (clone $baseQuery)->count(),
+        ];
+        if ($collection) {
+            $counts['collection'] = (clone $baseQuery)->where('collection', $collection)->count();
+        }
+        if ($entityType && $entityId) {
+            $counts['entity'] = (clone $baseQuery)->where('entity_type', $entityType)->where('entity_id', $entityId)->count();
+        }
+
+        $entityLabel = null;
+        if ($entityType && $entityId) {
+            try {
+                $model = $entityType::find($entityId);
+                $entityLabel = $model?->name ?? $model?->title ?? null;
+            } catch (\Throwable) {
+            }
+        }
+
+        $result['counts'] = $counts;
+        $result['entity_label'] = $entityLabel;
+
+        return response()->json($result);
+    }
 }

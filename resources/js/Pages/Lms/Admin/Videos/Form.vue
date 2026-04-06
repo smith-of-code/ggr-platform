@@ -129,7 +129,7 @@
 
           <MediaPickerModal
             :show="showMediaPicker"
-            :api-url="route('admin.media.index')"
+            :api-url="route('lms.admin.media.index', event.slug)"
             @close="showMediaPicker = false"
             @select="onMediaSelect"
           />

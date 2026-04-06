@@ -26,14 +26,14 @@
             <RInput v-model="form.slug" label="Slug" />
           </div>
           <div class="sm:col-span-2">
-            <RichTextEditor v-model="form.description" label="Описание" :upload-url="route('lms.admin.upload.image', event.slug)" :media-picker-url="route('admin.media.index')" collection="lms_courses" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
+            <RichTextEditor v-model="form.description" label="Описание" :upload-url="route('lms.admin.upload.image', event.slug)" :media-picker-url="route('lms.admin.media.index', event.slug)" collection="lms_courses" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
           </div>
           <div class="sm:col-span-2">
             <ImageUploadCrop
               v-model="form.image"
               label="Изображение курса"
               :upload-url="route('lms.admin.upload.image', event.slug)"
-              :media-picker-url="route('admin.media.index')" collection="lms_courses" :entity-type="mediaEntityType" :entity-id="mediaEntityId"
+              :media-picker-url="route('lms.admin.media.index', event.slug)" collection="lms_courses" :entity-type="mediaEntityType" :entity-id="mediaEntityId"
               :skip-crop="true"
               preview-class="h-32 w-full object-cover"
             />

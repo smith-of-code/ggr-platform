@@ -20,7 +20,7 @@
                                 Здравствуйте{{ $userName ? ', ' . $userName : '' }}!
                             </p>
                             <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 24px;">
-                                Вы зарегистрированы на платформе <strong>{{ $eventTitle }}</strong>.
+                                Вы зарегистрированы на платформе <strong>Высшей школы гостеприимства Росатома 2026</strong>.
                                 Перейдите по ссылке ниже, чтобы посмотреть свои данные и установить пароль для входа.
                             </p>
                             <table width="100%" cellpadding="0" cellspacing="0">

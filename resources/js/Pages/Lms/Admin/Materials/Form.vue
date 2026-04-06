@@ -16,7 +16,7 @@
           required
           :error="form.errors.title"
         />
-        <RichTextEditor v-model="form.content" label="Контент" :upload-url="route('lms.admin.upload.image', event.slug)" :media-picker-url="route('admin.media.index')" collection="lms_materials" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
+        <RichTextEditor v-model="form.content" label="Контент" :upload-url="route('lms.admin.upload.image', event.slug)" :media-picker-url="route('lms.admin.media.index', event.slug)" collection="lms_materials" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700">Группы</label>
           <div class="space-y-2">
@@ -88,8 +88,8 @@
 
     <MediaPickerModal
       :show="matFilePicker.show"
-      :api-url="route('admin.media.index')"
-      :upload-url="route('admin.upload.file')"
+      :api-url="route('lms.admin.media.index', event.slug)"
+      :upload-url="route('lms.admin.upload.file', event.slug)"
       accept="*"
       file-type="all"
       upload-field="file"

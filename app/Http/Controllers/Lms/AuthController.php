@@ -145,6 +145,9 @@ class AuthController extends Controller
 
         $request->validate([
             'password' => ['required', 'confirmed', Password::defaults()],
+            'consent' => ['accepted'],
+        ], [
+            'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
         ]);
 
         $user = User::findOrFail($profile->user_id);

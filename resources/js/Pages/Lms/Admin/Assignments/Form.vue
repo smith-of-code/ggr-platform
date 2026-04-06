@@ -144,8 +144,8 @@
 
     <MediaPickerModal
       :show="tplPicker.show"
-      :api-url="route('admin.media.index')"
-      :upload-url="route('admin.upload.file')"
+      :api-url="route('lms.admin.media.index', event.slug)"
+      :upload-url="route('lms.admin.upload.file', event.slug)"
       accept="*"
       file-type="all"
       upload-field="file"

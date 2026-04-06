@@ -50,8 +50,8 @@
                   class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
                 />
                 <span class="text-sm text-gray-600">
-                  Даю согласие на обработку
-                  <a href="/privacy-policy" target="_blank" class="text-[#003274] underline hover:text-[#025ea1]">персональных данных</a>
+                  Регистрируясь на платформе, вы даете
+                  <a href="/documents/Cогласие_на_распространение_вшгр2026.docx" target="_blank" class="text-[#003274] underline hover:text-[#025ea1]">согласие на обработку персональных данных</a>
                 </span>
               </label>
               <p v-if="form.errors.consent" class="mt-1 text-sm text-red-600">{{ form.errors.consent }}</p>

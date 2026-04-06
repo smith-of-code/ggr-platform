@@ -84,7 +84,22 @@
             <RInput v-model="form.password_confirmation" type="password" label="Подтверждение пароля"
                     placeholder="Повторите пароль" required />
 
-            <RButton variant="primary" size="lg" block :loading="form.processing" :disabled="form.processing">
+            <div>
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input
+                  v-model="form.consent"
+                  type="checkbox"
+                  class="mt-0.5 h-4 w-4 rounded border-gray-300 text-rosatom-600 focus:ring-rosatom-500"
+                />
+                <span class="text-sm text-gray-600">
+                  Регистрируясь на платформе, вы даете
+                  <a href="/documents/Cогласие_на_распространение_вшгр2026.docx" target="_blank" class="text-rosatom-600 underline hover:text-rosatom-700">согласие на обработку персональных данных</a>
+                </span>
+              </label>
+              <p v-if="form.errors.consent" class="mt-1 text-sm text-red-600">{{ form.errors.consent }}</p>
+            </div>
+
+            <RButton variant="primary" size="lg" block :loading="form.processing" :disabled="form.processing || !form.consent">
               Установить пароль и войти
             </RButton>
           </form>
@@ -116,6 +131,7 @@ const fullName = computed(() => {
 const form = useForm({
   password: '',
   password_confirmation: '',
+  consent: false,
 })
 
 const submit = () => {

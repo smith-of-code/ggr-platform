@@ -140,8 +140,8 @@
 
     <MediaPickerModal
       :show="kbFilePicker.show"
-      :api-url="route('admin.media.index')"
-      :upload-url="route('admin.upload.file')"
+      :api-url="route('lms.admin.media.index', event.slug)"
+      :upload-url="route('lms.admin.upload.file', event.slug)"
       :accept="form.items[kbFilePicker.idx]?.type === 'video' ? 'video/*' : '*'"
       :file-type="form.items[kbFilePicker.idx]?.type === 'video' ? 'video' : 'all'"
       upload-field="file"

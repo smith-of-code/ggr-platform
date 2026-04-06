@@ -10,7 +10,7 @@
               Здравствуйте, {{ user?.name }}!
             </h1>
             <p class="mt-2 max-w-xl text-sm text-white/70 lg:text-base">
-              Добро пожаловать в образовательную платформу {{ event?.title || event?.name }}
+              Добро пожаловать в образовательную платформу Высшей школы гостеприимства Росатома 2026
             </p>
           </div>
           <div v-if="gamificationEnabled" class="hidden shrink-0 rounded-2xl bg-white/10 p-4 lg:block">
