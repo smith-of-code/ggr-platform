@@ -75,9 +75,12 @@
                   <textarea v-model="block.description" rows="2" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" placeholder="Описание блока" />
                 </div>
 
-                <div>
-                  <label class="mb-1 block text-xs font-medium text-gray-500">Ссылка на материал</label>
-                  <input v-model="block.material_url" type="url" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" placeholder="https://..." />
+                <div v-if="materialSections?.length">
+                  <label class="mb-1 block text-xs font-medium text-gray-500">Материал</label>
+                  <select v-model="block.material_url" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
+                    <option value="">— Не выбран —</option>
+                    <option v-for="s in materialSections" :key="s.id" :value="materialUrl(s.id)">{{ s.title }}</option>
+                  </select>
                 </div>
               </div>
               <div class="flex flex-col gap-1 pt-5">
@@ -144,7 +147,7 @@
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
-const props = defineProps({ event: Object, trajectory: Object, courses: Array, assignments: Array })
+const props = defineProps({ event: Object, trajectory: Object, courses: Array, assignments: Array, materialSections: Array })
 
 const buildSteps = () => {
   if (props.trajectory?.steps?.length) {
@@ -187,6 +190,10 @@ function addStep() {
 
 function addBlock() {
   form.blocks.push({ type: 'static', title: '', description: '', date_label: '', date_start: '', date_end: '', lms_assignment_id: null, material_url: '' })
+}
+
+function materialUrl(sectionId) {
+  return route('lms.materials.show', { event: props.event.slug, section: sectionId })
 }
 
 function moveBlock(idx, direction) {

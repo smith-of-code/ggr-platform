@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsAssignment;
 use App\Models\Lms\LmsCourse;
 use App\Models\Lms\LmsEvent;
+use App\Models\Lms\LmsMaterialSection;
 use App\Models\Lms\LmsTrajectory;
 use App\Models\Lms\LmsTrajectoryBlock;
 use App\Models\Lms\LmsTrajectoryStep;
@@ -33,12 +34,15 @@ class TrajectoryController extends Controller
     {
         $courses = $event->courses()->orderBy('position')->get(['id', 'title']);
         $assignments = LmsAssignment::where('lms_event_id', $event->id)->orderBy('title')->get(['id', 'title']);
+        $materialSections = LmsMaterialSection::where('lms_event_id', $event->id)
+            ->orderBy('position')->get(['id', 'title']);
 
         return Inertia::render('Lms/Admin/Trajectories/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'trajectory' => null,
             'courses' => $courses,
             'assignments' => $assignments,
+            'materialSections' => $materialSections,
         ]);
     }
 
@@ -82,12 +86,15 @@ class TrajectoryController extends Controller
         $trajectory->load(['steps.course', 'blocks.assignment']);
         $courses = $event->courses()->orderBy('position')->get(['id', 'title']);
         $assignments = LmsAssignment::where('lms_event_id', $event->id)->orderBy('title')->get(['id', 'title']);
+        $materialSections = LmsMaterialSection::where('lms_event_id', $event->id)
+            ->orderBy('position')->get(['id', 'title']);
 
         return Inertia::render('Lms/Admin/Trajectories/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'trajectory' => $trajectory,
             'courses' => $courses,
             'assignments' => $assignments,
+            'materialSections' => $materialSections,
         ]);
     }
 
