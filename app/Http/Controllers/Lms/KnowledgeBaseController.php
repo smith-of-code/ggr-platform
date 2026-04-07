@@ -26,6 +26,7 @@ class KnowledgeBaseController extends Controller
         $sections = LmsKbSection::where('lms_event_id', $event->id)
             ->whereNull('parent_id')
             ->with('children')
+            ->withCount('items')
             ->orderBy('position')
             ->unless($isPrivileged, function ($query) use ($groupIds) {
                 $query->when($groupIds->isNotEmpty(), function ($q) use ($groupIds) {
@@ -39,10 +40,13 @@ class KnowledgeBaseController extends Controller
             })
             ->get();
 
+        $sections->load(['children' => fn($q) => $q->withCount('items')]);
+
         $sectionsData = $sections->map(fn($s) => [
             'id' => $s->id,
             'title' => $s->title,
             'description' => $s->description,
+            'items_count' => $s->items_count + $s->children->sum('items_count'),
             'children' => $s->children->map(fn($c) => $c->only(['id', 'title', 'description'])),
         ]);
 

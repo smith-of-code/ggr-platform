@@ -24,7 +24,7 @@ class LmsProgressObserver
         }
 
         $stage = $progress->stage()->with('course.event')->first();
-        if (!$stage?->course?->event) {
+        if (!$stage?->course?->event || !$stage->course->unlocks_gamification) {
             return;
         }
 
@@ -43,7 +43,7 @@ class LmsProgressObserver
         }
 
         $course = $enrollment->course()->with('event')->first();
-        if (!$course?->event) {
+        if (!$course?->event || !$course->unlocks_gamification) {
             return;
         }
 
@@ -63,6 +63,10 @@ class LmsProgressObserver
 
         $test = $attempt->test()->with('event')->first();
         if (!$test?->event) {
+            return;
+        }
+
+        if (!$this->isLinkedToGamificationCourse($test->id, null)) {
             return;
         }
 
@@ -88,12 +92,34 @@ class LmsProgressObserver
             return;
         }
 
+        if (!$this->isLinkedToGamificationCourse(null, $submission->assignment->id)) {
+            return;
+        }
+
         $this->gamification->awardPoints(
             $submission->assignment->event,
             User::find($submission->user_id),
             'assignment_approved',
             "Задание: {$submission->assignment->title}"
         );
+    }
+
+    private function isLinkedToGamificationCourse(?int $testId, ?int $assignmentId): bool
+    {
+        $column = $testId ? 'lms_test_id' : 'lms_assignment_id';
+        $value = $testId ?? $assignmentId;
+
+        $viaStage = \App\Models\Lms\LmsCourseStage::where($column, $value)
+            ->whereHas('course', fn ($q) => $q->where('unlocks_gamification', true))
+            ->exists();
+
+        if ($viaStage) {
+            return true;
+        }
+
+        return \App\Models\Lms\LmsStageBlock::where($column, $value)
+            ->whereHas('stage.course', fn ($q) => $q->where('unlocks_gamification', true))
+            ->exists();
     }
 
     public function trajectoryCompleted(LmsTrajectoryEnrollment $enrollment): void
