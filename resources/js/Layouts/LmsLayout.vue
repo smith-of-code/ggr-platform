@@ -170,7 +170,7 @@ const sidebarItems = computed(() => {
 
   if (mc.courses) items.push({ id: 'lms.courses', label: 'Программы', icon: icons.courses })
   if (mc.grants) items.push({ id: 'lms.grants', label: 'Возможности', icon: icons.grants })
-  if (mc.trajectories) items.push({ id: 'lms.trajectories', label: 'Траектории', icon: icons.trajectories })
+  if (mc.trajectories) items.push({ id: 'lms.trajectories', label: 'Траектория', icon: icons.trajectories })
   if (mc.tests) items.push({ id: 'lms.tests', label: 'Тестирование', icon: icons.tests })
   if (mc.assignments) items.push({ id: 'lms.assignments', label: 'Задания', icon: icons.assignments })
   if (mc.leaderboard && gamificationEnabled.value) items.push({ id: 'lms.gamification.leaderboard', label: 'Рейтинг', icon: icons.leaderboard })

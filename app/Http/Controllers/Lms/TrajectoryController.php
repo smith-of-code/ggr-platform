@@ -131,7 +131,7 @@ class TrajectoryController extends Controller
     {
         $enrollments = LmsCourseEnrollment::where('user_id', $user->id)
             ->whereHas('course', fn ($q) => $q->where('lms_event_id', $event->id))
-            ->with('course.stages')
+            ->with(['course.stages', 'course.modules'])
             ->get();
 
         $items = [];
@@ -149,7 +149,16 @@ class TrajectoryController extends Controller
 
             $dateLabel = $this->formatDateRange($course->starts_at, $course->ends_at);
 
-            $stagesList = $course->stages->sortBy('position')->map(fn ($s) => [
+            $modulePositions = $course->modules->pluck('position', 'id');
+
+            $orderedStages = $course->stages->sortBy(function ($s) use ($modulePositions) {
+                $modulePos = $s->lms_course_module_id
+                    ? ($modulePositions[$s->lms_course_module_id] ?? 9999)
+                    : -1;
+                return [$modulePos, $s->position];
+            });
+
+            $stagesList = $orderedStages->map(fn ($s) => [
                 'title' => $s->title,
                 'completed' => LmsStageProgress::where('lms_course_stage_id', $s->id)
                     ->where('user_id', $user->id)
