@@ -182,7 +182,7 @@ class CourseController extends Controller
             ->where('lms_event_id', $event->id)
             ->first();
 
-        if (! $profile || ! $profile->isProfileComplete()) {
+        if (! $course->is_mandatory && (! $profile || ! $profile->isProfileComplete())) {
             return redirect()->back()->withErrors([
                 'enroll' => 'Для записи на курс необходимо заполнить профиль.',
             ]);

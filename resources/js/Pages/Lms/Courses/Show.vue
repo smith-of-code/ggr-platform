@@ -81,7 +81,7 @@
                 </p>
                 <p class="mt-1 text-sm text-blue-700">Чтобы записаться на другой, отмените текущую заявку.</p>
               </div>
-              <div v-else-if="!isProfileComplete" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+              <div v-else-if="!isProfileComplete && !course?.is_mandatory" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
                 <p class="text-sm font-medium text-amber-800">Для записи на программу необходимо заполнить профиль</p>
                 <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-1 inline-block text-sm font-medium text-rosatom-600 hover:underline">
                   Перейти в личный кабинет

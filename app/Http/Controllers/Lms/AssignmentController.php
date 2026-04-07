@@ -52,6 +52,9 @@ class AssignmentController extends Controller
             $assignmentsQuery->where('title', 'ilike', '%' . $search . '%');
         }
 
+        $assignmentsQuery->orderByRaw('CASE WHEN deadline IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('deadline');
+
         $assignmentsPaginator = $assignmentsQuery->paginate(12)->withQueryString();
         $assignmentIds = collect($assignmentsPaginator->items())->pluck('id');
 
