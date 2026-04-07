@@ -126,6 +126,26 @@
         </div>
       </section>
 
+      <!-- Regulation -->
+      <section class="mt-20">
+        <div class="rounded-3xl bg-[#e9eef4] px-8 py-12 text-center sm:px-12">
+          <a
+            :href="regulationUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2.5 rounded-xl bg-[#003274] px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#003274]/20 transition hover:bg-[#025ea1] active:scale-[0.98]"
+          >
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Положение
+          </a>
+          <p class="mx-auto mt-4 max-w-lg text-sm text-gray-500">
+            Положение о грантовом конкурсе «Высшая школа гостеприимства Росатома»
+          </p>
+        </div>
+      </section>
+
       <!-- Application form -->
       <section id="application-form" class="mx-auto mt-16 max-w-2xl scroll-mt-24">
         <div v-if="$page.props.flash?.success" class="mb-6 rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
@@ -155,20 +175,30 @@
                 type="email"
                 required
                 autocomplete="email"
-                class="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#003274] focus:outline-none focus:ring-2 focus:ring-[#003274]/20"
+                class="mt-1.5 w-full rounded-xl border px-4 py-3 text-sm transition focus:outline-none focus:ring-2"
+                :class="emailError
+                  ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+                  : 'border-gray-200 focus:border-[#003274] focus:ring-[#003274]/20'"
+                @blur="validateEmail"
               />
-              <p v-if="form.errors.email" class="mt-1 text-xs text-red-600">{{ form.errors.email }}</p>
+              <p v-if="emailError || form.errors.email" class="mt-1 text-xs text-red-600">{{ emailError || form.errors.email }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700" for="idx-phone">Телефон</label>
               <input
                 id="idx-phone"
-                v-model="form.phone"
+                :value="form.phone"
                 type="tel"
                 autocomplete="tel"
-                class="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#003274] focus:outline-none focus:ring-2 focus:ring-[#003274]/20"
+                placeholder="+7 (___) ___-__-__"
+                class="mt-1.5 w-full rounded-xl border px-4 py-3 text-sm transition focus:outline-none focus:ring-2"
+                :class="phoneError
+                  ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+                  : 'border-gray-200 focus:border-[#003274] focus:ring-[#003274]/20'"
+                @input="onPhoneInput"
+                @blur="validatePhone"
               />
-              <p v-if="form.errors.phone" class="mt-1 text-xs text-red-600">{{ form.errors.phone }}</p>
+              <p v-if="phoneError || form.errors.phone" class="mt-1 text-xs text-red-600">{{ phoneError || form.errors.phone }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700" for="idx-message">Сообщение</label>
@@ -191,18 +221,39 @@
           </form>
         </div>
       </section>
+
+      <!-- Social links -->
+      <section v-if="socials.length" class="mt-20">
+        <div class="text-center">
+          <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Мы в социальных сетях</h2>
+          <p class="mt-2 text-gray-500">Следите за нашими новостями</p>
+          <div class="mt-10 flex flex-wrap justify-center gap-4">
+            <a
+              v-for="s in socials"
+              :key="s.name"
+              :href="s.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-3 rounded-xl border border-gray-200 px-6 py-4 transition hover:border-[#003274]/30 hover:shadow-md"
+            >
+              <span class="text-2xl" v-html="socialIconSvg(s.icon)" />
+              <span class="font-medium text-gray-700">{{ s.name }}</span>
+            </a>
+          </div>
+        </div>
+      </section>
     </div>
   </MainLayout>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Link, Head, useForm } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import { socialIcon } from '@/utils/opportunityToursIcons'
 
 const props = defineProps({
   products: { type: Array, default: () => [] },
-  /** Синоним бэкенда */
   latestAnnouncements: { type: Array, default: () => [] },
   announcements: { type: Array, default: () => [] },
 })
@@ -210,6 +261,20 @@ const props = defineProps({
 const announcementItems = computed(() =>
   props.announcements?.length ? props.announcements : props.latestAnnouncements,
 )
+
+const regulationUrl = 'https://disk.yandex.ru/i/QFSwdBIFTR55EA'
+
+const socials = [
+  { name: 'ВКонтакте', url: 'https://vk.com/rosatom_travel', icon: 'vk' },
+  { name: 'Telegram', url: 'https://t.me/rosatom_travel', icon: 'telegram' },
+]
+
+function socialIconSvg(key) {
+  return socialIcon(key, 'h-6 w-6')
+}
+
+const emailError = ref('')
+const phoneError = ref('')
 
 const form = useForm({
   type: 'program_info',
@@ -219,10 +284,58 @@ const form = useForm({
   message: '',
 })
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
+function validateEmail() {
+  emailError.value = ''
+  if (!form.email) return
+  if (!EMAIL_RE.test(form.email)) {
+    emailError.value = 'Введите корректный email-адрес'
+  }
+}
+
+function onPhoneInput(e) {
+  phoneError.value = ''
+  let digits = e.target.value.replace(/\D/g, '')
+  if (digits.startsWith('8')) digits = '7' + digits.slice(1)
+  if (digits && !digits.startsWith('7')) digits = '7' + digits
+  digits = digits.slice(0, 11)
+
+  let formatted = ''
+  if (digits.length > 0) formatted = '+7'
+  if (digits.length > 1) formatted += ' (' + digits.slice(1, 4)
+  if (digits.length >= 4) formatted += ') '
+  if (digits.length > 4) formatted += digits.slice(4, 7)
+  if (digits.length >= 7) formatted += '-'
+  if (digits.length > 7) formatted += digits.slice(7, 9)
+  if (digits.length >= 9) formatted += '-'
+  if (digits.length > 9) formatted += digits.slice(9, 11)
+
+  form.phone = formatted
+  e.target.value = formatted
+}
+
+function validatePhone() {
+  phoneError.value = ''
+  if (!form.phone) return
+  const digits = form.phone.replace(/\D/g, '')
+  if (digits.length > 0 && digits.length < 11) {
+    phoneError.value = 'Введите полный номер телефона'
+  }
+}
+
 function submitApplication() {
+  validateEmail()
+  validatePhone()
+  if (emailError.value || phoneError.value) return
+
   form.post(route('applications.store'), {
     preserveScroll: true,
-    onSuccess: () => form.reset(),
+    onSuccess: () => {
+      form.reset()
+      emailError.value = ''
+      phoneError.value = ''
+    },
   })
 }
 

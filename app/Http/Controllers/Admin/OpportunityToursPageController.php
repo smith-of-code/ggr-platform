@@ -46,6 +46,13 @@ class OpportunityToursPageController extends Controller
             ->orderBy('position')
             ->get(['id', 'title', 'slug', 'start_city']);
 
+        $activeTourIds = $allTours->pluck('id')->all();
+        if (! empty($data['featured_tour_ids'])) {
+            $data['featured_tour_ids'] = array_values(
+                array_filter($data['featured_tour_ids'], fn ($id) => in_array((int) $id, $activeTourIds, true))
+            );
+        }
+
         $allDirections = Direction::where('is_active', true)
             ->orderBy('position')
             ->get(['id', 'title', 'slug', 'description', 'image']);
@@ -106,8 +113,15 @@ class OpportunityToursPageController extends Controller
             'projects.*.link' => 'nullable|string|max:500',
 
             'featured_tour_ids' => 'nullable|array',
-            'featured_tour_ids.*' => 'integer|exists:tours,id',
+            'featured_tour_ids.*' => 'integer',
         ]);
+
+        if (! empty($validated['featured_tour_ids'])) {
+            $existingIds = Tour::whereIn('id', $validated['featured_tour_ids'])->pluck('id')->all();
+            $validated['featured_tour_ids'] = array_values(
+                array_filter($validated['featured_tour_ids'], fn ($id) => in_array($id, $existingIds, true))
+            );
+        }
 
         $values = [];
         foreach ($validated as $key => $value) {

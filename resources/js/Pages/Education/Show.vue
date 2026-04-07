@@ -102,20 +102,30 @@
                 type="email"
                 required
                 autocomplete="email"
-                class="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#003274] focus:outline-none focus:ring-2 focus:ring-[#003274]/20"
+                class="mt-1.5 w-full rounded-xl border px-4 py-3 text-sm transition focus:outline-none focus:ring-2"
+                :class="emailError
+                  ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+                  : 'border-gray-200 focus:border-[#003274] focus:ring-[#003274]/20'"
+                @blur="validateEmail"
               />
-              <p v-if="form.errors.email" class="mt-1 text-xs text-red-600">{{ form.errors.email }}</p>
+              <p v-if="emailError || form.errors.email" class="mt-1 text-xs text-red-600">{{ emailError || form.errors.email }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700" for="show-phone">Телефон</label>
               <input
                 id="show-phone"
-                v-model="form.phone"
+                :value="form.phone"
                 type="tel"
                 autocomplete="tel"
-                class="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-[#003274] focus:outline-none focus:ring-2 focus:ring-[#003274]/20"
+                placeholder="+7 (___) ___-__-__"
+                class="mt-1.5 w-full rounded-xl border px-4 py-3 text-sm transition focus:outline-none focus:ring-2"
+                :class="phoneError
+                  ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+                  : 'border-gray-200 focus:border-[#003274] focus:ring-[#003274]/20'"
+                @input="onPhoneInput"
+                @blur="validatePhone"
               />
-              <p v-if="form.errors.phone" class="mt-1 text-xs text-red-600">{{ form.errors.phone }}</p>
+              <p v-if="phoneError || form.errors.phone" class="mt-1 text-xs text-red-600">{{ phoneError || form.errors.phone }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700" for="show-message">Сообщение</label>
@@ -143,12 +153,16 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { Link, Head, useForm } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 
 defineProps({
   product: { type: Object, required: true },
 })
+
+const emailError = ref('')
+const phoneError = ref('')
 
 const form = useForm({
   type: 'program_info',
@@ -158,10 +172,58 @@ const form = useForm({
   message: '',
 })
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
+function validateEmail() {
+  emailError.value = ''
+  if (!form.email) return
+  if (!EMAIL_RE.test(form.email)) {
+    emailError.value = 'Введите корректный email-адрес'
+  }
+}
+
+function onPhoneInput(e) {
+  phoneError.value = ''
+  let digits = e.target.value.replace(/\D/g, '')
+  if (digits.startsWith('8')) digits = '7' + digits.slice(1)
+  if (digits && !digits.startsWith('7')) digits = '7' + digits
+  digits = digits.slice(0, 11)
+
+  let formatted = ''
+  if (digits.length > 0) formatted = '+7'
+  if (digits.length > 1) formatted += ' (' + digits.slice(1, 4)
+  if (digits.length >= 4) formatted += ') '
+  if (digits.length > 4) formatted += digits.slice(4, 7)
+  if (digits.length >= 7) formatted += '-'
+  if (digits.length > 7) formatted += digits.slice(7, 9)
+  if (digits.length >= 9) formatted += '-'
+  if (digits.length > 9) formatted += digits.slice(9, 11)
+
+  form.phone = formatted
+  e.target.value = formatted
+}
+
+function validatePhone() {
+  phoneError.value = ''
+  if (!form.phone) return
+  const digits = form.phone.replace(/\D/g, '')
+  if (digits.length > 0 && digits.length < 11) {
+    phoneError.value = 'Введите полный номер телефона'
+  }
+}
+
 function submitApplication() {
+  validateEmail()
+  validatePhone()
+  if (emailError.value || phoneError.value) return
+
   form.post(route('applications.store'), {
     preserveScroll: true,
-    onSuccess: () => form.reset(),
+    onSuccess: () => {
+      form.reset()
+      emailError.value = ''
+      phoneError.value = ''
+    },
   })
 }
 

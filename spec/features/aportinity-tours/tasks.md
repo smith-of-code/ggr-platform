@@ -109,3 +109,13 @@
 - **Scope**: Все затронутые файлы, spec
 - **DoD**: Линтер чист, spec финализирован
 - **Verify**: Линтер на изменённых файлах
+
+---
+
+## BUG-задачи
+
+### BUG-001: Фильтрация удалённых туров из featured_tour_ids
+
+- В `index()`: отфильтровать `featured_tour_ids` — оставить только ID существующих активных туров
+- В `update()`: заменить `exists:tours,id` на ручную фильтрацию — отбросить несуществующие ID после валидации (integer)
+- **Verify**: `source docker/.env.local && docker exec ${APP_NAME}_fpm php artisan route:list --path=admin/opportunity-tours-page`
