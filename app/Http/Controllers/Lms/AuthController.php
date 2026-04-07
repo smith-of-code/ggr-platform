@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Lms;
 
 use App\Http\Controllers\Controller;
+use App\Models\Consent;
 use App\Models\Lms\LmsEvent;
+use App\Services\ConsentService;
 use App\Models\Lms\LmsInvitation;
 use App\Models\Lms\LmsProfile;
 use App\Models\User;
@@ -95,6 +97,12 @@ class AuthController extends Controller
 
         $invitation->increment('uses_count');
 
+        ConsentService::log($request, Consent::TYPE_LMS_INVITE, [
+            'user_id' => $user->id,
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+        ], ['lms_event_id' => $event->id]);
+
         Auth::login($user);
         $request->session()->regenerate();
 
@@ -160,6 +168,11 @@ class AuthController extends Controller
             'activated_at' => now(),
             'invite_token' => null,
         ]);
+
+        ConsentService::log($request, Consent::TYPE_LMS_ACTIVATE, [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ], ['lms_event_id' => $event->id]);
 
         Auth::login($user);
         $request->session()->regenerate();

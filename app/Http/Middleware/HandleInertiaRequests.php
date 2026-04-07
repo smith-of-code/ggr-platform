@@ -66,6 +66,7 @@ class HandleInertiaRequests extends Middleware
             'hiddenPages' => fn () => $request->user()
                 ? []
                 : app(SettingsService::class)->getHiddenPages(),
+            'consentDocumentUrl' => config('consent.document_url'),
             'gamificationEnabled' => function () use ($request) {
                 $user = $request->user();
                 if (!$user) return false;

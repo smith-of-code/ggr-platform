@@ -445,9 +445,23 @@
                   />
                   <p v-if="contactForm.errors.message" class="mt-1 text-xs text-amber-200">{{ contactForm.errors.message }}</p>
                 </div>
+                <div>
+                  <label class="flex items-start gap-3 cursor-pointer">
+                    <input
+                      v-model="contactForm.consent"
+                      type="checkbox"
+                      class="mt-0.5 h-4 w-4 rounded border-white/30 bg-white/20 text-white focus:ring-white/50"
+                    />
+                    <span class="text-sm text-white/80">
+                      Отправляя сообщение, вы даете
+                      <a :href="$page.props.consentDocumentUrl" target="_blank" class="text-white underline hover:text-white/90">согласие на обработку персональных данных</a>
+                    </span>
+                  </label>
+                  <p v-if="contactForm.errors.consent" class="mt-1 text-xs text-amber-200">{{ contactForm.errors.consent }}</p>
+                </div>
                 <button
                   type="submit"
-                  :disabled="contactForm.processing"
+                  :disabled="contactForm.processing || !contactForm.consent"
                   class="w-full rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-[#003274] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {{ contactForm.processing ? 'Отправка…' : 'Отправить' }}
@@ -527,6 +541,7 @@ const contactForm = useForm({
   email: '',
   phone: '',
   message: '',
+  consent: false,
 })
 
 function submitContact() {

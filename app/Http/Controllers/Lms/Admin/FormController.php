@@ -244,6 +244,8 @@ class FormController extends Controller
             'is_anonymous' => ['boolean'],
             'allow_embed' => ['boolean'],
             'create_users' => ['boolean'],
+            'require_consent' => ['boolean'],
+            'consent_document_url' => ['nullable', 'string', 'max:500'],
             'fio_field_key' => ['nullable', 'string', 'max:100'],
             'email_field_key' => ['nullable', 'string', 'max:100'],
             'phone_field_key' => ['nullable', 'string', 'max:100'],

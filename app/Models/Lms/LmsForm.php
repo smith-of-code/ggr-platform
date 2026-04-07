@@ -13,6 +13,7 @@ class LmsForm extends Model
     protected $fillable = [
         'lms_event_id', 'title', 'description', 'slug',
         'is_active', 'is_anonymous', 'allow_embed', 'create_users',
+        'require_consent', 'consent_document_url',
         'fio_field_key', 'email_field_key', 'phone_field_key', 'position_field_key',
         'thank_you_message',
     ];
@@ -22,6 +23,7 @@ class LmsForm extends Model
         'is_anonymous' => 'boolean',
         'allow_embed' => 'boolean',
         'create_users' => 'boolean',
+        'require_consent' => 'boolean',
     ];
 
     public function event(): BelongsTo

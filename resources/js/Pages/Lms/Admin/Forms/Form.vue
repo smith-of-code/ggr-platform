@@ -32,6 +32,11 @@
           <RCheckbox v-model="form.is_anonymous" label="Анонимное прохождение" />
           <RCheckbox v-model="form.allow_embed" label="Разрешить встраивание (embed)" />
           <RCheckbox v-model="form.create_users" label="Создавать пользователей из ответов" />
+          <RCheckbox v-model="form.require_consent" label="Требовать согласие на обработку перс. данных" />
+          <div v-if="form.require_consent" class="sm:col-span-2">
+            <RInput v-model="form.consent_document_url" label="Ссылка на документ согласия" placeholder="По умолчанию: документ из формы регистрации" />
+            <p class="mt-1 text-xs text-gray-400">Оставьте пустым для использования ссылки по умолчанию</p>
+          </div>
         </div>
       </RCard>
 
@@ -180,6 +185,8 @@ const form = useForm({
   is_anonymous: formData?.is_anonymous ?? true,
   allow_embed: formData?.allow_embed ?? true,
   create_users: formData?.create_users ?? false,
+  require_consent: formData?.require_consent ?? false,
+  consent_document_url: formData?.consent_document_url ?? '',
   fio_field_key: formData?.fio_field_key ?? '',
   email_field_key: formData?.email_field_key ?? '',
   phone_field_key: formData?.phone_field_key ?? '',

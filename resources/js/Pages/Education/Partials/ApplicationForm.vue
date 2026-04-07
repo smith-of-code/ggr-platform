@@ -64,9 +64,23 @@
         />
         <p v-if="form.errors.message" class="mt-1 text-xs text-red-600">{{ form.errors.message }}</p>
       </div>
+      <div>
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input
+            v-model="form.consent"
+            type="checkbox"
+            class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
+          />
+          <span class="text-sm text-gray-600">
+            Отправляя заявку, вы даете
+            <a :href="$page.props.consentDocumentUrl" target="_blank" class="text-[#003274] underline hover:text-[#025ea1]">согласие на обработку персональных данных</a>
+          </span>
+        </label>
+        <p v-if="form.errors.consent" class="mt-1 text-xs text-red-600">{{ form.errors.consent }}</p>
+      </div>
       <button
         type="submit"
-        :disabled="form.processing"
+        :disabled="form.processing || !form.consent"
         class="w-full rounded-xl bg-[#003274] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#003274]/25 transition hover:bg-[#025ea1] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {{ form.processing ? 'Отправка…' : 'Отправить заявку' }}
@@ -92,6 +106,7 @@ const form = useForm({
   email: '',
   phone: '',
   message: '',
+  consent: false,
 })
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/

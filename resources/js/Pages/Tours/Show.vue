@@ -490,6 +490,19 @@
             <label class="block text-sm font-medium text-gray-700">Сообщение</label>
             <textarea v-model="appForm.message" rows="3" placeholder="Ваше сообщение..." class="mt-1.5 w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20" />
           </div>
+          <div>
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input
+                v-model="appForm.consent"
+                type="checkbox"
+                class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
+              />
+              <span class="text-sm text-gray-600">
+                Отправляя заявку, вы даете
+                <a :href="$page.props.consentDocumentUrl" target="_blank" class="text-[#003274] underline hover:text-[#025ea1]">согласие на обработку персональных данных</a>
+              </span>
+            </label>
+          </div>
         </form>
 
         <template #footer>
@@ -498,7 +511,7 @@
           </template>
           <template v-else>
             <RButton variant="outline" @click="showModal = false">Отмена</RButton>
-            <RButton variant="primary" @click="submitApplication">Отправить</RButton>
+            <RButton variant="primary" :disabled="!appForm.consent" @click="submitApplication">Отправить</RButton>
           </template>
         </template>
       </RModal>
@@ -727,6 +740,7 @@ const appForm = reactive({
   message: '',
   tour_departure_id: null,
   participation_variant: null,
+  consent: false,
 })
 
 function openApplicationModal(departureId = null, variant = null) {
@@ -752,6 +766,7 @@ function submitApplication() {
     email: appForm.email,
     phone: appForm.phone,
     message: appForm.message,
+    consent: appForm.consent,
   }
   if (appForm.participation_variant) {
     payload.message = `[${appForm.participation_variant === 'bchp' ? 'Сертификат БЧП' : appForm.participation_variant === 'contest' ? 'Конкурс' : 'За свой счёт'}] ${appForm.message || ''}`

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Application;
+use App\Models\Consent;
+use App\Services\ConsentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -20,8 +22,10 @@ class ApplicationController extends Controller
             'message' => 'nullable|string|max:2000',
             'tour_id' => 'nullable|exists:tours,id',
             'tour_departure_id' => 'nullable|exists:tour_departures,id',
+            'consent' => ['accepted'],
         ], [
             'email.email' => 'Введите корректный email-адрес',
+            'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
         ]);
 
         if (!empty($validated['phone'])) {
@@ -38,6 +42,11 @@ class ApplicationController extends Controller
             'tour_departure_id' => $validated['tour_departure_id'] ?? null,
             'status' => 'new',
         ]);
+
+        ConsentService::log($request, Consent::TYPE_APPLICATION, [
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+        ], ['application_type' => $validated['type']]);
 
         return back()->with('success', 'Заявка успешно отправлена. Мы свяжемся с вами в ближайшее время.');
     }
