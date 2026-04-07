@@ -85,6 +85,7 @@ class DashboardController extends Controller
                          ->where('lms_gamification_points.lms_event_id', '=', $event->id);
                 })
                 ->where('lms_profiles.lms_event_id', $event->id)
+                ->where('lms_profiles.role', '!=', 'admin')
                 ->whereNotNull('lms_profiles.city')
                 ->where('lms_profiles.city', '!=', '')
                 ->select(

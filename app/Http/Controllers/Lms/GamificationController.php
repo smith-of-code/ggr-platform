@@ -19,8 +19,13 @@ class GamificationController extends Controller
             return redirect()->route('lms.dashboard', $event)->with('error', 'Геймификация пока недоступна');
         }
 
+        $adminUserIds = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)
+            ->where('role', 'admin')
+            ->pluck('user_id');
+
         $userPoints = DB::table('lms_gamification_points')
             ->where('lms_event_id', $event->id)
+            ->whereNotIn('user_id', $adminUserIds)
             ->select('user_id', DB::raw('SUM(points) as total_points'))
             ->groupBy('user_id')
             ->orderByDesc('total_points')
@@ -33,34 +38,13 @@ class GamificationController extends Controller
             'total_points' => $row->total_points,
         ]);
 
-        $groupPoints = DB::table('lms_gamification_points')
-            ->join('lms_group_members', 'lms_gamification_points.user_id', '=', 'lms_group_members.user_id')
-            ->where('lms_gamification_points.lms_event_id', $event->id)
-            ->select('lms_group_members.lms_group_id', DB::raw('SUM(lms_gamification_points.points) as total_points'))
-            ->groupBy('lms_group_members.lms_group_id')
-            ->orderByDesc('total_points')
-            ->limit(20)
-            ->get();
-
-        $groupIds = $groupPoints->pluck('lms_group_id')->unique()->filter();
-        $groups = $groupIds->isNotEmpty()
-            ? \App\Models\Lms\LmsGroup::whereIn('id', $groupIds)->withCount('members')->get()->keyBy('id')
-            : collect();
-
-        $groupLeaderboard = $groupPoints->map(function ($row) use ($groups) {
-            $group = $groups->get($row->lms_group_id);
-            return [
-                'group' => $group ? ['id' => $group->id, 'title' => $group->title, 'members_count' => $group->members_count] : null,
-                'total_points' => $row->total_points,
-            ];
-        });
-
         $cityLeaderboard = DB::table('lms_profiles')
             ->leftJoin('lms_gamification_points', function ($join) use ($event) {
                 $join->on('lms_profiles.user_id', '=', 'lms_gamification_points.user_id')
                      ->where('lms_gamification_points.lms_event_id', '=', $event->id);
             })
             ->where('lms_profiles.lms_event_id', $event->id)
+            ->where('lms_profiles.role', '!=', 'admin')
             ->whereNotNull('lms_profiles.city')
             ->where('lms_profiles.city', '!=', '')
             ->select(
@@ -110,7 +94,6 @@ class GamificationController extends Controller
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'userLeaderboard' => $userLeaderboardData,
-            'groupLeaderboard' => $groupLeaderboard,
             'cityLeaderboard' => $cityLeaderboard,
             'userRank' => $userRank,
             'userPoints' => $userPoints,
