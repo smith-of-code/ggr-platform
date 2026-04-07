@@ -8,7 +8,11 @@ use App\Models\Lms\LmsAssignmentComment;
 use App\Models\Lms\LmsAssignmentReview;
 use App\Models\Lms\LmsAssignmentSubmission;
 use App\Models\Lms\LmsAssignmentTask;
+use App\Models\Lms\LmsCourseEnrollment;
+use App\Models\Lms\LmsCourseStage;
 use App\Models\Lms\LmsEvent;
+use App\Models\Lms\LmsStageBlock;
+use App\Models\Lms\LmsStageProgress;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -143,7 +147,12 @@ class AssignmentController extends Controller
         ]);
 
         $statusMap = ['approve' => 'approved', 'reject' => 'rejected', 'revision' => 'revision'];
-        $submission->update(['status' => $statusMap[$validated['decision']] ?? $validated['decision']]);
+        $newStatus = $statusMap[$validated['decision']] ?? $validated['decision'];
+        $submission->update(['status' => $newStatus]);
+
+        if ($newStatus === 'approved') {
+            $this->markLinkedStagesCompleted($assignment, $submission->user_id);
+        }
 
         return redirect()->back()->with('success', 'Решение сохранено');
     }
@@ -253,6 +262,35 @@ class AssignmentController extends Controller
     {
         if ($assignment->lms_event_id !== $event->id) {
             abort(404);
+        }
+    }
+
+    private function markLinkedStagesCompleted(LmsAssignment $assignment, int $userId): void
+    {
+        $stageIds = LmsCourseStage::where('lms_assignment_id', $assignment->id)->pluck('id')
+            ->merge(LmsStageBlock::where('lms_assignment_id', $assignment->id)->pluck('lms_course_stage_id'))
+            ->unique();
+
+        foreach ($stageIds as $stageId) {
+            LmsStageProgress::updateOrCreate(
+                ['lms_course_stage_id' => $stageId, 'user_id' => $userId],
+                ['status' => 'completed', 'completed_at' => now()]
+            );
+
+            $stage = LmsCourseStage::find($stageId);
+            if ($stage) {
+                $totalStages = LmsCourseStage::where('lms_course_id', $stage->lms_course_id)->count();
+                $completedStages = LmsStageProgress::whereIn(
+                    'lms_course_stage_id',
+                    LmsCourseStage::where('lms_course_id', $stage->lms_course_id)->pluck('id')
+                )->where('user_id', $userId)->where('status', 'completed')->count();
+
+                if ($completedStages >= $totalStages) {
+                    LmsCourseEnrollment::where('lms_course_id', $stage->lms_course_id)
+                        ->where('user_id', $userId)
+                        ->update(['status' => 'completed', 'completed_at' => now()]);
+                }
+            }
         }
     }
 }

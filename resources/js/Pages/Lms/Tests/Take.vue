@@ -1,6 +1,6 @@
 <template>
   <LmsLayout :event="event" :user="user" :profile="profile">
-    <Head :title="`Тест: ${test?.title} – ${event?.name}`" />
+    <Head :title="`Тест: ${test?.title} – ${event?.title || event?.name}`" />
     <div class="mx-auto max-w-3xl space-y-6">
       <div class="flex items-center justify-between">
         <h1 class="font-brand text-xl font-bold text-gray-900">{{ test?.title }}</h1>

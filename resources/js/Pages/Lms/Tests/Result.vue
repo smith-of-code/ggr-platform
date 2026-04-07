@@ -1,6 +1,6 @@
 <template>
   <LmsLayout :event="event" :user="user" :profile="profile">
-    <Head :title="`Результат: ${test?.title} – ${event?.name}`" />
+    <Head :title="`Результат: ${test?.title} – ${event?.title || event?.name}`" />
     <div class="mx-auto max-w-3xl space-y-6">
       <Link
         :href="route('lms.tests.show', { event: event?.slug, test: test?.id })"
