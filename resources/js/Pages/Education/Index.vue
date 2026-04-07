@@ -49,6 +49,13 @@
             </div>
             <div class="absolute left-3 top-3 flex flex-wrap gap-2">
               <span
+                v-if="p.type && p.type !== 'education'"
+                class="rounded-full px-3 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm"
+                :class="p.type === 'partner' ? 'bg-amber-400/90 text-amber-950' : 'bg-emerald-400/90 text-emerald-950'"
+              >
+                {{ p.type === 'partner' ? 'Партнёры' : 'Международный' }}
+              </span>
+              <span
                 v-if="p.duration"
                 class="rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-[#003274] shadow-sm backdrop-blur-sm"
               >
