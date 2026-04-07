@@ -327,6 +327,7 @@ function emptyModule() {
 function stageBlocksFromServer(s) {
   if (s.blocks?.length) {
     return s.blocks.map(b => ({
+      id: b.id || undefined,
       type: b.type || 'content',
       content: b.content ?? '',
       position: b.position ?? 0,
@@ -339,12 +340,14 @@ function stageBlocksFromServer(s) {
 function buildModules() {
   if (props.course?.modules?.length) {
     return props.course.modules.map(m => ({
+      id: m.id || undefined,
       title: m.title ?? '',
       description: m.description ?? '',
       available_from: m.available_from ? m.available_from.slice(0, 16) : '',
       available_to: m.available_to ? m.available_to.slice(0, 16) : '',
       source_module_id: m.source_module_id ?? null,
       stages: (m.stages || []).map(s => ({
+        id: s.id || undefined,
         title: s.title,
         type: s.type || 'content',
         content: s.content ?? '',
@@ -362,6 +365,7 @@ function buildOrphanStages() {
     return props.course.stages
       .filter(s => !s.lms_course_module_id)
       .map(s => ({
+        id: s.id || undefined,
         title: s.title,
         type: s.type || 'content',
         content: s.content ?? '',
