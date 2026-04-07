@@ -90,6 +90,12 @@
 - Сидер обновлён с реальными названиями, URL и путями к логотипам
 - Files: `OpportunityToursSeeder.php`, `public/images/partners/*`
 
+### BUG-001: Фильтрация удалённых туров из featured_tour_ids ✓
+- `index()`: фильтрация `featured_tour_ids` по существующим активным турам
+- `update()`: `exists:tours,id` → `integer` + ручная фильтрация после валидации
+- Lint: clean
+- Files: `app/Http/Controllers/Admin/OpportunityToursPageController.php`
+
 ## Open issues
 
 (пусто)
