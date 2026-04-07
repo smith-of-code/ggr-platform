@@ -168,7 +168,7 @@ const collectionLabels = {
   research_page: 'Исследования',
   atoms_vkusa: 'Атомы вкуса',
   opportunity_tours: 'Возможности',
-  lms_courses: 'Все курсы',
+  lms_courses: 'Все программы',
   lms_materials: 'Все материалы',
   lms_grants: 'Все гранты',
 }

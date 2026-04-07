@@ -26,7 +26,7 @@
             <div class="h-12 w-px bg-white/20" />
           </template>
           <div>
-            <p class="text-xs font-medium uppercase tracking-wider text-white/50">Курсов пройдено</p>
+            <p class="text-xs font-medium uppercase tracking-wider text-white/50">Программ пройдено</p>
             <p class="mt-1 text-3xl font-bold">
               {{ completedCoursesCount }}
               <span class="text-base font-normal text-white/50">/ {{ courses?.length || 0 }}</span>
@@ -63,7 +63,7 @@
         <div>
           <p class="font-semibold text-amber-800">Заполните профиль</p>
           <p class="mt-1 text-sm text-amber-700">
-            Только при заполненном личном кабинете участник может записаться на курс.
+            Только при заполненном личном кабинете участник может записаться на программу.
           </p>
           <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-2 inline-block text-sm font-medium text-rosatom-600 hover:underline">
             Перейти в личный кабинет
@@ -79,7 +79,7 @@
               <BookOpenIcon class="h-5 w-5 text-rosatom-600" />
             </div>
             <div>
-              <p class="text-sm text-gray-500">Записанных курсов</p>
+              <p class="text-sm text-gray-500">Записанных программ</p>
               <p class="text-2xl font-bold text-gray-900">{{ courses?.length || 0 }}</p>
             </div>
           </div>
@@ -90,7 +90,7 @@
               <CheckCircleIcon class="h-5 w-5 text-accent-green" />
             </div>
             <div>
-              <p class="text-sm text-gray-500">Завершённых курсов</p>
+              <p class="text-sm text-gray-500">Завершённых программ</p>
               <p class="text-2xl font-bold text-gray-900">{{ completedCoursesCount }}</p>
             </div>
           </div>
@@ -146,12 +146,12 @@
       <!-- My Courses -->
       <section>
         <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-lg font-bold text-gray-900">Мои курсы</h2>
+          <h2 class="text-lg font-bold text-gray-900">Мои программы</h2>
           <Link
             :href="route('lms.courses.index', { event: event?.slug })"
             class="text-sm font-semibold text-rosatom-600 hover:text-rosatom-700"
           >
-            Все курсы →
+            Все программы →
           </Link>
         </div>
         <div v-if="courses?.length" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -168,7 +168,7 @@
         </div>
         <div v-else class="rounded-xl border border-dashed border-gray-200 bg-white py-12 text-center">
           <BookOpenIcon class="mx-auto h-10 w-10 text-gray-300" />
-          <p class="mt-3 text-sm text-gray-400">Курсы пока не назначены</p>
+          <p class="mt-3 text-sm text-gray-400">Программы пока не назначены</p>
         </div>
       </section>
 

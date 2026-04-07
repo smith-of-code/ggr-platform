@@ -46,7 +46,7 @@
             </div>
             <div class="mt-1 text-xs text-gray-500 line-clamp-2">
               <span v-if="item.module_title">Модуль: {{ item.module_title }} · </span>
-              Курс: {{ item.course_title ?? '—' }}
+              Программа: {{ item.course_title ?? '—' }}
               <span v-if="item.type === 'content' && item.content" class="ml-1 text-gray-400">· {{ stripHtml(item.content).slice(0, 80) }}...</span>
             </div>
           </template>
@@ -54,12 +54,12 @@
             <div class="font-medium text-gray-900">{{ item.title }}</div>
             <div class="mt-0.5 text-xs text-gray-500">
               <template v-if="type === 'module'">
-                Курс: {{ item.course?.title ?? '—' }}
+                Программа: {{ item.course?.title ?? '—' }}
                 <span v-if="item.stages?.length" class="ml-2">· {{ item.stages.length }} этап(ов)</span>
               </template>
               <template v-else>
                 <span v-if="item.module?.title">Модуль: {{ item.module.title }} · </span>
-                Курс: {{ item.course?.title ?? '—' }}
+                Программа: {{ item.course?.title ?? '—' }}
               </template>
             </div>
           </template>

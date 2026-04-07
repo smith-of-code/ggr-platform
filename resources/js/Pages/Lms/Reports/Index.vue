@@ -45,7 +45,7 @@
         <table class="min-w-full">
           <thead>
             <tr class="border-b border-gray-200 bg-gray-50">
-              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Курс</th>
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Программа</th>
               <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Записано</th>
               <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">В процессе</th>
               <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Завершено</th>
@@ -68,7 +68,7 @@
             </tr>
           </tbody>
         </table>
-        <div v-if="courseStats.length === 0" class="px-5 py-12 text-center text-sm text-gray-400">Курсов пока нет</div>
+        <div v-if="courseStats.length === 0" class="px-5 py-12 text-center text-sm text-gray-400">Программ пока нет</div>
       </RCard>
     </div>
 
@@ -157,7 +157,7 @@
               <tr class="border-b border-gray-200 bg-gray-50">
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Участник</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Роль</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Курсов</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Программ</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Заверш.</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Тестов</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Ср. балл</th>
@@ -209,7 +209,7 @@
           <label class="mb-3 block text-sm font-medium text-gray-700">Включить разделы</label>
           <div class="space-y-2">
             <RCheckbox v-model="emailSections.users" label="Участники (детальная таблица)" />
-            <RCheckbox v-model="emailSections.courses" label="Курсы (статистика)" />
+            <RCheckbox v-model="emailSections.courses" label="Программы (статистика)" />
             <RCheckbox v-model="emailSections.tests" label="Тесты (статистика)" />
           </div>
         </div>
@@ -245,7 +245,7 @@ const props = defineProps({
 })
 
 const tabs = computed(() => [
-  { id: 'courses', label: 'Курсы', count: props.courseStats?.length || 0 },
+  { id: 'courses', label: 'Программы', count: props.courseStats?.length || 0 },
   { id: 'tests', label: 'Тесты', count: props.testStats?.length || 0 },
   { id: 'assignments', label: 'Задания', count: props.assignmentStats?.length || 0 },
   { id: 'users', label: 'Участники', count: props.userDetails?.length || 0 },
@@ -267,10 +267,10 @@ const selectedSections = computed(() => {
 
 const summaryCards = computed(() => [
   { label: 'Участников', value: props.summary?.total_users ?? 0, color: 'text-rosatom-600', bg: 'bg-rosatom-500' },
-  { label: 'Курсов', value: props.summary?.total_courses ?? 0, color: 'text-blue-600', bg: 'bg-blue-500' },
+  { label: 'Программ', value: props.summary?.total_courses ?? 0, color: 'text-blue-600', bg: 'bg-blue-500' },
   { label: 'Тестов', value: props.summary?.total_tests ?? 0, color: 'text-purple-600', bg: 'bg-purple-500' },
   { label: 'Заданий', value: props.summary?.total_assignments ?? 0, color: 'text-amber-600', bg: 'bg-amber-500' },
-  { label: 'Ср. завершение курсов', value: (props.summary?.avg_course_completion ?? 0) + '%', color: 'text-green-600', bg: 'bg-green-500', sub: 'от записанных' },
+  { label: 'Ср. завершение программ', value: (props.summary?.avg_course_completion ?? 0) + '%', color: 'text-green-600', bg: 'bg-green-500', sub: 'от записанных' },
   { label: 'Ср. сдача тестов', value: (props.summary?.avg_test_pass_rate ?? 0) + '%', color: 'text-emerald-600', bg: 'bg-emerald-500', sub: 'от попыток' },
 ])
 

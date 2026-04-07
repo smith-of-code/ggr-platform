@@ -36,7 +36,7 @@
         </div>
 
         <h1 class="text-2xl font-bold text-gray-900">Регистрация</h1>
-        <p class="mt-2 text-sm text-gray-500">Создайте аккаунт для доступа к курсам</p>
+        <p class="mt-2 text-sm text-gray-500">Создайте аккаунт для доступа к программам</p>
 
         <form @submit.prevent="submit" class="mt-8 space-y-5">
           <RInput

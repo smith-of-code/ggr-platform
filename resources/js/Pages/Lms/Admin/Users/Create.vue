@@ -7,7 +7,7 @@
           Назад к участникам
         </RButton>
         <h1 class="text-2xl font-bold text-gray-900">Добавить участника</h1>
-        <p class="mt-1 text-sm text-gray-500">Создайте нового пользователя и назначьте ему роль и курсы</p>
+        <p class="mt-1 text-sm text-gray-500">Создайте нового пользователя и назначьте ему роль и программы</p>
       </div>
 
       <form @submit.prevent="submit" class="space-y-8">
@@ -49,14 +49,14 @@
 
         <!-- Course assignment -->
         <RCard elevation="raised">
-          <h2 class="mb-5 text-lg font-bold text-gray-900">Назначение курсов</h2>
+          <h2 class="mb-5 text-lg font-bold text-gray-900">Назначение программ</h2>
           <MultiSelect
             v-model="form.course_ids"
             :options="courses"
             value-key="id"
             label-key="title"
-            label="Курсы"
-            placeholder="Выберите курсы для назначения"
+            label="Программы"
+            placeholder="Выберите программы для назначения"
           />
         </RCard>
 

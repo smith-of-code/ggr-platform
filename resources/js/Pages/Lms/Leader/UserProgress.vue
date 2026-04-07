@@ -20,7 +20,7 @@
 
       <!-- Course progress -->
       <div>
-        <h2 class="font-brand mb-4 text-lg font-semibold text-gray-900">Прогресс по курсам</h2>
+        <h2 class="font-brand mb-4 text-lg font-semibold text-gray-900">Прогресс по программам</h2>
         <div class="space-y-3">
           <Link
             v-for="cp in (courseProgress || [])"
@@ -38,7 +38,7 @@
           </Link>
         </div>
         <p v-if="!(courseProgress?.length)" class="py-8 text-center text-gray-400">
-          Нет записей на курсы
+          Нет записей на программы
         </p>
       </div>
 

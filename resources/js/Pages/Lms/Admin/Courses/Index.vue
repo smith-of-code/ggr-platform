@@ -2,12 +2,12 @@
   <LmsAdminLayout :event="event">
     <div class="mb-8 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Курсы</h1>
-        <p class="mt-1 text-sm text-gray-500">Курсы события «{{ event.title }}»</p>
+        <h1 class="text-2xl font-bold text-gray-900">Программы</h1>
+        <p class="mt-1 text-sm text-gray-500">Программы события «{{ event.title }}»</p>
       </div>
       <Link :href="route('lms.admin.courses.create', event.slug)" class="inline-flex items-center gap-2 rounded-xl bg-rosatom-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rosatom-700">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-        Создать курс
+        Создать программу
       </Link>
     </div>
 
@@ -54,7 +54,7 @@
           </tr>
         </tbody>
       </table>
-      <div v-if="courses.data.length === 0" class="px-5 py-16 text-center text-sm text-gray-500">Курсов пока нет</div>
+      <div v-if="courses.data.length === 0" class="px-5 py-16 text-center text-sm text-gray-500">Программ пока нет</div>
     </RCard>
   </LmsAdminLayout>
 </template>
@@ -66,7 +66,7 @@ import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 const props = defineProps({ event: Object, courses: Object })
 
 function confirmDestroy(course) {
-  if (confirm(`Удалить курс "${course.title}"?`)) {
+  if (confirm(`Удалить программу "${course.title}"?`)) {
     router.delete(route('lms.admin.courses.destroy', [props.event.slug, course.id]))
   }
 }

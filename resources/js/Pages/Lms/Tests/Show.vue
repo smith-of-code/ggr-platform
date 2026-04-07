@@ -1,6 +1,6 @@
 <template>
   <LmsLayout :event="event" :user="user" :profile="profile">
-    <Head :title="`${test?.title} – ${event?.name}`" />
+    <Head :title="`${test?.title} – ${event?.title || event?.name}`" />
     <div class="mx-auto max-w-3xl space-y-6">
       <Link
         :href="route('lms.tests.index', { event: event?.slug })"
@@ -62,8 +62,8 @@
               </thead>
               <tbody class="divide-y divide-gray-200">
                 <tr v-for="a in attempts" :key="a.id" class="hover:bg-gray-50">
-                  <td class="px-4 py-3 text-sm text-gray-700">{{ formatDate(a.completed_at || a.created_at) }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-700">{{ a.score ?? a.percentage }}%</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ formatDate(a.finished_at || a.started_at) }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ a.percentage ?? 0 }}% ({{ a.score ?? 0 }}/{{ a.max_score ?? 0 }})</td>
                   <td class="px-4 py-3">
                     <RBadge :variant="a.passed ? 'success' : 'error'" size="sm">
                       {{ a.passed ? 'Сдан' : 'Не сдан' }}

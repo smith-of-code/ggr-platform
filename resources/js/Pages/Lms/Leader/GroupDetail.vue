@@ -23,7 +23,7 @@
             <thead>
               <tr>
                 <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Участник</th>
-                <th class="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Курсы</th>
+                <th class="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Программы</th>
                 <th class="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Прогресс</th>
                 <th class="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Баллы</th>
                 <th class="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider text-gray-500"></th>

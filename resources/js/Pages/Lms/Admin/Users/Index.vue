@@ -100,7 +100,7 @@
         </RButton>
         <RButton variant="outline" size="sm" @click="showBulkEnrollModal = true">
           <template #icon><AcademicCapIcon class="h-4 w-4" /></template>
-          Записать на курсы
+          Записать на программы
         </RButton>
         <button type="button" class="ml-auto text-xs text-gray-500 hover:text-gray-700" @click="selectedIds = []">
           Снять выделение
@@ -429,21 +429,21 @@
 
     <!-- Bulk Enroll Modal -->
     <div class="enroll-modal-wrapper">
-      <RModal v-model="showBulkEnrollModal" title="Записать на курсы" :subtitle="`Выбрано участников: ${selectedIds.length}`" size="lg">
+      <RModal v-model="showBulkEnrollModal" title="Записать на программы" :subtitle="`Выбрано участников: ${selectedIds.length}`" size="lg">
         <div class="min-h-[340px] space-y-5">
           <MultiSelect
             v-model="bulkEnrollCourseIds"
             :options="courses"
             value-key="id"
             label-key="title"
-            label="Курсы"
-            placeholder="Выберите курсы..."
+            label="Программы"
+            placeholder="Выберите программы..."
             :searchable="true"
           />
           <div v-if="bulkEnrollCourseIds.length" class="space-y-3">
             <p class="text-sm text-gray-500">
               Будет создано до <strong>{{ selectedIds.length * bulkEnrollCourseIds.length }}</strong> записей
-              ({{ selectedIds.length }} участников × {{ bulkEnrollCourseIds.length }} курсов)
+              ({{ selectedIds.length }} участников × {{ bulkEnrollCourseIds.length }} программ)
             </p>
             <div class="flex flex-wrap gap-2">
               <RBadge v-for="cid in bulkEnrollCourseIds" :key="cid" variant="primary" size="sm">

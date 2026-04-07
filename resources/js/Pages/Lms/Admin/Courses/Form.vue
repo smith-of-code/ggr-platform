@@ -3,9 +3,9 @@
     <div class="mb-8">
       <Link :href="route('lms.admin.courses.index', event.slug)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-900">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-        Назад к курсам
+        Назад к программам
       </Link>
-      <h1 class="text-2xl font-bold text-gray-900">{{ course ? 'Редактировать курс' : 'Новый курс' }}</h1>
+      <h1 class="text-2xl font-bold text-gray-900">{{ course ? 'Редактировать программу' : 'Новая программа' }}</h1>
     </div>
 
     <form @submit.prevent="submit" class="space-y-8">
@@ -31,7 +31,7 @@
           <div class="sm:col-span-2">
             <ImageUploadCrop
               v-model="form.image"
-              label="Изображение курса"
+              label="Изображение программы"
               :upload-url="route('lms.admin.upload.image', event.slug)"
               :media-picker-url="route('lms.admin.media.index', event.slug)" collection="lms_courses" :entity-type="mediaEntityType" :entity-id="mediaEntityId"
               :skip-crop="true"
@@ -54,7 +54,7 @@
             <RCheckbox v-model="form.requires_approval" label="Требуется одобрение для записи" />
           </div>
           <div class="flex items-end">
-            <RCheckbox v-model="form.is_mandatory" label="Обязательный курс (автозапись при регистрации)" />
+            <RCheckbox v-model="form.is_mandatory" label="Обязательная программа (автозапись при регистрации)" />
           </div>
           <div class="flex items-end">
             <RCheckbox v-model="form.unlocks_gamification" label="Открывает геймификацию (баллы, рейтинг)" />
@@ -75,7 +75,7 @@
         </template>
 
         <div v-if="form.modules.length === 0" class="py-8 text-center text-sm text-gray-400">
-          Модулей пока нет. Нажмите «Добавить модуль», чтобы структурировать курс.
+          Модулей пока нет. Нажмите «Добавить модуль», чтобы структурировать программу.
         </div>
 
         <div class="space-y-6">
@@ -93,7 +93,7 @@
                     @click="openModuleSearch(mIdx)"
                   >
                     <MagnifyingGlassIcon class="h-3.5 w-3.5" />
-                    Найти модуль из другого курса
+                    Найти модуль из другой программы
                   </button>
                   <div class="flex items-center gap-2">
                     <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-rosatom-500 text-xs font-bold text-white">{{ mIdx + 1 }}</span>

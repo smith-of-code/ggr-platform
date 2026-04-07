@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Lms;
 
 use App\Http\Controllers\Controller;
+use App\Models\Lms\LmsCourseEnrollment;
+use App\Models\Lms\LmsCourseStage;
+use App\Models\Lms\LmsEvent;
+use App\Models\Lms\LmsProfile;
+use App\Models\Lms\LmsStageBlock;
+use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTest;
 use App\Models\Lms\LmsTestAttempt;
 use App\Models\Lms\LmsTestAnswer;
 use App\Models\Lms\LmsTestQuestion;
 use App\Models\Lms\LmsTestResponse;
-use App\Models\Lms\LmsEvent;
-use App\Models\Lms\LmsProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,6 +32,22 @@ class TestController extends Controller
         }
 
         $tests = $query->paginate(12)->withQueryString();
+        $user = auth()->user();
+        $testIds = collect($tests->items())->pluck('id');
+
+        $attempts = LmsTestAttempt::whereIn('lms_test_id', $testIds)
+            ->where('user_id', $user->id)
+            ->get()
+            ->groupBy('lms_test_id');
+
+        $tests->getCollection()->transform(function ($test) use ($attempts) {
+            $testAttempts = $attempts->get($test->id, collect());
+            $test->attempt_count = $testAttempts->count();
+            $bestAttempt = $testAttempts->where('passed', true)->sortByDesc('percentage')->first()
+                ?? $testAttempts->sortByDesc('percentage')->first();
+            $test->best_score = $bestAttempt?->percentage;
+            return $test;
+        });
 
         return Inertia::render('Lms/Tests/Index', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
@@ -63,7 +83,7 @@ class TestController extends Controller
         ]);
     }
 
-    public function start(LmsEvent $event, LmsTest $test): RedirectResponse
+    public function start(Request $request, LmsEvent $event, LmsTest $test): RedirectResponse
     {
         if ($test->lms_event_id !== $event->id) {
             abort(404);
@@ -84,6 +104,10 @@ class TestController extends Controller
             'started_at' => now(),
             'status' => 'in_progress',
         ]);
+
+        if ($returnUrl = $request->input('return_url')) {
+            return redirect($returnUrl);
+        }
 
         return redirect()->route('lms.tests.take', [
             'event' => $event->slug,
@@ -216,7 +240,60 @@ class TestController extends Controller
             'finished_at' => now(),
         ]);
 
+        if ($passed) {
+            $this->markLinkedStagesCompleted($test, $user);
+        }
+
+        if ($returnUrl = $request->input('return_url')) {
+            return redirect($returnUrl);
+        }
+
         return redirect()->route('lms.tests.result', [$event, $test, $attempt]);
+    }
+
+    private function markLinkedStagesCompleted(LmsTest $test, $user): void
+    {
+        $stageIds = collect();
+
+        // Legacy: test linked directly to stage
+        $directStageIds = LmsCourseStage::where('lms_test_id', $test->id)->pluck('id');
+        $stageIds = $stageIds->merge($directStageIds);
+
+        // Multi-block: test linked via stage_blocks
+        $blockStageIds = LmsStageBlock::where('lms_test_id', $test->id)->pluck('lms_course_stage_id');
+        $stageIds = $stageIds->merge($blockStageIds);
+
+        $stageIds = $stageIds->unique();
+
+        foreach ($stageIds as $stageId) {
+            LmsStageProgress::updateOrCreate(
+                ['lms_course_stage_id' => $stageId, 'user_id' => $user->id],
+                ['status' => 'completed', 'completed_at' => now()]
+            );
+
+            $stage = LmsCourseStage::find($stageId);
+            if ($stage) {
+                $this->checkCourseCompletion($stage->lms_course_id, $user);
+            }
+        }
+    }
+
+    private function checkCourseCompletion(int $courseId, $user): void
+    {
+        $totalStages = LmsCourseStage::where('lms_course_id', $courseId)->count();
+        $completedStages = LmsStageProgress::whereIn(
+            'lms_course_stage_id',
+            LmsCourseStage::where('lms_course_id', $courseId)->pluck('id')
+        )
+            ->where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->count();
+
+        if ($completedStages >= $totalStages) {
+            LmsCourseEnrollment::where('lms_course_id', $courseId)
+                ->where('user_id', $user->id)
+                ->update(['status' => 'completed', 'completed_at' => now()]);
+        }
     }
 
     public function result(LmsEvent $event, LmsTest $test, LmsTestAttempt $attempt): Response

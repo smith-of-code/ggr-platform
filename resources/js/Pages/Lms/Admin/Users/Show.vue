@@ -80,7 +80,7 @@
 
           <!-- Course assignment -->
           <RCard elevation="raised">
-            <h3 class="mb-4 text-lg font-bold text-gray-900">Назначенные курсы</h3>
+            <h3 class="mb-4 text-lg font-bold text-gray-900">Назначенные программы</h3>
 
             <div v-if="enrollments?.length" class="mb-4 space-y-2">
               <div v-for="e in enrollments" :key="e.id" class="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
@@ -95,7 +95,7 @@
                   <button
                     type="button"
                     class="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500"
-                    title="Отписать от курса"
+                    title="Отписать от программы"
                     @click="unenrollFromCourse(e)"
                   >
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
@@ -103,7 +103,7 @@
                 </div>
               </div>
             </div>
-            <div v-else class="mb-4 text-sm text-gray-400">Курсы не назначены</div>
+            <div v-else class="mb-4 text-sm text-gray-400">Программы не назначены</div>
 
             <form @submit.prevent="assignCourses" class="mt-4 border-t border-gray-100 pt-4">
               <MultiSelect
@@ -111,11 +111,11 @@
                 :options="availableCourses"
                 value-key="id"
                 label-key="title"
-                label="Добавить курсы"
-                placeholder="Выберите курсы для назначения"
+                label="Добавить программы"
+                placeholder="Выберите программы для назначения"
               />
               <RButton type="submit" variant="primary" size="sm" class="mt-3" :loading="courseForm.processing" :disabled="courseForm.processing || courseForm.course_ids.length === 0">
-                Назначить курсы
+                Назначить программы
               </RButton>
             </form>
           </RCard>
@@ -212,7 +212,7 @@ function enrollmentBadgeVariant(status) {
 }
 
 function unenrollFromCourse(enrollment) {
-  const courseName = enrollment.course?.title || 'курса'
+  const courseName = enrollment.course?.title || 'программы'
   if (!confirm(`Отписать участника от «${courseName}»? Прогресс обучения будет удалён.`)) return
   router.delete(route('lms.admin.enrollments.destroy', [props.event.slug, enrollment.id]))
 }

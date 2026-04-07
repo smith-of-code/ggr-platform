@@ -110,8 +110,8 @@ const sidebarItems = computed(() => {
 
   if (props.event) {
     items.push(
-      { id: 'courses', label: 'Курсы', icon: icons.courses },
-      { id: 'enrollments', label: 'Заявки на курсы', icon: icons.enrollments },
+      { id: 'courses', label: 'Программы', icon: icons.courses },
+      { id: 'enrollments', label: 'Заявки на программы', icon: icons.enrollments },
       { id: 'tests', label: 'Тесты', icon: icons.tests },
       { id: 'assignments', label: 'Задания', icon: icons.assignments },
       { id: 'trajectories', label: 'Траектории', icon: icons.trajectories },

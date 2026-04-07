@@ -1,15 +1,15 @@
 <template>
   <LmsLayout :event="event" :user="$page.props.user" :profile="$page.props.profile">
-    <Head :title="`Курсы – ${event?.title}`" />
+    <Head :title="`Программы – ${event?.title}`" />
     <div class="space-y-6">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 class="font-brand text-2xl font-bold text-gray-900">Каталог курсов</h1>
+        <h1 class="font-brand text-2xl font-bold text-gray-900">Каталог программ</h1>
         <div class="w-full sm:w-72">
           <input
             :value="filters?.search ?? ''"
             @input="debouncedSearch"
             type="text"
-            placeholder="Поиск курсов..."
+            placeholder="Поиск программ..."
             class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
           />
         </div>
@@ -33,7 +33,7 @@
 
       <div v-if="!coursesList.length" class="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">
         <BookOpenIcon class="mx-auto h-10 w-10 text-gray-300" />
-        <p class="mt-3 text-sm text-gray-400">Курсы не найдены</p>
+        <p class="mt-3 text-sm text-gray-400">Программы не найдены</p>
       </div>
 
       <!-- Pagination -->

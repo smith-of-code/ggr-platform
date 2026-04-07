@@ -43,39 +43,44 @@
               />
             </div>
 
-            <!-- test -->
+            <!-- test (inline) -->
             <div v-else-if="block.type === 'test' && block.lms_test_id">
-              <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <InlineTest
+                v-if="inlineTest"
+                :event="event"
+                :test="inlineTest.test"
+                :attempts="inlineTest.attempts"
+                :active-attempt="inlineTest.activeAttempt"
+                :questions="inlineTest.questions"
+                :latest-result="inlineTest.latestResult"
+                :return-url="stageReturnUrl"
+              />
+              <div v-else class="rounded-xl border border-gray-200 bg-gray-50 p-5">
                 <div class="flex items-center gap-3">
                   <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
                     <ClipboardDocumentListIcon class="h-5 w-5 text-amber-600" />
                   </div>
-                  <div>
-                    <p class="font-medium text-gray-900">{{ block.test?.title || 'Тест' }}</p>
-                    <p class="text-xs text-gray-400">Нажмите, чтобы перейти к тестированию</p>
-                  </div>
+                  <p class="font-medium text-gray-900">{{ block.test?.title || 'Тест' }}</p>
                 </div>
-                <RButton variant="outline" class="mt-4" @click="router.visit(route('lms.tests.show', { event: event?.slug, test: block.lms_test_id }))">
-                  Перейти к тесту
-                </RButton>
               </div>
             </div>
 
-            <!-- assignment -->
+            <!-- assignment (inline) -->
             <div v-else-if="block.type === 'assignment' && block.lms_assignment_id">
-              <div class="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <InlineAssignment
+                v-if="inlineAssignment"
+                :event="event"
+                :assignment="inlineAssignment.assignment"
+                :submission="inlineAssignment.submission"
+                :user="user"
+              />
+              <div v-else class="rounded-xl border border-gray-200 bg-gray-50 p-5">
                 <div class="flex items-center gap-3">
                   <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
                     <PencilSquareIcon class="h-5 w-5 text-blue-600" />
                   </div>
-                  <div>
-                    <p class="font-medium text-gray-900">{{ block.assignment?.title || 'Задание' }}</p>
-                    <p class="text-xs text-gray-400">Нажмите, чтобы перейти к заданию</p>
-                  </div>
+                  <p class="font-medium text-gray-900">{{ block.assignment?.title || 'Задание' }}</p>
                 </div>
-                <RButton variant="outline" class="mt-4" @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: block.lms_assignment_id }))">
-                  Перейти к заданию
-                </RButton>
               </div>
             </div>
 
@@ -232,6 +237,8 @@ import { Head, Link, router } from '@inertiajs/vue3'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import axios from 'axios'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
+import InlineTest from '@/Components/Lms/InlineTest.vue'
+import InlineAssignment from '@/Components/Lms/InlineAssignment.vue'
 import {
   ArrowLeftIcon,
   ChevronLeftIcon,
@@ -254,9 +261,15 @@ const props = defineProps({
   linkedVideo: { type: Object, default: null },
   progress: { type: Object, default: null },
   stages: { type: Array, default: () => [] },
+  inlineTest: { type: Object, default: null },
+  inlineAssignment: { type: Object, default: null },
 })
 
 const scormFrame = ref(null)
+
+const stageReturnUrl = computed(() =>
+  route('lms.stages.show', { event: props.event?.slug, course: props.course?.id, stage: props.stage?.id })
+)
 
 const displayBlocks = computed(() => {
   if (props.blocks?.length) return props.blocks

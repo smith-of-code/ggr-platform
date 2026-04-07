@@ -32,7 +32,7 @@
           <p class="mb-4 text-sm text-gray-500">
             Статические блоки — фиксированные этапы (отбор, очный старт и т.д.).
             Блоки «Задание» — ссылка на задание из LMS.
-            Курсы и гранты участника подтягиваются автоматически по датам.
+            Программы и гранты участника подтягиваются автоматически по датам.
           </p>
           <div v-for="(block, idx) in form.blocks" :key="idx" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
             <div class="flex items-start gap-3">
@@ -111,12 +111,12 @@
       <!-- Steps (legacy) -->
       <RCard>
         <template #header>
-          <h2 class="text-base font-bold text-gray-900">Этапы (курсы)</h2>
+          <h2 class="text-base font-bold text-gray-900">Этапы (программы)</h2>
         </template>
         <div class="space-y-3 p-8">
           <div v-for="(step, idx) in form.steps" :key="idx" class="flex gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
             <select v-model="step.lms_course_id" required class="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
-              <option value="">— Выберите курс —</option>
+              <option value="">— Выберите программу —</option>
               <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.title }}</option>
             </select>
             <RCheckbox v-model="step.is_locked" label="Закрыт" class="shrink-0" />

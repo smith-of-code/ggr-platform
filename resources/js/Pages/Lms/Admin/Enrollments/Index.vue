@@ -3,14 +3,14 @@
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">
-          {{ course ? `Заявки — ${course.title}` : 'Заявки на курсы' }}
+          {{ course ? `Заявки — ${course.title}` : 'Заявки на программы' }}
         </h1>
-        <p class="mt-1 text-sm text-gray-500">Управление записями участников на курсы</p>
+        <p class="mt-1 text-sm text-gray-500">Управление записями участников на программы</p>
       </div>
       <div v-if="course">
         <RButton variant="ghost" size="sm" @click="router.visit(route('lms.admin.courses.edit', [event.slug, course.id]))">
           <template #icon><ArrowLeftIcon class="h-4 w-4" /></template>
-          К курсу
+          К программе
         </RButton>
       </div>
     </div>
@@ -33,7 +33,7 @@
           :options="courses"
           value-key="id"
           label-key="title"
-          placeholder="Все курсы"
+          placeholder="Все программы"
           :searchable="true"
         />
       </div>
@@ -80,7 +80,7 @@
             <thead>
               <tr class="border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400">
                 <th class="px-6 py-3 font-medium">Участник</th>
-                <th v-if="!course" class="px-6 py-3 font-medium">Курс</th>
+                <th v-if="!course" class="px-6 py-3 font-medium">Программа</th>
                 <th class="px-6 py-3 font-medium">Организация / Должность</th>
                 <th class="px-6 py-3 font-medium">Проект / Идея</th>
                 <th class="px-6 py-3 font-medium">Дата заявки</th>
@@ -183,7 +183,7 @@
 
             <div class="mt-4 flex-1 space-y-2 text-sm">
               <div v-if="!course && e.course?.title">
-                <p class="text-xs font-medium uppercase text-gray-400">Курс</p>
+                <p class="text-xs font-medium uppercase text-gray-400">Программа</p>
                 <p class="text-gray-700">{{ e.course.title }}</p>
               </div>
               <div v-if="e.profile_data?.organization || e.profile_data?.position">
@@ -247,21 +247,21 @@
       </div>
     </div>
     <!-- Reassign modal -->
-    <RModal v-model="showReassignModal" title="Перевести на другой курс" size="sm">
+    <RModal v-model="showReassignModal" title="Перевести на другую программу" size="sm">
       <div class="space-y-4">
         <p class="text-sm text-gray-600">
           Участник: <span class="font-medium text-gray-900">{{ reassignEnrollment?.user?.name }}</span>
         </p>
         <p class="text-sm text-gray-600">
-          Текущий курс: <span class="font-medium text-gray-900">{{ reassignEnrollment?.course?.title }}</span>
+          Текущая программа: <span class="font-medium text-gray-900">{{ reassignEnrollment?.course?.title }}</span>
         </p>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-700">Новый курс</label>
+          <label class="mb-1.5 block text-sm font-medium text-gray-700">Новая программа</label>
           <select
             v-model="reassignCourseId"
             class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
           >
-            <option :value="null" disabled>Выберите курс</option>
+            <option :value="null" disabled>Выберите программу</option>
             <option
               v-for="c in availableCoursesForReassign"
               :key="c.id"
@@ -361,7 +361,7 @@ function reject(id) {
 
 function unenroll(enrollment) {
   const userName = enrollment.user?.name || 'участника'
-  const courseName = enrollment.course?.title || 'курса'
+  const courseName = enrollment.course?.title || 'программы'
   if (!confirm(`Отписать ${userName} от ${courseName}? Прогресс обучения будет удалён.`)) return
   router.delete(route('lms.admin.enrollments.destroy', [props.event.slug, enrollment.id]))
 }

@@ -54,7 +54,7 @@ import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
 const menuSections = [
-  { key: 'courses', label: 'Курсы' },
+  { key: 'courses', label: 'Программы' },
   { key: 'trajectories', label: 'Траектории' },
   { key: 'tests', label: 'Тестирование' },
   { key: 'assignments', label: 'Задания' },

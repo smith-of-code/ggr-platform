@@ -5,7 +5,7 @@
       <!-- Back -->
       <RButton variant="ghost" size="sm" @click="router.visit(route('lms.courses.index', { event: event?.slug }))">
         <template #icon><ArrowLeftIcon class="h-4 w-4" /></template>
-        Все курсы
+        Все программы
       </RButton>
 
       <!-- Course header -->
@@ -30,7 +30,7 @@
             <template v-if="enrollmentStatus === 'enrolled' || enrollmentStatus === 'in_progress' || enrollmentStatus === 'completed'">
               <div class="flex items-center gap-2 text-sm font-medium text-green-600">
                 <CheckCircleIcon class="h-5 w-5" />
-                Вы записаны на курс
+                Вы записаны на программу
                 <span v-if="course?.is_mandatory" class="ml-1 rounded-full bg-rosatom-100 px-2.5 py-0.5 text-xs font-semibold text-rosatom-700">Обязательный</span>
               </div>
               <RProgress :percentage="overallProgress" label="Прогресс" show-label size="sm" class="mt-3" />
@@ -49,7 +49,7 @@
                   <ClockIcon class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
                   <div>
                     <p class="text-sm font-medium text-amber-800">Ваша заявка на рассмотрении</p>
-                    <p class="mt-1 text-sm text-amber-700">Мы проверяем, насколько ваш проект соответствует выбранному курсу.</p>
+                    <p class="mt-1 text-sm text-amber-700">Мы проверяем, насколько ваш проект соответствует выбранной программе.</p>
                   </div>
                 </div>
                 <button
@@ -77,12 +77,12 @@
             <template v-else>
               <div v-if="existingOtherEnrollment" class="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
                 <p class="text-sm font-medium text-blue-800">
-                  Вы уже записаны на курс «{{ existingOtherEnrollment.course_title }}».
+                  Вы уже записаны на программу «{{ existingOtherEnrollment.course_title }}».
                 </p>
                 <p class="mt-1 text-sm text-blue-700">Чтобы записаться на другой, отмените текущую заявку.</p>
               </div>
               <div v-else-if="!isProfileComplete" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
-                <p class="text-sm font-medium text-amber-800">Для записи на курс необходимо заполнить профиль</p>
+                <p class="text-sm font-medium text-amber-800">Для записи на программу необходимо заполнить профиль</p>
                 <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-1 inline-block text-sm font-medium text-rosatom-600 hover:underline">
                   Перейти в личный кабинет
                 </Link>
@@ -91,7 +91,7 @@
                 <p class="text-sm font-medium text-red-800">{{ $page.props.errors.enroll }}</p>
               </div>
               <RButton v-else variant="primary" @click="enroll">
-                Записаться на курс
+                Записаться
               </RButton>
             </template>
           </div>
@@ -100,7 +100,7 @@
 
       <!-- Program / Schedule -->
       <RCard elevation="raised">
-        <h2 class="font-brand text-xl font-bold text-gray-900">Программа курса</h2>
+        <h2 class="font-brand text-xl font-bold text-gray-900">Программа</h2>
         <p class="mt-1 text-sm text-gray-500">Расписание модулей и уроков</p>
 
         <!-- Modules -->
@@ -231,7 +231,7 @@
         </div>
 
         <div v-if="!modules?.length && !orphanStages?.length" class="mt-8 text-center text-sm text-gray-400">
-          Программа курса пока не заполнена
+          Программа пока не заполнена
         </div>
       </RCard>
     </div>
@@ -310,7 +310,7 @@ function enroll() {
 }
 
 function unenroll() {
-  if (!confirm('Отменить заявку на курс?')) return
+  if (!confirm('Отменить заявку на программу?')) return
   router.delete(route('lms.courses.unenroll', { event: props.event?.slug, course: props.course?.id }))
 }
 

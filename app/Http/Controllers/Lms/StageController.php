@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Lms;
 
 use App\Http\Controllers\Controller;
+use App\Models\Lms\LmsAssignment;
+use App\Models\Lms\LmsAssignmentSubmission;
 use App\Models\Lms\LmsCourse;
 use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsCourseStage;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsStageProgress;
+use App\Models\Lms\LmsTest;
+use App\Models\Lms\LmsTestAttempt;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,12 +69,15 @@ class StageController extends Controller
                 'lms_assignment_id' => $block->lms_assignment_id,
                 'lms_video_id' => $block->lms_video_id,
                 'position' => $block->position,
-                'scheduled_at' => $block->scheduled_at,
+                'scheduled_at' => $block->scheduled_at?->format('Y-m-d\TH:i:s'),
                 'test' => $block->test?->only(['id', 'title']),
                 'assignment' => $block->assignment?->only(['id', 'title']),
                 'video' => $block->video?->only(['id', 'title', 'url', 'source', 'duration_seconds']),
             ];
         });
+
+        $inlineTestData = $this->loadInlineTestData($stage, $blocks, $user, $event);
+        $inlineAssignmentData = $this->loadInlineAssignmentData($stage, $blocks, $user, $event);
 
         return Inertia::render('Lms/Courses/Stage', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
@@ -85,6 +92,8 @@ class StageController extends Controller
             'linkedAssignment' => $stage->assignment?->only(['id', 'title']),
             'linkedVideo' => $stage->video?->only(['id', 'title', 'url', 'source', 'duration_seconds']),
             'progress' => $progress?->only(['status', 'scorm_data', 'score', 'watched_seconds', 'completed_at']),
+            'inlineTest' => $inlineTestData,
+            'inlineAssignment' => $inlineAssignmentData,
         ]);
     }
 
@@ -195,5 +204,96 @@ class StageController extends Controller
         );
 
         return response()->json(['success' => true]);
+    }
+
+    private function loadInlineTestData($stage, $blocks, $user, LmsEvent $event): ?array
+    {
+        $testId = $stage->lms_test_id;
+        if (!$testId) {
+            $testBlock = $blocks->firstWhere('type', 'test');
+            $testId = $testBlock['lms_test_id'] ?? null;
+        }
+        if (!$testId) {
+            return null;
+        }
+
+        $test = LmsTest::find($testId);
+        if (!$test) {
+            return null;
+        }
+
+        $questionsCount = $test->questions()->count();
+        $attempts = LmsTestAttempt::where('lms_test_id', $test->id)
+            ->where('user_id', $user->id)
+            ->orderByDesc('started_at')
+            ->get(['id', 'score', 'max_score', 'percentage', 'passed', 'started_at', 'finished_at', 'status']);
+
+        $activeAttempt = $attempts->firstWhere('status', 'in_progress');
+        $latestCompleted = $attempts->first(fn ($a) => $a->status === 'completed' || $a->finished_at);
+
+        $questions = null;
+        $attemptData = null;
+
+        if ($activeAttempt) {
+            $test->load('questions.answers');
+            $questions = $test->questions->map(function ($q) use ($test) {
+                $data = [
+                    'id' => $q->id,
+                    'text' => $q->question ?? $q->text ?? '',
+                    'type' => $q->type,
+                    'image' => $q->image ?? null,
+                ];
+                if (in_array($q->type, ['single', 'multiple'])) {
+                    $answers = $q->answers->map(fn ($a) => ['id' => $a->id, 'text' => $a->answer ?? $a->text ?? '']);
+                    $data['answers'] = $test->shuffle_answers ? $answers->shuffle()->values() : $answers;
+                }
+                return $data;
+            });
+            if ($test->shuffle_questions) {
+                $questions = $questions->shuffle()->values();
+            }
+            $attemptData = $activeAttempt->only(['id', 'status', 'started_at']);
+        }
+
+        return [
+            'test' => array_merge(
+                $test->only(['id', 'title', 'description', 'time_limit_minutes', 'passing_score', 'max_attempts']),
+                ['questions_count' => $questionsCount]
+            ),
+            'attempts' => $attempts,
+            'activeAttempt' => $attemptData,
+            'questions' => $questions,
+            'latestResult' => $latestCompleted?->only(['id', 'score', 'max_score', 'percentage', 'passed']),
+        ];
+    }
+
+    private function loadInlineAssignmentData($stage, $blocks, $user, LmsEvent $event): ?array
+    {
+        $assignmentId = $stage->lms_assignment_id;
+        if (!$assignmentId) {
+            $assignmentBlock = $blocks->firstWhere('type', 'assignment');
+            $assignmentId = $assignmentBlock['lms_assignment_id'] ?? null;
+        }
+        if (!$assignmentId) {
+            return null;
+        }
+
+        $assignment = LmsAssignment::with('tasks')->find($assignmentId);
+        if (!$assignment) {
+            return null;
+        }
+
+        $submission = LmsAssignmentSubmission::where('lms_assignment_id', $assignment->id)
+            ->where('user_id', $user->id)
+            ->with(['reviews.reviewer:id,name', 'comments.user:id,name', 'answers.task'])
+            ->first();
+
+        return [
+            'assignment' => array_merge(
+                $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline', 'completion_mode']),
+                ['tasks' => $assignment->tasks]
+            ),
+            'submission' => $submission,
+        ];
     }
 }

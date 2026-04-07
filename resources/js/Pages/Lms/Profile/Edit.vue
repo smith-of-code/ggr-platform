@@ -15,7 +15,7 @@
           </svg>
           <div>
             <p class="font-semibold text-emerald-800">Профиль заполнен!</p>
-            <p class="mt-1 text-sm text-emerald-700">Переходите к выбору курса.</p>
+            <p class="mt-1 text-sm text-emerald-700">Переходите к выбору программы.</p>
           </div>
         </div>
       </div>
@@ -32,7 +32,7 @@
           <div>
             <p class="font-semibold text-amber-800">Заполните профиль</p>
             <p class="mt-1 text-sm text-amber-700">
-              Для записи на курс необходимо заполнить все обязательные поля. Не хватает:
+              Для записи на программу необходимо заполнить все обязательные поля. Не хватает:
             </p>
             <ul class="mt-2 list-inside list-disc space-y-0.5 text-sm text-amber-700">
               <li v-for="field in missingFields" :key="field">{{ field }}</li>

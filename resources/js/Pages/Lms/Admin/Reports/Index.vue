@@ -29,9 +29,9 @@
         </select>
       </div>
       <div class="min-w-[200px]">
-        <label class="mb-1 block text-xs font-medium text-gray-500">Курс</label>
+        <label class="mb-1 block text-xs font-medium text-gray-500">Программа</label>
         <select v-model="filterCourseId" @change="applyFilters" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
-          <option value="">Все курсы</option>
+          <option value="">Все программы</option>
           <option v-for="c in availableCourses" :key="c.id" :value="c.id">{{ c.title }}</option>
         </select>
       </div>
@@ -79,7 +79,7 @@
         <table class="min-w-full">
           <thead>
             <tr class="border-b border-gray-200 bg-gray-50">
-              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Курс</th>
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Программа</th>
               <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Записано</th>
               <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Не начали</th>
               <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">В процессе</th>
@@ -129,7 +129,7 @@
             </template>
           </tbody>
         </table>
-        <div v-if="courseStats.length === 0" class="px-5 py-12 text-center text-sm text-gray-400">Курсов пока нет</div>
+        <div v-if="courseStats.length === 0" class="px-5 py-12 text-center text-sm text-gray-400">Программ пока нет</div>
       </RCard>
     </div>
 
@@ -267,11 +267,11 @@
               <p class="text-xl font-bold text-amber-600">{{ g.total_points }}</p>
             </div>
             <div>
-              <p class="text-xs text-gray-400">Курсов завершено</p>
+              <p class="text-xs text-gray-400">Программ завершено</p>
               <p class="text-xl font-bold text-green-600">{{ g.total_completions }}</p>
             </div>
             <div>
-              <p class="text-xs text-gray-400">Ср. курсов/чел</p>
+              <p class="text-xs text-gray-400">Ср. программ/чел</p>
               <p class="text-xl font-bold text-blue-600">{{ g.avg_completions }}</p>
             </div>
           </div>
@@ -330,7 +330,7 @@
         </div>
         <select v-model="userSort" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
           <option value="name">По имени</option>
-          <option value="courses_completed">По курсам</option>
+          <option value="courses_completed">По программам</option>
           <option value="tests_passed">По тестам</option>
           <option value="total_points">По баллам</option>
           <option value="avg_test_score">По ср. баллу</option>
@@ -345,7 +345,7 @@
               <tr class="border-b border-gray-200 bg-gray-50">
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Участник</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Роль</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Курсов</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Программ</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Заверш.</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Тестов</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Ср. балл</th>
@@ -399,7 +399,7 @@
           <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
           <div>
             <p class="text-sm font-medium text-amber-800">Участники без активности более 14 дней</p>
-            <p class="mt-0.5 text-xs text-amber-600">Записаны на курсы, но не проходят обучение. Рекомендуется направить напоминание.</p>
+            <p class="mt-0.5 text-xs text-amber-600">Записаны на программы, но не проходят обучение. Рекомендуется направить напоминание.</p>
           </div>
         </div>
       </div>
@@ -410,7 +410,7 @@
             <tr class="border-b border-gray-200 bg-gray-50">
               <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Участник</th>
               <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Роль</th>
-              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Курсов</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Программ</th>
               <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Последняя активность</th>
             </tr>
           </thead>
@@ -443,9 +443,9 @@
           <label class="mb-3 block text-sm font-medium text-gray-700">Включить разделы</label>
           <div class="space-y-2">
             <RCheckbox v-model="emailSections.users" label="Участники (детальная таблица)" />
-            <RCheckbox v-model="emailSections.courses" label="Курсы (статистика)" />
+            <RCheckbox v-model="emailSections.courses" label="Программы (статистика)" />
             <RCheckbox v-model="emailSections.tests" label="Тесты (статистика)" />
-            <RCheckbox v-model="emailSections.stages" label="Этапы курсов (детализация)" />
+            <RCheckbox v-model="emailSections.stages" label="Этапы программ (детализация)" />
           </div>
         </div>
 
@@ -486,7 +486,7 @@ const props = defineProps({
 })
 
 const tabs = computed(() => [
-  { id: 'courses', label: 'Курсы', count: props.courseStats?.length || 0 },
+  { id: 'courses', label: 'Программы', count: props.courseStats?.length || 0 },
   { id: 'tests', label: 'Тесты', count: props.testStats?.length || 0 },
   { id: 'assignments', label: 'Задания', count: props.assignmentStats?.length || 0 },
   { id: 'activity', label: 'Динамика' },
@@ -540,7 +540,7 @@ const selectedSections = computed(() => {
 const summaryCards = computed(() => [
   { label: 'Участников', value: props.summary?.total_users ?? 0, color: 'text-rosatom-600', bg: 'bg-rosatom-500' },
   { label: 'Активных (7 дн)', value: props.summary?.active_last_7_days ?? 0, color: 'text-blue-600', bg: 'bg-blue-500', sub: `неактивных: ${props.summary?.inactive_users ?? 0}` },
-  { label: 'Ср. завершение курсов', value: (props.summary?.avg_course_completion ?? 0) + '%', color: 'text-green-600', bg: 'bg-green-500' },
+  { label: 'Ср. завершение программ', value: (props.summary?.avg_course_completion ?? 0) + '%', color: 'text-green-600', bg: 'bg-green-500' },
   { label: 'Ср. сдача тестов', value: (props.summary?.avg_test_pass_rate ?? 0) + '%', color: 'text-purple-600', bg: 'bg-purple-500' },
   { label: 'Баллов начислено', value: props.summary?.total_gamification_points ?? 0, color: 'text-amber-600', bg: 'bg-amber-500' },
 ])
@@ -612,7 +612,7 @@ const timelineDates = computed(() => {
 const timelineSeries = computed(() => {
   const tl = props.activityTimeline || {}
   return [
-    { key: 'enrollments', label: 'Записи на курсы', color: 'bg-blue-500', barColor: 'bg-blue-400', data: tl.enrollments || {}, max: maxVal(tl.enrollments), total: sumVal(tl.enrollments) },
+    { key: 'enrollments', label: 'Записи на программы', color: 'bg-blue-500', barColor: 'bg-blue-400', data: tl.enrollments || {}, max: maxVal(tl.enrollments), total: sumVal(tl.enrollments) },
     { key: 'completions', label: 'Завершения', color: 'bg-green-500', barColor: 'bg-green-400', data: tl.completions || {}, max: maxVal(tl.completions), total: sumVal(tl.completions) },
     { key: 'test_attempts', label: 'Попытки тестов', color: 'bg-purple-500', barColor: 'bg-purple-400', data: tl.test_attempts || {}, max: maxVal(tl.test_attempts), total: sumVal(tl.test_attempts) },
   ]

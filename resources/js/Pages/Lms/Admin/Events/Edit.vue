@@ -58,7 +58,7 @@ const props = defineProps({ event: Object })
 const defaultMenu = { courses: true, trajectories: true, tests: true, assignments: true, leaderboard: true, videos: true, kb: true, materials: true }
 
 const menuSections = [
-  { key: 'courses', label: 'Курсы' },
+  { key: 'courses', label: 'Программы' },
   { key: 'trajectories', label: 'Траектории' },
   { key: 'tests', label: 'Тестирование' },
   { key: 'assignments', label: 'Задания' },

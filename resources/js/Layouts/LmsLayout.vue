@@ -168,7 +168,7 @@ const sidebarItems = computed(() => {
     { id: 'lms.dashboard', label: 'Главная', icon: icons.home },
   ]
 
-  if (mc.courses) items.push({ id: 'lms.courses', label: 'Курсы', icon: icons.courses })
+  if (mc.courses) items.push({ id: 'lms.courses', label: 'Программы', icon: icons.courses })
   if (mc.grants) items.push({ id: 'lms.grants', label: 'Возможности', icon: icons.grants })
   if (mc.trajectories) items.push({ id: 'lms.trajectories', label: 'Траектории', icon: icons.trajectories })
   if (mc.tests) items.push({ id: 'lms.tests', label: 'Тестирование', icon: icons.tests })

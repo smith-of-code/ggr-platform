@@ -249,7 +249,7 @@ function submissionBadgeClass(status) {
 }
 
 function actionLabel(item) {
-  if (item.type === 'course') return 'Перейти к курсу'
+  if (item.type === 'course') return 'Перейти к программе'
   if (item.type === 'grant') return 'Подробнее о гранте'
   if (item.type === 'task') return 'Перейти к заданию'
   return 'Подробнее'

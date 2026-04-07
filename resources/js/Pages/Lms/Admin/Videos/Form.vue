@@ -30,7 +30,7 @@
         <!-- Длительность видео -->
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700">Длительность видео</label>
-          <p class="mb-2 text-xs text-gray-400">Используется для контроля просмотра в курсах</p>
+          <p class="mb-2 text-xs text-gray-400">Используется для контроля просмотра в программах</p>
           <div class="flex items-center gap-2">
             <div class="w-24">
               <RInput

@@ -34,7 +34,7 @@
               <BookOpenIcon class="h-6 w-6 text-accent-yellow" />
             </div>
             <div>
-              <p class="text-sm text-gray-500">Активных курсов</p>
+              <p class="text-sm text-gray-500">Активных программ</p>
               <p class="text-2xl font-bold text-gray-900">{{ stats?.active_courses ?? activeCourses ?? 0 }}</p>
             </div>
           </div>
