@@ -7,15 +7,40 @@
         <h1 class="text-2xl font-bold text-gray-900">Образовательные продукты</h1>
         <p class="mt-1 text-sm text-gray-500">ВШГР и программы обучения</p>
       </div>
-      <Link
-        :href="route('admin.education-products.create')"
-        class="flex items-center gap-2 rounded-xl bg-[#003274] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#003274]/20 transition hover:bg-[#025ea1]"
-      >
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        Новый продукт
-      </Link>
+      <div class="relative" ref="dropdownRef">
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-xl bg-[#003274] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#003274]/20 transition hover:bg-[#025ea1]"
+          @click="showTypeMenu = !showTypeMenu"
+        >
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Новый продукт
+          <svg class="h-3.5 w-3.5 transition" :class="showTypeMenu && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+        <div
+          v-if="showTypeMenu"
+          class="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl"
+        >
+          <Link
+            v-for="t in productTypes"
+            :key="t.value"
+            :href="route('admin.education-products.create', { type: t.value })"
+            class="flex items-start gap-3 px-4 py-3 transition hover:bg-gray-50"
+          >
+            <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" :class="t.iconBg">
+              <svg class="h-4 w-4" :class="t.iconColor" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" v-html="t.iconPath" />
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-gray-900">{{ t.label }}</p>
+              <p class="text-xs text-gray-500">{{ t.hint }}</p>
+            </div>
+          </Link>
+        </div>
+      </div>
     </div>
 
     <RCard elevation="raised" flush>
@@ -23,6 +48,7 @@
         <thead>
           <tr class="border-b border-gray-100 bg-gray-50/50">
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Название</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Тип</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Длительность</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Формат</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Активен</th>
@@ -35,6 +61,9 @@
             <td class="px-5 py-3.5">
               <p class="text-sm font-medium text-gray-900">{{ product.title }}</p>
               <p class="mt-0.5 font-mono text-xs text-gray-400">{{ product.slug }}</p>
+            </td>
+            <td class="px-5 py-3.5">
+              <RBadge :variant="typeBadge(product.type).variant" size="sm">{{ typeBadge(product.type).label }}</RBadge>
             </td>
             <td class="px-5 py-3.5 text-sm text-gray-600">
               {{ product.duration ?? '—' }}
@@ -180,10 +209,60 @@
 </template>
 
 <script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 
 defineProps({ products: Object, lmsCourses: { type: Array, default: () => [] } })
+
+const showTypeMenu = ref(false)
+const dropdownRef = ref(null)
+
+const productTypes = [
+  {
+    value: 'education',
+    label: 'Продукт образования',
+    hint: 'Программа обучения с секциями',
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-600',
+    iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.902 59.902 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />',
+  },
+  {
+    value: 'partner',
+    label: 'Партнёрская программа',
+    hint: 'Описание + условия участия',
+    iconBg: 'bg-amber-50',
+    iconColor: 'text-amber-600',
+    iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />',
+  },
+  {
+    value: 'international',
+    label: 'Международный контур',
+    hint: 'Страновые программы',
+    iconBg: 'bg-emerald-50',
+    iconColor: 'text-emerald-600',
+    iconPath: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />',
+  },
+]
+
+const TYPE_BADGES = {
+  education: { label: 'Образование', variant: 'info' },
+  partner: { label: 'Партнёры', variant: 'warning' },
+  international: { label: 'Международный', variant: 'success' },
+}
+
+function typeBadge(type) {
+  return TYPE_BADGES[type] || TYPE_BADGES.education
+}
+
+function onClickOutside(e) {
+  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
+    showTypeMenu.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', onClickOutside))
+onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 
 function stripTags(html) {
   if (!html) return ''

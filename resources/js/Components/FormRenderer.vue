@@ -93,10 +93,24 @@
         </div>
       </div>
 
-      <div class="border-t border-gray-100 px-8 py-5">
+      <div class="border-t border-gray-100 px-8 py-5 space-y-4">
+        <div v-if="form.require_consent">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input
+              v-model="consentChecked"
+              type="checkbox"
+              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span class="text-sm text-gray-600">
+              Отправляя форму, вы даете
+              <a :href="consentUrl" target="_blank" class="text-blue-600 underline hover:text-blue-800">согласие на обработку персональных данных</a>
+            </span>
+          </label>
+          <p v-if="errors.consent" class="mt-1 text-xs text-red-600">{{ errors.consent }}</p>
+        </div>
         <button
           type="submit"
-          :disabled="processing"
+          :disabled="processing || (form.require_consent && !consentChecked)"
           class="rounded-xl bg-blue-600 px-8 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-700 disabled:opacity-50"
         >
           {{ processing ? 'Отправка...' : 'Отправить' }}
@@ -107,7 +121,8 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import axios from 'axios'
 
 const props = defineProps({
@@ -117,10 +132,14 @@ const props = defineProps({
 
 const emit = defineEmits(['submitted'])
 
+const page = usePage()
+const consentUrl = computed(() => props.form.consent_document_url || page.props.consentDocumentUrl || '#')
+
 const answers = reactive({})
 const errors = ref({})
 const processing = ref(false)
 const submitted = ref(false)
+const consentChecked = ref(false)
 
 props.fields.forEach(f => {
   answers[f.key] = f.type === 'checkbox' ? [] : ''
@@ -137,8 +156,13 @@ async function submitForm() {
   processing.value = true
   errors.value = {}
 
+  const payload = { answers }
+  if (props.form.require_consent) {
+    payload.consent = consentChecked.value
+  }
+
   try {
-    await axios.post(`/forms/${props.form.slug}/submit`, { answers })
+    await axios.post(`/forms/${props.form.slug}/submit`, payload)
     submitted.value = true
     emit('submitted')
   } catch (err) {

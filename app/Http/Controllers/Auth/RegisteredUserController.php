@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Consent;
 use App\Models\User;
+use App\Services\ConsentService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,6 +48,11 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
+
+        ConsentService::log($request, Consent::TYPE_REGISTRATION, [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
 
         Auth::login($user);
 

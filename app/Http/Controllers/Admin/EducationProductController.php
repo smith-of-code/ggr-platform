@@ -8,6 +8,7 @@ use App\Models\Lms\LmsCourse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,9 +44,18 @@ class EducationProductController extends Controller
             ->with('success', "Курс «{$course->title}» {$status}");
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Admin/EducationProducts/Form');
+        $type = $request->query('type', EducationProduct::TYPE_EDUCATION);
+        if (! in_array($type, EducationProduct::TYPES, true)) {
+            $type = EducationProduct::TYPE_EDUCATION;
+        }
+
+        return Inertia::render('Admin/EducationProducts/Form', [
+            'productType' => $type,
+            'sectionDefinitions' => EducationProduct::SECTION_DEFINITIONS,
+            'sectionLabels' => EducationProduct::SECTION_LABELS,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -64,12 +74,16 @@ class EducationProductController extends Controller
     {
         return Inertia::render('Admin/EducationProducts/Form', [
             'product' => $education_product,
+            'productType' => $education_product->type,
+            'sectionDefinitions' => EducationProduct::SECTION_DEFINITIONS,
+            'sectionLabels' => EducationProduct::SECTION_LABELS,
         ]);
     }
 
     public function update(Request $request, EducationProduct $education_product): RedirectResponse
     {
         $validated = $this->validatedProduct($request, $education_product->id);
+        unset($validated['type']);
 
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['position'] = $validated['position'] ?? 0;
@@ -96,9 +110,10 @@ class EducationProductController extends Controller
             $slugRule .= ',' . $exceptId;
         }
 
-        return $request->validate([
+        $rules = [
             'title' => 'required|string|max:255',
             'slug' => $slugRule,
+            'type' => ['required', 'string', Rule::in(EducationProduct::TYPES)],
             'description' => 'nullable|string',
             'content' => 'nullable|string',
             'image' => 'nullable|string|max:2048',
@@ -108,6 +123,22 @@ class EducationProductController extends Controller
             'price_info' => 'nullable|string|max:255',
             'position' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
-        ]);
+            'sections' => 'nullable|array',
+            'sections.*.enabled' => 'boolean',
+            'sections.*.content' => 'nullable|string',
+            'sections.*.items' => 'nullable|array',
+            'sections.*.items.*.name' => 'nullable|string|max:255',
+            'sections.*.items.*.position' => 'nullable|string|max:255',
+            'sections.*.items.*.photo' => 'nullable|string|max:2048',
+            'sections.*.items.*.bio' => 'nullable|string',
+            'regulation_file' => 'nullable|string|max:2048',
+            'countries' => 'nullable|array',
+            'countries.*.name' => 'required_with:countries|string|max:255',
+            'countries.*.slug' => 'nullable|string|max:255',
+            'countries.*.description' => 'nullable|string',
+            'countries.*.content' => 'nullable|string',
+        ];
+
+        return $request->validate($rules);
     }
 }

@@ -266,7 +266,20 @@
               <label class="mb-1.5 block text-sm font-medium text-gray-700">Сообщение</label>
               <textarea v-model="appForm.message" rows="3" class="w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20" placeholder="Расскажите о себе..." />
             </div>
-            <RButton type="submit" variant="primary" size="lg" block>Отправить заявку</RButton>
+            <div>
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input
+                  v-model="appForm.consent"
+                  type="checkbox"
+                  class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
+                />
+                <span class="text-sm text-gray-600">
+                  Отправляя заявку, вы даете
+                  <a :href="$page.props.consentDocumentUrl" target="_blank" class="text-[#003274] underline hover:text-[#025ea1]">согласие на обработку персональных данных</a>
+                </span>
+              </label>
+            </div>
+            <RButton type="submit" variant="primary" size="lg" block :disabled="!appForm.consent">Отправить заявку</RButton>
           </form>
         </div>
       </section>
@@ -499,6 +512,7 @@ const appForm = reactive({
   email: '',
   phone: '',
   message: '',
+  consent: false,
 })
 
 const toursSlider = ref(null)
@@ -548,6 +562,7 @@ function submitApplication() {
     email: appForm.email,
     phone: appForm.phone,
     message: appForm.message,
+    consent: appForm.consent,
   }, {
     preserveScroll: true,
     onSuccess: () => {

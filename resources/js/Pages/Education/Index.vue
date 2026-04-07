@@ -49,6 +49,13 @@
             </div>
             <div class="absolute left-3 top-3 flex flex-wrap gap-2">
               <span
+                v-if="p.type && p.type !== 'education'"
+                class="rounded-full px-3 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm"
+                :class="p.type === 'partner' ? 'bg-amber-400/90 text-amber-950' : 'bg-emerald-400/90 text-emerald-950'"
+              >
+                {{ p.type === 'partner' ? 'Партнёры' : 'Международный' }}
+              </span>
+              <span
                 v-if="p.duration"
                 class="rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-[#003274] shadow-sm backdrop-blur-sm"
               >
@@ -211,9 +218,23 @@
               />
               <p v-if="form.errors.message" class="mt-1 text-xs text-red-600">{{ form.errors.message }}</p>
             </div>
+            <div>
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input
+                  v-model="form.consent"
+                  type="checkbox"
+                  class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
+                />
+                <span class="text-sm text-gray-600">
+                  Отправляя заявку, вы даете
+                  <a :href="$page.props.consentDocumentUrl" target="_blank" class="text-[#003274] underline hover:text-[#025ea1]">согласие на обработку персональных данных</a>
+                </span>
+              </label>
+              <p v-if="form.errors.consent" class="mt-1 text-xs text-red-600">{{ form.errors.consent }}</p>
+            </div>
             <button
               type="submit"
-              :disabled="form.processing"
+              :disabled="form.processing || !form.consent"
               class="w-full rounded-xl bg-[#003274] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#003274]/25 transition hover:bg-[#025ea1] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {{ form.processing ? 'Отправка…' : 'Отправить' }}
@@ -282,6 +303,7 @@ const form = useForm({
   email: '',
   phone: '',
   message: '',
+  consent: false,
 })
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/

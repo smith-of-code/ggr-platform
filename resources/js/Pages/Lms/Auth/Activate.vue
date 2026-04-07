@@ -93,7 +93,7 @@
                 />
                 <span class="text-sm text-gray-600">
                   Регистрируясь на платформе, вы даете
-                  <a href="/documents/Cогласие_на_распространение_вшгр2026.docx" target="_blank" class="text-rosatom-600 underline hover:text-rosatom-700">согласие на обработку персональных данных</a>
+                  <a :href="$page.props.consentDocumentUrl" target="_blank" class="text-rosatom-600 underline hover:text-rosatom-700">согласие на обработку персональных данных</a>
                 </span>
               </label>
               <p v-if="form.errors.consent" class="mt-1 text-sm text-red-600">{{ form.errors.consent }}</p>

@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\City;
+use App\Models\Consent;
 use App\Models\ContactSubmission;
 use App\Models\Favorite;
 use App\Models\Recipe;
 use App\Models\TimelineEvent;
 use App\Models\Tour;
+use App\Services\ConsentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -97,6 +99,9 @@ class HomeController extends Controller
             'email' => 'required|email',
             'phone' => 'nullable|string|max:50',
             'message' => 'required|string|max:5000',
+            'consent' => ['accepted'],
+        ], [
+            'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
         ]);
 
         if (!Schema::hasTable('contact_submissions')) {
@@ -109,6 +114,11 @@ class HomeController extends Controller
             'phone' => $validated['phone'] ?? null,
             'message' => $validated['message'],
             'source' => 'home_contact',
+        ]);
+
+        ConsentService::log($request, Consent::TYPE_CONTACT_FORM, [
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
         ]);
 
         return back()->with('success', 'Сообщение отправлено. Мы свяжемся с вами в ближайшее время.');

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Lms;
 
 use App\Http\Controllers\Controller;
+use App\Models\Consent;
 use App\Models\Lms\LmsForm;
 use App\Models\Lms\LmsFormResponse;
 use App\Models\Lms\LmsFormSubmission;
+use App\Services\ConsentService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +22,10 @@ class FormPublicController extends Controller
             ->firstOrFail();
 
         return Inertia::render('Forms/Public', [
-            'form' => $form->only(['id', 'title', 'description', 'slug', 'thank_you_message']),
+            'form' => [
+                ...$form->only(['id', 'title', 'description', 'slug', 'thank_you_message', 'require_consent']),
+                'consent_document_url' => $form->consent_document_url ?: config('consent.document_url'),
+            ],
             'fields' => $form->fields->map(fn ($f) => $f->only([
                 'id', 'key', 'label', 'type', 'required', 'placeholder', 'options', 'position',
             ])),
@@ -35,7 +40,10 @@ class FormPublicController extends Controller
             ->firstOrFail();
 
         return response()->json([
-            'form' => $form->only(['id', 'title', 'description', 'slug', 'thank_you_message']),
+            'form' => [
+                ...$form->only(['id', 'title', 'description', 'slug', 'thank_you_message', 'require_consent']),
+                'consent_document_url' => $form->consent_document_url ?: config('consent.document_url'),
+            ],
             'fields' => $form->fields->map(fn ($f) => $f->only([
                 'id', 'key', 'label', 'type', 'required', 'placeholder', 'options', 'position',
             ])),
@@ -64,7 +72,13 @@ class FormPublicController extends Controller
             $rules["answers.{$field->key}"] = $fieldRules;
         }
 
-        $validated = $request->validate($rules);
+        if ($form->require_consent) {
+            $rules['consent'] = ['accepted'];
+        }
+
+        $validated = $request->validate($rules, [
+            'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
+        ]);
         $answers = $validated['answers'] ?? [];
 
         $submission = LmsFormSubmission::create([
@@ -86,6 +100,16 @@ class FormPublicController extends Controller
                     'value' => (string) $value,
                 ]);
             }
+        }
+
+        if ($form->require_consent) {
+            $emailKey = $form->email_field_key;
+            $phoneKey = $form->phone_field_key;
+
+            ConsentService::log($request, Consent::TYPE_LMS_FORM, [
+                'email' => $emailKey ? ($answers[$emailKey] ?? null) : null,
+                'phone' => $phoneKey ? ($answers[$phoneKey] ?? null) : null,
+            ], ['lms_form_id' => $form->id, 'lms_form_slug' => $form->slug]);
         }
 
         return response()->json([
@@ -134,7 +158,13 @@ class FormPublicController extends Controller
             $rules["answers.{$field->key}"] = $fieldRules;
         }
 
-        $validated = $request->validate($rules);
+        if ($form->require_consent) {
+            $rules['consent'] = ['accepted'];
+        }
+
+        $validated = $request->validate($rules, [
+            'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
+        ]);
         $answers = $validated['answers'] ?? [];
 
         $submission = LmsFormSubmission::create([
@@ -156,6 +186,16 @@ class FormPublicController extends Controller
                     'value' => (string) $value,
                 ]);
             }
+        }
+
+        if ($form->require_consent) {
+            $emailKey = $form->email_field_key;
+            $phoneKey = $form->phone_field_key;
+
+            ConsentService::log($request, Consent::TYPE_LMS_FORM, [
+                'email' => $emailKey ? ($answers[$emailKey] ?? null) : null,
+                'phone' => $phoneKey ? ($answers[$phoneKey] ?? null) : null,
+            ], ['lms_form_id' => $form->id, 'lms_form_slug' => $form->slug]);
         }
 
         if ($request->wantsJson() || $request->header('X-Inertia')) {
