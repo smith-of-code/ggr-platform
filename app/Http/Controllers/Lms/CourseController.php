@@ -93,10 +93,17 @@ class CourseController extends Controller
 
         $isSequential = (bool) $course->sequential;
 
-        // Глобальный расчёт доступности по всем этапам курса (по position)
+        $modulePositions = $course->modules->pluck('position', 'id');
+        $orderedStages = $course->stages->sortBy(function ($s) use ($modulePositions) {
+            $modulePos = $s->lms_course_module_id
+                ? ($modulePositions[$s->lms_course_module_id] ?? 9999)
+                : -1;
+            return [$modulePos, $s->position];
+        });
+
         $stageAvailability = [];
         $prevCompleted = true;
-        foreach ($course->stages->sortBy('position') as $stage) {
+        foreach ($orderedStages as $stage) {
             $progress = $stageProgress->get($stage->id);
             $isAvailable = true;
             if ($stage->available_from && now()->lt($stage->available_from)) {

@@ -50,7 +50,7 @@ class LmsCourse extends Model
     /** @return HasMany<LmsCourseStage> */
     public function stages(): HasMany
     {
-        return $this->hasMany(LmsCourseStage::class, 'lms_course_id');
+        return $this->hasMany(LmsCourseStage::class, 'lms_course_id')->orderBy('position');
     }
 
     /** @return HasMany<LmsCourseEnrollment> */
