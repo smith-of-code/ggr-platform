@@ -124,9 +124,30 @@
           </div>
         </div>
         <template #footer>
-          <RButton type="button" variant="outline" block class="mt-3" @click="addItem">
-            + Добавить элемент
-          </RButton>
+          <div class="mt-3 flex gap-3">
+            <RButton type="button" variant="outline" class="flex-1" @click="addItem">
+              + Добавить элемент
+            </RButton>
+            <div class="relative flex-1">
+              <RButton
+                type="button"
+                variant="outline"
+                class="w-full"
+                :loading="bulkUploading"
+                :disabled="bulkUploading"
+              >
+                {{ bulkUploading ? `Загрузка ${bulkProgress}/${bulkTotal}...` : '📁 Загрузить пачку файлов' }}
+              </RButton>
+              <input
+                v-if="!bulkUploading"
+                ref="bulkFileInput"
+                type="file"
+                multiple
+                class="absolute inset-0 cursor-pointer opacity-0"
+                @change="onBulkFiles"
+              />
+            </div>
+          </div>
         </template>
       </RCard>
 
@@ -154,11 +175,16 @@
 <script setup>
 import { ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
+import axios from 'axios'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
 const props = defineProps({ event: Object, section: Object, parentSections: Array, groups: Array })
 const kbFilePicker = ref({ show: false, idx: -1 })
+const bulkFileInput = ref(null)
+const bulkUploading = ref(false)
+const bulkProgress = ref(0)
+const bulkTotal = ref(0)
 
 function makeItem(overrides = {}) {
   return {
@@ -210,6 +236,53 @@ function onKbFilePickerSelect(url, name) {
     item._fileName = name || url.split('/').pop()
   }
   kbFilePicker.value = { show: false, idx: -1 }
+}
+
+async function onBulkFiles(e) {
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
+
+  bulkUploading.value = true
+  bulkTotal.value = files.length
+  bulkProgress.value = 0
+
+  const uploadUrl = route('lms.admin.upload.file', props.event.slug)
+  const concurrency = 3
+  let idx = 0
+
+  async function uploadNext() {
+    while (idx < files.length) {
+      const file = files[idx++]
+      const fd = new FormData()
+      fd.append('file', file)
+      try {
+        const { data } = await axios.post(uploadUrl, fd)
+        const name = file.name.replace(/\.[^.]+$/, '')
+        form.items.push(makeItem({
+          title: name,
+          type: 'file',
+          file_path: data.url,
+          _mode: 'upload',
+          _fileName: data.name || file.name,
+          position: form.items.length,
+        }))
+      } catch {
+        form.items.push(makeItem({
+          title: file.name.replace(/\.[^.]+$/, ''),
+          type: 'file',
+          _mode: 'upload',
+          _fileName: `Ошибка: ${file.name}`,
+          position: form.items.length,
+        }))
+      }
+      bulkProgress.value++
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, files.length) }, uploadNext))
+
+  bulkUploading.value = false
+  if (bulkFileInput.value) bulkFileInput.value.value = ''
 }
 
 function submit() {
