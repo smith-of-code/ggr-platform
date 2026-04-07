@@ -302,6 +302,7 @@ class CourseController extends Controller
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date'],
             'modules' => ['nullable', 'array'],
+            'modules.*.id' => ['nullable', 'integer'],
             'modules.*.title' => ['required', 'string', 'max:255'],
             'modules.*.description' => ['nullable', 'string'],
             'modules.*.position' => ['nullable', 'integer'],
@@ -312,8 +313,11 @@ class CourseController extends Controller
             'stages' => ['nullable', 'array'],
         ];
 
+        $stageRules['id'] = ['nullable', 'integer'];
         $stageRules['source_stage_id'] = ['nullable', 'integer', 'exists:lms_course_stages,id'];
         $stageRules['blocks'] = ['nullable', 'array'];
+
+        $blockRules['id'] = ['nullable', 'integer'];
 
         foreach ($stageRules as $field => $fieldRules) {
             $rules["modules.*.stages.*.{$field}"] = $fieldRules;
@@ -330,11 +334,25 @@ class CourseController extends Controller
 
     private function syncModulesAndStages(LmsCourse $course, array $modules, array $orphanStages): void
     {
-        $course->stages()->delete();
-        $course->modules()->delete();
+        $incomingModuleIds = collect($modules)->pluck('id')->filter()->all();
+        $incomingStageIds = collect($modules)
+            ->flatMap(fn ($m) => collect($m['stages'] ?? [])->pluck('id'))
+            ->merge(collect($orphanStages)->pluck('id'))
+            ->filter()
+            ->all();
+
+        // Delete blocks of stages that will be removed
+        $stageIdsToDelete = $course->stages()->whereNotIn('id', $incomingStageIds)->pluck('id');
+        LmsStageBlock::whereIn('lms_course_stage_id', $stageIdsToDelete)->delete();
+
+        // Delete removed stages (cascades lms_stage_progress)
+        $course->stages()->whereNotIn('id', $incomingStageIds)->delete();
+
+        // Delete removed modules
+        $course->modules()->whereNotIn('id', $incomingModuleIds)->delete();
 
         foreach ($modules as $mIndex => $module) {
-            $mod = LmsCourseModule::create([
+            $modData = [
                 'lms_course_id' => $course->id,
                 'title' => $module['title'],
                 'description' => $module['description'] ?? null,
@@ -343,19 +361,30 @@ class CourseController extends Controller
                 'available_to' => $module['available_to'] ?? null,
                 'unlock_type' => 'date',
                 'source_module_id' => $module['source_module_id'] ?? null,
-            ]);
+            ];
+
+            if (!empty($module['id'])) {
+                $mod = LmsCourseModule::find($module['id']);
+                if ($mod && $mod->lms_course_id === $course->id) {
+                    $mod->update($modData);
+                } else {
+                    $mod = LmsCourseModule::create($modData);
+                }
+            } else {
+                $mod = LmsCourseModule::create($modData);
+            }
 
             foreach ($module['stages'] ?? [] as $sIndex => $stage) {
-                $this->createStage($course, $stage, $sIndex, $mod->id);
+                $this->upsertStage($course, $stage, $sIndex, $mod->id);
             }
         }
 
         foreach ($orphanStages as $index => $stage) {
-            $this->createStage($course, $stage, $index, null);
+            $this->upsertStage($course, $stage, $index, null);
         }
     }
 
-    private function createStage(LmsCourse $course, array $stage, int $index, ?int $moduleId): void
+    private function upsertStage(LmsCourse $course, array $stage, int $index, ?int $moduleId): void
     {
         $blocks = $stage['blocks'] ?? [];
 
@@ -384,7 +413,24 @@ class CourseController extends Controller
 
         $this->applyTypeFields($data, $primaryType, $primaryContent);
 
-        $stageModel = LmsCourseStage::create($data);
+        if (!empty($stage['id'])) {
+            $stageModel = LmsCourseStage::find($stage['id']);
+            if ($stageModel && $stageModel->lms_course_id === $course->id) {
+                $stageModel->update($data);
+            } else {
+                $stageModel = LmsCourseStage::create($data);
+            }
+        } else {
+            $stageModel = LmsCourseStage::create($data);
+        }
+
+        $this->syncBlocks($stageModel, $blocks, $data);
+    }
+
+    private function syncBlocks(LmsCourseStage $stageModel, array $blocks, array $stageData): void
+    {
+        $incomingBlockIds = collect($blocks)->pluck('id')->filter()->all();
+        $stageModel->blocks()->whereNotIn('id', $incomingBlockIds)->delete();
 
         if (!empty($blocks)) {
             foreach ($blocks as $bIndex => $block) {
@@ -396,18 +442,27 @@ class CourseController extends Controller
                     'scheduled_at' => $block['scheduled_at'] ?? null,
                 ];
                 $this->applyBlockTypeFields($blockData, $block['type'] ?? 'content', $block['content'] ?? null);
+
+                if (!empty($block['id'])) {
+                    $existing = LmsStageBlock::find($block['id']);
+                    if ($existing && $existing->lms_course_stage_id === $stageModel->id) {
+                        $existing->update($blockData);
+                        continue;
+                    }
+                }
                 LmsStageBlock::create($blockData);
             }
         } else {
+            $stageModel->blocks()->delete();
             LmsStageBlock::create([
                 'lms_course_stage_id' => $stageModel->id,
-                'type' => $primaryType ?? 'content',
-                'content' => $primaryContent,
+                'type' => $stageData['type'] ?? 'content',
+                'content' => $stageData['content'] ?? null,
                 'position' => 0,
-                'lms_test_id' => $data['lms_test_id'] ?? null,
-                'lms_assignment_id' => $data['lms_assignment_id'] ?? null,
-                'lms_video_id' => $data['lms_video_id'] ?? null,
-                'scorm_package' => $data['scorm_package'] ?? null,
+                'lms_test_id' => $stageData['lms_test_id'] ?? null,
+                'lms_assignment_id' => $stageData['lms_assignment_id'] ?? null,
+                'lms_video_id' => $stageData['lms_video_id'] ?? null,
+                'scorm_package' => $stageData['scorm_package'] ?? null,
             ]);
         }
     }

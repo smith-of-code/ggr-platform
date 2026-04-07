@@ -67,10 +67,15 @@ class GamificationService
 
     public function getLeaderboard(LmsEvent $event, int $limit = 50): array
     {
+        $adminUserIds = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)
+            ->where('role', 'admin')
+            ->pluck('user_id');
+
         return DB::table('lms_gamification_points')
             ->select('users.id', 'users.name', DB::raw('SUM(lms_gamification_points.points) as total_points'))
             ->join('users', 'users.id', '=', 'lms_gamification_points.user_id')
             ->where('lms_gamification_points.lms_event_id', $event->id)
+            ->whereNotIn('lms_gamification_points.user_id', $adminUserIds)
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total_points')
             ->limit($limit)
@@ -89,9 +94,14 @@ class GamificationService
     {
         $userTotal = $this->getUserPoints($event, $user);
 
+        $adminUserIds = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)
+            ->where('role', 'admin')
+            ->pluck('user_id');
+
         return DB::table('lms_gamification_points')
             ->select('user_id', DB::raw('SUM(points) as total'))
             ->where('lms_event_id', $event->id)
+            ->whereNotIn('user_id', $adminUserIds)
             ->groupBy('user_id')
             ->having(DB::raw('SUM(points)'), '>', $userTotal)
             ->count() + 1;

@@ -17,7 +17,7 @@
               <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ section.title }}</h3>
               <p class="mt-2 line-clamp-2 text-sm text-gray-500">{{ section.description || '–' }}</p>
               <p class="mt-3 text-xs text-gray-400">
-                {{ childrenCount(section) }} материалов
+                {{ section.items_count ?? 0 }} материалов
               </p>
             </template>
           </RCard>
@@ -47,10 +47,4 @@ const props = defineProps({
 })
 
 const user = computed(() => props.user || props.event?.user || usePage().props.auth?.user || {})
-
-function childrenCount(section) {
-  const children = section?.children
-  if (Array.isArray(children)) return children.length
-  return section?.children_count ?? 0
-}
 </script>

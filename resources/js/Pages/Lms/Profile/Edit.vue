@@ -507,7 +507,7 @@ const docConfig = [
   { type: 'enrollment_application', label: 'Заявление на зачисление *', hasTemplate: false },
   { type: 'snils', label: 'Скан СНИЛС *', hasTemplate: false },
   { type: 'diploma', label: 'Скан диплома о высшем или среднем образовании *', hasTemplate: false },
-  { type: 'personal_data_consent', label: 'Согласие на обработку персональных данных *', hasTemplate: true },
+
   { type: 'name_change_certificate', label: 'Свидетельство о перемене фамилии (при наличии)', hasTemplate: false },
 ]
 
