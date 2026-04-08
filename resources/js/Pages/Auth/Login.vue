@@ -38,7 +38,16 @@
 
           <RInput v-model="form.password" type="password" label="Пароль" placeholder="••••••••" :error="form.errors.password" required id="password" />
 
-          <RCheckbox v-model="form.remember" label="Запомнить меня" />
+          <div class="flex items-center justify-between gap-3">
+            <RCheckbox v-model="form.remember" label="Запомнить меня" />
+            <Link
+              v-if="canResetPassword"
+              :href="route('password.request')"
+              class="text-sm font-medium text-rosatom-600 transition hover:text-rosatom-700 hover:underline"
+            >
+              Забыли пароль?
+            </Link>
+          </div>
 
           <RButton variant="primary" size="lg" block :loading="form.processing" :disabled="form.processing">
             Войти
@@ -86,7 +95,7 @@
 </template>
 
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3'
+import { Head, Link, useForm } from '@inertiajs/vue3'
 
 defineProps({
   canResetPassword: { type: Boolean, default: false },
