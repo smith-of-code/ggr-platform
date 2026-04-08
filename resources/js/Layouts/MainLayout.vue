@@ -183,7 +183,12 @@ import { isLmsFullPageUrl } from '@/composables/useLmsFullPageNav'
 const page = usePage()
 const mobileOpen = ref(false)
 const scrolled = ref(false)
-const cabinetUrl = computed(() => page.props.lmsEntryUrl || route('profile.edit'))
+const cabinetUrl = computed(() => {
+  if (page.props.auth?.user?.is_admin) {
+    return route('admin.dashboard')
+  }
+  return page.props.lmsEntryUrl || route('profile.edit')
+})
 
 const hiddenPages = computed(() => page.props.hiddenPages || [])
 

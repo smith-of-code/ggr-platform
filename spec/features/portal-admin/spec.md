@@ -44,7 +44,7 @@
 - Исследования: Исследования, Рецепты
 
 ## Маршруты
-Все под `/admin` с middleware `auth`:
+Все под `/admin` с middleware `auth` и `portal.admin` (флаг `users.is_admin`, см. `App\Http\Middleware\EnsurePortalAdmin`):
 - `/admin` — дашборд
 - `/admin/cities/*` — города
 - `/admin/tours/*` — туры

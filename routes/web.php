@@ -1,21 +1,22 @@
 <?php
 
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
+use App\Http\Controllers\Admin\AtomsVkusaController as AdminAtomsVkusaController;
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
+use App\Http\Controllers\Admin\BlogSubscriberController as AdminBlogSubscriberController;
 use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\RecipeController as AdminRecipeController;
+use App\Http\Controllers\Admin\DirectionController as AdminDirectionController;
 use App\Http\Controllers\Admin\EducationProductController as AdminEducationProductController;
 use App\Http\Controllers\Admin\OpportunityToursPageController as AdminOpportunityToursPageController;
-use App\Http\Controllers\Admin\ResearchPageController as AdminResearchPageController;
 use App\Http\Controllers\Admin\PageVisibilityController as AdminPageVisibilityController;
+use App\Http\Controllers\Admin\RecipeController as AdminRecipeController;
+use App\Http\Controllers\Admin\ResearchPageController as AdminResearchPageController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
-use App\Http\Controllers\Admin\UploadController as AdminUploadController;
-use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TimelineEventController as AdminTimelineController;
-use App\Http\Controllers\Admin\DirectionController as AdminDirectionController;
-use App\Http\Controllers\Admin\AtomsVkusaController as AdminAtomsVkusaController;
-use App\Http\Controllers\Admin\BlogSubscriberController as AdminBlogSubscriberController;
+use App\Http\Controllers\Admin\TourController as AdminTourController;
+use App\Http\Controllers\Admin\TourReviewController as AdminTourReviewController;
+use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlogController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\DirectionController;
 use App\Http\Controllers\EducationController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Lms\SocialAuthController;
 use App\Http\Controllers\OpportunityToursController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecipeController;
@@ -32,7 +34,6 @@ use App\Http\Controllers\ResearchPageController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\TourReviewController;
 use App\Http\Controllers\VacancyController;
-use App\Http\Controllers\Admin\TourReviewController as AdminTourReviewController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public portal (no auth required) ──
@@ -76,7 +77,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tours/{tour}/reviews', [TourReviewController::class, 'store'])->name('tours.reviews.store');
 });
 
-Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/applications/export', [AdminApplicationController::class, 'export'])->name('applications.export');
     Route::get('/applications', [AdminApplicationController::class, 'index'])->name('applications.index');
@@ -135,9 +136,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 });
 
 // Social OAuth (global)
-Route::get('/auth/social/{provider}/login', [\App\Http\Controllers\Lms\SocialAuthController::class, 'redirectToGlobalLogin'])
+Route::get('/auth/social/{provider}/login', [SocialAuthController::class, 'redirectToGlobalLogin'])
     ->name('social.login');
-Route::get('/auth/social/{provider}/callback', [\App\Http\Controllers\Lms\SocialAuthController::class, 'callback'])
+Route::get('/auth/social/{provider}/callback', [SocialAuthController::class, 'callback'])
     ->name('social.callback');
 
 require __DIR__.'/auth.php';

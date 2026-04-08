@@ -9,7 +9,6 @@ use App\Models\Tour;
 use App\Models\TourDeparture;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,6 +20,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Администратор',
                 'password' => bcrypt('T7qK8oQEksH5yq'),
                 'email_verified_at' => now(),
+                'is_admin' => true,
             ]
         );
 
