@@ -68,12 +68,25 @@ class UserController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $cities = LmsProfile::where('lms_event_id', $event->id)
+        $dbCities = LmsProfile::where('lms_event_id', $event->id)
             ->whereNotNull('city')
             ->where('city', '!=', '')
             ->distinct()
-            ->orderBy('city')
             ->pluck('city');
+
+        $knownCities = collect([
+            'Ангарск', 'Байкальск', 'Балаково', 'Билибино', 'Большая Страча',
+            'Волгодонск', 'Глазов', 'Гудаута', 'Десногорск', 'Димитровград',
+            'Железногорск', 'Заречный (Пензенская область)', 'Заречный (Свердловская область)',
+            'Зеленогорск', 'Краснокаменск', 'Курчатов', 'Лесной', 'Неман',
+            'Нововоронеж', 'Новоуральск', 'Новый Афон', 'Обнинск', 'Озёрск',
+            'Островец', 'Певек', 'Пицунда', 'Полярные Зори', 'Ревда',
+            'Саров', 'Северск', 'Снежинск', 'Советск', 'Соликамск, Пермский край',
+            'Сосновый Бор', 'Сухум', 'Трёхгорный', 'Удомля', 'Ульяновск',
+            'Усолье-Сибирское', 'Электросталь',
+        ]);
+
+        $cities = $dbCities->merge($knownCities)->unique()->sort()->values();
 
         return Inertia::render('Lms/Admin/Users/Index', [
             'event' => $event->only(['id', 'slug', 'title']),

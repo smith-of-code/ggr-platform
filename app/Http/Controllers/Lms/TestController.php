@@ -16,6 +16,7 @@ use App\Models\Lms\LmsTestQuestion;
 use App\Models\Lms\LmsTestResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,16 +24,36 @@ class TestController extends Controller
 {
     public function index(Request $request, LmsEvent $event): Response
     {
+        $user = auth()->user();
+
+        $enrolledCourseIds = LmsCourseEnrollment::where('user_id', $user->id)
+            ->whereHas('course', fn($q) => $q->where('lms_event_id', $event->id))
+            ->pluck('lms_course_id');
+
+        $directStageTestIds = DB::table('lms_course_stages')
+            ->whereIn('lms_course_id', $enrolledCourseIds)
+            ->whereNotNull('lms_test_id')
+            ->distinct()
+            ->pluck('lms_test_id');
+
+        $blockTestIds = DB::table('lms_stage_blocks')
+            ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
+            ->whereIn('lms_course_stages.lms_course_id', $enrolledCourseIds)
+            ->whereNotNull('lms_stage_blocks.lms_test_id')
+            ->distinct()
+            ->pluck('lms_stage_blocks.lms_test_id');
+
+        $availableTestIds = $directStageTestIds->merge($blockTestIds)->unique()->values();
+
         $query = LmsTest::where('lms_event_id', $event->id)
             ->where('is_active', true)
-            ->where('in_menu', true);
+            ->whereIn('id', $availableTestIds);
 
         if ($search = $request->get('search')) {
             $query->where('title', 'ilike', '%' . $search . '%');
         }
 
         $tests = $query->paginate(12)->withQueryString();
-        $user = auth()->user();
         $testIds = collect($tests->items())->pluck('id');
 
         $attempts = LmsTestAttempt::whereIn('lms_test_id', $testIds)

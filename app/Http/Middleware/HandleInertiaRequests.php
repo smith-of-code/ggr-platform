@@ -67,6 +67,24 @@ class HandleInertiaRequests extends Middleware
                 ? []
                 : app(SettingsService::class)->getHiddenPages(),
             'consentDocumentUrl' => config('consent.document_url'),
+            'lmsEntryUrl' => function () use ($request) {
+                $user = $request->user();
+                if (!$user) {
+                    return null;
+                }
+
+                $profile = LmsProfile::where('user_id', $user->id)
+                    ->with('event:id,slug')
+                    ->orderByDesc('activated_at')
+                    ->orderByDesc('id')
+                    ->first();
+
+                if (!$profile?->event?->slug) {
+                    return null;
+                }
+
+                return route('lms.dashboard', ['event' => $profile->event->slug], false);
+            },
             'gamificationEnabled' => function () use ($request) {
                 $user = $request->user();
                 if (!$user) return false;

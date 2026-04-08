@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AuthController extends Controller
 {
@@ -117,11 +118,7 @@ class AuthController extends Controller
             ->first();
 
         if (!$profile) {
-            return Inertia::render('Lms/Auth/Activate', [
-                'event' => $event->only(['id', 'slug', 'title']),
-                'profile' => null,
-                'error' => 'Ссылка недействительна или уже была использована.',
-            ]);
+            return redirect()->to('/lms/' . $event->slug);
         }
 
         return Inertia::render('Lms/Auth/Activate', [
@@ -180,12 +177,18 @@ class AuthController extends Controller
         return redirect()->route('lms.dashboard', $event);
     }
 
-    public function logout(Request $request, LmsEvent $event): RedirectResponse
+    public function logout(Request $request, LmsEvent $event): RedirectResponse|HttpResponse
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        $redirect = redirect()->route('login');
+
+        if ($request->header('X-Inertia')) {
+            return Inertia::location($redirect->getTargetUrl());
+        }
+
+        return $redirect;
     }
 }
