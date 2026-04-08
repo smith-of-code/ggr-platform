@@ -118,11 +118,7 @@ class AuthController extends Controller
             ->first();
 
         if (!$profile) {
-            return Inertia::render('Lms/Auth/Activate', [
-                'event' => $event->only(['id', 'slug', 'title']),
-                'profile' => null,
-                'error' => 'Ссылка недействительна или уже была использована.',
-            ]);
+            return redirect()->to('/lms/' . $event->slug);
         }
 
         return Inertia::render('Lms/Auth/Activate', [
