@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AuthController extends Controller
 {
@@ -180,12 +181,18 @@ class AuthController extends Controller
         return redirect()->route('lms.dashboard', $event);
     }
 
-    public function logout(Request $request, LmsEvent $event): RedirectResponse
+    public function logout(Request $request, LmsEvent $event): RedirectResponse|HttpResponse
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        $redirect = redirect()->route('login');
+
+        if ($request->header('X-Inertia')) {
+            return Inertia::location($redirect->getTargetUrl());
+        }
+
+        return $redirect;
     }
 }
