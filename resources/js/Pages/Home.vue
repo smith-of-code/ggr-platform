@@ -30,6 +30,12 @@
             >
               Города
             </Link>
+            <Link
+              :href="vshgrHref"
+              class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+            >
+              ВШГР
+            </Link>
           </div>
         </div>
       </section>
@@ -348,12 +354,20 @@
             <p class="mx-auto mt-4 max-w-xl text-lg text-white/80">
               Оставьте заявку, и мы свяжемся с вами в ближайшее время
             </p>
-            <Link
-              :href="route('tours.index')"
-              class="mt-8 inline-flex items-center rounded-xl bg-white px-8 py-3.5 font-semibold text-[#003274] shadow-lg transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
-            >
-              Выбрать тур
-            </Link>
+            <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                :href="route('tours.index')"
+                class="inline-flex items-center rounded-xl bg-white px-8 py-3.5 font-semibold text-[#003274] shadow-lg transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+              >
+                Выбрать тур
+              </Link>
+              <Link
+                :href="vshgrHref"
+                class="inline-flex items-center rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+              >
+                Перейти в ВШГР
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -501,6 +515,12 @@ const props = defineProps({
 })
 
 const page = usePage()
+const vshgrHref = computed(() => {
+  if (page.props.auth?.user) {
+    return page.props.lmsEntryUrl || route('education.index')
+  }
+  return route('education.index')
+})
 
 const flashSuccess = computed(() => page.props.flash?.success ?? null)
 

@@ -149,6 +149,12 @@ import { Link, usePage } from '@inertiajs/vue3'
 const page = usePage()
 const mobileOpen = ref(false)
 const scrolled = ref(false)
+const vshgrHref = computed(() => {
+  if (page.props.auth?.user) {
+    return page.props.lmsEntryUrl || route('education.index')
+  }
+  return route('education.index')
+})
 const cabinetUrl = computed(() => page.props.lmsEntryUrl || route('profile.edit'))
 
 const hiddenPages = computed(() => page.props.hiddenPages || [])
@@ -158,7 +164,7 @@ const allNavItems = computed(() => [
   { slug: 'cities', label: 'Города', href: route('cities.index'), active: page.url.startsWith('/cities') },
   { slug: 'tours', label: 'Каталог туров', href: route('tours.index'), active: page.url.startsWith('/tours') },
   { slug: 'opportunity-tours', label: 'Туры возможностей', href: route('opportunity-tours.index'), active: page.url.startsWith('/opportunity-tours') },
-  { slug: 'education', label: 'ВШГР', href: route('education.index'), active: page.url.startsWith('/vshgr') },
+  { slug: 'education', label: 'ВШГР', href: vshgrHref.value, active: page.url.startsWith('/vshgr') || page.url.startsWith('/lms/') },
   { slug: 'research', label: 'Исследования', href: route('research.index'), active: page.url.startsWith('/research') },
   { slug: 'atomy-vkusa', label: 'Атомы вкуса', href: route('directions.show', 'atomy-vkusa'), active: page.url.startsWith('/directions/atomy-vkusa') },
   { slug: 'blog', label: 'Блог', href: route('blog.index'), active: page.url.startsWith('/blog') },
