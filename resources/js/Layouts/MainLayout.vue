@@ -31,7 +31,7 @@
           <div class="hidden shrink-0 lg:flex">
             <Link
               v-if="$page.props.auth?.user"
-              :href="route('profile.edit')"
+              :href="cabinetUrl"
               class="rounded-lg bg-[#003274] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#025ea1]"
             >
               Личный кабинет
@@ -79,7 +79,7 @@
           <div class="my-2 border-t border-gray-100" />
           <Link
             v-if="$page.props.auth?.user"
-            :href="route('profile.edit')"
+            :href="cabinetUrl"
             class="block rounded-lg bg-[#003274] px-4 py-3 text-center text-white"
           >
             Личный кабинет
@@ -149,6 +149,7 @@ import { Link, usePage } from '@inertiajs/vue3'
 const page = usePage()
 const mobileOpen = ref(false)
 const scrolled = ref(false)
+const cabinetUrl = computed(() => page.props.lmsEntryUrl || route('profile.edit'))
 
 const hiddenPages = computed(() => page.props.hiddenPages || [])
 
