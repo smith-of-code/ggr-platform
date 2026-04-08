@@ -13,6 +13,7 @@ use App\Models\Lms\LmsKbItem;
 use App\Models\Lms\LmsKbSection;
 use App\Models\Lms\LmsMaterialSection;
 use App\Models\Lms\LmsProfile;
+use App\Models\Lms\LmsRole;
 use App\Models\Lms\LmsTest;
 use App\Models\Lms\LmsTestAnswer;
 use App\Models\Lms\LmsTestQuestion;
@@ -50,7 +51,21 @@ class LmsSeeder extends Seeder
             ['name' => 'Участник Петров', 'password' => Hash::make('password')]
         );
 
-        LmsProfile::create(['user_id' => $admin->id, 'lms_event_id' => $event->id, 'role' => 'admin', 'position' => 'Администратор', 'city' => 'Москва']);
+        $adminRole = LmsRole::create([
+            'lms_event_id' => $event->id,
+            'name' => 'Администратор',
+            'slug' => 'admin',
+            'description' => 'Полный доступ к настройкам мероприятия в LMS.',
+        ]);
+
+        LmsProfile::create([
+            'user_id' => $admin->id,
+            'lms_event_id' => $event->id,
+            'role' => 'admin',
+            'lms_role_id' => $adminRole->id,
+            'position' => 'Администратор',
+            'city' => 'Москва',
+        ]);
         LmsProfile::create(['user_id' => $curator->id, 'lms_event_id' => $event->id, 'role' => 'curator', 'position' => 'Куратор группы', 'city' => 'Саров']);
         LmsProfile::create(['user_id' => $student->id, 'lms_event_id' => $event->id, 'role' => 'participant', 'position' => 'Специалист', 'city' => 'Железногорск']);
 

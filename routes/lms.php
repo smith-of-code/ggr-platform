@@ -1,40 +1,41 @@
 <?php
 
-use App\Http\Controllers\Lms\AuthController;
-use App\Http\Controllers\Lms\SocialAuthController;
-use App\Http\Controllers\Lms\DashboardController;
-use App\Http\Controllers\Lms\CourseController;
-use App\Http\Controllers\Lms\StageController;
-use App\Http\Controllers\Lms\TestController;
-use App\Http\Controllers\Lms\AssignmentController;
-use App\Http\Controllers\Lms\TrajectoryController;
-use App\Http\Controllers\Lms\VideoController;
-use App\Http\Controllers\Lms\KnowledgeBaseController;
-use App\Http\Controllers\Lms\MaterialController;
-use App\Http\Controllers\Lms\LeaderController;
-use App\Http\Controllers\Lms\GamificationController;
-use App\Http\Controllers\Lms\ProfileController;
-use App\Http\Controllers\Lms\ReportController;
-use App\Http\Controllers\Lms\Admin\EventController as AdminEventController;
-use App\Http\Controllers\Lms\Admin\CourseController as AdminCourseController;
-use App\Http\Controllers\Lms\Admin\TestController as AdminTestController;
 use App\Http\Controllers\Lms\Admin\AssignmentController as AdminAssignmentController;
-use App\Http\Controllers\Lms\Admin\TrajectoryController as AdminTrajectoryController;
-use App\Http\Controllers\Lms\Admin\VideoController as AdminVideoController;
+use App\Http\Controllers\Lms\Admin\CourseController as AdminCourseController;
+use App\Http\Controllers\Lms\Admin\EnrollmentController as AdminEnrollmentController;
+use App\Http\Controllers\Lms\Admin\EventController as AdminEventController;
+use App\Http\Controllers\Lms\Admin\FormController as AdminFormController;
+use App\Http\Controllers\Lms\Admin\GamificationController as AdminGamificationController;
+use App\Http\Controllers\Lms\Admin\GrantController as AdminGrantController;
+use App\Http\Controllers\Lms\Admin\GroupController as AdminGroupController;
+use App\Http\Controllers\Lms\Admin\InvitationController as AdminInvitationController;
 use App\Http\Controllers\Lms\Admin\KnowledgeBaseController as AdminKbController;
 use App\Http\Controllers\Lms\Admin\MaterialController as AdminMaterialController;
-use App\Http\Controllers\Lms\Admin\GroupController as AdminGroupController;
-use App\Http\Controllers\Lms\Admin\UserController as AdminUserController;
-use App\Http\Controllers\Lms\Admin\EnrollmentController as AdminEnrollmentController;
-use App\Http\Controllers\Lms\Admin\GamificationController as AdminGamificationController;
-use App\Http\Controllers\Lms\Admin\InvitationController as AdminInvitationController;
-use App\Http\Controllers\Lms\Admin\RoleController as AdminRoleController;
-use App\Http\Controllers\Lms\Admin\FormController as AdminFormController;
 use App\Http\Controllers\Lms\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Lms\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Lms\Admin\TestController as AdminTestController;
+use App\Http\Controllers\Lms\Admin\TrajectoryController as AdminTrajectoryController;
 use App\Http\Controllers\Lms\Admin\UploadController as AdminUploadController;
-use App\Http\Controllers\Lms\GrantController;
-use App\Http\Controllers\Lms\Admin\GrantController as AdminGrantController;
+use App\Http\Controllers\Lms\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Lms\Admin\VideoController as AdminVideoController;
+use App\Http\Controllers\Lms\AssignmentController;
+use App\Http\Controllers\Lms\AuthController;
+use App\Http\Controllers\Lms\CourseController;
+use App\Http\Controllers\Lms\DashboardController;
 use App\Http\Controllers\Lms\FormPublicController;
+use App\Http\Controllers\Lms\GamificationController;
+use App\Http\Controllers\Lms\GrantController;
+use App\Http\Controllers\Lms\KnowledgeBaseController;
+use App\Http\Controllers\Lms\LeaderController;
+use App\Http\Controllers\Lms\MaterialController;
+use App\Http\Controllers\Lms\ProfileController;
+use App\Http\Controllers\Lms\ReportController;
+use App\Http\Controllers\Lms\SocialAuthController;
+use App\Http\Controllers\Lms\StageController;
+use App\Http\Controllers\Lms\TestController;
+use App\Http\Controllers\Lms\TrajectoryController;
+use App\Http\Controllers\Lms\VideoController;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 
 // ── LMS Auth ──
@@ -134,7 +135,7 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
 });
 
 // ── LMS Admin ──
-Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth'])->group(function () {
+Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoffice'])->group(function () {
     Route::resource('events', AdminEventController::class);
 
     Route::prefix('{event}')->group(function () {
@@ -192,7 +193,7 @@ Route::post('/forms/{slug}/submit', [FormPublicController::class, 'submit'])->na
 // Widget API (CORS, no CSRF)
 Route::get('/api/forms/{slug}', [FormPublicController::class, 'apiShow'])->name('forms.api.show');
 Route::post('/api/forms/{slug}/submit', [FormPublicController::class, 'apiSubmit'])
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+    ->withoutMiddleware([ValidateCsrfToken::class])
     ->name('forms.api.submit');
 Route::options('/api/forms/{slug}/submit', [FormPublicController::class, 'apiCorsOptions'])
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+    ->withoutMiddleware([ValidateCsrfToken::class]);

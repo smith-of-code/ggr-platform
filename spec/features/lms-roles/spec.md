@@ -26,3 +26,4 @@
 - Курсы получают ролевой доступ через pivot lms_course_role_access
 - Роль может быть назначена через инвайт (LmsInvitation.lms_role_id)
 - Базовые роли (participant, curator, leader, admin) заданы enum в LmsProfile.role
+- Доступ к маршрутам `lms-admin` (middleware `lms.backoffice`): для мероприятия с параметром `event` — профиль пользователя с `lms_roles.slug = admin` либо без `lms_role_id` и `LmsProfile.role = admin`; для списка/создания мероприятий — наличие хотя бы одного такого профиля (`App\Models\Lms\LmsProfile`, `App\Http\Middleware\EnsureLmsBackofficeAccess`)

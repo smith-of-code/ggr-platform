@@ -14,7 +14,9 @@ class LmsProfile extends Model
     protected $table = 'lms_profiles';
 
     public const DIRECTION_MANAGEMENT = 'management';
+
     public const DIRECTION_SPECIALISTS = 'specialists';
+
     public const DIRECTION_ENTREPRENEURS = 'entrepreneurs';
 
     public const DIRECTIONS = [
@@ -30,11 +32,17 @@ class LmsProfile extends Model
     ];
 
     public const FACULTY_MANAGEMENT_TEAM = 'management_team';
+
     public const FACULTY_INDUSTRIAL_TOURISM_GUIDE = 'industrial_tourism_guide';
+
     public const FACULTY_EXCURSION_ACTIVITY = 'excursion_activity';
+
     public const FACULTY_TOURISM_PRODUCT = 'tourism_product';
+
     public const FACULTY_SERVICE = 'service';
+
     public const FACULTY_TOURISM_INFRASTRUCTURE = 'tourism_infrastructure';
+
     public const FACULTY_MARKETING = 'marketing';
 
     public const FACULTIES = [
@@ -151,6 +159,42 @@ class LmsProfile extends Model
         return $this->belongsTo(LmsRole::class, 'lms_role_id');
     }
 
+    /**
+     * Доступ к backoffice LMS для конкретного мероприятия: кастомная роль со slug admin
+     * либо legacy-поле role=admin при отсутствии lms_role_id.
+     */
+    public static function userIsLmsAdminForEvent(User $user, LmsEvent $event): bool
+    {
+        $profile = static::where('user_id', $user->id)
+            ->where('lms_event_id', $event->id)
+            ->with('lmsRole:id,slug')
+            ->first();
+
+        if (! $profile) {
+            return false;
+        }
+
+        if ($profile->lms_role_id !== null) {
+            return $profile->lmsRole?->slug === 'admin';
+        }
+
+        return $profile->role === 'admin';
+    }
+
+    /** Профиль с правами администрирования LMS (для маршрутов без параметра event). */
+    public static function userHasAnyLmsAdminProfile(User $user): bool
+    {
+        return static::where('user_id', $user->id)
+            ->where(function ($q) {
+                $q->whereHas('lmsRole', function ($role) {
+                    $role->where('slug', 'admin');
+                })->orWhere(function ($q2) {
+                    $q2->whereNull('lms_role_id')->where('role', 'admin');
+                });
+            })
+            ->exists();
+    }
+
     public function cityRelation(): BelongsTo
     {
         return $this->belongsTo(City::class, 'city_id');
@@ -217,7 +261,7 @@ class LmsProfile extends Model
 
         foreach ($docLabels as $type => $label) {
             if (! in_array($type, $uploadedTypes)) {
-                $missing[] = $label . ' (документ)';
+                $missing[] = $label.' (документ)';
             }
         }
 
