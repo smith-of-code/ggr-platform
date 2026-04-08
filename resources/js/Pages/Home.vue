@@ -30,8 +30,15 @@
             >
               Города
             </Link>
+            <a
+              v-if="page.props.auth?.user && isLmsFullPageUrl(vshgrHref)"
+              :href="vshgrHref"
+              class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+            >
+              ВШГР
+            </a>
             <Link
-              v-if="page.props.auth?.user"
+              v-else-if="page.props.auth?.user"
               :href="vshgrHref"
               class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
             >
@@ -362,8 +369,15 @@
               >
                 Выбрать тур
               </Link>
+              <a
+                v-if="page.props.auth?.user && isLmsFullPageUrl(vshgrHref)"
+                :href="vshgrHref"
+                class="inline-flex items-center rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+              >
+                Перейти в ВШГР
+              </a>
               <Link
-                v-if="page.props.auth?.user"
+                v-else-if="page.props.auth?.user"
                 :href="vshgrHref"
                 class="inline-flex items-center rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
               >
@@ -494,6 +508,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
+import { isLmsFullPageUrl } from '@/composables/useLmsFullPageNav'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import YandexCityMap from '@/Components/YandexCityMap.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'

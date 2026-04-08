@@ -15,22 +15,36 @@
           <!-- Desktop nav -->
           <nav class="hidden flex-1 items-center justify-center lg:flex">
             <div class="flex items-center gap-0.5">
-              <Link
-                v-for="item in navItems"
-                :key="item.href"
-                :href="item.href"
-                class="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274] xl:px-3"
-                :class="{ 'bg-[#003274]/5 text-[#003274] font-semibold': item.active }"
-              >
-                {{ item.label }}
-              </Link>
+              <template v-for="item in navItems" :key="item.slug">
+                <a
+                  v-if="isLmsFullPageUrl(item.href)"
+                  :href="item.href"
+                  class="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274] xl:px-3"
+                  :class="{ 'bg-[#003274]/5 text-[#003274] font-semibold': item.active }"
+                >{{ item.label }}</a>
+                <Link
+                  v-else
+                  :href="item.href"
+                  class="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-gray-600 transition hover:bg-gray-100 hover:text-[#003274] xl:px-3"
+                  :class="{ 'bg-[#003274]/5 text-[#003274] font-semibold': item.active }"
+                >
+                  {{ item.label }}
+                </Link>
+              </template>
             </div>
           </nav>
 
           <!-- Auth button (desktop) -->
           <div class="hidden shrink-0 lg:flex">
+            <a
+              v-if="$page.props.auth?.user && isLmsFullPageUrl(cabinetUrl)"
+              :href="cabinetUrl"
+              class="rounded-lg bg-[#003274] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#025ea1]"
+            >
+              Личный кабинет
+            </a>
             <Link
-              v-if="$page.props.auth?.user"
+              v-else-if="$page.props.auth?.user"
               :href="cabinetUrl"
               class="rounded-lg bg-[#003274] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#025ea1]"
             >
@@ -70,15 +84,28 @@
         leave-to-class="-translate-y-2 opacity-0"
       >
         <div v-if="mobileOpen" class="border-t border-gray-200 bg-white px-4 pb-4 pt-2 lg:hidden">
-          <Link
-            v-for="item in navItems"
-            :key="item.href"
-            :href="item.href"
-            class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
-          >{{ item.label }}</Link>
+          <template v-for="item in navItems" :key="item.slug">
+            <a
+              v-if="isLmsFullPageUrl(item.href)"
+              :href="item.href"
+              class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
+            >{{ item.label }}</a>
+            <Link
+              v-else
+              :href="item.href"
+              class="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
+            >{{ item.label }}</Link>
+          </template>
           <div class="my-2 border-t border-gray-100" />
+          <a
+            v-if="$page.props.auth?.user && isLmsFullPageUrl(cabinetUrl)"
+            :href="cabinetUrl"
+            class="block rounded-lg bg-[#003274] px-4 py-3 text-center text-white"
+          >
+            Личный кабинет
+          </a>
           <Link
-            v-if="$page.props.auth?.user"
+            v-else-if="$page.props.auth?.user"
             :href="cabinetUrl"
             class="block rounded-lg bg-[#003274] px-4 py-3 text-center text-white"
           >
@@ -115,12 +142,18 @@
           <div>
             <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-900">Навигация</h3>
             <div class="mt-4 flex flex-col gap-3">
-              <Link
-                v-for="item in navItems"
-                :key="item.href"
-                :href="item.href"
-                class="text-sm text-gray-500 transition hover:text-[#003274]"
-              >{{ item.label }}</Link>
+              <template v-for="item in navItems" :key="item.slug">
+                <a
+                  v-if="isLmsFullPageUrl(item.href)"
+                  :href="item.href"
+                  class="text-sm text-gray-500 transition hover:text-[#003274]"
+                >{{ item.label }}</a>
+                <Link
+                  v-else
+                  :href="item.href"
+                  class="text-sm text-gray-500 transition hover:text-[#003274]"
+                >{{ item.label }}</Link>
+              </template>
             </div>
           </div>
           <div>
@@ -145,16 +178,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
+import { isLmsFullPageUrl } from '@/composables/useLmsFullPageNav'
 
 const page = usePage()
 const mobileOpen = ref(false)
 const scrolled = ref(false)
-const vshgrHref = computed(() => {
-  if (page.props.auth?.user) {
-    return page.props.lmsEntryUrl || route('education.index')
-  }
-  return route('education.index')
-})
 const cabinetUrl = computed(() => page.props.lmsEntryUrl || route('profile.edit'))
 
 const hiddenPages = computed(() => page.props.hiddenPages || [])
@@ -164,7 +192,7 @@ const allNavItems = computed(() => [
   { slug: 'cities', label: 'Города', href: route('cities.index'), active: page.url.startsWith('/cities') },
   { slug: 'tours', label: 'Каталог туров', href: route('tours.index'), active: page.url.startsWith('/tours') },
   { slug: 'opportunity-tours', label: 'Туры возможностей', href: route('opportunity-tours.index'), active: page.url.startsWith('/opportunity-tours') },
-  { slug: 'education', label: 'ВШГР', href: vshgrHref.value, active: page.url.startsWith('/vshgr') || page.url.startsWith('/lms/') },
+  { slug: 'education', label: 'ВШГР', href: route('education.index'), active: page.url.startsWith('/vshgr') || page.url.startsWith('/lms/') },
   { slug: 'research', label: 'Исследования', href: route('research.index'), active: page.url.startsWith('/research') },
   { slug: 'atomy-vkusa', label: 'Атомы вкуса', href: route('directions.show', 'atomy-vkusa'), active: page.url.startsWith('/directions/atomy-vkusa') },
   { slug: 'blog', label: 'Блог', href: route('blog.index'), active: page.url.startsWith('/blog') },
