@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -33,7 +34,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request): RedirectResponse|HttpResponse
     {
         $request->authenticate();
 
@@ -47,11 +48,19 @@ class AuthenticatedSessionController extends Controller
             $event = $lmsProfile->event;
             if ($event) {
                 app(GamificationService::class)->awardPoints($event, $user, 'login_daily', 'Ежедневный вход');
-                return redirect()->intended(route('lms.dashboard', $event->slug, false));
+                $redirect = redirect()->intended(route('lms.dashboard', $event->slug, false));
+                if ($request->header('X-Inertia')) {
+                    return Inertia::location($redirect->getTargetUrl());
+                }
+                return $redirect;
             }
         }
 
-        return redirect()->intended(route('admin.dashboard', absolute: false));
+        $redirect = redirect()->intended(route('admin.dashboard', absolute: false));
+        if ($request->header('X-Inertia')) {
+            return Inertia::location($redirect->getTargetUrl());
+        }
+        return $redirect;
     }
 
     /**
