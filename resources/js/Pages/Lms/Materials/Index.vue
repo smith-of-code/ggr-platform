@@ -16,9 +16,11 @@
             <template #default>
               <div class="min-w-0 flex-1">
                 <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ section.title }}</h3>
-                <p v-if="contentSnippet(section)" class="mt-1 line-clamp-2 text-sm text-gray-500">
-                  {{ contentSnippet(section) }}
-                </p>
+                <div
+                  v-if="section?.content"
+                  class="mt-1 line-clamp-2 text-sm text-gray-500 prose prose-sm max-w-none prose-p:my-0 prose-a:text-rosatom-600"
+                  v-html="section.content"
+                />
               </div>
               <ChevronRightIcon class="ml-4 h-5 w-5 shrink-0 text-gray-400" />
             </template>
@@ -50,11 +52,4 @@ const props = defineProps({
 })
 
 const user = computed(() => props.user || props.event?.user || usePage().props.auth?.user || {})
-
-function contentSnippet(section) {
-  const content = section?.content
-  if (!content || typeof content !== 'string') return ''
-  const stripped = content.replace(/<[^>]*>/g, '').trim()
-  return stripped.length > 120 ? stripped.slice(0, 120) + '…' : stripped
-}
 </script>

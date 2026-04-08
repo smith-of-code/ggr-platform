@@ -129,6 +129,16 @@
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex justify-end gap-2">
+                    <RButton
+                      v-if="e.profile_data?.project_description"
+                      variant="ghost"
+                      size="sm"
+                      icon-only
+                      title="Посмотреть идею"
+                      @click="openIdeaModal(e)"
+                    >
+                      <template #icon><EyeIcon class="h-4 w-4" /></template>
+                    </RButton>
                     <template v-if="e.status === 'pending'">
                       <RButton variant="primary" size="sm" @click="approve(e.id)">Одобрить</RButton>
                       <RButton variant="outline" size="sm" @click="openReassign(e)">Перевести</RButton>
@@ -205,6 +215,16 @@
                 </p>
               </div>
               <div class="flex flex-wrap justify-end gap-1.5">
+                <RButton
+                  v-if="e.profile_data?.project_description"
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  title="Посмотреть идею"
+                  @click="openIdeaModal(e)"
+                >
+                  <template #icon><EyeIcon class="h-4 w-4" /></template>
+                </RButton>
                 <template v-if="e.status === 'pending'">
                   <RButton variant="primary" size="sm" @click="approve(e.id)">Одобрить</RButton>
                   <RButton variant="outline" size="sm" @click="openReassign(e)">Перевести</RButton>
@@ -279,6 +299,29 @@
         </div>
       </template>
     </RModal>
+
+    <RModal
+      v-model="showIdeaModal"
+      title="Идея участника"
+      size="md"
+    >
+      <div v-if="ideaEnrollment" class="space-y-3">
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-3">
+          <p class="text-sm font-medium text-gray-900">{{ ideaEnrollment.user?.name || 'Участник' }}</p>
+          <p class="mt-0.5 text-xs text-gray-500">
+            {{ ideaEnrollment.course?.title || 'Программа не указана' }}
+          </p>
+        </div>
+        <p class="whitespace-pre-line text-sm leading-6 text-gray-700">
+          {{ ideaEnrollment.profile_data?.project_description }}
+        </p>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <RButton variant="outline" size="sm" type="button" @click="showIdeaModal = false">Закрыть</RButton>
+        </div>
+      </template>
+    </RModal>
   </LmsAdminLayout>
 </template>
 
@@ -287,7 +330,7 @@ import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import SearchSelect from '@/Components/SearchSelect.vue'
-import { ArrowLeftIcon, TableCellsIcon, Squares2X2Icon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, TableCellsIcon, Squares2X2Icon, EyeIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   event: Object,
@@ -375,6 +418,8 @@ function remove(enrollment) {
 const showReassignModal = ref(false)
 const reassignEnrollment = ref(null)
 const reassignCourseId = ref(null)
+const showIdeaModal = ref(false)
+const ideaEnrollment = ref(null)
 
 const availableCoursesForReassign = computed(() => {
   if (!reassignEnrollment.value) return []
@@ -394,6 +439,11 @@ function submitReassign() {
     { course_id: reassignCourseId.value },
     { onSuccess: () => { showReassignModal.value = false } }
   )
+}
+
+function openIdeaModal(enrollment) {
+  ideaEnrollment.value = enrollment
+  showIdeaModal.value = true
 }
 
 function statusVariant(status) {
