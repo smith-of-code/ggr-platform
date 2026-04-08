@@ -32,7 +32,7 @@
             </div>
             <RInput v-model.number="form.position" label="Позиция" type="number" />
             <div class="flex items-center gap-3 pt-6">
-              <RCheckbox v-model:checked="form.is_active" />
+              <RCheckbox v-model="form.is_active" />
               <span class="text-sm font-medium text-gray-700">Активно</span>
             </div>
           </div>
@@ -215,7 +215,7 @@ const form = useForm({
   paid_participation_steps: props.direction?.paid_participation_steps ?? [],
   paid_form_slug: props.direction?.paid_form_slug ?? '',
   featured_tour_ids: props.direction?.featured_tour_ids ?? [],
-  is_active: props.direction?.is_active ?? true,
+  is_active: Boolean(props.direction?.is_active ?? true),
   position: props.direction?.position ?? 0,
 })
 
