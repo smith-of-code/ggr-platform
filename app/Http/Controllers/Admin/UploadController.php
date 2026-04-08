@@ -16,7 +16,7 @@ class UploadController extends Controller
     public function file(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => 'required|file|max:51200',
+            'file' => 'required|file|max:102400',
         ]);
 
         $disk = config('filesystems.upload_disk', 'public');
