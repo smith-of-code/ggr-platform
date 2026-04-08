@@ -1,6 +1,6 @@
 <template>
   <div class="flex min-h-screen font-sans">
-    <Head :title="`Активация — ${event.title}`" />
+    <Head title="Высшая школа гостеприимства Росатома - 2026" />
 
     <div class="relative hidden w-1/2 overflow-hidden lg:flex lg:flex-col lg:justify-between">
       <div class="absolute inset-0 bg-gradient-to-br from-rosatom-900 via-rosatom-800 to-rosatom-700" />
@@ -15,11 +15,11 @@
         </div>
         <div>
           <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
-            Высшая школа<br />гостеприимного развития
+            Высшая школа<br />гостеприимства Росатома - 2026
           </h2>
-          <p class="mt-6 max-w-lg text-lg text-rosatom-300/80">
-            Образовательная платформа для подготовки специалистов в области гостеприимства гостеприимных городов Росатома
-          </p>
+<!--          <p class="mt-6 max-w-lg text-lg text-rosatom-300/80">-->
+<!--            Образовательная платформа для подготовки специалистов в области гостеприимства гостеприимных городов Росатома-->
+<!--          </p>-->
         </div>
         <p class="text-sm text-white/30">&copy; {{ new Date().getFullYear() }} Росатом</p>
       </div>
