@@ -211,7 +211,6 @@ class LmsProfile extends Model
             LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION => 'Заявление на зачисление',
             LmsProfileDocument::TYPE_SNILS => 'СНИЛС',
             LmsProfileDocument::TYPE_DIPLOMA => 'Диплом',
-            LmsProfileDocument::TYPE_PERSONAL_DATA_CONSENT => 'Согласие на обработку ПД',
         ];
 
         $uploadedTypes = $this->documents()->pluck('type')->toArray();

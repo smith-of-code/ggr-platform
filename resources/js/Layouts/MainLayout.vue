@@ -31,10 +31,10 @@
           <div class="hidden shrink-0 lg:flex">
             <Link
               v-if="$page.props.auth?.user"
-              :href="route('admin.dashboard')"
+              :href="route('profile.edit')"
               class="rounded-lg bg-[#003274] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#025ea1]"
             >
-              Админка
+              Личный кабинет
             </Link>
             <Link
               v-else
@@ -79,10 +79,10 @@
           <div class="my-2 border-t border-gray-100" />
           <Link
             v-if="$page.props.auth?.user"
-            :href="route('admin.dashboard')"
+            :href="route('profile.edit')"
             class="block rounded-lg bg-[#003274] px-4 py-3 text-center text-white"
           >
-            Админка
+            Личный кабинет
           </Link>
           <Link
             v-else
