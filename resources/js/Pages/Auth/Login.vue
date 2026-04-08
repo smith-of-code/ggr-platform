@@ -1,6 +1,6 @@
 <template>
   <div class="flex min-h-screen font-sans">
-    <Head title="Вход – ВШГР" />
+    <Head title="Высшая школа гостеприимства Росатома - 2026" />
 
     <!-- Left panel: branding -->
     <div class="hidden w-1/2 flex-col justify-between bg-rosatom-800 p-12 lg:flex">
@@ -9,11 +9,11 @@
       </div>
       <div>
         <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
-          Высшая школа<br />гостеприимного развития
+          Высшая школа<br />гостеприимства Росатома - 2026
         </h2>
-        <p class="mt-6 max-w-lg text-lg text-rosatom-300">
+        <!-- <p class="mt-6 max-w-lg text-lg text-rosatom-300">
           Образовательная платформа для подготовки специалистов в области гостеприимства гостеприимных городов Росатома
-        </p>
+        </p> -->
       </div>
       <p class="text-sm text-rosatom-500">&copy; {{ new Date().getFullYear() }} Росатом</p>
     </div>
