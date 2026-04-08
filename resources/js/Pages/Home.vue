@@ -31,6 +31,7 @@
               Города
             </Link>
             <Link
+              v-if="page.props.auth?.user"
               :href="vshgrHref"
               class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
             >
@@ -362,6 +363,7 @@
                 Выбрать тур
               </Link>
               <Link
+                v-if="page.props.auth?.user"
                 :href="vshgrHref"
                 class="inline-flex items-center rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
               >
