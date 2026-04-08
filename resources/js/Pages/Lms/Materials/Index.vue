@@ -16,11 +16,6 @@
             <template #default>
               <div class="min-w-0 flex-1">
                 <h3 class="font-semibold text-gray-900 group-hover:text-rosatom-600">{{ section.title }}</h3>
-                <div
-                  v-if="section?.content"
-                  class="mt-1 line-clamp-2 text-sm text-gray-500 prose prose-sm max-w-none prose-p:my-0 prose-a:text-rosatom-600"
-                  v-html="section.content"
-                />
               </div>
               <ChevronRightIcon class="ml-4 h-5 w-5 shrink-0 text-gray-400" />
             </template>

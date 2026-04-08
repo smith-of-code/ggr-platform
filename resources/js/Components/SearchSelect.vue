@@ -63,7 +63,12 @@
             class="flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm transition hover:bg-rosatom-50"
             :class="{ 'bg-rosatom-50 font-medium text-rosatom-700': isSelected(opt) }"
           >
-            <span class="flex-1 truncate">{{ opt[labelKey] }}</span>
+            <span
+              class="flex-1"
+              :class="optionWrap ? 'whitespace-normal break-words leading-5' : 'truncate'"
+            >
+              {{ opt[labelKey] }}
+            </span>
             <svg v-if="isSelected(opt)" class="h-4 w-4 shrink-0 text-rosatom-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
             </svg>
@@ -98,6 +103,7 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
   error: { type: String, default: '' },
   hint: { type: String, default: '' },
+  optionWrap: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue'])
