@@ -113,7 +113,7 @@ class ProfileController extends Controller
     {
         $request->validate([
             'type' => ['required', Rule::in(LmsProfileDocument::TYPES)],
-            'file' => ['required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
+            'file' => ['required', 'file', 'max:51200', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
         ]);
 
         $user = auth()->user();
