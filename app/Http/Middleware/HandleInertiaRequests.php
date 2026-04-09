@@ -19,9 +19,18 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Determine the current asset version.
+     * При ASSET_URL родительский version() не учитывает новый Vite manifest — сначала manifest.
      */
     public function version(Request $request): ?string
     {
+        if (file_exists($manifest = public_path('build/manifest.json'))) {
+            return hash_file('xxh128', $manifest);
+        }
+
+        if (file_exists($manifest = public_path('mix-manifest.json'))) {
+            return hash_file('xxh128', $manifest);
+        }
+
         return parent::version($request);
     }
 
