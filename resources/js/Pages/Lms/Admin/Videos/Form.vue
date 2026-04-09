@@ -137,17 +137,24 @@
           <div v-if="form.errors.thumbnail_file" class="mt-1 text-sm text-red-600">{{ form.errors.thumbnail_file }}</div>
         </div>
 
-        <div>
-          <label class="mb-2 block text-sm font-medium text-gray-700">Группы</label>
-          <div class="space-y-2">
-            <div v-for="g in groups" :key="g.id" class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-gray-50" :class="form.group_ids.includes(g.id) ? 'bg-rosatom-50' : ''">
+        <div class="rounded-xl border border-gray-200 bg-gray-50/80 p-5">
+          <p class="mb-3 text-sm font-medium text-gray-800">Кому показывать</p>
+          <RCheckbox
+            v-model="form.visible_to_all"
+            label="Всем пользователям (включая не записанных ни в одну программу)"
+          />
+          <p class="mb-3 mt-2 text-xs text-gray-500">Если снять галочку, отметьте хотя бы одну программу.</p>
+          <p class="mb-2 text-sm font-medium text-gray-700">Программы</p>
+          <div class="space-y-2" :class="form.visible_to_all ? 'pointer-events-none opacity-50' : ''">
+            <div v-for="g in groups" :key="g.id" class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-white" :class="form.group_ids.includes(g.id) ? 'bg-white ring-1 ring-rosatom-200' : ''">
               <RCheckbox
                 :model-value="form.group_ids.includes(g.id)"
-                @update:model-value="(v) => { if (v) form.group_ids.push(g.id); else form.group_ids = form.group_ids.filter(id => id !== g.id) }"
+                @update:model-value="(v) => { if (v) { if (!form.group_ids.includes(g.id)) form.group_ids.push(g.id) } else { form.group_ids = form.group_ids.filter(id => id !== g.id) } }"
                 :label="g.title"
               />
             </div>
           </div>
+          <div v-if="form.errors.group_ids" class="mt-2 text-sm text-red-600">{{ form.errors.group_ids }}</div>
         </div>
         <RCheckbox v-model="form.is_active" label="Активно" />
         <div class="flex gap-3 border-t border-gray-200 pt-6">
@@ -162,7 +169,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { Link, useForm, router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
@@ -185,11 +192,18 @@ const form = useForm({
   description: props.video?.description ?? '',
   source: props.video?.source ?? '',
   url: props.video?.url ?? '',
+  visible_to_all: props.video?.visible_to_all ?? true,
   group_ids: props.video?.groups?.map(g => g.id) ?? [],
   is_active: props.video?.is_active ?? true,
   duration_seconds: props.video?.duration_seconds ?? null,
   thumbnail_file: null,
   remove_thumbnail: false,
+})
+
+watch(() => form.visible_to_all, (v) => {
+  if (v) {
+    form.group_ids = []
+  }
 })
 
 function handleFileSelect(e) {

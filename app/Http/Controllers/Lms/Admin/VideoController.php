@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,8 +40,10 @@ class VideoController extends Controller
     public function store(Request $request, LmsEvent $event): RedirectResponse
     {
         $validated = $this->validateVideo($request);
+        [$visibleToAll, $groupIds] = $this->normalizeVideoAccess($request, $event);
 
         $validated['lms_event_id'] = $event->id;
+        $validated['visible_to_all'] = $visibleToAll;
         $validated['is_recording'] = $request->boolean('is_recording', false);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['source'] = $validated['source'] ?? $this->detectSource($validated['url'] ?? null);
@@ -48,10 +51,7 @@ class VideoController extends Controller
         $validated['thumbnail'] = $this->resolveThumbnail($request, $validated['url'] ?? null);
 
         $video = LmsVideo::create($validated);
-
-        if ($request->filled('group_ids')) {
-            $video->groups()->sync($request->group_ids);
-        }
+        $video->groups()->sync($groupIds);
 
         return redirect()->route('lms.admin.videos.index', $event)->with('success', 'Видео создано');
     }
@@ -75,7 +75,9 @@ class VideoController extends Controller
         $this->ensureVideoBelongsToEvent($video, $event);
 
         $validated = $this->validateVideo($request);
+        [$visibleToAll, $groupIds] = $this->normalizeVideoAccess($request, $event);
 
+        $validated['visible_to_all'] = $visibleToAll;
         $validated['is_recording'] = $request->boolean('is_recording', false);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['source'] = $validated['source'] ?? $this->detectSource($validated['url'] ?? null);
@@ -83,8 +85,7 @@ class VideoController extends Controller
         $validated['thumbnail'] = $this->resolveThumbnail($request, $validated['url'] ?? null, $video->thumbnail);
 
         $video->update($validated);
-
-        $video->groups()->sync($request->group_ids ?? []);
+        $video->groups()->sync($groupIds);
 
         return redirect()->route('lms.admin.videos.index', $event)->with('success', 'Видео обновлено');
     }
@@ -109,7 +110,43 @@ class VideoController extends Controller
             'duration_seconds' => ['nullable', 'integer', 'min:1'],
             'thumbnail_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'remove_thumbnail' => ['nullable', 'boolean'],
+            'visible_to_all' => ['sometimes', 'boolean'],
+            'group_ids' => ['nullable', 'array'],
+            'group_ids.*' => ['integer', 'exists:lms_groups,id'],
         ]);
+    }
+
+    /**
+     * @return array{0: bool, 1: array<int, int>}
+     */
+    private function normalizeVideoAccess(Request $request, LmsEvent $event): array
+    {
+        $visibleToAll = $request->boolean('visible_to_all');
+
+        $rawIds = $request->input('group_ids', []);
+        if (! is_array($rawIds)) {
+            $rawIds = [];
+        }
+        $groupIds = array_values(array_unique(array_filter(array_map('intval', $rawIds))));
+
+        if ($visibleToAll) {
+            return [true, []];
+        }
+
+        if ($groupIds === []) {
+            throw ValidationException::withMessages([
+                'group_ids' => ['Выберите хотя бы одну программу или отметьте «Всем пользователям».'],
+            ]);
+        }
+
+        $validCount = LmsGroup::where('lms_event_id', $event->id)->whereIn('id', $groupIds)->count();
+        if ($validCount !== count($groupIds)) {
+            throw ValidationException::withMessages([
+                'group_ids' => ['Некорректный выбор программ.'],
+            ]);
+        }
+
+        return [false, $groupIds];
     }
 
     private function resolveThumbnail(Request $request, ?string $url, ?string $existing = null): ?string
@@ -121,6 +158,7 @@ class VideoController extends Controller
         if ($request->hasFile('thumbnail_file')) {
             $disk = config('filesystems.upload_disk');
             $path = $request->file('thumbnail_file')->store('thumbnails/videos', $disk);
+
             return Storage::disk($disk)->url($path);
         }
 
@@ -144,7 +182,8 @@ class VideoController extends Controller
                 if ($resp->ok()) {
                     return $resp->json('thumbnail_url');
                 }
-            } catch (\Throwable) {}
+            } catch (\Throwable) {
+            }
         }
 
         // YouTube
@@ -157,12 +196,13 @@ class VideoController extends Controller
 
     private function detectSource(?string $url): string
     {
-        if (!$url) {
+        if (! $url) {
             return 'upload';
         }
         if (preg_match('/rutube\.ru/', $url)) {
             return 'rutube';
         }
+
         return 'link';
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Lms;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
+use App\Models\Lms\LmsGroup;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsVideo;
 use App\Services\GamificationService;
@@ -21,29 +22,51 @@ class VideoController extends Controller
             ->where('user_id', $user->id)
             ->pluck('lms_group_id');
 
-        $videosQuery = LmsVideo::where('lms_event_id', $event->id)
-            ->where('is_active', true)
-            ->where(function ($query) use ($groupIds) {
-                $query->whereDoesntHave('groups');
-                if ($groupIds->isNotEmpty()) {
-                    $query->orWhereHas('groups', fn($q) => $q->whereIn('lms_groups.id', $groupIds));
-                }
-            });
-
-        if ($search = $request->get('search')) {
-            $videosQuery->where('title', 'ilike', '%' . $search . '%');
+        $filterGroupId = $request->integer('lms_group_id') ?: null;
+        if ($filterGroupId !== null) {
+            $belongs = LmsGroup::where('id', $filterGroupId)
+                ->where('lms_event_id', $event->id)
+                ->exists();
+            if (! $belongs) {
+                $filterGroupId = null;
+            }
         }
 
-        $videos = $videosQuery->paginate(12)->withQueryString();
+        $videosQuery = LmsVideo::query()
+            ->where('lms_event_id', $event->id)
+            ->where('is_active', true);
+
+        if ($filterGroupId !== null) {
+            $videosQuery->whereHas('groups', fn ($q) => $q->where('lms_groups.id', $filterGroupId));
+        } else {
+            $videosQuery->where(function ($query) use ($groupIds) {
+                $query->where('visible_to_all', true);
+                if ($groupIds->isNotEmpty()) {
+                    $query->orWhereHas('groups', fn ($gq) => $gq->whereIn('lms_groups.id', $groupIds));
+                }
+            });
+        }
+
+        if ($search = $request->get('search')) {
+            $videosQuery->where('title', 'ilike', '%'.$search.'%');
+        }
+
+        $videos = $videosQuery->orderByDesc('created_at')->paginate(12)->withQueryString();
 
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+
+        $programFilterGroups = $event->groups()->orderBy('title')->get(['id', 'title']);
 
         return Inertia::render('Lms/Videos/Index', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'videos' => $videos,
-            'filters' => $request->only(['search']),
+            'programFilterGroups' => $programFilterGroups,
+            'filters' => [
+                'search' => $request->get('search'),
+                'lms_group_id' => $filterGroupId,
+            ],
         ]);
     }
 
@@ -52,17 +75,12 @@ class VideoController extends Controller
         if ($video->lms_event_id !== $event->id) {
             abort(404);
         }
-        $user = auth()->user();
-        $groupIds = DB::table('lms_group_members')
-            ->where('user_id', $user->id)
-            ->pluck('lms_group_id');
 
-        $hasAccess = $video->groups->isEmpty()
-            || $video->groups()->whereIn('lms_groups.id', $groupIds)->exists();
-
-        if (!$hasAccess) {
-            abort(403);
+        if (! $video->is_active) {
+            abort(404);
         }
+
+        $user = auth()->user();
 
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 

@@ -21,12 +21,14 @@ class LmsVideo extends Model
         'duration_seconds',
         'is_recording',
         'is_active',
+        'visible_to_all',
     ];
 
     protected $casts = [
         'duration_seconds' => 'integer',
         'is_recording' => 'boolean',
         'is_active' => 'boolean',
+        'visible_to_all' => 'boolean',
     ];
 
     /** @return BelongsTo<LmsEvent, $this> */

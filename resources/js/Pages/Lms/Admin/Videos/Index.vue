@@ -16,7 +16,7 @@
         <thead>
           <tr class="border-b border-gray-200 bg-gray-50">
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Название</th>
-            <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Групп</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Видимость</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Статус</th>
             <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Действия</th>
           </tr>
@@ -24,7 +24,7 @@
         <tbody class="divide-y divide-gray-100">
           <tr v-for="v in videos.data" :key="v.id" class="transition hover:bg-gray-50">
             <td class="px-5 py-3.5 text-sm font-medium text-gray-900">{{ v.title }}</td>
-            <td class="px-5 py-3.5 text-center text-sm text-gray-500">{{ v.groups?.length ?? 0 }}</td>
+            <td class="px-5 py-3.5 text-sm text-gray-600">{{ visibilityLabel(v) }}</td>
             <td class="px-5 py-3.5 text-center">
               <RBadge :variant="v.is_active ? 'success' : 'neutral'">
                 {{ v.is_active ? 'Активно' : 'Скрыто' }}
@@ -55,6 +55,14 @@ import { Link, router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
 const props = defineProps({ event: Object, videos: Object })
+
+function visibilityLabel(v) {
+  if (v.visible_to_all) {
+    return 'Всем пользователям'
+  }
+  const titles = (v.groups || []).map((g) => g.title).filter(Boolean)
+  return titles.length ? titles.join(', ') : '—'
+}
 
 function confirmDestroy(video) {
   if (confirm(`Удалить видео "${video.title}"?`)) {
