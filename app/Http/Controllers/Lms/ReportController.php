@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lms;
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
+use App\Support\MailDisplayName;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class ReportController extends Controller
             ->where('user_id', auth()->id())
             ->first();
 
-        if (!in_array($profile?->role ?? '', ['curator', 'admin'])) {
+        if (! in_array($profile?->role ?? '', ['curator', 'admin'])) {
             abort(403, 'Недостаточно прав для доступа к отчётам.');
         }
 
@@ -55,7 +56,7 @@ class ReportController extends Controller
                 'lms_tests.id',
                 'lms_tests.title',
                 DB::raw('COUNT(DISTINCT lms_test_attempts.user_id) as attempted'),
-                DB::raw("COUNT(DISTINCT CASE WHEN lms_test_attempts.passed = true THEN lms_test_attempts.user_id END) as passed"),
+                DB::raw('COUNT(DISTINCT CASE WHEN lms_test_attempts.passed = true THEN lms_test_attempts.user_id END) as passed'),
                 DB::raw('COALESCE(AVG(lms_test_attempts.percentage), 0) as avg_score'),
                 DB::raw('COUNT(lms_test_attempts.id) as total_attempts'),
             )
@@ -84,7 +85,7 @@ class ReportController extends Controller
             ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = '.$eventId." AND ce.status = 'completed' GROUP BY user_id) as cc"), 'cc.user_id', '=', 'lms_profiles.user_id')
             ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = '.$eventId.' GROUP BY user_id) as ce'), 'ce.user_id', '=', 'lms_profiles.user_id')
             ->leftJoin(DB::raw('(SELECT user_id, COUNT(DISTINCT lms_test_id) as cnt, AVG(percentage) as avg_pct FROM lms_test_attempts ta JOIN lms_tests t ON t.id = ta.lms_test_id WHERE t.lms_event_id = '.$eventId.' AND ta.passed = true GROUP BY user_id) as tp'), 'tp.user_id', '=', 'lms_profiles.user_id')
-            ->leftJoin(DB::raw("(SELECT user_id, COUNT(*) as cnt FROM lms_assignment_submissions asub JOIN lms_assignments a ON a.id = asub.lms_assignment_id WHERE a.lms_event_id = ".$eventId." AND asub.status = 'approved' GROUP BY user_id) as aa"), 'aa.user_id', '=', 'lms_profiles.user_id')
+            ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_assignment_submissions asub JOIN lms_assignments a ON a.id = asub.lms_assignment_id WHERE a.lms_event_id = '.$eventId." AND asub.status = 'approved' GROUP BY user_id) as aa"), 'aa.user_id', '=', 'lms_profiles.user_id')
             ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = '.$eventId.' GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_profiles.user_id')
             ->select(
                 'users.id',
@@ -156,7 +157,7 @@ class ReportController extends Controller
                 ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = '.$eventId.' GROUP BY user_id) as ce'), 'ce.user_id', '=', 'lms_profiles.user_id')
                 ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = '.$eventId." AND ce.status = 'completed' GROUP BY user_id) as cc"), 'cc.user_id', '=', 'lms_profiles.user_id')
                 ->leftJoin(DB::raw('(SELECT user_id, COUNT(DISTINCT lms_test_id) as cnt, AVG(percentage) as avg_pct FROM lms_test_attempts ta JOIN lms_tests t ON t.id = ta.lms_test_id WHERE t.lms_event_id = '.$eventId.' AND ta.passed = true GROUP BY user_id) as tp'), 'tp.user_id', '=', 'lms_profiles.user_id')
-                ->leftJoin(DB::raw("(SELECT user_id, COUNT(*) as cnt FROM lms_assignment_submissions asub JOIN lms_assignments a ON a.id = asub.lms_assignment_id WHERE a.lms_event_id = ".$eventId." AND asub.status = 'approved' GROUP BY user_id) as aa"), 'aa.user_id', '=', 'lms_profiles.user_id')
+                ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_assignment_submissions asub JOIN lms_assignments a ON a.id = asub.lms_assignment_id WHERE a.lms_event_id = '.$eventId." AND asub.status = 'approved' GROUP BY user_id) as aa"), 'aa.user_id', '=', 'lms_profiles.user_id')
                 ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = '.$eventId.' GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_profiles.user_id')
                 ->select('users.name', 'users.email', 'lms_profiles.role',
                     DB::raw('COALESCE(ce.cnt, 0) as ce'), DB::raw('COALESCE(cc.cnt, 0) as cc'),
@@ -195,7 +196,7 @@ class ReportController extends Controller
                 ->select('lms_tests.title',
                     DB::raw('COUNT(lms_test_attempts.id) as attempts'),
                     DB::raw('COUNT(DISTINCT lms_test_attempts.user_id) as users'),
-                    DB::raw("COUNT(DISTINCT CASE WHEN lms_test_attempts.passed = true THEN lms_test_attempts.user_id END) as passed"),
+                    DB::raw('COUNT(DISTINCT CASE WHEN lms_test_attempts.passed = true THEN lms_test_attempts.user_id END) as passed'),
                     DB::raw('COALESCE(ROUND(AVG(lms_test_attempts.percentage)::numeric, 1), 0) as avg_score'))
                 ->groupBy('lms_tests.id', 'lms_tests.title')->orderBy('lms_tests.title')->get();
             foreach ($tests as $t) {
@@ -211,7 +212,9 @@ class ReportController extends Controller
 
         $csvContent = "\xEF\xBB\xBF".$csvContent;
 
-        Mail::raw('Отчёт по событию «'.$event->title.'» во вложении.', function ($message) use ($validated, $event, $csvContent) {
+        $body = 'Отчёт по событию «'.$event->title.'» во вложении.'."\n\n— ".MailDisplayName::resolve();
+
+        Mail::raw($body, function ($message) use ($validated, $event, $csvContent) {
             $message->to($validated['email'])
                 ->subject('Отчёт: '.$event->title.' — '.now()->format('d.m.Y'))
                 ->attachData($csvContent, 'report_'.$event->slug.'_'.now()->format('Y-m-d').'.csv', [

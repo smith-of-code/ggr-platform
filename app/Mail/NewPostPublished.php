@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesMailDisplayName;
 use App\Models\BlogSubscriber;
 use App\Models\Post;
 use Illuminate\Bus\Queueable;
@@ -12,9 +13,10 @@ use Illuminate\Queue\SerializesModels;
 
 class NewPostPublished extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels, UsesMailDisplayName;
 
     public Post $post;
+
     public BlogSubscriber $subscriber;
 
     public function __construct(Post $post, BlogSubscriber $subscriber)
@@ -26,7 +28,7 @@ class NewPostPublished extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Новая статья: ' . $this->post->title,
+            subject: 'Новая статья: '.$this->post->title,
         );
     }
 
@@ -37,6 +39,7 @@ class NewPostPublished extends Mailable
             with: [
                 'post' => $this->post,
                 'unsubscribeUrl' => route('blog.unsubscribe', $this->subscriber->token),
+                'mailFromName' => $this->mailDisplayName(),
             ],
         );
     }

@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesMailDisplayName;
 use App\Models\Lms\LmsEvent;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -12,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 
 class InvitationMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels, UsesMailDisplayName;
 
     public function __construct(
         public User $user,
@@ -35,6 +36,7 @@ class InvitationMail extends Mailable
                 'userName' => trim("{$this->user->last_name} {$this->user->first_name} {$this->user->patronymic}"),
                 'eventTitle' => $this->event->title,
                 'activateUrl' => $this->activateUrl,
+                'mailFromName' => $this->mailDisplayName(),
             ],
         );
     }

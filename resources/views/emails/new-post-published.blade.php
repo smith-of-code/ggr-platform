@@ -12,6 +12,7 @@
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
                     <tr>
                         <td style="background-color:#003274;padding:24px 32px;">
+                            <p style="margin:0 0 8px;color:#92c4ed;font-size:13px;letter-spacing:0.02em;">{{ $mailFromName }}</p>
                             <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Новая статья в блоге</h1>
                         </td>
                     </tr>
@@ -41,7 +42,8 @@
                         <td style="padding:16px 32px;border-top:1px solid #eee;">
                             <p style="margin:0;color:#999;font-size:12px;line-height:1.5;">
                                 Вы получили это письмо, потому что подписались на рассылку блога.<br>
-                                <a href="{{ $unsubscribeUrl }}" style="color:#999;text-decoration:underline;">Отписаться от рассылки</a>
+                                <a href="{{ $unsubscribeUrl }}" style="color:#999;text-decoration:underline;">Отписаться от рассылки</a><br><br>
+                                С уважением, команда {{ $mailFromName }}
                             </p>
                         </td>
                     </tr>

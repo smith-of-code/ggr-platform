@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesMailDisplayName;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfileDocument;
 use App\Models\User;
@@ -13,7 +14,7 @@ use Illuminate\Queue\SerializesModels;
 
 class LmsProfileDocumentAnnulledMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels, UsesMailDisplayName;
 
     public function __construct(
         public User $user,
@@ -39,6 +40,7 @@ class LmsProfileDocumentAnnulledMail extends Mailable
                 'documentTypeLabel' => $this->documentTypeLabel(),
                 'adminComment' => $this->adminComment,
                 'profileUrl' => url(route('lms.profile.edit', ['event' => $this->event->slug])),
+                'mailFromName' => $this->mailDisplayName(),
             ],
         );
     }

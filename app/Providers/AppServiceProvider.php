@@ -13,12 +13,16 @@ use App\Observers\LmsProgressObserver;
 use App\Services\GamificationService;
 use App\Services\SettingsService;
 use App\Socialite\VkIdProvider;
+use App\Support\MailDisplayName;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Socialite\Facades\Socialite;
 use SocialiteProviders\Manager\SocialiteWasCalled;
+use SocialiteProviders\Yandex\Provider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,6 +37,26 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         app(SettingsService::class)->applyMailConfig();
+
+        ResetPassword::toMailUsing(function (object $notifiable, string $token): MailMessage {
+            $broker = config('auth.defaults.passwords');
+            $expire = (int) config("auth.passwords.{$broker}.expire");
+
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            $fromName = MailDisplayName::resolve();
+
+            return (new MailMessage)
+                ->subject('Сброс пароля — '.$fromName)
+                ->view('emails.reset-password', [
+                    'resetUrl' => $url,
+                    'expireMinutes' => $expire,
+                    'mailFromName' => $fromName,
+                ]);
+        });
 
         // Участник LMS открывает /courses/{slug}; админка передаёт id.
         // Параметр event на момент bind может быть ещё строкой (slug из URI), а не LmsEvent.
@@ -86,7 +110,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(function (SocialiteWasCalled $event) {
-            $event->extendSocialite('yandex', \SocialiteProviders\Yandex\Provider::class);
+            $event->extendSocialite('yandex', Provider::class);
         });
     }
 }

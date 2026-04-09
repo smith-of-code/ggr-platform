@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lms\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
+use App\Support\MailDisplayName;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -124,7 +125,7 @@ class ReportController extends Controller
             if (in_array($section, ['all', 'stages'])) {
                 $this->writeCsvStages($eventId);
             }
-        }, 'report_' . $event->slug . '_' . now()->format('Y-m-d') . '.csv', [
+        }, 'report_'.$event->slug.'_'.now()->format('Y-m-d').'.csv', [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
@@ -139,8 +140,8 @@ class ReportController extends Controller
         $eventId = $event->id;
 
         $rows = [];
-        $rows[] = ['Отчёт по событию: ' . $event->title];
-        $rows[] = ['Дата: ' . now()->format('d.m.Y H:i')];
+        $rows[] = ['Отчёт по событию: '.$event->title];
+        $rows[] = ['Дата: '.now()->format('d.m.Y H:i')];
         $rows[] = [];
 
         if (in_array('users', $validated['sections'])) {
@@ -160,7 +161,7 @@ class ReportController extends Controller
             $courses = $this->getCourseStats($eventId, null);
             foreach ($courses as $c) {
                 $pct = $c->enrolled > 0 ? round($c->completed / $c->enrolled * 100, 1) : 0;
-                $rows[] = [$c->title, $c->enrolled, $c->in_progress, $c->completed, $pct . '%'];
+                $rows[] = [$c->title, $c->enrolled, $c->in_progress, $c->completed, $pct.'%'];
             }
             $rows[] = [];
         }
@@ -170,7 +171,7 @@ class ReportController extends Controller
             $rows[] = ['Тест', 'Попыток', 'Участников', 'Сдало', 'Ср. балл'];
             $tests = $this->getTestStats($eventId, null);
             foreach ($tests as $t) {
-                $rows[] = [$t->title, $t->total_attempts, $t->attempted, $t->passed, round($t->avg_score, 1) . '%'];
+                $rows[] = [$t->title, $t->total_attempts, $t->attempted, $t->passed, round($t->avg_score, 1).'%'];
             }
             $rows[] = [];
         }
@@ -182,27 +183,29 @@ class ReportController extends Controller
             foreach ($stages as $s) {
                 $total = $s->started + $s->in_progress + $s->completed;
                 $pct = $total > 0 ? round($s->completed / $total * 100, 1) : 0;
-                $rows[] = [$s->course_title, $s->stage_title, $s->started, $s->in_progress, $s->completed, $pct . '%'];
+                $rows[] = [$s->course_title, $s->stage_title, $s->started, $s->in_progress, $s->completed, $pct.'%'];
             }
             $rows[] = [];
         }
 
         $csvContent = '';
         foreach ($rows as $row) {
-            $csvContent .= implode(';', array_map(fn ($v) => '"' . str_replace('"', '""', (string) $v) . '"', $row)) . "\n";
+            $csvContent .= implode(';', array_map(fn ($v) => '"'.str_replace('"', '""', (string) $v).'"', $row))."\n";
         }
 
-        $csvContent = "\xEF\xBB\xBF" . $csvContent;
+        $csvContent = "\xEF\xBB\xBF".$csvContent;
 
-        Mail::raw('Отчёт по событию «' . $event->title . '» во вложении.', function ($message) use ($validated, $event, $csvContent) {
+        $body = 'Отчёт по событию «'.$event->title.'» во вложении.'."\n\n— ".MailDisplayName::resolve();
+
+        Mail::raw($body, function ($message) use ($validated, $event, $csvContent) {
             $message->to($validated['email'])
-                ->subject('Отчёт: ' . $event->title . ' — ' . now()->format('d.m.Y'))
-                ->attachData($csvContent, 'report_' . $event->slug . '_' . now()->format('Y-m-d') . '.csv', [
+                ->subject('Отчёт: '.$event->title.' — '.now()->format('d.m.Y'))
+                ->attachData($csvContent, 'report_'.$event->slug.'_'.now()->format('Y-m-d').'.csv', [
                     'mime' => 'text/csv',
                 ]);
         });
 
-        return redirect()->back()->with('success', 'Отчёт отправлен на ' . $validated['email']);
+        return redirect()->back()->with('success', 'Отчёт отправлен на '.$validated['email']);
     }
 
     private function getCourseStats(int $eventId, ?string $roleFilter)
@@ -248,8 +251,8 @@ class ReportController extends Controller
             'lms_tests.id',
             'lms_tests.title',
             DB::raw('COUNT(DISTINCT lms_test_attempts.user_id) as attempted'),
-            DB::raw("COUNT(DISTINCT CASE WHEN lms_test_attempts.passed = true THEN lms_test_attempts.user_id END) as passed"),
-            DB::raw("COUNT(DISTINCT CASE WHEN lms_test_attempts.passed = false THEN lms_test_attempts.user_id END) as failed"),
+            DB::raw('COUNT(DISTINCT CASE WHEN lms_test_attempts.passed = true THEN lms_test_attempts.user_id END) as passed'),
+            DB::raw('COUNT(DISTINCT CASE WHEN lms_test_attempts.passed = false THEN lms_test_attempts.user_id END) as failed'),
             DB::raw('COALESCE(AVG(lms_test_attempts.percentage), 0) as avg_score'),
             DB::raw('COALESCE(MIN(lms_test_attempts.percentage), 0) as min_score'),
             DB::raw('COALESCE(MAX(lms_test_attempts.percentage), 0) as max_score'),
@@ -304,10 +307,10 @@ class ReportController extends Controller
         return $query
             ->leftJoin(DB::raw("(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE {$ccWhere} GROUP BY user_id) as cc"), 'cc.user_id', '=', 'lms_profiles.user_id')
             ->leftJoin(DB::raw("(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE {$ceWhere} GROUP BY user_id) as ce"), 'ce.user_id', '=', 'lms_profiles.user_id')
-            ->leftJoin(DB::raw('(SELECT user_id, COUNT(DISTINCT lms_test_id) as cnt, AVG(percentage) as avg_pct FROM lms_test_attempts ta JOIN lms_tests t ON t.id = ta.lms_test_id WHERE t.lms_event_id = ' . $eventId . ' AND ta.passed = true GROUP BY user_id) as tp'), 'tp.user_id', '=', 'lms_profiles.user_id')
-            ->leftJoin(DB::raw("(SELECT user_id, COUNT(*) as cnt FROM lms_assignment_submissions asub JOIN lms_assignments a ON a.id = asub.lms_assignment_id WHERE a.lms_event_id = " . $eventId . " AND asub.status = 'approved' GROUP BY user_id) as aa"), 'aa.user_id', '=', 'lms_profiles.user_id')
-            ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = ' . $eventId . ' GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_profiles.user_id')
-            ->leftJoin(DB::raw('(SELECT sp.user_id, MAX(sp.updated_at) as last_activity FROM lms_stage_progress sp JOIN lms_course_stages cs ON cs.id = sp.lms_course_stage_id JOIN lms_courses c ON c.id = cs.lms_course_id WHERE c.lms_event_id = ' . $eventId . ' GROUP BY sp.user_id) as la'), 'la.user_id', '=', 'lms_profiles.user_id')
+            ->leftJoin(DB::raw('(SELECT user_id, COUNT(DISTINCT lms_test_id) as cnt, AVG(percentage) as avg_pct FROM lms_test_attempts ta JOIN lms_tests t ON t.id = ta.lms_test_id WHERE t.lms_event_id = '.$eventId.' AND ta.passed = true GROUP BY user_id) as tp'), 'tp.user_id', '=', 'lms_profiles.user_id')
+            ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_assignment_submissions asub JOIN lms_assignments a ON a.id = asub.lms_assignment_id WHERE a.lms_event_id = '.$eventId." AND asub.status = 'approved' GROUP BY user_id) as aa"), 'aa.user_id', '=', 'lms_profiles.user_id')
+            ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = '.$eventId.' GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_profiles.user_id')
+            ->leftJoin(DB::raw('(SELECT sp.user_id, MAX(sp.updated_at) as last_activity FROM lms_stage_progress sp JOIN lms_course_stages cs ON cs.id = sp.lms_course_stage_id JOIN lms_courses c ON c.id = cs.lms_course_id WHERE c.lms_event_id = '.$eventId.' GROUP BY sp.user_id) as la'), 'la.user_id', '=', 'lms_profiles.user_id')
             ->select(
                 'users.id',
                 'users.name',
@@ -355,8 +358,8 @@ class ReportController extends Controller
         $enrollments = DB::table('lms_course_enrollments')
             ->join('lms_courses', 'lms_courses.id', '=', 'lms_course_enrollments.lms_course_id')
             ->where('lms_courses.lms_event_id', $eventId)
-            ->whereBetween('lms_course_enrollments.created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
-            ->select(DB::raw("DATE(lms_course_enrollments.created_at) as date"), DB::raw('COUNT(*) as count'))
+            ->whereBetween('lms_course_enrollments.created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->select(DB::raw('DATE(lms_course_enrollments.created_at) as date'), DB::raw('COUNT(*) as count'))
             ->groupBy('date')
             ->orderBy('date')
             ->pluck('count', 'date');
@@ -366,8 +369,8 @@ class ReportController extends Controller
             ->where('lms_courses.lms_event_id', $eventId)
             ->where('lms_course_enrollments.status', 'completed')
             ->whereNotNull('lms_course_enrollments.completed_at')
-            ->whereBetween('lms_course_enrollments.completed_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
-            ->select(DB::raw("DATE(lms_course_enrollments.completed_at) as date"), DB::raw('COUNT(*) as count'))
+            ->whereBetween('lms_course_enrollments.completed_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->select(DB::raw('DATE(lms_course_enrollments.completed_at) as date'), DB::raw('COUNT(*) as count'))
             ->groupBy('date')
             ->orderBy('date')
             ->pluck('count', 'date');
@@ -375,8 +378,8 @@ class ReportController extends Controller
         $testAttempts = DB::table('lms_test_attempts')
             ->join('lms_tests', 'lms_tests.id', '=', 'lms_test_attempts.lms_test_id')
             ->where('lms_tests.lms_event_id', $eventId)
-            ->whereBetween('lms_test_attempts.created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
-            ->select(DB::raw("DATE(lms_test_attempts.created_at) as date"), DB::raw('COUNT(*) as count'))
+            ->whereBetween('lms_test_attempts.created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->select(DB::raw('DATE(lms_test_attempts.created_at) as date'), DB::raw('COUNT(*) as count'))
             ->groupBy('date')
             ->orderBy('date')
             ->pluck('count', 'date');
@@ -395,8 +398,8 @@ class ReportController extends Controller
         return DB::table('lms_groups')
             ->where('lms_groups.lms_event_id', $eventId)
             ->leftJoin('lms_group_members', 'lms_groups.id', '=', 'lms_group_members.lms_group_id')
-            ->leftJoin(DB::raw('(SELECT ce.user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = ' . $eventId . " AND ce.status = 'completed' GROUP BY ce.user_id) as cc"), 'cc.user_id', '=', 'lms_group_members.user_id')
-            ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = ' . $eventId . ' GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_group_members.user_id')
+            ->leftJoin(DB::raw('(SELECT ce.user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = '.$eventId." AND ce.status = 'completed' GROUP BY ce.user_id) as cc"), 'cc.user_id', '=', 'lms_group_members.user_id')
+            ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = '.$eventId.' GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_group_members.user_id')
             ->select(
                 'lms_groups.id',
                 'lms_groups.title',
@@ -432,8 +435,8 @@ class ReportController extends Controller
         return DB::table('lms_profiles')
             ->where('lms_profiles.lms_event_id', $eventId)
             ->join('users', 'users.id', '=', 'lms_profiles.user_id')
-            ->leftJoin(DB::raw('(SELECT sp.user_id, MAX(sp.updated_at) as last_act FROM lms_stage_progress sp JOIN lms_course_stages cs ON cs.id = sp.lms_course_stage_id JOIN lms_courses c ON c.id = cs.lms_course_id WHERE c.lms_event_id = ' . $eventId . ' GROUP BY sp.user_id) as la'), 'la.user_id', '=', 'lms_profiles.user_id')
-            ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = ' . $eventId . ' GROUP BY user_id) as ce'), 'ce.user_id', '=', 'lms_profiles.user_id')
+            ->leftJoin(DB::raw('(SELECT sp.user_id, MAX(sp.updated_at) as last_act FROM lms_stage_progress sp JOIN lms_course_stages cs ON cs.id = sp.lms_course_stage_id JOIN lms_courses c ON c.id = cs.lms_course_id WHERE c.lms_event_id = '.$eventId.' GROUP BY sp.user_id) as la'), 'la.user_id', '=', 'lms_profiles.user_id')
+            ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = '.$eventId.' GROUP BY user_id) as ce'), 'ce.user_id', '=', 'lms_profiles.user_id')
             ->where(function ($q) {
                 $q->whereNull('la.last_act')
                     ->orWhere('la.last_act', '<', now()->subDays(14));
@@ -459,7 +462,7 @@ class ReportController extends Controller
         $users = $this->getUserDetails($eventId, null, null);
         foreach ($users as $u) {
             $lastAct = $u->last_activity ? date('d.m.Y', strtotime($u->last_activity)) : '—';
-            echo "\"{$u->name}\";\"{$u->email}\";\"" . ($u->role ?? '—') . "\";\"{$u->courses_enrolled}\";\"{$u->courses_completed}\";\"{$u->tests_passed}\";\"{$u->avg_test_score}\";\"{$u->assignments_approved}\";\"{$u->total_points}\";\"{$lastAct}\"\n";
+            echo "\"{$u->name}\";\"{$u->email}\";\"".($u->role ?? '—')."\";\"{$u->courses_enrolled}\";\"{$u->courses_completed}\";\"{$u->tests_passed}\";\"{$u->avg_test_score}\";\"{$u->assignments_approved}\";\"{$u->total_points}\";\"{$lastAct}\"\n";
         }
         echo "\n";
     }
@@ -482,7 +485,7 @@ class ReportController extends Controller
         echo "\"Тест\";\"Попыток\";\"Участников\";\"Сдало\";\"Ср. балл\";\"Мин. балл\";\"Макс. балл\"\n";
         $tests = $this->getTestStats($eventId, null);
         foreach ($tests as $t) {
-            echo "\"{$t->title}\";\"{$t->total_attempts}\";\"{$t->attempted}\";\"{$t->passed}\";\"" . round($t->avg_score, 1) . "%\";\"" . round($t->min_score, 1) . "%\";\"" . round($t->max_score, 1) . "%\"\n";
+            echo "\"{$t->title}\";\"{$t->total_attempts}\";\"{$t->attempted}\";\"{$t->passed}\";\"".round($t->avg_score, 1).'%";"'.round($t->min_score, 1).'%";"'.round($t->max_score, 1)."%\"\n";
         }
         echo "\n";
     }

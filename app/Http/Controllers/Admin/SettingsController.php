@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Jobs\SendMailJob;
 use App\Services\SettingsService;
+use App\Support\MailDisplayName;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -54,7 +55,7 @@ class SettingsController extends Controller
             'count' => 'required|integer|min:1|max:50',
         ]);
 
-        $appName = config('app.name');
+        $fromName = MailDisplayName::resolve();
         $count = (int) $validated['count'];
 
         for ($i = 1; $i <= $count; $i++) {
@@ -62,7 +63,7 @@ class SettingsController extends Controller
 
             SendMailJob::dispatch(
                 to: $validated['email'],
-                rawBody: "Тестовое письмо{$label} от {$appName}",
+                rawBody: "Тестовое письмо{$label} от «{$fromName}»",
                 subject: "Тестовое письмо{$label}",
             );
         }
@@ -81,15 +82,15 @@ class SettingsController extends Controller
             'email' => 'required|email',
         ]);
 
-        $appName = config('app.name');
+        $fromName = MailDisplayName::resolve();
         $now = now()->format('d.m.Y H:i:s');
 
         try {
             Mail::raw(
-                "Прямое тестовое письмо от {$appName}\nОтправлено: {$now}\n\nЕсли вы видите это письмо — SMTP настроен корректно.",
-                function ($message) use ($validated, $appName) {
+                "Прямое тестовое письмо от «{$fromName}»\nОтправлено: {$now}\n\nЕсли вы видите это письмо — SMTP настроен корректно.",
+                function ($message) use ($validated, $fromName) {
                     $message->to($validated['email'])
-                        ->subject("[{$appName}] Прямой тест SMTP");
+                        ->subject("[{$fromName}] Прямой тест SMTP");
                 }
             );
         } catch (\Throwable $e) {
