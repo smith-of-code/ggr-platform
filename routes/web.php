@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TourReviewController as AdminTourReviewController;
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
+use App\Http\Controllers\Admin\VshgrPageController as AdminVshgrPageController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogSubscriptionController;
@@ -121,6 +122,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
 
     Route::get('/opportunity-tours-page', [AdminOpportunityToursPageController::class, 'index'])->name('opportunity-tours-page.index');
     Route::put('/opportunity-tours-page', [AdminOpportunityToursPageController::class, 'update'])->name('opportunity-tours-page.update');
+
+    Route::get('/vshgr-page', [AdminVshgrPageController::class, 'index'])->name('vshgr-page.index');
+    Route::put('/vshgr-page', [AdminVshgrPageController::class, 'update'])->name('vshgr-page.update');
 
     Route::get('/research-page', [AdminResearchPageController::class, 'index'])->name('research-page.index');
     Route::put('/research-page', [AdminResearchPageController::class, 'update'])->name('research-page.update');

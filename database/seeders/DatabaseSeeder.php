@@ -320,5 +320,6 @@ class DatabaseSeeder extends Seeder
         $this->call(PortalSeeder::class);
         $this->call(OpportunityToursSeeder::class);
         $this->call(ResearchPageSeeder::class);
+        $this->call(VshgrPageSeeder::class);
     }
 }

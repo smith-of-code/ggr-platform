@@ -4,11 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\EducationProduct;
 use App\Models\Post;
+use App\Services\SettingsService;
+use App\Support\VshgrPageContent;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class EducationController extends Controller
 {
+    public function __construct(
+        private readonly SettingsService $settings,
+    ) {}
+
     public function index(): Response
     {
         $products = EducationProduct::query()
@@ -25,9 +31,13 @@ class EducationController extends Controller
             ->limit(3)
             ->get();
 
+        $raw = $this->settings->getGroup(VshgrPageContent::GROUP);
+        $pageData = VshgrPageContent::mergeFromStored($raw);
+
         return Inertia::render('Education/Index', [
             'products' => $products,
             'latestAnnouncements' => $latestAnnouncements,
+            'pageData' => $pageData,
         ]);
     }
 

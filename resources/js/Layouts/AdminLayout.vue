@@ -149,6 +149,16 @@
         </Link>
 
         <Link
+          :href="route('admin.vshgr-page.index')"
+          :class="[isActive('admin.vshgr-page') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
+        >
+          <svg :class="[isActive('admin.vshgr-page') ? 'text-[#003274]' : 'text-gray-400 group-hover:text-gray-600']" class="h-5 w-5 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.902 59.902 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.01 50.01 0 0 1 12 0c1.607 0 3.158.112 4.656.326" />
+          </svg>
+          Страница ВШГР
+        </Link>
+
+        <Link
           :href="route('admin.research-page.index')"
           :class="[isActive('admin.research-page') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
         >
@@ -259,6 +269,7 @@ function isActive(routePrefix) {
   if (routePrefix === 'admin.atoms-vkusa') return url.startsWith('/admin/atoms-vkusa')
   if (routePrefix === 'admin.vacancies') return url.startsWith('/admin/vacancies')
   if (routePrefix === 'admin.opportunity-tours-page') return url.startsWith('/admin/opportunity-tours-page')
+  if (routePrefix === 'admin.vshgr-page') return url.startsWith('/admin/vshgr-page')
   if (routePrefix === 'admin.research-page') return url.startsWith('/admin/research-page')
   if (routePrefix === 'admin.timeline') return url.startsWith('/admin/timeline')
   return false

@@ -9,13 +9,12 @@
         <div class="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-sky-300 blur-3xl" />
       </div>
       <div class="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-        <p class="text-sm font-semibold uppercase tracking-widest text-white/70">ВШГР</p>
+        <p class="text-sm font-semibold uppercase tracking-widest text-white/70">{{ pageData.hero_eyebrow }}</p>
         <h1 class="mt-3 max-w-4xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-          Высшая школа гостеприимного развития
+          {{ pageData.hero_title }}
         </h1>
         <p class="mt-6 max-w-2xl text-lg leading-relaxed text-white/90">
-          Мы готовим профессионалов сферы гостеприимства и сервиса для атомных городов и индустриального туризма —
-          через практику, экспертизу и программы, ориентированные на реальные задачи отрасли.
+          {{ pageData.hero_description }}
         </p>
       </div>
     </section>
@@ -24,8 +23,8 @@
       <!-- Catalog -->
       <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Программы обучения</h2>
-          <p class="mt-1 text-gray-500">Выберите направление и узнайте подробности</p>
+          <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ pageData.catalog_title }}</h2>
+          <p class="mt-1 text-gray-500">{{ pageData.catalog_subtitle }}</p>
         </div>
       </div>
 
@@ -84,13 +83,13 @@
         </article>
       </div>
       <div v-else class="rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-16 text-center text-gray-500">
-        Программы скоро появятся в каталоге.
+        {{ pageData.catalog_empty_text }}
       </div>
 
       <!-- Announcements -->
       <section v-if="announcementItems.length" class="mt-20 border-t border-gray-100 pt-16">
-        <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Анонсы и новости</h2>
-        <p class="mt-1 text-gray-500">Последние материалы</p>
+        <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ pageData.announcements_title }}</h2>
+        <p class="mt-1 text-gray-500">{{ pageData.announcements_subtitle }}</p>
         <div class="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <article
             v-for="post in announcementItems"
@@ -122,13 +121,13 @@
       <!-- CTA -->
       <section class="mt-20">
         <div class="overflow-hidden rounded-3xl bg-gradient-to-r from-[#003274] to-[#025ea1] px-8 py-12 text-center text-white shadow-xl sm:px-12">
-          <h2 class="text-2xl font-bold sm:text-3xl">Интересует сотрудничество или вопрос по программам?</h2>
-          <p class="mx-auto mt-3 max-w-xl text-white/90">Оставьте заявку — расскажем подробнее о формате и сроках.</p>
+          <h2 class="text-2xl font-bold sm:text-3xl">{{ pageData.cta_title }}</h2>
+          <p class="mx-auto mt-3 max-w-xl text-white/90">{{ pageData.cta_body }}</p>
           <a
             href="#application-form"
             class="mt-8 inline-flex items-center justify-center rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-[#003274] shadow-lg transition hover:bg-gray-50"
           >
-            Хочу узнать подробнее
+            {{ pageData.cta_button_label }}
           </a>
         </div>
       </section>
@@ -137,7 +136,7 @@
       <section class="mt-20">
         <div class="rounded-3xl bg-[#e9eef4] px-8 py-12 text-center sm:px-12">
           <a
-            :href="regulationUrl"
+            :href="pageData.regulation_url"
             target="_blank"
             rel="noopener noreferrer"
             class="inline-flex items-center gap-2.5 rounded-xl bg-[#003274] px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#003274]/20 transition hover:bg-[#025ea1] active:scale-[0.98]"
@@ -145,10 +144,10 @@
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
-            Положение
+            {{ pageData.regulation_button_label }}
           </a>
           <p class="mx-auto mt-4 max-w-lg text-sm text-gray-500">
-            Положение о грантовом конкурсе «Высшая школа гостеприимства Росатома»
+            {{ pageData.regulation_caption }}
           </p>
         </div>
       </section>
@@ -159,8 +158,8 @@
           {{ $page.props.flash.success }}
         </div>
         <div class="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm sm:p-10">
-          <h2 class="text-xl font-bold text-gray-900">Заявка на консультацию</h2>
-          <p class="mt-2 text-sm text-gray-500">Заполните форму — мы свяжемся с вами в ближайшее время.</p>
+          <h2 class="text-xl font-bold text-gray-900">{{ pageData.form_title }}</h2>
+          <p class="mt-2 text-sm text-gray-500">{{ pageData.form_subtitle }}</p>
           <form class="mt-8 space-y-5" @submit.prevent="submitApplication">
             <div>
               <label class="block text-sm font-medium text-gray-700" for="idx-name">Имя <span class="text-red-500">*</span></label>
@@ -244,14 +243,14 @@
       </section>
 
       <!-- Social links -->
-      <section v-if="socials.length" class="mt-20">
+      <section v-if="socialsList.length" class="mt-20">
         <div class="text-center">
-          <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Мы в социальных сетях</h2>
-          <p class="mt-2 text-gray-500">Следите за нашими новостями</p>
+          <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ pageData.socials_title }}</h2>
+          <p class="mt-2 text-gray-500">{{ pageData.socials_subtitle }}</p>
           <div class="mt-10 flex flex-wrap justify-center gap-4">
             <a
-              v-for="s in socials"
-              :key="s.name"
+              v-for="(s, idx) in socialsList"
+              :key="s.url + '-' + idx"
               :href="s.url"
               target="_blank"
               rel="noopener noreferrer"
@@ -277,18 +276,16 @@ const props = defineProps({
   products: { type: Array, default: () => [] },
   latestAnnouncements: { type: Array, default: () => [] },
   announcements: { type: Array, default: () => [] },
+  pageData: { type: Object, default: () => ({}) },
 })
 
 const announcementItems = computed(() =>
   props.announcements?.length ? props.announcements : props.latestAnnouncements,
 )
 
-const regulationUrl = 'https://disk.yandex.ru/i/QFSwdBIFTR55EA'
-
-const socials = [
-  { name: 'ВКонтакте', url: 'https://vk.com/rosatom_travel', icon: 'vk' },
-  { name: 'Telegram', url: 'https://t.me/rosatom_travel', icon: 'telegram' },
-]
+const socialsList = computed(() =>
+  Array.isArray(props.pageData?.socials) ? props.pageData.socials.filter(s => s?.url && s?.name) : [],
+)
 
 function socialIconSvg(key) {
   return socialIcon(key, 'h-6 w-6')
