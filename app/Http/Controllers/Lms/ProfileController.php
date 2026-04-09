@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsProfileDocument;
+use App\Models\Lms\LmsProfileDocumentReplaceRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -27,6 +28,11 @@ class ProfileController extends Controller
             );
 
         $profile->load('documents');
+
+        $pendingDocumentReplaceRequests = LmsProfileDocumentReplaceRequest::where('lms_profile_id', $profile->id)
+            ->where('status', LmsProfileDocumentReplaceRequest::STATUS_PENDING)
+            ->orderBy('created_at')
+            ->get(['type', 'user_comment', 'created_at']);
 
         $socialAccounts = $user->socialAccounts()
             ->get(['provider', 'created_at'])
@@ -49,7 +55,48 @@ class ProfileController extends Controller
             'documentTypes' => LmsProfileDocument::TYPES,
             'documentTypesWithTemplate' => LmsProfileDocument::TYPES_WITH_TEMPLATE,
             'enrollmentTemplates' => $enrollmentTemplates,
+            'pendingDocumentReplaceRequests' => $pendingDocumentReplaceRequests,
         ]);
+    }
+
+    public function storeDocumentReplaceRequest(Request $request, LmsEvent $event): RedirectResponse
+    {
+        $validated = $request->validate([
+            'type' => ['required', Rule::in(LmsProfileDocument::TYPES)],
+            'user_comment' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $user = auth()->user();
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $document = $profile->documents()->where('type', $validated['type'])->first();
+        if (! $document || ! $document->isLockedForParticipant()) {
+            return redirect()->back()->withErrors([
+                'replace_request' => 'Замена доступна только для подтверждённых документов.',
+            ]);
+        }
+
+        $exists = LmsProfileDocumentReplaceRequest::where('lms_profile_id', $profile->id)
+            ->where('type', $validated['type'])
+            ->where('status', LmsProfileDocumentReplaceRequest::STATUS_PENDING)
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()->withErrors([
+                'replace_request' => 'Заявка на этот тип документа уже отправлена.',
+            ]);
+        }
+
+        LmsProfileDocumentReplaceRequest::create([
+            'lms_profile_id' => $profile->id,
+            'type' => $validated['type'],
+            'user_comment' => $validated['user_comment'],
+            'status' => LmsProfileDocumentReplaceRequest::STATUS_PENDING,
+        ]);
+
+        return redirect()->back()->with('success', 'Заявка на замену документа отправлена.');
     }
 
     public function update(Request $request, LmsEvent $event): RedirectResponse
@@ -121,7 +168,18 @@ class ProfileController extends Controller
             ->where('user_id', $user->id)
             ->firstOrFail();
 
+        $existing = $profile->documents()->where('type', $request->type)->first();
+        if ($existing && $existing->isLockedForParticipant()) {
+            return redirect()->back()->withErrors([
+                'file' => 'Этот документ подтверждён модератором. Для изменения обратитесь в поддержку.',
+            ]);
+        }
+
         $disk = config('filesystems.upload_disk');
+        if ($existing && $existing->hasFile()) {
+            Storage::disk($disk)->delete($existing->file_path);
+        }
+
         $path = $request->file('file')->store('profile-documents', $disk);
 
         $profile->documents()->updateOrCreate(
@@ -129,6 +187,9 @@ class ProfileController extends Controller
             [
                 'file_path' => $path,
                 'original_name' => $request->file('file')->getClientOriginalName(),
+                'status' => LmsProfileDocument::STATUS_PENDING_REVIEW,
+                'admin_comment' => null,
+                'reviewed_at' => null,
             ]
         );
 
@@ -153,8 +214,16 @@ class ProfileController extends Controller
             abort(403);
         }
 
+        if ($document->isLockedForParticipant()) {
+            return redirect()->back()->withErrors([
+                'file' => 'Подтверждённый документ можно удалить только через поддержку.',
+            ]);
+        }
+
         $disk = config('filesystems.upload_disk');
-        Storage::disk($disk)->delete($document->file_path);
+        if ($document->hasFile()) {
+            Storage::disk($disk)->delete($document->file_path);
+        }
         $document->delete();
 
         return redirect()->back();

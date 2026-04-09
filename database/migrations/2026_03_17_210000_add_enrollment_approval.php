@@ -13,10 +13,12 @@ return new class extends Migration
             $table->boolean('requires_approval')->default(false)->after('is_active');
         });
 
-        // Change enum to varchar to support pending/rejected
-        DB::statement("ALTER TABLE lms_course_enrollments ALTER COLUMN status TYPE varchar(20)");
-        DB::statement("ALTER TABLE lms_course_enrollments ALTER COLUMN status SET DEFAULT 'enrolled'");
-        DB::statement("DROP TYPE IF EXISTS lms_course_enrollments_status_check");
+        // PostgreSQL: снять enum/check со status для значений pending/rejected. SQLite: колонка уже строковая.
+        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE lms_course_enrollments ALTER COLUMN status TYPE varchar(20)');
+            DB::statement("ALTER TABLE lms_course_enrollments ALTER COLUMN status SET DEFAULT 'enrolled'");
+            DB::statement('DROP TYPE IF EXISTS lms_course_enrollments_status_check');
+        }
 
         Schema::table('lms_course_enrollments', function (Blueprint $table) {
             $table->timestamp('reviewed_at')->nullable()->after('completed_at');

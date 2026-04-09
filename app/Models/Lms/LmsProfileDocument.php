@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LmsProfileDocument extends Model
 {
+    public const STATUS_PENDING_REVIEW = 'pending_review';
+
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_ANNULLED = 'annulled';
+
     public const TYPE_ENROLLMENT_APPLICATION = 'enrollment_application';
     public const TYPE_SNILS = 'snils';
     public const TYPE_DIPLOMA = 'diploma';
@@ -33,7 +39,27 @@ class LmsProfileDocument extends Model
         'type',
         'file_path',
         'original_name',
+        'status',
+        'admin_comment',
+        'reviewed_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'reviewed_at' => 'datetime',
+        ];
+    }
+
+    public function hasFile(): bool
+    {
+        return $this->file_path !== null && $this->file_path !== '';
+    }
+
+    public function isLockedForParticipant(): bool
+    {
+        return $this->status === self::STATUS_APPROVED && $this->hasFile();
+    }
 
     public function profile(): BelongsTo
     {

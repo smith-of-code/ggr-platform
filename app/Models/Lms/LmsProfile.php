@@ -205,6 +205,11 @@ class LmsProfile extends Model
         return $this->hasMany(LmsProfileDocument::class);
     }
 
+    public function documentReplaceRequests(): HasMany
+    {
+        return $this->hasMany(LmsProfileDocumentReplaceRequest::class, 'lms_profile_id');
+    }
+
     public function generateInviteToken(): string
     {
         do {
@@ -257,7 +262,11 @@ class LmsProfile extends Model
             LmsProfileDocument::TYPE_DIPLOMA => 'Диплом',
         ];
 
-        $uploadedTypes = $this->documents()->pluck('type')->toArray();
+        $uploadedTypes = $this->documents()
+            ->whereNotNull('file_path')
+            ->where('file_path', '!=', '')
+            ->pluck('type')
+            ->toArray();
 
         foreach ($docLabels as $type => $label) {
             if (! in_array($type, $uploadedTypes)) {

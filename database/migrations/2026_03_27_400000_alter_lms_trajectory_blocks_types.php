@@ -9,11 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE lms_trajectory_blocks DROP CONSTRAINT IF EXISTS lms_trajectory_blocks_type_check");
-
-        DB::statement("DELETE FROM lms_trajectory_blocks WHERE type IN ('course', 'grant')");
-
-        DB::statement("ALTER TABLE lms_trajectory_blocks ADD CONSTRAINT lms_trajectory_blocks_type_check CHECK (type IN ('static', 'task'))");
+        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE lms_trajectory_blocks DROP CONSTRAINT IF EXISTS lms_trajectory_blocks_type_check');
+            DB::statement("DELETE FROM lms_trajectory_blocks WHERE type IN ('course', 'grant')");
+            DB::statement("ALTER TABLE lms_trajectory_blocks ADD CONSTRAINT lms_trajectory_blocks_type_check CHECK (type IN ('static', 'task'))");
+        }
 
         Schema::table('lms_trajectory_blocks', function (Blueprint $table) {
             $table->date('date_start')->nullable()->after('date_label');
@@ -30,7 +30,9 @@ return new class extends Migration
             $table->dropColumn(['date_start', 'date_end']);
         });
 
-        DB::statement("ALTER TABLE lms_trajectory_blocks DROP CONSTRAINT IF EXISTS lms_trajectory_blocks_type_check");
-        DB::statement("ALTER TABLE lms_trajectory_blocks ADD CONSTRAINT lms_trajectory_blocks_type_check CHECK (type IN ('static', 'course', 'grant'))");
+        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE lms_trajectory_blocks DROP CONSTRAINT IF EXISTS lms_trajectory_blocks_type_check');
+            DB::statement("ALTER TABLE lms_trajectory_blocks ADD CONSTRAINT lms_trajectory_blocks_type_check CHECK (type IN ('static', 'course', 'grant'))");
+        }
     }
 };

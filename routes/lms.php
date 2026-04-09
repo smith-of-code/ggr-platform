@@ -58,6 +58,7 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/documents', [ProfileController::class, 'uploadDocument'])->name('profile.documents.upload');
+    Route::post('/profile/document-replace-requests', [ProfileController::class, 'storeDocumentReplaceRequest'])->name('profile.document-replace-requests.store');
     Route::delete('/profile/documents/{document}', [ProfileController::class, 'deleteDocument'])->name('profile.documents.delete');
     Route::get('/profile/templates/{type}', [ProfileController::class, 'downloadTemplate'])->name('profile.templates.download');
 
@@ -160,6 +161,10 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::post('users-bulk-enroll', [AdminUserController::class, 'bulkEnroll'])->name('users.bulk-enroll');
         Route::get('users-template', [AdminUserController::class, 'downloadTemplate'])->name('users.template');
         Route::get('users/{user}/documents', [AdminUserController::class, 'downloadUserDocuments'])->name('users.download-documents');
+        Route::post('users/{user}/documents/{document}/approve', [AdminUserController::class, 'approveProfileDocument'])->name('users.documents.approve');
+        Route::post('users/{user}/documents/{document}/annul', [AdminUserController::class, 'annulProfileDocument'])->name('users.documents.annul');
+        Route::post('users/{user}/document-replace-requests/{replaceRequest}/approve', [AdminUserController::class, 'approveDocumentReplaceRequest'])->name('users.document-replace-requests.approve');
+        Route::post('users/{user}/document-replace-requests/{replaceRequest}/reject', [AdminUserController::class, 'rejectDocumentReplaceRequest'])->name('users.document-replace-requests.reject');
         Route::post('users/{user}/approve-direction', [AdminUserController::class, 'approveDirection'])->name('users.approve-direction');
         Route::post('users/{user}/reject-direction', [AdminUserController::class, 'rejectDirection'])->name('users.reject-direction');
         Route::post('invitations', [AdminInvitationController::class, 'store'])->name('invitations.store');

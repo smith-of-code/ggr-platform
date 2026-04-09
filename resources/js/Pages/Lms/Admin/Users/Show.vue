@@ -10,6 +10,12 @@
       <div v-if="$page.props.flash?.success" class="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
         {{ $page.props.flash.success }}
       </div>
+      <div v-if="$page.props.errors?.document" class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+        {{ $page.props.errors.document }}
+      </div>
+      <div v-if="$page.props.errors?.replace_request" class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+        {{ $page.props.errors.replace_request }}
+      </div>
 
       <div class="grid gap-6 lg:grid-cols-3">
         <!-- Profile card -->
@@ -124,24 +130,124 @@
           <RCard elevation="raised">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-bold text-gray-900">Документы</h3>
-              <RButton v-if="documents?.length" variant="outline" size="sm" @click="downloadDocuments">
+              <RButton v-if="documentsWithFileCount > 0" variant="outline" size="sm" @click="downloadDocuments">
                 <template #icon><ArrowDownTrayIcon class="h-4 w-4" /></template>
-                Скачать {{ documents.length > 1 ? 'все' : '' }}
+                Скачать {{ documentsWithFileCount > 1 ? 'все' : '' }}
               </RButton>
             </div>
 
-            <div v-if="documents?.length" class="space-y-2">
-              <div v-for="doc in documents" :key="doc.id" class="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3">
-                <DocumentIcon class="h-5 w-5 shrink-0 text-gray-400" />
-                <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-gray-900">{{ doc.type_label }}</p>
-                  <p class="truncate text-xs text-gray-400">{{ doc.original_name }}</p>
+            <div v-if="documents?.length" class="space-y-3">
+              <div v-for="doc in documents" :key="doc.id" class="rounded-xl bg-gray-50 px-4 py-3">
+                <div class="flex flex-wrap items-start gap-3">
+                  <DocumentIcon class="h-5 w-5 shrink-0 text-gray-400" />
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <p class="text-sm font-medium text-gray-900">{{ doc.type_label }}</p>
+                      <RBadge :variant="documentStatusBadge(doc)" size="sm">{{ documentStatusLabel(doc) }}</RBadge>
+                    </div>
+                    <p v-if="doc.has_file" class="truncate text-xs text-gray-400">{{ doc.original_name }}</p>
+                    <p v-else class="text-xs text-amber-700">Файл отсутствует — участнику нужно загрузить заново</p>
+                    <p v-if="doc.admin_comment" class="mt-1 text-xs text-gray-600">
+                      <span class="font-medium">Комментарий модератора:</span> {{ doc.admin_comment }}
+                    </p>
+                  </div>
+                  <div v-if="doc.has_file" class="flex shrink-0 flex-wrap gap-2">
+                    <RButton
+                      v-if="doc.status !== 'approved'"
+                      variant="primary"
+                      size="sm"
+                      type="button"
+                      @click="approveDocument(doc)"
+                    >
+                      Подтвердить
+                    </RButton>
+                    <RButton variant="outline" size="sm" type="button" @click="openAnnulModal(doc)">
+                      Аннулировать
+                    </RButton>
+                  </div>
                 </div>
-                <CheckCircleIcon class="h-5 w-5 shrink-0 text-green-500" />
               </div>
             </div>
             <p v-else class="text-sm text-gray-400">Документы не загружены</p>
           </RCard>
+
+          <RCard v-if="documentReplaceRequests?.length" elevation="raised">
+            <h3 class="mb-4 text-lg font-bold text-gray-900">Заявки на замену документов</h3>
+            <div class="space-y-3">
+              <div
+                v-for="req in documentReplaceRequests"
+                :key="req.id"
+                class="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3"
+              >
+                <p class="text-sm font-medium text-gray-900">{{ req.type_label }}</p>
+                <p class="mt-1 whitespace-pre-wrap text-xs text-gray-600">{{ req.user_comment }}</p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <RButton size="sm" variant="primary" type="button" @click="approveReplaceRequest(req)">
+                    Одобрить
+                  </RButton>
+                  <RButton size="sm" variant="outline" type="button" @click="openRejectReplaceModal(req)">
+                    Отклонить
+                  </RButton>
+                </div>
+              </div>
+            </div>
+          </RCard>
+
+          <RModal v-model="annulModalOpen" title="Аннулировать документ" subtitle="Участник получит письмо с комментарием. Файл будет удалён из хранилища." size="md">
+            <div class="mt-4">
+              <label class="mb-1 block text-sm font-medium text-gray-700">Комментарий (обязательно)</label>
+              <textarea
+                v-model="annulForm.comment"
+                rows="4"
+                class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+                placeholder="Укажите, чего не хватает или что нужно исправить"
+              />
+              <p v-if="annulForm.errors.comment" class="mt-1 text-sm text-red-600">{{ annulForm.errors.comment }}</p>
+            </div>
+            <template #footer>
+              <div class="flex justify-end gap-3">
+                <RButton variant="outline" size="sm" type="button" @click="annulModalOpen = false">Отмена</RButton>
+                <RButton
+                  variant="danger"
+                  size="sm"
+                  type="button"
+                  :loading="annulForm.processing"
+                  :disabled="annulForm.processing"
+                  @click="submitAnnul"
+                >
+                  Аннулировать
+                </RButton>
+              </div>
+            </template>
+          </RModal>
+
+          <RModal v-model="rejectReplaceModalOpen" title="Отклонить заявку на замену" subtitle="Необязательный комментарий для внутреннего учёта (на почту не отправляется)." size="md">
+            <div class="mt-4">
+              <label class="mb-1 block text-sm font-medium text-gray-700">Комментарий</label>
+              <textarea
+                v-model="rejectReplaceForm.admin_comment"
+                rows="3"
+                class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+                placeholder="Причина отклонения (необязательно)"
+              />
+              <p v-if="rejectReplaceForm.errors.admin_comment" class="mt-1 text-sm text-red-600">{{ rejectReplaceForm.errors.admin_comment }}</p>
+            </div>
+            <template #footer>
+              <div class="flex justify-end gap-3">
+                <RButton variant="outline" size="sm" type="button" @click="rejectReplaceModalOpen = false">Отмена</RButton>
+                <RButton
+                  variant="danger"
+                  size="sm"
+                  type="button"
+                  :loading="rejectReplaceForm.processing"
+                  :disabled="rejectReplaceForm.processing"
+                  @click="submitRejectReplace"
+                >
+                  Отклонить
+                </RButton>
+              </div>
+            </template>
+          </RModal>
         </div>
       </div>
     </div>
@@ -149,12 +255,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import SearchSelect from '@/Components/SearchSelect.vue'
 import MultiSelect from '@/Components/MultiSelect.vue'
-import { ArrowLeftIcon, ArrowDownTrayIcon, DocumentIcon, CheckCircleIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, ArrowDownTrayIcon, DocumentIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   event: Object,
@@ -163,6 +269,7 @@ const props = defineProps({
   roles: Array,
   courses: Array,
   documents: Array,
+  documentReplaceRequests: { type: Array, default: () => [] },
   directionLabels: { type: Object, default: () => ({}) },
   facultyLabels: { type: Object, default: () => ({}) },
 })
@@ -192,6 +299,85 @@ const enrolledCourseIds = computed(() => (props.enrollments || []).map(e => e.lm
 const availableCourses = computed(() =>
   (props.courses || []).filter(c => !enrolledCourseIds.value.includes(c.id))
 )
+
+const documentsWithFileCount = computed(() => (props.documents || []).filter(d => d.has_file).length)
+
+const annulModalOpen = ref(false)
+const annulDocumentId = ref(null)
+
+const annulForm = useForm({ comment: '' })
+
+function documentStatusLabel(doc) {
+  if (doc.status === 'approved') return 'Подтверждён'
+  if (doc.status === 'annulled') return 'Аннулирован'
+  return 'На проверке'
+}
+
+function documentStatusBadge(doc) {
+  if (doc.status === 'approved') return 'success'
+  if (doc.status === 'annulled') return 'warning'
+  return 'neutral'
+}
+
+function approveDocument(doc) {
+  if (!confirm('Подтвердить документ? Участник больше не сможет заменить его самостоятельно (только через поддержку).')) return
+  router.post(route('lms.admin.users.documents.approve', [props.event.slug, props.profile.user_id, doc.id]), {}, { preserveScroll: true })
+}
+
+function openAnnulModal(doc) {
+  annulDocumentId.value = doc.id
+  annulForm.reset()
+  annulForm.clearErrors()
+  annulModalOpen.value = true
+}
+
+function submitAnnul() {
+  if (!annulDocumentId.value) return
+  annulForm.post(
+    route('lms.admin.users.documents.annul', [props.event.slug, props.profile.user_id, annulDocumentId.value]),
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        annulModalOpen.value = false
+        annulDocumentId.value = null
+      },
+    }
+  )
+}
+
+const rejectReplaceModalOpen = ref(false)
+const rejectReplaceRequestId = ref(null)
+const rejectReplaceForm = useForm({ admin_comment: '' })
+
+function approveReplaceRequest(req) {
+  if (!confirm('Одобрить замену? Текущий подтверждённый файл будет удалён, участник сможет загрузить документ заново.')) return
+  router.post(
+    route('lms.admin.users.document-replace-requests.approve', [props.event.slug, props.profile.user_id, req.id]),
+    {},
+    { preserveScroll: true }
+  )
+}
+
+function openRejectReplaceModal(req) {
+  rejectReplaceRequestId.value = req.id
+  rejectReplaceForm.reset()
+  rejectReplaceForm.clearErrors()
+  rejectReplaceModalOpen.value = true
+}
+
+function submitRejectReplace() {
+  if (!rejectReplaceRequestId.value) return
+  rejectReplaceForm.post(
+    route('lms.admin.users.document-replace-requests.reject', [props.event.slug, props.profile.user_id, rejectReplaceRequestId.value]),
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        rejectReplaceModalOpen.value = false
+        rejectReplaceRequestId.value = null
+      },
+    }
+  )
+}
 
 function submitUpdate() {
   editForm.patch(route('lms.admin.users.update', [props.event.slug, props.profile.user_id]))

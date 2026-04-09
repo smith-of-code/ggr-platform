@@ -189,6 +189,9 @@
       <RCard>
         <template #default>
           <h2 class="mb-5 text-lg font-semibold text-gray-900">Документы</h2>
+          <p v-if="page.props.flash?.success" class="mb-4 text-sm text-green-700">{{ page.props.flash.success }}</p>
+          <p v-if="page.props.errors?.file" class="mb-4 text-sm text-red-600">{{ page.props.errors.file }}</p>
+          <p v-if="page.props.errors?.replace_request" class="mb-4 text-sm text-red-600">{{ page.props.errors.replace_request }}</p>
 
           <div class="space-y-4">
             <div
@@ -199,8 +202,20 @@
               <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex-1">
                   <p class="text-sm font-medium text-gray-900">{{ dt.label }}</p>
-                  <p v-if="uploadedDoc(dt.type)" class="mt-1 text-xs text-green-600">
+                  <p v-if="hasDocFile(uploadedDoc(dt.type))" class="mt-1 text-xs text-green-600">
                     Загружен: {{ uploadedDoc(dt.type).original_name }}
+                  </p>
+                  <p v-if="documentLockedNotice(dt.type)" class="mt-2 text-xs text-gray-600">
+                    {{ documentLockedNotice(dt.type) }}
+                  </p>
+                  <p v-if="documentAnnulledNotice(dt.type)" class="mt-2 text-xs font-medium text-red-600">
+                    {{ documentAnnulledNotice(dt.type) }}
+                  </p>
+                  <p
+                    v-if="docIsLocked(uploadedDoc(dt.type)) && hasPendingReplaceForType(dt.type)"
+                    class="mt-2 text-xs text-amber-700"
+                  >
+                    Заявка на замену документа отправлена и ожидает решения модератора.
                   </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
@@ -214,7 +229,7 @@
                     </svg>
                     Скачать шаблон
                   </a>
-                  <label class="cursor-pointer">
+                  <label v-if="!docIsLocked(uploadedDoc(dt.type))" class="cursor-pointer">
                     <input
                       type="file"
                       class="hidden"
@@ -225,11 +240,11 @@
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                       </svg>
-                      {{ uploadedDoc(dt.type) ? 'Заменить' : 'Загрузить' }}
+                      {{ hasDocFile(uploadedDoc(dt.type)) ? 'Заменить' : 'Загрузить' }}
                     </span>
                   </label>
                   <button
-                    v-if="uploadedDoc(dt.type)"
+                    v-if="hasDocFile(uploadedDoc(dt.type)) && !docIsLocked(uploadedDoc(dt.type))"
                     type="button"
                     class="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-100"
                     :disabled="docDeleteProcessing"
@@ -237,6 +252,15 @@
                   >
                     Удалить
                   </button>
+                  <RButton
+                    v-if="docIsLocked(uploadedDoc(dt.type)) && !hasPendingReplaceForType(dt.type)"
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    @click="openReplaceModal(dt.type)"
+                  >
+                    Запросить замену
+                  </RButton>
                 </div>
               </div>
 
@@ -350,6 +374,40 @@
           </div>
         </template>
       </RModal>
+
+      <RModal
+        v-model="replaceModalOpen"
+        title="Запросить замену документа"
+        subtitle="Опишите причину — модератор рассмотрит заявку и при одобрении откроет загрузку нового файла."
+        size="md"
+      >
+        <div class="mt-4">
+          <label class="mb-1 block text-sm font-medium text-gray-700">Комментарий для модератора *</label>
+          <textarea
+            v-model="replaceRequestForm.user_comment"
+            rows="4"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+            placeholder="Например: ошибка в ФИО в заявлении"
+          />
+          <p v-if="replaceRequestForm.errors.user_comment" class="mt-1 text-sm text-red-600">{{ replaceRequestForm.errors.user_comment }}</p>
+          <p v-if="replaceRequestForm.errors.type" class="mt-1 text-sm text-red-600">{{ replaceRequestForm.errors.type }}</p>
+        </div>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <RButton variant="outline" size="sm" type="button" @click="replaceModalOpen = false">Отмена</RButton>
+            <RButton
+              variant="primary"
+              size="sm"
+              type="button"
+              :loading="replaceRequestForm.processing"
+              :disabled="replaceRequestForm.processing"
+              @click="submitReplaceRequest"
+            >
+              Отправить заявку
+            </RButton>
+          </div>
+        </template>
+      </RModal>
     </div>
   </LmsLayout>
 </template>
@@ -371,6 +429,7 @@ const props = defineProps({
   documentTypes: { type: Array, default: () => [] },
   documentTypesWithTemplate: { type: Array, default: () => [] },
   enrollmentTemplates: { type: Array, default: () => [] },
+  pendingDocumentReplaceRequests: { type: Array, default: () => [] },
 })
 
 const page = usePage()
@@ -515,8 +574,56 @@ const docConfig = [
 
 const docDeleteProcessing = ref(false)
 
+const replaceModalOpen = ref(false)
+const replaceRequestForm = useForm({
+  type: '',
+  user_comment: '',
+})
+
+function hasPendingReplaceForType(type) {
+  return (props.pendingDocumentReplaceRequests || []).some(r => r.type === type)
+}
+
+function openReplaceModal(type) {
+  replaceRequestForm.type = type
+  replaceRequestForm.user_comment = ''
+  replaceRequestForm.clearErrors()
+  replaceModalOpen.value = true
+}
+
+function submitReplaceRequest() {
+  replaceRequestForm.post(route('lms.profile.document-replace-requests.store', { event: props.event?.slug }), {
+    preserveScroll: true,
+    onSuccess: () => {
+      replaceModalOpen.value = false
+    },
+  })
+}
+
 function uploadedDoc(type) {
   return props.profile?.documents?.find(d => d.type === type) || null
+}
+
+function hasDocFile(doc) {
+  return !!(doc && doc.file_path)
+}
+
+function docIsLocked(doc) {
+  return doc != null && doc.status === 'approved' && hasDocFile(doc)
+}
+
+function documentLockedNotice(type) {
+  const d = uploadedDoc(type)
+  if (!d || !docIsLocked(d)) return ''
+  return 'Документ подтверждён модератором. Заменить или удалить его можно только через поддержку.'
+}
+
+function documentAnnulledNotice(type) {
+  const d = uploadedDoc(type)
+  if (!d || hasDocFile(d) || d.status !== 'annulled') return ''
+  return d.admin_comment
+    ? `Документ отклонён модератором: ${d.admin_comment}`
+    : 'Документ отклонён. Загрузите файл заново.'
 }
 
 function uploadDoc(type, e) {

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Lms\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SendMailJob;
+use App\Services\Lms\LmsProfileDocumentReplaceRequestService;
+use App\Services\Lms\LmsProfileDocumentReviewService;
 use App\Mail\InvitationMail;
 use App\Models\Lms\LmsCourse;
 use App\Models\Lms\LmsCourseEnrollment;
@@ -11,6 +13,7 @@ use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsInvitation;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsProfileDocument;
+use App\Models\Lms\LmsProfileDocumentReplaceRequest;
 use App\Models\Lms\LmsRole;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -215,7 +219,23 @@ class UserController extends Controller
             'type_label' => $typeLabels[$doc->type] ?? $doc->type,
             'original_name' => $doc->original_name,
             'created_at' => $doc->created_at,
+            'status' => $doc->status,
+            'admin_comment' => $doc->admin_comment,
+            'reviewed_at' => $doc->reviewed_at,
+            'has_file' => $doc->hasFile(),
         ]);
+
+        $documentReplaceRequests = LmsProfileDocumentReplaceRequest::where('lms_profile_id', $profile->id)
+            ->where('status', LmsProfileDocumentReplaceRequest::STATUS_PENDING)
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn(LmsProfileDocumentReplaceRequest $r) => [
+                'id' => $r->id,
+                'type' => $r->type,
+                'type_label' => $typeLabels[$r->type] ?? $r->type,
+                'user_comment' => $r->user_comment,
+                'created_at' => $r->created_at,
+            ]);
 
         return Inertia::render('Lms/Admin/Users/Show', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -226,6 +246,7 @@ class UserController extends Controller
             'facultyLabels' => LmsProfile::FACULTY_LABELS,
             'courses' => $courses,
             'documents' => $documents,
+            'documentReplaceRequests' => $documentReplaceRequests,
         ]);
     }
 
@@ -569,6 +590,90 @@ class UserController extends Controller
         return $rows;
     }
 
+    public function approveProfileDocument(LmsEvent $event, User $user, LmsProfileDocument $document): RedirectResponse
+    {
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        if ($document->lms_profile_id !== $profile->id) {
+            abort(404);
+        }
+
+        try {
+            app(LmsProfileDocumentReviewService::class)->approve($document);
+        } catch (InvalidArgumentException $e) {
+            return redirect()->back()->withErrors(['document' => $e->getMessage()]);
+        }
+
+        return redirect()->back()->with('success', 'Документ подтверждён');
+    }
+
+    public function annulProfileDocument(Request $request, LmsEvent $event, User $user, LmsProfileDocument $document): RedirectResponse
+    {
+        $validated = $request->validate([
+            'comment' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        if ($document->lms_profile_id !== $profile->id) {
+            abort(404);
+        }
+
+        try {
+            app(LmsProfileDocumentReviewService::class)->annul($document, $validated['comment'], $event);
+        } catch (InvalidArgumentException $e) {
+            return redirect()->back()->withErrors(['comment' => $e->getMessage()]);
+        }
+
+        return redirect()->back()->with('success', 'Документ аннулирован, участник уведомлён по email');
+    }
+
+    public function approveDocumentReplaceRequest(LmsEvent $event, User $user, LmsProfileDocumentReplaceRequest $replaceRequest): RedirectResponse
+    {
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        if ($replaceRequest->lms_profile_id !== $profile->id) {
+            abort(404);
+        }
+
+        try {
+            app(LmsProfileDocumentReplaceRequestService::class)->approve($replaceRequest);
+        } catch (InvalidArgumentException $e) {
+            return redirect()->back()->withErrors(['replace_request' => $e->getMessage()]);
+        }
+
+        return redirect()->back()->with('success', 'Заявка одобрена — участник может загрузить документ заново.');
+    }
+
+    public function rejectDocumentReplaceRequest(Request $request, LmsEvent $event, User $user, LmsProfileDocumentReplaceRequest $replaceRequest): RedirectResponse
+    {
+        $validated = $request->validate([
+            'admin_comment' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        if ($replaceRequest->lms_profile_id !== $profile->id) {
+            abort(404);
+        }
+
+        try {
+            app(LmsProfileDocumentReplaceRequestService::class)->reject($replaceRequest, $validated['admin_comment'] ?? null);
+        } catch (InvalidArgumentException $e) {
+            return redirect()->back()->withErrors(['replace_request' => $e->getMessage()]);
+        }
+
+        return redirect()->back()->with('success', 'Заявка на замену отклонена.');
+    }
+
     public function downloadUserDocuments(LmsEvent $event, User $user)
     {
         $profile = LmsProfile::where('lms_event_id', $event->id)
@@ -576,7 +681,7 @@ class UserController extends Controller
             ->with('documents')
             ->firstOrFail();
 
-        $documents = $profile->documents;
+        $documents = $profile->documents->filter(fn(LmsProfileDocument $d) => $d->hasFile());
 
         if ($documents->isEmpty()) {
             return redirect()->back()->with('success', 'У пользователя нет загруженных документов');

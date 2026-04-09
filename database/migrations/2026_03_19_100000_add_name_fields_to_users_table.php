@@ -14,16 +14,18 @@ return new class extends Migration
             $table->string('first_name')->nullable()->after('last_name');
         });
 
-        // Разбиваем существующее поле name на last_name и first_name
-        DB::statement("
-            UPDATE users SET
-                last_name  = split_part(name, ' ', 1),
-                first_name = CASE
-                    WHEN array_length(string_to_array(name, ' '), 1) >= 2
-                    THEN split_part(name, ' ', 2)
-                    ELSE NULL
-                END
-        ");
+        // Разбиваем существующее поле name на last_name и first_name (PostgreSQL)
+        if (Schema::getConnection()->getDriverName() === 'pgsql') {
+            DB::statement("
+                UPDATE users SET
+                    last_name  = split_part(name, ' ', 1),
+                    first_name = CASE
+                        WHEN array_length(string_to_array(name, ' '), 1) >= 2
+                        THEN split_part(name, ' ', 2)
+                        ELSE NULL
+                    END
+            ");
+        }
     }
 
     public function down(): void
