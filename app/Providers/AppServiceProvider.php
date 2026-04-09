@@ -34,9 +34,15 @@ class AppServiceProvider extends ServiceProvider
 
         app(SettingsService::class)->applyMailConfig();
 
-        // Участник LMS открывает /courses/{slug}; админка и API передают id.
+        // Участник LMS открывает /courses/{slug}; админка передаёт id.
+        // Параметр event на момент bind может быть ещё строкой (slug из URI), а не LmsEvent.
         Route::bind('course', function (string $value, \Illuminate\Routing\Route $route): LmsCourse {
-            $event = $route->parameter('event');
+            $eventParam = $route->parameter('event');
+            $event = $eventParam instanceof LmsEvent
+                ? $eventParam
+                : (is_string($eventParam) && $eventParam !== ''
+                    ? LmsEvent::query()->where('slug', $eventParam)->first()
+                    : null);
 
             if ($event instanceof LmsEvent) {
                 $course = ctype_digit($value)
