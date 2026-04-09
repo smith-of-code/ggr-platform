@@ -85,3 +85,17 @@ Cascade delete: удаление события удаляет весь связ
 - Каждое событие получает свой URL: `/lms/{slug}/`
 - Участники привязываются к событию через `LmsProfile`
 - Контент создаётся в рамках события через LMS-админку (`/lms-admin/{event}/...`)
+
+## Bugfixes
+
+### BUG-LMS-RUTUBE-PRIVATE-001
+
+- **Issue:** Ссылка RuTube «только по ссылке» (`/video/private/{id}/?p=...`) в LMS-видео сохраняется, но на странице просмотра плеер показывает «временно недоступно».
+- **Expected:** iframe ведёт на `https://rutube.ru/play/embed/{id}/?p={ключ}` (как в [FAQ RuTube по embed](https://rutube.ru/info/embed/)); воспроизведение как по прямой ссылке.
+- **Actual:** В embed подставлялся неверный id (`private` из-за regex `video/([a-zA-Z0-9]+)`), ключ `p` терялся.
+- **Repro:**
+  - В `lms-admin/{event}/videos/{id}/edit` указать URL вида `https://rutube.ru/video/private/<uuid>/?p=<key>`.
+  - Открыть `/lms/{event}/videos/{id}`.
+- **Acceptance:**
+  - Плеер загружает корректный embed с `p` для приватных ссылок.
+  - Публичные ссылки `rutube.ru/video/{id}` без регрессии.
