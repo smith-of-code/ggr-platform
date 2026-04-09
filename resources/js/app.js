@@ -6,6 +6,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import { useToast } from '@/composables/useToast';
+import { formatInvalidInertiaResponse, formatValidationErrors } from '@/utils/inertiaErrors';
 
 import {
     RButton, RInput, RCheckbox, RAvatar, RBadge, RCard,
@@ -23,22 +24,40 @@ const uiKitComponents = {
 
 const toast = useToast()
 
-router.on('error', () => {
+/** Сеть / сбой загрузки chunk: detail.exception — Error (Inertia v2). */
+router.on('exception', (event) => {
+    const ex = event.detail?.exception
+    if (ex instanceof Error && ex.message?.trim() && ex.message.length < 400) {
+        toast.error(ex.message.trim())
+        return
+    }
+    toast.error('Не удалось выполнить запрос. Проверьте подключение к сети.')
+})
+
+/** Ошибки валидации после Inertia-ответа: detail.errors (не дублировать в finish). */
+router.on('error', (event) => {
+    const errors = event.detail?.errors
+    if (errors && typeof errors === 'object' && Object.keys(errors).length > 0) {
+        toast.error(formatValidationErrors(errors))
+        return
+    }
     toast.error('Произошла ошибка при обработке запроса')
 })
 
+/** Non-Inertia ответ: detail.response — { data, headers, status }. */
 router.on('invalid', (event) => {
     event.preventDefault()
-    toast.error('Сервер вернул некорректный ответ')
+    toast.error(formatInvalidInertiaResponse(event.detail?.response))
 })
 
-router.on('finish', (event) => {
+/**
+ * flash.error — отдельный toast.
+ * props.errors обрабатываются в inertia:error (один toast на цикл визита).
+ */
+router.on('finish', () => {
     const page = router.page
     if (page?.props?.flash?.error) {
         toast.error(page.props.flash.error)
-    }
-    if (page?.props?.errors && Object.keys(page.props.errors).length > 0) {
-        toast.error('Пожалуйста, исправьте ошибки в форме')
     }
 })
 

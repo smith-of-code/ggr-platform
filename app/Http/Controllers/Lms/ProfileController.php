@@ -106,7 +106,7 @@ class ProfileController extends Controller
             'last_name' => ['nullable', 'string', 'max:255'],
             'first_name' => ['nullable', 'string', 'max:255'],
             'patronymic' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:30'],
             'city' => ['nullable', 'string', 'max:255'],
             'organization' => ['nullable', 'string', 'max:255'],
@@ -114,6 +114,8 @@ class ProfileController extends Controller
             'project_description' => ['nullable', 'string', 'max:5000'],
             'preferred_channel' => ['nullable', Rule::in(['telegram', 'max'])],
             'avatar' => ['nullable', 'image', 'max:2048'],
+        ], [
+            'email.unique' => 'Этот адрес электронной почты уже используется.',
         ]);
 
         $profile = LmsProfile::where('lms_event_id', $event->id)
