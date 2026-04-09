@@ -69,3 +69,10 @@
 - **Scope:** `database/seeders/PortalSeeder.php`, `resources/js/Pages/Education/Index.vue`
 - **DoD:** Каталог корректно отображает продукты всех типов; бейджи типов различимы визуально
 - **Verify:** `source docker/.env.local && docker exec ${APP_NAME}_fpm php artisan db:seed --class=PortalSeeder`
+
+## BUG-T11 — Навигация education: не выходить за контейнер
+
+- **Цель:** Выровнять sticky-навигацию по секциям с шириной контента и сохранить горизонтальный скролл при многих пунктах.
+- **Scope:** `resources/js/Pages/Education/Show.vue` (блок `<nav>` для `enabledSections`).
+- **DoD:** Убраны отрицательные margin, у контейнера навигации заданы ограничения ширины (`max-w-full` / `min-w-0`) при необходимости; визуально совпадает с hero.
+- **Verify:** Проверка в браузере на `/vshgr/...`; `npm run lint` для затронутых файлов при наличии скрипта.

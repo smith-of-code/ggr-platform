@@ -38,13 +38,18 @@
       </div>
 
       <!-- Section navigation (education only) -->
-      <nav v-if="productType === 'education' && enabledSections.length > 1" class="sticky top-0 z-10 -mx-4 mt-8 overflow-x-auto bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div class="flex gap-2">
+      <nav
+        v-if="productType === 'education' && enabledSections.length > 1"
+        class="section-nav sticky top-16 z-10 mt-8 max-w-full min-w-0 overflow-x-auto overflow-y-hidden rounded-2xl border border-[#003274]/12 bg-gradient-to-b from-[#f4f7fb] to-white/95 py-2.5 pl-2.5 pr-2 shadow-[0_8px_30px_-12px_rgba(0,50,116,0.18)] backdrop-blur-md md:overflow-x-visible md:overflow-y-visible [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] [scrollbar-color:rgba(0,50,116,0.35)_rgba(0,50,116,0.06)]"
+        aria-label="Разделы программы"
+        @wheel="onSectionNavWheel"
+      >
+        <div class="flex w-max max-w-none items-center gap-1.5 pb-0.5 md:w-full md:max-w-full md:flex-wrap md:items-start md:gap-2">
           <a
             v-for="s in enabledSections"
             :key="s.slug"
             :href="`#section-${s.slug}`"
-            class="shrink-0 rounded-full border border-gray-200 px-4 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#003274] hover:text-[#003274]"
+            class="shrink-0 rounded-full border border-gray-200/90 bg-white/90 px-3.5 py-2 text-xs font-medium text-gray-700 shadow-sm transition hover:border-[#003274]/35 hover:bg-[#003274]/[0.07] hover:text-[#003274] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f4f7fb] active:scale-[0.98]"
           >
             {{ s.label }}
           </a>
@@ -254,6 +259,16 @@ function hasSection(slug) {
 function sectionContent(slug) {
   const s = sections.value[slug]
   return s?.enabled ? (s.content || null) : null
+}
+
+/** Вертикальное колесо мыши → горизонтальный скролл, пока ряд не переносится (до md). */
+function onSectionNavWheel(e) {
+  if (typeof window === 'undefined' || window.matchMedia('(min-width: 768px)').matches) return
+  const el = e.currentTarget
+  if (!(el instanceof HTMLElement)) return
+  if (el.scrollWidth <= el.clientWidth + 1) return
+  e.preventDefault()
+  el.scrollLeft += e.deltaY
 }
 </script>
 

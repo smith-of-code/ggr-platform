@@ -34,6 +34,11 @@
 - ✅ `database/seeders/PortalSeeder.php` — type для существующих 3 продуктов + 2 новых (partner, international с sections/countries)
 - ✅ `resources/js/Pages/Education/Index.vue` — бейдж типа на карточках каталога
 
+### BUG-T11 — Навигация education: не выходить за контейнер
+- ✅ `resources/js/Pages/Education/Show.vue` — убраны `-mx-*`/`px-*` у `<nav>`, добавлены `max-w-full min-w-0`, внутренний ряд `flex w-max` для скролла; `aria-label` на nav
+- ✅ Линтер IDE: без замечаний по `Show.vue`
+- ✅ `php artisan test --filter=Education` в Docker — тестов нет, exit 0
+
 ## Partially completed
 
 (пусто)
