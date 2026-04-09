@@ -27,6 +27,12 @@
 - `Pages/Lms/Admin/Courses/Index.vue`, `Form.vue`, `StageEditor.vue`, `SearchRefModal.vue`
 - `Pages/Lms/Admin/Enrollments/Index.vue`
 
+### Параметр `{course}` в URL (LMS)
+
+В маршрутах под префиксом `lms/{event}/…` и `lms-admin/{event}/…` сегмент `{course}` резолвится в `LmsCourse` так: если значение целиком состоит из цифр — по `id` в рамках `lms_event_id` события; иначе — по `slug`. В маршрутах без параметра `event` (например, toggle курса в админке портала) допускается только числовой `id`.
+
+Реализация: `Route::bind('course', …)` в `AppServiceProvider`.
+
 ## Схема БД
 
 ### lms_courses

@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Lms\LmsAssignmentReview;
+use App\Models\Lms\LmsCourse;
 use App\Models\Lms\LmsCourseEnrollment;
+use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTestAttempt;
 use App\Models\Lms\LmsTrajectoryEnrollment;
@@ -12,6 +14,7 @@ use App\Services\GamificationService;
 use App\Services\SettingsService;
 use App\Socialite\VkIdProvider;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Socialite\Facades\Socialite;
@@ -30,6 +33,32 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         app(SettingsService::class)->applyMailConfig();
+
+        // Участник LMS открывает /courses/{slug}; админка и API передают id.
+        Route::bind('course', function (string $value, \Illuminate\Routing\Route $route): LmsCourse {
+            $event = $route->parameter('event');
+
+            if ($event instanceof LmsEvent) {
+                $course = ctype_digit($value)
+                    ? LmsCourse::query()
+                        ->where('lms_event_id', $event->id)
+                        ->where('id', (int) $value)
+                        ->first()
+                    : LmsCourse::query()
+                        ->where('lms_event_id', $event->id)
+                        ->where('slug', $value)
+                        ->first();
+            } else {
+                if (! ctype_digit($value)) {
+                    abort(404);
+                }
+                $course = LmsCourse::query()->where('id', (int) $value)->first();
+            }
+
+            abort_if($course === null, 404);
+
+            return $course;
+        });
 
         $observer = app(LmsProgressObserver::class);
 
