@@ -317,7 +317,7 @@
                 :fields="[
                   { key: 'label', label: 'Название', placeholder: 'VK' },
                   { key: 'href', label: 'Ссылка', placeholder: 'https://vk.com/gostepr' },
-                  { key: 'icon', label: 'Иконка (vk, telegram)', placeholder: 'vk' },
+                  { key: 'icon', label: 'Иконка', type: 'icon-select', options: socialIconOptions, iconMap: socialIconMap },
                 ]"
                 add-label="Добавить соцсеть"
                 :new-item="{ label: '', href: '', icon: 'vk' }"
@@ -357,10 +357,25 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import SectionHeader from '@/Pages/Admin/OpportunityToursPage/SectionHeader.vue'
 import DynamicList from '@/Pages/Admin/OpportunityToursPage/DynamicList.vue'
 import IconPicker from '@/Components/IconPicker.vue'
+import { socialIcon, socialIconKeys } from '@/utils/opportunityToursIcons'
 
 const props = defineProps({
   pageData: { type: Object, default: () => ({}) },
 })
+
+const socialIconOptions = [
+  { value: 'vk', label: 'ВКонтакте' },
+  { value: 'telegram', label: 'Telegram' },
+  { value: 'max', label: 'Max' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'rutube', label: 'Рутьюб' },
+  { value: 'ok', label: 'Одноклассники' },
+  { value: 'dzen', label: 'Дзен' },
+]
+
+const socialIconMap = Object.fromEntries(
+  socialIconKeys.map(k => [k, socialIcon(k, 'h-5 w-5')])
+)
 
 const blockLabels = {
   hero: 'Hero-блок',
