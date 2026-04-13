@@ -4,7 +4,7 @@
       <!-- Hero -->
       <section v-if="isBlockVisible('hero')" :style="blockStyle('hero')" class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-24 text-white sm:px-6 sm:py-32 lg:px-8 lg:py-40">
         <img
-          :src="pd.hero_bg_image || 'https://images.unsplash.com/photo-1513326738677-b964603b136d?w=1600&h=600&fit=crop'"
+          :src="pd.hero_bg_image || '/images/unsplash/hero-bg.jpg'"
           alt=""
           class="absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-luminosity"
         />

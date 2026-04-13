@@ -6,7 +6,7 @@
         <!-- Left side - image -->
         <div class="relative hidden lg:block">
           <img
-            src="https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=900&fit=crop"
+            src="/images/unsplash/register-bg.jpg"
             alt="Атомные города"
             class="absolute inset-0 h-full w-full object-cover"
           />

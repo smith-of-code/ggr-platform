@@ -129,12 +129,12 @@ class AtomsVkusaSeeder extends Seeder
                 'results_year' => '2025',
                 'results_content' => 'В 2025 году конкурс «Атомы вкуса» собрал более 320 заявок из 12 атомных городов. 50 участников прошли в полуфиналы, 10 стали финалистами. Победители получили стажировки в ведущих ресторанах Москвы и призовой фонд 1,5 млн рублей.',
                 'results_gallery' => [
-                    ['url' => 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=450&fit=crop', 'caption' => 'Финал конкурса 2025'],
-                    ['url' => 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=450&fit=crop', 'caption' => 'Дегустация блюд финалистов'],
-                    ['url' => 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&h=450&fit=crop', 'caption' => 'Мастер-класс от шеф-повара'],
-                    ['url' => 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800&h=450&fit=crop', 'caption' => 'Полуфинал в Нововоронеже'],
-                    ['url' => 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800&h=450&fit=crop', 'caption' => 'Награждение победителей'],
-                    ['url' => 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=450&fit=crop', 'caption' => 'Блюда участников конкурса'],
+                    ['url' => '/images/unsplash/contest-final.jpg', 'caption' => 'Финал конкурса 2025'],
+                    ['url' => '/images/unsplash/food-plating.jpg', 'caption' => 'Дегустация блюд финалистов'],
+                    ['url' => '/images/unsplash/masterclass-chef.jpg', 'caption' => 'Мастер-класс от шеф-повара'],
+                    ['url' => '/images/unsplash/semifinal.jpg', 'caption' => 'Полуфинал в Нововоронеже'],
+                    ['url' => '/images/unsplash/award-ceremony.jpg', 'caption' => 'Награждение победителей'],
+                    ['url' => '/images/unsplash/contest-dishes.jpg', 'caption' => 'Блюда участников конкурса'],
                 ],
                 'results_videos' => [
                     ['url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'title' => 'Итоги конкурса «Атомы вкуса» 2025'],
@@ -145,19 +145,19 @@ class AtomsVkusaSeeder extends Seeder
                         'name' => 'Екатерина Волкова',
                         'city' => 'Нововоронеж',
                         'text' => 'Победительница конкурса 2025 с блюдом «Донские закаты» — тыквенный суп-пюре с копчёной уткой и местными травами. Сейчас Екатерина работает су-шефом в ресторане «Техникум» в Москве.',
-                        'image' => 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop',
+                        'image' => '/images/unsplash/stage-cooking-1.jpg',
                     ],
                     [
                         'name' => 'Алексей Миронов',
                         'city' => 'Обнинск',
                         'text' => 'Серебряный призёр с десертом «Атомный калач» — авторская интерпретация калужского теста с ягодами и мёдом. Запустил линейку авторских десертов в местной кондитерской.',
-                        'image' => 'https://images.unsplash.com/photo-1486427944781-dbf45c0a0164?w=400&h=300&fit=crop',
+                        'image' => '/images/unsplash/stage-cooking-2.jpg',
                     ],
                     [
                         'name' => 'Марина Сидорова',
                         'city' => 'Снежинск',
                         'text' => 'Бронзовый призёр с блюдом «Уральское сияние» — строганина из муксуна с кедровым маслом и морошкой. Провела серию мастер-классов по уральской кухне.',
-                        'image' => 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop',
+                        'image' => '/images/unsplash/stage-cooking-3.jpg',
                     ],
                 ],
 
@@ -281,17 +281,17 @@ class AtomsVkusaSeeder extends Seeder
                     [
                         'title' => 'Гастрономические маршруты',
                         'description' => 'На основе рецептов победителей создаются гастрономические маршруты по атомным городам с дегустациями и мастер-классами.',
-                        'image' => 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=600&h=400&fit=crop',
+                        'image' => '/images/unsplash/news-food-1.jpg',
                     ],
                     [
                         'title' => 'Книга атомных рецептов',
                         'description' => 'Лучшие рецепты публикуются в ежегодной «Книге атомных рецептов» — кулинарном путеводителе по вкусам атомных городов.',
-                        'image' => 'https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=600&h=400&fit=crop',
+                        'image' => '/images/unsplash/news-food-2.jpg',
                     ],
                     [
                         'title' => 'Фестивали и события',
                         'description' => 'Конкурс включает гастрофестивали в атомных городах, привлекающие туристов и популяризирующие локальную кухню.',
-                        'image' => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&h=400&fit=crop',
+                        'image' => '/images/unsplash/news-food-3.jpg',
                     ],
                 ],
             ]

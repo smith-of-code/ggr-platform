@@ -167,7 +167,7 @@ class MainPageController extends Controller
         return [
             'hero_title' => 'Гостеприимные города Росатома',
             'hero_description' => 'Цифровая экосистема для развития туристического, образовательного и предпринимательского потенциала атомных городов',
-            'hero_bg_image' => 'https://images.unsplash.com/photo-1513326738677-b964603b136d?w=1600&h=600&fit=crop',
+            'hero_bg_image' => '/images/unsplash/hero-bg.jpg',
             'moving_title' => 'Переезжаем',
             'moving_description' => 'Узнайте о возможностях переезда в атомные города — программа поддержки, условия и перспективы',
             'cta_title' => 'Хотите узнать подробнее о программе?',

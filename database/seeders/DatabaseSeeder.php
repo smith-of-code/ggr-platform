@@ -140,7 +140,7 @@ class DatabaseSeeder extends Seeder
                 'price_from' => 35000,
                 'description' => 'Гастрономический тур по Нововоронежу и Воронежской области. Донская кухня, фермерские продукты, мастер-классы от шеф-поваров и знакомство с экопроизводствами атомграда.',
                 'is_featured' => false,
-                'image' => 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=450&fit=crop',
+                'image' => '/images/unsplash/food-plating.jpg',
             ],
             [
                 'title' => 'Уральские горизонты',
