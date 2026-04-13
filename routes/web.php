@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DirectionController as AdminDirectionController;
 use App\Http\Controllers\Admin\EducationProductController as AdminEducationProductController;
+use App\Http\Controllers\Admin\MainPageController as AdminMainPageController;
 use App\Http\Controllers\Admin\OpportunityToursPageController as AdminOpportunityToursPageController;
 use App\Http\Controllers\Admin\PageVisibilityController as AdminPageVisibilityController;
 use App\Http\Controllers\Admin\RecipeController as AdminRecipeController;
@@ -122,6 +123,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::patch('/tour-reviews/{tourReview}/approve', [AdminTourReviewController::class, 'approve'])->name('tour-reviews.approve');
     Route::patch('/tour-reviews/{tourReview}/reject', [AdminTourReviewController::class, 'reject'])->name('tour-reviews.reject');
     Route::delete('/tour-reviews/{tourReview}', [AdminTourReviewController::class, 'destroy'])->name('tour-reviews.destroy');
+
+    Route::get('/main-page', [AdminMainPageController::class, 'index'])->name('main-page.index');
+    Route::put('/main-page', [AdminMainPageController::class, 'update'])->name('main-page.update');
 
     Route::get('/opportunity-tours-page', [AdminOpportunityToursPageController::class, 'index'])->name('opportunity-tours-page.index');
     Route::put('/opportunity-tours-page', [AdminOpportunityToursPageController::class, 'update'])->name('opportunity-tours-page.update');

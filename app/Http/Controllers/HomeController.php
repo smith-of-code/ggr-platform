@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Admin\MainPageController;
 use App\Models\City;
 use App\Models\Consent;
 use App\Models\ContactSubmission;
@@ -11,6 +12,7 @@ use App\Models\Recipe;
 use App\Models\TimelineEvent;
 use App\Models\Tour;
 use App\Services\ConsentService;
+use App\Services\SettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -32,6 +34,35 @@ class HomeController extends Controller
     public function moving(): Response
     {
         return Inertia::render('Moving');
+    }
+
+    private function buildMainPageData(): array
+    {
+        $settings = app(SettingsService::class);
+        $raw = $settings->getGroup('main_page');
+        $defaults = MainPageController::defaults();
+
+        $jsonKeys = [
+            'block_order', 'program_stages', 'program_cities', 'program_results',
+            'city_benefits', 'additional_initiatives', 'videos',
+            'contact_bullets', 'contacts', 'socials', 'section_titles',
+        ];
+
+        $data = [];
+        foreach ($defaults as $key => $value) {
+            $data[$key] = $raw[$key] ?? $value;
+        }
+        foreach ($jsonKeys as $key) {
+            if (isset($raw[$key])) {
+                $data[$key] = json_decode($raw[$key], true) ?? [];
+            }
+        }
+
+        if (empty($data['block_order'])) {
+            $data['block_order'] = MainPageController::defaultBlockOrder();
+        }
+
+        return $data;
     }
 
     private function buildHomePageProps(Request $request): array
@@ -116,6 +147,7 @@ class HomeController extends Controller
             'latestPosts' => $latestPosts,
             'timelineEvents' => $timelineEvents,
             'userFavorites' => $userFavorites,
+            'pageData' => $this->buildMainPageData(),
         ];
     }
 

@@ -139,6 +139,16 @@
         </div>
 
         <Link
+          :href="route('admin.main-page.index')"
+          :class="[isActive('admin.main-page') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
+        >
+          <svg :class="[isActive('admin.main-page') ? 'text-[#003274]' : 'text-gray-400 group-hover:text-gray-600']" class="h-5 w-5 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+          </svg>
+          Главная страница
+        </Link>
+
+        <Link
           :href="route('admin.opportunity-tours-page.index')"
           :class="[isActive('admin.opportunity-tours-page') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
         >
@@ -268,6 +278,7 @@ function isActive(routePrefix) {
   if (routePrefix === 'admin.recipes') return url.startsWith('/admin/recipes')
   if (routePrefix === 'admin.atoms-vkusa') return url.startsWith('/admin/atoms-vkusa')
   if (routePrefix === 'admin.vacancies') return url.startsWith('/admin/vacancies')
+  if (routePrefix === 'admin.main-page') return url.startsWith('/admin/main-page')
   if (routePrefix === 'admin.opportunity-tours-page') return url.startsWith('/admin/opportunity-tours-page')
   if (routePrefix === 'admin.vshgr-page') return url.startsWith('/admin/vshgr-page')
   if (routePrefix === 'admin.research-page') return url.startsWith('/admin/research-page')

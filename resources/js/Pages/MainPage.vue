@@ -1,20 +1,20 @@
 <template>
   <MainLayout>
-    <div>
+    <div class="flex flex-col">
       <!-- Hero -->
-      <section class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-24 text-white sm:px-6 sm:py-32 lg:px-8 lg:py-40">
+      <section v-if="isBlockVisible('hero')" :style="blockStyle('hero')" class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-24 text-white sm:px-6 sm:py-32 lg:px-8 lg:py-40">
         <img
-          src="https://images.unsplash.com/photo-1513326738677-b964603b136d?w=1600&h=600&fit=crop"
+          :src="pd.hero_bg_image || 'https://images.unsplash.com/photo-1513326738677-b964603b136d?w=1600&h=600&fit=crop'"
           alt=""
           class="absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-luminosity"
         />
         <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.1),transparent_70%)]" />
         <div class="relative mx-auto max-w-7xl text-center">
           <h1 class="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Гостеприимные города<br class="hidden sm:block" /> Росатома
+            {{ pd.hero_title || 'Гостеприимные города Росатома' }}
           </h1>
           <p class="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/85">
-            Цифровая экосистема для развития туристического, образовательного и предпринимательского потенциала атомных городов
+            {{ pd.hero_description || 'Цифровая экосистема для развития туристического, образовательного и предпринимательского потенциала атомных городов' }}
           </p>
           <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
@@ -49,10 +49,10 @@
       </section>
 
       <!-- Program stages -->
-      <section class="bg-[#f3f4fa] px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('program_stages') && programStages.length" :style="blockStyle('program_stages')" class="bg-[#f3f4fa] px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal mb-10 text-center">
-            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Этапы программы</h2>
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('program_stages', 'Этапы программы') }}</h2>
           </div>
 
           <div class="space-y-8">
@@ -100,12 +100,12 @@
       </section>
 
       <!-- Program cities by year -->
-      <section class="bg-white px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('program_cities') && programCitiesRaw.length" :style="blockStyle('program_cities')" class="bg-white px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal mb-10 text-center">
-            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Города программы</h2>
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('program_cities', 'Города программы') }}</h2>
             <p class="mx-auto mt-3 max-w-2xl text-gray-500">
-              Города-участники программы «Гостеприимные города Росатома» по годам
+              {{ sectionSubtitle('program_cities', 'Города-участники программы «Гостеприимные города Росатома» по годам') }}
             </p>
           </div>
 
@@ -115,7 +115,7 @@
               :key="year"
               type="button"
               class="rounded-full px-6 py-2.5 text-sm font-semibold transition duration-200"
-              :class="activeCitiesYear === year
+              :class="currentActiveCitiesYear === year
                 ? 'bg-[#003274] text-white shadow-lg'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               @click="activeCitiesYear = year"
@@ -126,7 +126,7 @@
 
           <div class="grid gap-5 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             <div
-              v-for="(city, i) in programCitiesByYear[activeCitiesYear]"
+              v-for="(city, i) in programCitiesByYear[currentActiveCitiesYear]"
               :key="city.name"
               class="reveal group overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               :class="'reveal-delay-' + ((i % 5) + 1)"
@@ -149,22 +149,22 @@
       </section>
 
       <!-- Program results by year -->
-      <section class="bg-[#2a376c] px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('program_results') && programResultsRaw.length" :style="blockStyle('program_results')" class="bg-[#2a376c] px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal mb-10 text-center">
-            <h2 class="text-2xl font-bold text-white sm:text-3xl">Результаты программы</h2>
+            <h2 class="text-2xl font-bold text-white sm:text-3xl">{{ sectionTitle('program_results', 'Результаты программы') }}</h2>
             <p class="mx-auto mt-3 max-w-2xl text-white/70">
-              Ключевые достижения по годам реализации программы
+              {{ sectionSubtitle('program_results', 'Ключевые достижения по годам реализации программы') }}
             </p>
           </div>
 
           <div class="mb-10 flex justify-center gap-2">
             <button
-              v-for="year in programYears"
+              v-for="year in resultYears"
               :key="year"
               type="button"
               class="rounded-full px-6 py-2.5 text-sm font-semibold transition duration-200"
-              :class="activeResultsYear === year
+              :class="currentActiveResultsYear === year
                 ? 'bg-white text-[#2a376c] shadow-lg'
                 : 'bg-white/10 text-white/80 hover:bg-white/20'"
               @click="activeResultsYear = year"
@@ -176,7 +176,7 @@
           <div class="grid items-start gap-10 lg:grid-cols-2">
             <div class="flex items-center justify-center">
               <img
-                src="https://optim.tildacdn.com/tild3735-3663-4333-b331-333938383739/-/format/webp/Mask_group.png.webp"
+                :src="pd.program_results_image || 'https://optim.tildacdn.com/tild3735-3663-4333-b331-333938383739/-/format/webp/Mask_group.png.webp'"
                 alt="Результаты программы"
                 class="w-full max-w-md rounded-2xl"
                 loading="lazy"
@@ -184,7 +184,7 @@
             </div>
             <ul class="space-y-6">
               <li
-                v-for="(result, i) in programResultsByYear[activeResultsYear]"
+                v-for="(result, i) in programResultsByYear[currentActiveResultsYear]"
                 :key="i"
                 class="reveal"
                 :class="'reveal-delay-' + ((i % 5) + 1)"
@@ -198,12 +198,12 @@
       </section>
 
       <!-- City benefits -->
-      <section class="bg-white px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('city_benefits') && cityBenefits.length" :style="blockStyle('city_benefits')" class="bg-white px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal mb-12 text-center">
-            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Что получает город</h2>
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('city_benefits', 'Что получает город') }}</h2>
             <p class="mx-auto mt-3 max-w-2xl text-gray-500">
-              Преимущества участия в программе для городов-присутствия Росатома
+              {{ sectionSubtitle('city_benefits', 'Преимущества участия в программе для городов-присутствия Росатома') }}
             </p>
           </div>
           <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -229,10 +229,10 @@
       </section>
 
       <!-- Additional initiatives -->
-      <section class="overflow-hidden bg-[#f3f4fa] px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('additional_initiatives') && additionalInitiatives.length" :style="blockStyle('additional_initiatives')" class="overflow-hidden bg-[#f3f4fa] px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal mb-12 text-center">
-            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Дополнительные инициативы</h2>
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('additional_initiatives', 'Дополнительные инициативы') }}</h2>
           </div>
           <div class="grid gap-5 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             <div
@@ -258,11 +258,11 @@
       </section>
 
       <!-- Videos slideshow -->
-      <section v-if="videoItems.length" class="bg-white px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('videos') && videoItems.length" :style="blockStyle('videos')" class="bg-white px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal mb-10 text-center">
-            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Видеоролики</h2>
-            <p class="mt-2 text-gray-500">Смотрите, как живут и развиваются атомные города</p>
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('videos', 'Видеоролики') }}</h2>
+            <p class="mt-2 text-gray-500">{{ sectionSubtitle('videos', 'Смотрите, как живут и развиваются атомные города') }}</p>
           </div>
           <div class="relative">
             <div
@@ -385,12 +385,12 @@
       </Teleport>
 
       <!-- News -->
-      <section v-if="latestPosts?.length" class="bg-[#f3f4fa] px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('news') && latestPosts?.length" :style="blockStyle('news')" class="bg-[#f3f4fa] px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Новости</h2>
-              <p class="mt-2 text-gray-500">Последние новости программы</p>
+              <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('news', 'Новости') }}</h2>
+              <p class="mt-2 text-gray-500">{{ sectionSubtitle('news', 'Последние новости программы') }}</p>
             </div>
             <Link
               :href="route('blog.index')"
@@ -435,14 +435,14 @@
       </section>
 
       <!-- Moving -->
-      <section class="bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-16 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('moving')" :style="blockStyle('moving')" class="bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-16 sm:px-6 lg:px-8">
         <div class="reveal mx-auto max-w-7xl">
           <div class="relative overflow-hidden rounded-2xl bg-white/10 px-8 py-12 text-center text-white shadow-xl backdrop-blur-sm sm:px-16 sm:py-16">
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
             <div class="relative">
-              <h2 class="text-2xl font-bold sm:text-3xl">Переезжаем</h2>
+              <h2 class="text-2xl font-bold sm:text-3xl">{{ pd.moving_title || 'Переезжаем' }}</h2>
               <p class="mx-auto mt-4 max-w-2xl text-lg text-white/85">
-                Узнайте о возможностях переезда в атомные города — программа поддержки, условия и перспективы
+                {{ pd.moving_description || 'Узнайте о возможностях переезда в атомные города — программа поддержки, условия и перспективы' }}
               </p>
               <div class="mt-8">
                 <Link
@@ -461,7 +461,7 @@
       </section>
 
       <!-- Stats -->
-      <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('stats')" :style="blockStyle('stats')" class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <RCard v-for="(stat, i) in statCards" :key="i" elevation="raised" hoverable class="reveal text-center" :class="'reveal-delay-' + (i + 1)">
             <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
@@ -474,12 +474,12 @@
       </section>
 
       <!-- Featured tours -->
-      <section class="bg-white px-4 py-16 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('featured_tours')" :style="blockStyle('featured_tours')" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal flex items-end justify-between">
             <div>
-              <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Популярные туры</h2>
-              <p class="mt-2 text-gray-500">Откройте для себя уникальные маршруты</p>
+              <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('featured_tours', 'Популярные туры') }}</h2>
+              <p class="mt-2 text-gray-500">{{ sectionSubtitle('featured_tours', 'Откройте для себя уникальные маршруты') }}</p>
             </div>
             <Link
               :href="route('tours.index')"
@@ -546,12 +546,12 @@
       </section>
 
       <!-- Cities -->
-      <section v-if="cities?.length" class="px-4 py-16 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('cities') && cities?.length" :style="blockStyle('cities')" class="px-4 py-16 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal flex items-end justify-between">
             <div>
-              <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Атомные города</h2>
-              <p class="mt-2 text-gray-500">Современные города с уникальной историей</p>
+              <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('cities', 'Атомные города') }}</h2>
+              <p class="mt-2 text-gray-500">{{ sectionSubtitle('cities', 'Современные города с уникальной историей') }}</p>
             </div>
             <Link
               :href="route('cities.index')"
@@ -589,15 +589,16 @@
 
       <!-- Interactive Yandex Map -->
       <section
-        v-if="allCities?.length"
+        v-if="isBlockVisible('map') && allCities?.length"
+        :style="blockStyle('map')"
         class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-20 text-white sm:px-6 lg:px-8"
       >
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(255,255,255,0.12),transparent_55%)]" />
         <div class="relative mx-auto max-w-7xl">
           <div class="reveal text-center">
-            <h2 class="text-2xl font-bold sm:text-3xl">География проекта</h2>
+            <h2 class="text-2xl font-bold sm:text-3xl">{{ sectionTitle('map', 'География проекта') }}</h2>
             <p class="mx-auto mt-3 max-w-2xl text-sm text-white/80 sm:text-base">
-              Атомные города на карте России — нажмите на маркер, чтобы узнать о городе и перейти на его страницу
+              {{ sectionSubtitle('map', 'Атомные города на карте России — нажмите на маркер, чтобы узнать о городе и перейти на его страницу') }}
             </p>
           </div>
           <div class="reveal mx-auto mt-10 overflow-hidden rounded-2xl shadow-2xl shadow-black/30" style="height: 520px">
@@ -607,13 +608,13 @@
       </section>
 
       <!-- Атомы вкуса -->
-      <section v-if="latestRecipes?.length" class="bg-white px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('recipes') && latestRecipes?.length" :style="blockStyle('recipes')" class="bg-white px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Книга <span class="text-[#003274]">атомных</span> рецептов</h2>
+              <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('recipes', 'Книга атомных рецептов') }}</h2>
               <p class="mt-2 max-w-xl text-gray-500">
-                Блюда из городов атомной отрасли — откройте для себя кулинарные традиции регионов
+                {{ sectionSubtitle('recipes', 'Блюда из городов атомной отрасли — откройте для себя кулинарные традиции регионов') }}
               </p>
             </div>
             <Link
@@ -665,12 +666,12 @@
       </section>
 
       <!-- Timeline -->
-      <section class="bg-slate-50 px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('timeline')" :style="blockStyle('timeline')" class="bg-slate-50 px-4 py-20 sm:px-6 lg:px-8">
         <div class="relative mx-auto max-w-5xl">
           <div class="reveal mb-14 text-center">
-            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Хронология событий</h2>
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('timeline', 'Хронология событий') }}</h2>
             <p class="mx-auto mt-3 max-w-xl text-gray-500">
-              Ключевые новости, события и вехи развития программы
+              {{ sectionSubtitle('timeline', 'Ключевые новости, события и вехи развития программы') }}
             </p>
           </div>
           <div
@@ -766,13 +767,13 @@
       </section>
 
       <!-- CTA -->
-      <section class="reveal mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('cta')" :style="blockStyle('cta')" class="reveal mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#003274] to-[#025ea1] px-8 py-16 text-center text-white shadow-xl sm:px-16">
           <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.1),transparent_60%)]" />
           <div class="relative">
-            <h2 class="text-2xl font-bold sm:text-3xl">Хотите узнать подробнее о программе?</h2>
+            <h2 class="text-2xl font-bold sm:text-3xl">{{ pd.cta_title || 'Хотите узнать подробнее о программе?' }}</h2>
             <p class="mx-auto mt-4 max-w-xl text-lg text-white/80">
-              Оставьте заявку, и мы свяжемся с вами в ближайшее время
+              {{ pd.cta_description || 'Оставьте заявку, и мы свяжемся с вами в ближайшее время' }}
             </p>
             <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
@@ -802,29 +803,27 @@
 
       <!-- Contact -->
       <section
+        v-if="isBlockVisible('contact_form')"
+        :style="blockStyle('contact_form')"
         class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#024a85] to-[#025ea1] px-4 py-20 text-white sm:px-6 lg:px-8"
       >
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_0%,rgba(255,255,255,0.12),transparent_50%)]" />
         <div class="relative mx-auto max-w-7xl">
           <div class="reveal mb-12 text-center">
-            <h2 class="text-2xl font-bold sm:text-3xl">Хочу узнать подробнее</h2>
+            <h2 class="text-2xl font-bold sm:text-3xl">{{ pd.contact_title || 'Хочу узнать подробнее' }}</h2>
             <p class="mx-auto mt-3 max-w-2xl text-base text-white/85">
-              Заполните форму — мы ответим на вопросы о турах, городах и возможностях программы
+              {{ pd.contact_description || 'Заполните форму — мы ответим на вопросы о турах, городах и возможностях программы' }}
             </p>
           </div>
           <div class="reveal grid gap-12 lg:grid-cols-2 lg:gap-16">
             <div class="flex flex-col justify-center space-y-6 text-white/90">
               <p class="text-lg leading-relaxed">
-                Команда проекта поможет подобрать маршрут, расскажет о датах и условиях участия.
+                {{ pd.contact_left_text || 'Команда проекта поможет подобрать маршрут, расскажет о датах и условиях участия.' }}
               </p>
-              <ul class="space-y-3 text-sm text-white/80">
-                <li class="flex items-start gap-2">
+              <ul v-if="contactBullets.length" class="space-y-3 text-sm text-white/80">
+                <li v-for="(bullet, bi) in contactBullets" :key="bi" class="flex items-start gap-2">
                   <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
-                  Ответ в рабочие дни в течение 1–2 дней
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
-                  Консультация без обязательства записи на тур
+                  {{ bullet.text }}
                 </li>
               </ul>
             </div>
@@ -915,12 +914,12 @@
       </section>
 
       <!-- Contacts -->
-      <section class="bg-white px-4 py-20 sm:px-6 lg:px-8">
+      <section v-if="isBlockVisible('contacts')" :style="blockStyle('contacts')" class="bg-white px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
           <div class="reveal mb-12 text-center">
-            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">Контакты</h2>
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('contacts', 'Контакты') }}</h2>
             <p class="mx-auto mt-3 max-w-2xl text-gray-500">
-              Свяжитесь с нами любым удобным способом
+              {{ sectionSubtitle('contacts', 'Свяжитесь с нами любым удобным способом') }}
             </p>
           </div>
           <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -983,49 +982,92 @@ const props = defineProps({
   latestRecipes: { type: Array, default: () => [] },
   latestPosts: { type: Array, default: () => [] },
   stats: Object,
-  timelineEvents: {
-    type: Array,
-    default: () => [],
-  },
-  userFavorites: {
-    type: Object,
-    default: null,
-  },
+  timelineEvents: { type: Array, default: () => [] },
+  userFavorites: { type: Object, default: null },
+  pageData: { type: Object, default: () => ({}) },
 })
 
 const page = usePage()
+const pd = props.pageData || {}
+const st = pd.section_titles || {}
 
-const currentYear = new Date().getFullYear()
-const programYears = [currentYear, currentYear - 1, currentYear - 2]
-const activeCitiesYear = ref(currentYear)
-const activeResultsYear = ref(currentYear)
+function sectionTitle(id, fallback) {
+  return st[id]?.title || fallback
+}
+function sectionSubtitle(id, fallback) {
+  return st[id]?.subtitle || fallback
+}
 
-const programCitiesData = [
-  { name: 'Саров', region: 'Нижегородская область', image: 'https://optim.tildacdn.com/tild3737-6434-4934-a233-666136616434/-/cover/520x600/center/center/-/format/webp/photo.png.webp' },
-  { name: 'Глазов', region: 'Удмуртская Республика', image: 'https://optim.tildacdn.com/tild3434-6435-4664-b966-383133643365/-/cover/520x600/center/center/-/format/webp/photo.png.webp' },
-  { name: 'Певек', region: 'Чукотский автономный округ', image: 'https://optim.tildacdn.com/tild6466-6638-4634-a336-613335646161/-/cover/520x600/center/center/-/format/webp/photo.png.webp' },
-  { name: 'Билибино', region: 'Чукотский автономный округ', image: 'https://optim.tildacdn.com/tild3066-3934-4232-b065-383932616531/-/cover/520x600/center/center/-/format/webp/photo.png.webp' },
-  { name: 'Советск', region: 'Калининградская область', image: 'https://optim.tildacdn.com/tild3266-3161-4831-b938-653732366261/-/cover/520x600/center/center/-/format/webp/photo.png.webp' },
-  { name: 'Неман', region: 'Калининградская область', image: 'https://optim.tildacdn.com/tild6632-3634-4530-a138-346334333565/-/cover/520x600/center/center/-/format/webp/photo.png.webp' },
-  { name: 'Нововоронеж', region: 'Воронежская область', image: 'https://optim.tildacdn.com/tild3563-3666-4863-b838-393533643238/-/cover/520x600/center/center/-/format/webp/photo.png.webp' },
-  { name: 'Сосновый Бор', region: 'Ленинградская область', image: 'https://optim.tildacdn.com/tild3330-6438-4566-a263-363731383763/-/cover/520x600/center/center/-/format/webp/_.png.webp' },
-]
+const enabledBlocks = computed(() => {
+  const order = pd.block_order || []
+  const set = new Set()
+  order.forEach(b => { if (b.enabled) set.add(b.id) })
+  if (set.size === 0) return null
+  return set
+})
 
-const programCitiesByYear = Object.fromEntries(
-  programYears.map(y => [y, programCitiesData]),
-)
+function isBlockVisible(id) {
+  return enabledBlocks.value === null || enabledBlocks.value.has(id)
+}
 
-const programResultsData = [
-  { value: '13 млн руб.', description: 'грантовой поддержки от «Росатома» получили четырнадцать лучших предпринимательских проектов «Гостеприимного акселератора „Росатома"»' },
-  { value: '74 «Тура возможностей»', description: 'в Волгодонск, Полярные Зори и Железногорск совместно с программами «Больше, чем путешествие» и «Студтуризм»' },
-  { value: '>25 млн руб.', description: 'общая сумма привлечённых инвестиций в проекты' },
-  { value: '>100 382 654 млн руб.', description: 'доход субъектов туристической деятельности в атомных городах от Туров возможностей' },
-  { value: '6 туроператоров', description: 'создано в атомных городах Железногорск, Саров, Трёхгорный, Волгодонск, Глазов, Сосновый Бор' },
-]
+const blockOrderMap = computed(() => {
+  const order = pd.block_order || []
+  const map = {}
+  order.forEach((b, i) => { map[b.id] = i })
+  return map
+})
 
-const programResultsByYear = Object.fromEntries(
-  programYears.map(y => [y, programResultsData]),
-)
+function blockStyle(id) {
+  const idx = blockOrderMap.value[id]
+  return idx !== undefined ? { order: idx } : {}
+}
+
+const programStages = computed(() => pd.program_stages || [])
+const cityBenefits = computed(() => pd.city_benefits || [])
+const additionalInitiatives = computed(() => pd.additional_initiatives || [])
+const videoItems = computed(() => pd.videos || [])
+const contactItems = computed(() => {
+  const items = pd.contacts || []
+  const icons = {
+    'Телефон': '<svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>',
+    'E-mail': '<svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>',
+    'Адрес': '<svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>',
+    'Время работы': '<svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>',
+  }
+  return items.map(c => ({ ...c, icon: icons[c.label] || icons['Телефон'] }))
+})
+
+const socialIconSvgs = {
+  vk: '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.785 16.241s.288-.032.436-.194c.136-.148.132-.427.132-.427s-.02-1.304.587-1.496c.598-.188 1.368 1.259 2.184 1.814.616.42 1.084.328 1.084.328l2.178-.03s1.14-.071.6-.964c-.045-.073-.32-.659-1.644-1.864-1.386-1.262-1.2-1.058.468-3.243.834-1.093 1.168-1.76 1.064-2.045-.1-.272-.708-.2-.708-.2h-2.476s-.184-.025-.32.056c-.133.08-.219.266-.219.266s-.392 1.044-.916 1.932c-1.104 1.872-1.546 1.972-1.728 1.856-.424-.272-.318-1.092-.318-1.674 0-1.82.276-2.58-.536-2.778-.27-.066-.468-.11-1.156-.116-.882-.01-1.628.002-2.05.209-.282.138-.498.444-.366.462.164.022.534.1.73.366.254.344.244 1.116.244 1.116s.146 2.14-.34 2.404c-.332.182-.788-.19-1.768-1.892-.502-.872-.882-1.836-.882-1.836s-.074-.18-.204-.276c-.158-.118-.378-.156-.378-.156h-2.354s-.354.01-.484.164c-.116.138-.01.422-.01.422s1.838 4.3 3.92 6.468c1.908 1.988 4.072 1.858 4.072 1.858h.98Z"/></svg>',
+  telegram: '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0h-.056Zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635Z"/></svg>',
+}
+
+const socialLinks = computed(() => {
+  const items = pd.socials || []
+  return items.map(s => ({ ...s, icon: socialIconSvgs[s.icon] || socialIconSvgs.vk }))
+})
+
+const contactBullets = computed(() => pd.contact_bullets || [])
+
+const programCitiesRaw = computed(() => pd.program_cities || [])
+const programYears = computed(() => programCitiesRaw.value.map(g => g.year).sort((a, b) => b - a))
+const activeCitiesYear = ref(null)
+const currentActiveCitiesYear = computed(() => activeCitiesYear.value ?? programYears.value[0] ?? new Date().getFullYear())
+const programCitiesByYear = computed(() => {
+  const map = {}
+  programCitiesRaw.value.forEach(g => { map[g.year] = g.cities })
+  return map
+})
+
+const programResultsRaw = computed(() => pd.program_results || [])
+const resultYears = computed(() => programResultsRaw.value.map(g => g.year).sort((a, b) => b - a))
+const activeResultsYear = ref(null)
+const currentActiveResultsYear = computed(() => activeResultsYear.value ?? resultYears.value[0] ?? new Date().getFullYear())
+const programResultsByYear = computed(() => {
+  const map = {}
+  programResultsRaw.value.forEach(g => { map[g.year] = g.results })
+  return map
+})
 
 const vshgrHref = computed(() => {
   if (page.props.auth?.user) {
@@ -1038,24 +1080,6 @@ const flashSuccess = computed(() => page.props.flash?.success ?? null)
 
 const videoSlider = ref(null)
 const activeVideo = ref(null)
-
-const videoItems = [
-  {
-    title: 'Гостеприимные города Росатома — о программе',
-    thumbnail: 'https://optim.tildacdn.com/tild3561-3633-4131-b363-376163356263/-/format/webp/1.jpg.webp',
-    embedUrl: 'https://vk.com/video_ext.php?oid=-200000000&id=456239000&hd=2',
-  },
-  {
-    title: 'Туры возможностей — как это было',
-    thumbnail: 'https://optim.tildacdn.com/tild3863-6639-4539-b162-373464633166/-/format/webp/1.jpg.webp',
-    embedUrl: 'https://vk.com/video_ext.php?oid=-200000000&id=456239001&hd=2',
-  },
-  {
-    title: 'Атомные города — жизнь и перспективы',
-    thumbnail: 'https://optim.tildacdn.com/tild6135-3663-4432-b634-646662353234/-/format/webp/1.jpg.webp',
-    embedUrl: 'https://vk.com/video_ext.php?oid=-200000000&id=456239002&hd=2',
-  },
-]
 
 function scrollVideos(direction) {
   if (!videoSlider.value) return
@@ -1071,103 +1095,6 @@ function openVideoModal(video) {
 function closeVideoModal() {
   activeVideo.value = null
 }
-
-const programStages = [
-  {
-    step: 'Этап 1',
-    title: 'Исследования туристического потенциала атомных городов',
-    description: 'Работе с конкретным городом предшествует комплексное исследование: опросы, интервью и анализ потенциала развития.',
-    image: 'https://optim.tildacdn.com/tild3561-3633-4131-b363-376163356263/-/format/webp/1.jpg.webp',
-    buttonLabel: 'Перейти к исследованиям',
-    href: route('research.index'),
-  },
-  {
-    step: 'Этап 2',
-    title: 'Развитие гостеприимной инфраструктуры',
-    description: 'Формируются решения по улучшению городской среды, точек притяжения и сервисов для туристов в атомных городах.',
-    image: 'https://optim.tildacdn.com/tild6135-3663-4432-b634-646662353234/-/format/webp/1.jpg.webp',
-    buttonLabel: 'Скоро',
-    href: null,
-  },
-  {
-    step: 'Этап 3',
-    title: 'Повышение компетенций муниципалитетов',
-    description: 'Муниципальные команды усиливают навыки управления, проектирования и продвижения туристических инициатив.',
-    image: 'https://optim.tildacdn.com/tild3436-3139-4265-b636-396532643735/-/format/webp/1.jpg.webp',
-    buttonLabel: 'Скоро',
-    href: null,
-  },
-  {
-    step: 'Этап 4',
-    title: 'Туры возможностей в атомные города',
-    description: 'Итоговый этап программы: запуск маршрутов и форматов посещения, объединяющих ключевые возможности городов.',
-    image: 'https://optim.tildacdn.com/tild3863-6639-4539-b162-373464633166/-/format/webp/1.jpg.webp',
-    buttonLabel: 'Перейти к турам возможностей',
-    href: route('opportunity-tours.index'),
-  },
-]
-
-const cityBenefits = [
-  {
-    title: 'Комплексное исследование сферы досуга, отдыха жителей и\u00a0потенциала туристической привлекательности',
-    image: 'https://optim.tildacdn.com/tild6664-3264-4361-b931-346231303464/-/cover/720x540/center/center/-/format/webp/1.png.webp',
-  },
-  {
-    title: 'Дополнительное профессиональное образование муниципальной команды, консультации и\u00a0работа с\u00a0лучшими экспертами отрасли',
-    image: 'https://optim.tildacdn.com/tild3863-3563-4136-b466-323864396336/-/cover/720x540/center/center/-/format/webp/3.png.webp',
-  },
-  {
-    title: 'Гостеприимный акселератор с\u00a0грантовой поддержкой для предпринимателей, формирование турпродуктов',
-    image: 'https://optim.tildacdn.com/tild3563-6634-4434-a636-326235366563/-/cover/720x540/center/center/-/format/webp/5.png.webp',
-  },
-  {
-    title: 'Подбор инвестиционной программы и\u00a0мер поддержки. Привлечение финансирования из\u00a0региональных и\u00a0федеральных программ',
-    image: 'https://optim.tildacdn.com/tild6563-3138-4264-a135-303834396533/-/cover/720x540/center/center/-/format/webp/4.png.webp',
-  },
-  {
-    title: 'Формирование гостеприимной среды: создание сообщества, улучшение качества досуга жителей и\u00a0гостей, развитие инфраструктуры',
-    image: 'https://optim.tildacdn.com/tild3236-3264-4364-b236-343862356166/-/cover/720x540/center/center/-/format/webp/6.png.webp',
-  },
-  {
-    title: 'Популяризация турпродуктов города на\u00a0региональном и\u00a0федеральном уровнях: таргетированный турпоток\u00a0— потенциальные сотрудники предприятий и\u00a0жители атомных городов',
-    image: 'https://optim.tildacdn.com/tild6563-3764-4766-a536-313239376436/-/cover/720x540/center/center/-/format/webp/_3.png.webp',
-  },
-]
-
-const additionalInitiatives = [
-  {
-    title: 'Формирование сети домашних горнолыжных баз',
-    image: 'https://optim.tildacdn.com/tild3431-3935-4066-b135-653938383231/-/cover/520x600/center/center/-/format/webp/___.jpg.webp',
-  },
-  {
-    title: 'Создание сети туристических клубов в\u00a0атомных городах',
-    image: 'https://optim.tildacdn.com/tild3832-6433-4266-a161-653737316164/-/cover/520x600/center/center/-/format/webp/__.jpg.webp',
-  },
-  {
-    title: 'Автомобильный туризм',
-    image: 'https://optim.tildacdn.com/tild3832-3365-4235-b838-666561363566/-/cover/520x600/center/center/-/format/webp/_.jpg.webp',
-  },
-  {
-    title: 'Гастротуризм',
-    image: 'https://optim.tildacdn.com/tild6232-3331-4662-a434-393066303162/-/cover/520x600/center/center/-/format/webp/photo.jpg.webp',
-  },
-  {
-    title: 'Водный туризм',
-    image: 'https://optim.tildacdn.com/tild3233-3564-4030-a332-346562636263/-/cover/520x600/center/center/-/format/webp/_.jpg.webp',
-  },
-  {
-    title: 'Создание сети экологичных «АТОМотелей»',
-    image: 'https://optim.tildacdn.com/tild6632-6637-4131-b030-633935333233/-/cover/520x600/center/center/-/format/webp/photo.jpg.webp',
-  },
-  {
-    title: 'Создание сувенирной линейки атомных городов',
-    image: 'https://optim.tildacdn.com/tild6166-3735-4531-b561-376461343161/-/cover/520x600/center/center/-/format/webp/__.jpg.webp',
-  },
-  {
-    title: 'Интеграция сферы развития туризма, досуга и\u00a0гостеприимства в\u00a0мастер-планы городов',
-    image: 'https://optim.tildacdn.com/tild6264-6338-4836-b264-653765373538/-/cover/520x600/center/center/-/format/webp/__-_.jpg.webp',
-  },
-]
 
 const sortedTimelineEvents = computed(() => {
   const raw = props.timelineEvents || []
@@ -1195,8 +1122,8 @@ const statCards = computed(() => [
     icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5" /></svg>',
   },
   {
-    value: '3000+',
-    label: 'Гостей',
+    value: pd.stats_guests_value || '3000+',
+    label: pd.stats_guests_label || 'Гостей',
     icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>',
   },
 ])
@@ -1217,46 +1144,6 @@ function submitContact() {
     },
   })
 }
-
-const contactItems = [
-  {
-    label: 'Телефон',
-    value: '+7 (495) 668-28-83',
-    href: 'tel:+74956682883',
-    icon: '<svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>',
-  },
-  {
-    label: 'E-mail',
-    value: 'info@gostepr.ru',
-    href: 'mailto:info@gostepr.ru',
-    icon: '<svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>',
-  },
-  {
-    label: 'Адрес',
-    value: 'Москва, ул. Большая Ордынка, 24',
-    href: null,
-    icon: '<svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>',
-  },
-  {
-    label: 'Время работы',
-    value: 'Пн — Пт, 9:00 — 18:00',
-    href: null,
-    icon: '<svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>',
-  },
-]
-
-const socialLinks = [
-  {
-    label: 'VK',
-    href: 'https://vk.com/gostepr',
-    icon: '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.785 16.241s.288-.032.436-.194c.136-.148.132-.427.132-.427s-.02-1.304.587-1.496c.598-.188 1.368 1.259 2.184 1.814.616.42 1.084.328 1.084.328l2.178-.03s1.14-.071.6-.964c-.045-.073-.32-.659-1.644-1.864-1.386-1.262-1.2-1.058.468-3.243.834-1.093 1.168-1.76 1.064-2.045-.1-.272-.708-.2-.708-.2h-2.476s-.184-.025-.32.056c-.133.08-.219.266-.219.266s-.392 1.044-.916 1.932c-1.104 1.872-1.546 1.972-1.728 1.856-.424-.272-.318-1.092-.318-1.674 0-1.82.276-2.58-.536-2.778-.27-.066-.468-.11-1.156-.116-.882-.01-1.628.002-2.05.209-.282.138-.498.444-.366.462.164.022.534.1.73.366.254.344.244 1.116.244 1.116s.146 2.14-.34 2.404c-.332.182-.788-.19-1.768-1.892-.502-.872-.882-1.836-.882-1.836s-.074-.18-.204-.276c-.158-.118-.378-.156-.378-.156h-2.354s-.354.01-.484.164c-.116.138-.01.422-.01.422s1.838 4.3 3.92 6.468c1.908 1.988 4.072 1.858 4.072 1.858h.98Z"/></svg>',
-  },
-  {
-    label: 'Telegram',
-    href: 'https://t.me/gostepr',
-    icon: '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0h-.056Zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635Z"/></svg>',
-  },
-]
 
 function stripHtml(html) {
   if (!html) return ''
