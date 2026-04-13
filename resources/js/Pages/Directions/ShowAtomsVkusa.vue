@@ -2,23 +2,24 @@
   <MainLayout>
     <Head :title="content.hero_title || direction.title" />
 
-    <!-- Hero -->
-    <section
-      class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-24 text-white sm:px-6 lg:px-8"
-      :style="content.hero_image ? { backgroundImage: `url(${content.hero_image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}"
+    <HeroSection
+      :title="content.hero_title || direction.title"
+      :description="content.hero_description || direction.description"
+      :bg-image="content.hero_image || direction.hero_bg_image"
+      :bg-image-inline="!!(content.hero_image || direction.hero_bg_image)"
+      :bg-color-from="direction.hero_bg_color_from"
+      :bg-color-via="direction.hero_bg_color_via"
+      :bg-color-to="direction.hero_bg_color_to"
+      :text-color="direction.hero_text_color"
+      :bg-color-enabled="!!direction.hero_bg_color_enabled"
+      centered
+      size="lg"
     >
-      <div v-if="content.hero_image" class="absolute inset-0 bg-[#003274]/70" />
-      <div class="relative mx-auto max-w-7xl text-center">
-        <h1 class="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">{{ content.hero_title || direction.title }}</h1>
-        <p v-if="content.hero_description || direction.description" class="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-white/85">
-          {{ content.hero_description || direction.description }}
-        </p>
-        <button type="button" class="mt-8 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-[#003274] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl" @click="scrollTo('application')">
-          Подать заявку
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
-        </button>
-      </div>
-    </section>
+      <button type="button" class="mt-8 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-[#003274] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl" @click="scrollTo('application')">
+        Подать заявку
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
+      </button>
+    </HeroSection>
 
     <!-- Поднаправления (скрыт по запросу заказчика) -->
     <section v-if="false && direction.sub_directions?.length" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
@@ -488,6 +489,7 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import HeroSection from '@/Components/shared/HeroSection.vue'
 import Modal from '@/Components/Modal.vue'
 import FormRenderer from '@/Components/FormRenderer.vue'
 

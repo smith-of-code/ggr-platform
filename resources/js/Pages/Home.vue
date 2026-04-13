@@ -1,52 +1,44 @@
 <template>
   <MainLayout>
     <div>
-      <!-- Hero -->
-      <section class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-24 text-white sm:px-6 sm:py-32 lg:px-8 lg:py-40">
-        <img
-          src="/images/unsplash/hero-bg.jpg"
-          alt=""
-          class="absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-luminosity"
-        />
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.1),transparent_70%)]" />
-        <div class="relative mx-auto max-w-7xl text-center">
-          <h1 class="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Гостеприимные города<br class="hidden sm:block" /> Росатома
-          </h1>
-          <p class="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/85">
-            Цифровая экосистема для развития туристического, образовательного и предпринимательского потенциала атомных городов
-          </p>
-          <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              :href="route('tours.index')"
-              class="group rounded-xl bg-white px-8 py-3.5 font-semibold text-[#003274] shadow-lg shadow-black/10 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
-            >
-              Выбрать тур
-              <span class="ml-1 inline-block transition group-hover:translate-x-1">&rarr;</span>
-            </Link>
-            <Link
-              :href="route('cities.index')"
-              class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
-            >
-              Города
-            </Link>
-            <a
-              v-if="page.props.auth?.user && isLmsFullPageUrl(vshgrHref)"
-              :href="vshgrHref"
-              class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
-            >
-              ВШГР
-            </a>
-            <Link
-              v-else-if="page.props.auth?.user"
-              :href="vshgrHref"
-              class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
-            >
-              ВШГР
-            </Link>
-          </div>
+      <HeroSection
+        description="Цифровая экосистема для развития туристического, образовательного и предпринимательского потенциала атомных городов"
+        bg-image="/images/unsplash/hero-bg.jpg"
+        overlay
+        centered
+        size="lg"
+      >
+        <template #title>Гостеприимные города<br class="hidden sm:block" /> Росатома</template>
+        <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <Link
+            :href="route('tours.index')"
+            class="group rounded-xl bg-white px-8 py-3.5 font-semibold text-[#003274] shadow-lg shadow-black/10 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+          >
+            Выбрать тур
+            <span class="ml-1 inline-block transition group-hover:translate-x-1">&rarr;</span>
+          </Link>
+          <Link
+            :href="route('cities.index')"
+            class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+          >
+            Города
+          </Link>
+          <a
+            v-if="page.props.auth?.user && isLmsFullPageUrl(vshgrHref)"
+            :href="vshgrHref"
+            class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+          >
+            ВШГР
+          </a>
+          <Link
+            v-else-if="page.props.auth?.user"
+            :href="vshgrHref"
+            class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+          >
+            ВШГР
+          </Link>
         </div>
-      </section>
+      </HeroSection>
 
       <!-- Stats -->
       <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -510,6 +502,7 @@ import { computed, ref } from 'vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
 import { isLmsFullPageUrl } from '@/composables/useLmsFullPageNav'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import HeroSection from '@/Components/shared/HeroSection.vue'
 import YandexCityMap from '@/Components/YandexCityMap.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 

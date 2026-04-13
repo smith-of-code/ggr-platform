@@ -13,6 +13,46 @@
           <RInput v-model="form.hero_title" label="Заголовок *" :error="form.errors.hero_title" />
           <RInput v-model="form.hero_description" label="Описание *" :error="form.errors.hero_description" />
         </div>
+        <div class="mt-4">
+          <RInput v-model="form.hero_bg_image" label="Фоновое изображение (URL)" :error="form.errors.hero_bg_image" />
+        </div>
+        <p class="mt-4 text-xs text-gray-500">Градиент фона: начало, середина (необязательно), конец.</p>
+        <div class="mt-2 grid gap-4 sm:grid-cols-3">
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (from)</label>
+            <div class="flex items-center gap-3">
+              <input type="color" v-model="form.hero_bg_color_from" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+              <RInput v-model="form.hero_bg_color_from" placeholder="#003274" class="flex-1" />
+            </div>
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (via)</label>
+            <div class="flex items-center gap-3">
+              <input type="color" v-model="form.hero_bg_color_via" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+              <RInput v-model="form.hero_bg_color_via" placeholder="#025ea1" class="flex-1" />
+            </div>
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (to)</label>
+            <div class="flex items-center gap-3">
+              <input type="color" v-model="form.hero_bg_color_to" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+              <RInput v-model="form.hero_bg_color_to" placeholder="#0277bd" class="flex-1" />
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет текста</label>
+            <div class="flex items-center gap-3">
+              <input type="color" v-model="form.hero_text_color" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+              <RInput v-model="form.hero_text_color" placeholder="#ffffff" class="flex-1" />
+            </div>
+          </div>
+          <div class="flex items-center gap-3 pt-6">
+            <RCheckbox v-model="form.hero_bg_color_enabled" />
+            <span class="text-sm font-medium text-gray-700">Использовать свой градиент (вместо стандартного)</span>
+          </div>
+        </div>
       </RCard>
 
       <!-- Stats -->
@@ -284,6 +324,7 @@ const emotionIconMap = Object.fromEntries(
 const socialIconOptions = [
   { value: 'vk', label: 'ВКонтакте' },
   { value: 'telegram', label: 'Telegram' },
+  { value: 'max', label: 'Max' },
   { value: 'youtube', label: 'YouTube' },
   { value: 'rutube', label: 'Рутьюб' },
   { value: 'ok', label: 'Одноклассники' },
@@ -326,6 +367,12 @@ const d = props.pageData
 const form = useForm({
   hero_title: d.hero_title ?? 'Туры возможностей',
   hero_description: d.hero_description ?? '',
+  hero_bg_image: d.hero_bg_image ?? '',
+  hero_bg_color_from: d.hero_bg_color_from ?? '',
+  hero_bg_color_via: d.hero_bg_color_via ?? '',
+  hero_bg_color_to: d.hero_bg_color_to ?? '',
+  hero_text_color: d.hero_text_color ?? '',
+  hero_bg_color_enabled: Boolean(Number(d.hero_bg_color_enabled ?? 0)),
   stats: d.stats ?? [{ value: '', label: '' }],
   emotions: d.emotions ?? [{ icon: 'heart', count: '', label: '' }],
   partners: d.partners ?? [{ name: '', url: '', logo: '' }],

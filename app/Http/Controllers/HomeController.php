@@ -46,11 +46,17 @@ class HomeController extends Controller
             'block_order', 'program_stages', 'program_cities', 'program_results',
             'city_benefits', 'additional_initiatives', 'videos',
             'contact_bullets', 'contacts', 'socials', 'section_titles',
+            'stats_cards',
         ];
 
         $data = [];
         foreach ($defaults as $key => $value) {
             $data[$key] = $raw[$key] ?? $value;
+        }
+        foreach ($raw as $key => $value) {
+            if (!array_key_exists($key, $data)) {
+                $data[$key] = $value;
+            }
         }
         foreach ($jsonKeys as $key) {
             if (isset($raw[$key])) {

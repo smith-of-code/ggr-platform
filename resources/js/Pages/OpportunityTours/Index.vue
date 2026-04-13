@@ -2,23 +2,29 @@
   <MainLayout>
     <Head :title="heroTitle" />
 
-    <!-- Цифры проекта -->
-    <section class="bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-20 text-white sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-7xl text-center">
-        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">{{ heroTitle }}</h1>
-        <p class="mx-auto mt-4 max-w-2xl text-lg text-white/80">{{ heroDescription }}</p>
-        <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div
-            v-for="stat in statsData"
-            :key="stat.label"
-            class="rounded-2xl bg-white/10 px-6 py-8 backdrop-blur-sm transition hover:bg-white/15"
-          >
-            <p class="text-4xl font-bold">{{ stat.value }}</p>
-            <p class="mt-2 text-sm text-white/70">{{ stat.label }}</p>
-          </div>
+    <HeroSection
+      :title="heroTitle"
+      :description="heroDescription"
+      :bg-image="d.hero_bg_image"
+      :bg-image-inline="!!d.hero_bg_image"
+      :bg-color-from="d.hero_bg_color_from"
+      :bg-color-via="d.hero_bg_color_via"
+      :bg-color-to="d.hero_bg_color_to"
+      :text-color="d.hero_text_color"
+      :bg-color-enabled="Boolean(Number(d.hero_bg_color_enabled))"
+      centered
+    >
+      <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          v-for="stat in statsData"
+          :key="stat.label"
+          class="rounded-2xl bg-white/10 px-6 py-8 backdrop-blur-sm transition hover:bg-white/15"
+        >
+          <p class="text-4xl font-bold">{{ stat.value }}</p>
+          <p class="mt-2 text-sm text-white/70">{{ stat.label }}</p>
         </div>
       </div>
-    </section>
+    </HeroSection>
 
     <!-- Проекты программы -->
     <section class="bg-white px-4 py-16 sm:px-6 lg:px-8">
@@ -434,6 +440,7 @@
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import HeroSection from '@/Components/shared/HeroSection.vue'
 import { emotionIcon, socialIcon } from '@/utils/opportunityToursIcons'
 
 const props = defineProps({

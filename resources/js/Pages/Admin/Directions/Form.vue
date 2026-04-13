@@ -39,6 +39,51 @@
         </div>
       </RCard>
 
+      <!-- Hero-блок -->
+      <RCard elevation="raised">
+        <div class="space-y-6">
+          <h2 class="text-base font-bold text-gray-900">Настройки Hero-блока</h2>
+          <p class="text-sm text-gray-500">Градиент фона задаётся тремя цветами: начало, середина (необязательно) и конец.</p>
+          <div class="grid gap-5 sm:grid-cols-3">
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (from)</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_bg_color_from" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_bg_color_from" placeholder="#003274" class="flex-1" />
+              </div>
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (via)</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_bg_color_via" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_bg_color_via" placeholder="#025ea1" class="flex-1" />
+              </div>
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (to)</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_bg_color_to" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_bg_color_to" placeholder="#0277bd" class="flex-1" />
+              </div>
+            </div>
+          </div>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет текста</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_text_color" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_text_color" placeholder="#ffffff" class="flex-1" />
+              </div>
+            </div>
+            <ImageUploadCrop v-model="form.hero_bg_image" label="Фоновое изображение" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="directions" :entity-type="mediaEntityType" :entity-id="mediaEntityId" :skip-crop="true" preview-class="h-32 w-full object-cover" />
+          </div>
+          <div class="flex items-center gap-3">
+            <RCheckbox v-model="form.hero_bg_color_enabled" />
+            <span class="text-sm font-medium text-gray-700">Использовать свой градиент (вместо стандартного)</span>
+          </div>
+        </div>
+      </RCard>
+
       <!-- Поднаправления -->
       <RCard elevation="raised">
         <div class="space-y-6">
@@ -204,6 +249,12 @@ const form = useForm({
   slug: props.direction?.slug ?? '',
   description: props.direction?.description ?? '',
   image: props.direction?.image ?? '',
+  hero_bg_color_from: props.direction?.hero_bg_color_from ?? '',
+  hero_bg_color_via: props.direction?.hero_bg_color_via ?? '',
+  hero_bg_color_to: props.direction?.hero_bg_color_to ?? '',
+  hero_text_color: props.direction?.hero_text_color ?? '',
+  hero_bg_image: props.direction?.hero_bg_image ?? '',
+  hero_bg_color_enabled: Boolean(props.direction?.hero_bg_color_enabled ?? false),
   project_key: props.direction?.project_key ?? '',
   sub_directions_title: props.direction?.sub_directions_title ?? '',
   sub_directions_description: props.direction?.sub_directions_description ?? '',

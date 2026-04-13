@@ -2,14 +2,7 @@
   <MainLayout>
     <Head :title="d.hero_title || 'Исследования'" />
 
-    <!-- Hero -->
-    <section class="bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-20 text-white sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-7xl">
-        <p class="reveal text-sm font-semibold uppercase tracking-widest text-white/60">{{ d.hero_title }}</p>
-        <h1 class="reveal mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">{{ d.hero_subtitle }}</h1>
-        <p class="reveal mt-6 max-w-3xl text-lg leading-relaxed text-white/80">{{ d.hero_description }}</p>
-      </div>
-    </section>
+    <HeroSection :eyebrow="d.hero_title" :title="d.hero_subtitle" :description="d.hero_description" />
 
     <!-- Tasks -->
     <section v-if="d.tasks?.length" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
@@ -235,6 +228,7 @@
 import { ref } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import HeroSection from '@/Components/shared/HeroSection.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
 useScrollReveal()

@@ -25,6 +25,7 @@ class MainPageController extends Controller
         'contacts',
         'socials',
         'section_titles',
+        'stats_cards',
     ];
 
     public function __construct(
@@ -57,6 +58,11 @@ class MainPageController extends Controller
             'hero_title' => 'required|string|max:255',
             'hero_description' => 'required|string|max:1000',
             'hero_bg_image' => 'nullable|string|max:500',
+            'hero_bg_color_from' => 'nullable|string|max:20',
+            'hero_bg_color_via' => 'nullable|string|max:20',
+            'hero_bg_color_to' => 'nullable|string|max:20',
+            'hero_text_color' => 'nullable|string|max:20',
+            'hero_bg_color_enabled' => 'boolean',
 
             'program_stages' => 'nullable|array',
             'program_stages.*.step' => 'required|string|max:50',
@@ -97,8 +103,11 @@ class MainPageController extends Controller
             'moving_title' => 'required|string|max:255',
             'moving_description' => 'required|string|max:1000',
 
-            'stats_guests_value' => 'required|string|max:50',
-            'stats_guests_label' => 'required|string|max:100',
+            'stats_cards' => 'nullable|array',
+            'stats_cards.*.icon' => 'required|string|max:50',
+            'stats_cards.*.label' => 'required|string|max:100',
+            'stats_cards.*.source' => 'required|string|in:cities,tours,events,custom',
+            'stats_cards.*.value' => 'nullable|string|max:100',
 
             'cta_title' => 'required|string|max:255',
             'cta_description' => 'required|string|max:1000',
@@ -125,6 +134,8 @@ class MainPageController extends Controller
             'block_order.*.id' => 'required|string|max:50',
             'block_order.*.enabled' => 'required|boolean',
         ]);
+
+        $validated['hero_bg_color_enabled'] = $request->boolean('hero_bg_color_enabled') ? '1' : '0';
 
         $values = [];
         foreach ($validated as $key => $value) {
@@ -162,12 +173,27 @@ class MainPageController extends Controller
         ];
     }
 
+    public static function defaultStatsCards(): array
+    {
+        return [
+            ['icon' => 'building', 'label' => 'Атомных городов', 'source' => 'cities', 'value' => ''],
+            ['icon' => 'map', 'label' => 'Туров возможностей', 'source' => 'tours', 'value' => ''],
+            ['icon' => 'calendar', 'label' => 'Событий в хронологии', 'source' => 'events', 'value' => ''],
+            ['icon' => 'users', 'label' => 'Гостей', 'source' => 'custom', 'value' => '3000+'],
+        ];
+    }
+
     public static function defaults(): array
     {
         return [
             'hero_title' => 'Гостеприимные города Росатома',
             'hero_description' => 'Цифровая экосистема для развития туристического, образовательного и предпринимательского потенциала атомных городов',
             'hero_bg_image' => '/images/unsplash/hero-bg.jpg',
+            'hero_bg_color_from' => '',
+            'hero_bg_color_via' => '',
+            'hero_bg_color_to' => '',
+            'hero_text_color' => '',
+            'hero_bg_color_enabled' => '0',
             'moving_title' => 'Переезжаем',
             'moving_description' => 'Узнайте о возможностях переезда в атомные города — программа поддержки, условия и перспективы',
             'cta_title' => 'Хотите узнать подробнее о программе?',
@@ -175,8 +201,6 @@ class MainPageController extends Controller
             'contact_title' => 'Хочу узнать подробнее',
             'contact_description' => 'Заполните форму — мы ответим на вопросы о турах, городах и возможностях программы',
             'contact_left_text' => 'Команда проекта поможет подобрать маршрут, расскажет о датах и условиях участия.',
-            'stats_guests_value' => '3000+',
-            'stats_guests_label' => 'Гостей',
             'program_results_image' => 'https://optim.tildacdn.com/tild3735-3663-4333-b331-333938383739/-/format/webp/Mask_group.png.webp',
         ];
     }

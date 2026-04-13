@@ -69,6 +69,12 @@ class OpportunityToursPageController extends Controller
         $validated = $request->validate([
             'hero_title' => 'required|string|max:255',
             'hero_description' => 'required|string|max:1000',
+            'hero_bg_image' => 'nullable|string|max:500',
+            'hero_bg_color_from' => 'nullable|string|max:20',
+            'hero_bg_color_via' => 'nullable|string|max:20',
+            'hero_bg_color_to' => 'nullable|string|max:20',
+            'hero_text_color' => 'nullable|string|max:20',
+            'hero_bg_color_enabled' => 'boolean',
 
             'stats' => 'required|array|min:1',
             'stats.*.value' => 'required|string|max:50',
@@ -122,6 +128,8 @@ class OpportunityToursPageController extends Controller
                 array_filter($validated['featured_tour_ids'], fn ($id) => in_array($id, $existingIds, true))
             );
         }
+
+        $validated['hero_bg_color_enabled'] = $request->boolean('hero_bg_color_enabled') ? '1' : '0';
 
         $values = [];
         foreach ($validated as $key => $value) {

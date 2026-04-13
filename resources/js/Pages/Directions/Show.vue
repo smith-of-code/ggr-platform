@@ -2,15 +2,17 @@
   <MainLayout>
     <Head :title="direction.title" />
 
-    <!-- Hero -->
-    <section class="bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-20 text-white sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-7xl">
-        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">{{ direction.title }}</h1>
-        <p v-if="direction.description" class="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-white/80">
-          {{ direction.description }}
-        </p>
-      </div>
-    </section>
+    <HeroSection
+      :title="direction.title"
+      :description="direction.description"
+      :bg-image="direction.hero_bg_image"
+      :bg-image-inline="!!direction.hero_bg_image"
+      :bg-color-from="direction.hero_bg_color_from"
+      :bg-color-via="direction.hero_bg_color_via"
+      :bg-color-to="direction.hero_bg_color_to"
+      :text-color="direction.hero_text_color"
+      :bg-color-enabled="!!direction.hero_bg_color_enabled"
+    />
 
     <!-- Поднаправления -->
     <section v-if="direction.sub_directions?.length" class="bg-white px-4 py-16 sm:px-6 lg:px-8">
@@ -254,6 +256,7 @@
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import HeroSection from '@/Components/shared/HeroSection.vue'
 import Modal from '@/Components/Modal.vue'
 import FormRenderer from '@/Components/FormRenderer.vue'
 

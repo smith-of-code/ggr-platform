@@ -2,22 +2,19 @@
   <MainLayout>
     <Head title="ВШГР — образовательные программы" />
 
-    <!-- Hero -->
-    <section class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#024a8f] to-[#003274] text-white">
-      <div class="absolute inset-0 opacity-10">
-        <div class="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white blur-3xl" />
-        <div class="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-sky-300 blur-3xl" />
-      </div>
-      <div class="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-        <p class="text-sm font-semibold uppercase tracking-widest text-white/70">{{ pageData.hero_eyebrow }}</p>
-        <h1 class="mt-3 max-w-4xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-          {{ pageData.hero_title }}
-        </h1>
-        <p class="mt-6 max-w-2xl text-lg leading-relaxed text-white/90">
-          {{ pageData.hero_description }}
-        </p>
-      </div>
-    </section>
+    <HeroSection
+      :eyebrow="pageData.hero_eyebrow"
+      :title="pageData.hero_title"
+      :description="pageData.hero_description"
+      size="sm"
+    >
+      <template #decorations>
+        <div class="absolute inset-0 opacity-10">
+          <div class="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white blur-3xl" />
+          <div class="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-sky-300 blur-3xl" />
+        </div>
+      </template>
+    </HeroSection>
 
     <div class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <!-- Catalog -->
@@ -270,6 +267,7 @@
 import { computed, ref } from 'vue'
 import { Link, Head, useForm } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import HeroSection from '@/Components/shared/HeroSection.vue'
 import { socialIcon } from '@/utils/opportunityToursIcons'
 
 const props = defineProps({

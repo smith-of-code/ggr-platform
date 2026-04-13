@@ -38,6 +38,7 @@ class DirectionController extends Controller
         $validated = $this->validateDirection($request);
         $validated['slug'] = $this->uniqueSlug(Direction::class, $validated['title'], $validated['slug'] ?? null);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['hero_bg_color_enabled'] = $request->boolean('hero_bg_color_enabled');
 
         Direction::create($validated);
 
@@ -59,6 +60,7 @@ class DirectionController extends Controller
         $validated = $this->validateDirection($request);
         $validated['slug'] = $this->uniqueSlug(Direction::class, $validated['title'], $validated['slug'] ?? null, $direction->id);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['hero_bg_color_enabled'] = $request->boolean('hero_bg_color_enabled');
 
         $direction->update($validated);
 
@@ -93,6 +95,12 @@ class DirectionController extends Controller
             'slug' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|string',
+            'hero_bg_color_from' => 'nullable|string|max:20',
+            'hero_bg_color_via' => 'nullable|string|max:20',
+            'hero_bg_color_to' => 'nullable|string|max:20',
+            'hero_text_color' => 'nullable|string|max:20',
+            'hero_bg_image' => 'nullable|string|max:500',
+            'hero_bg_color_enabled' => 'boolean',
             'project_key' => 'nullable|string|in:start_atomgrad,atoms_vkusa,llr',
             'sub_directions_title' => 'nullable|string|max:255',
             'sub_directions_description' => 'nullable|string',

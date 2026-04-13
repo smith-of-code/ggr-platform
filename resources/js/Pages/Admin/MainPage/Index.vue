@@ -74,6 +74,43 @@
               <RInput v-model="form.hero_bg_image" label="Фоновое изображение (URL)" :error="form.errors.hero_bg_image" />
             </div>
             <RInput v-model="form.hero_description" label="Описание *" :error="form.errors.hero_description" />
+            <p class="text-xs text-gray-500">Градиент фона: начало, середина (необязательно), конец.</p>
+            <div class="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (from)</label>
+                <div class="flex items-center gap-3">
+                  <input type="color" v-model="form.hero_bg_color_from" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                  <RInput v-model="form.hero_bg_color_from" placeholder="#003274" class="flex-1" />
+                </div>
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (via)</label>
+                <div class="flex items-center gap-3">
+                  <input type="color" v-model="form.hero_bg_color_via" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                  <RInput v-model="form.hero_bg_color_via" placeholder="#025ea1" class="flex-1" />
+                </div>
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (to)</label>
+                <div class="flex items-center gap-3">
+                  <input type="color" v-model="form.hero_bg_color_to" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                  <RInput v-model="form.hero_bg_color_to" placeholder="#0277bd" class="flex-1" />
+                </div>
+              </div>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет текста</label>
+                <div class="flex items-center gap-3">
+                  <input type="color" v-model="form.hero_text_color" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                  <RInput v-model="form.hero_text_color" placeholder="#ffffff" class="flex-1" />
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <RCheckbox v-model="form.hero_bg_color_enabled" />
+              <span class="text-sm font-medium text-gray-700">Использовать свой градиент (вместо стандартного)</span>
+            </div>
           </template>
 
           <template v-else-if="block.id === 'program_stages'">
@@ -196,11 +233,46 @@
           </template>
 
           <template v-else-if="block.id === 'stats'">
-            <p class="text-xs text-gray-500">Остальные счётчики (города, туры, события) рассчитываются автоматически из БД.</p>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <RInput v-model="form.stats_guests_value" label="Значение *" placeholder="3000+" :error="form.errors.stats_guests_value" />
-              <RInput v-model="form.stats_guests_label" label="Подпись *" placeholder="Гостей" :error="form.errors.stats_guests_label" />
+            <div
+              v-for="(card, ci) in form.stats_cards"
+              :key="ci"
+              class="rounded-lg border border-gray-100 bg-gray-50/60 p-4"
+            >
+              <div class="mb-3 flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">Карточка {{ ci + 1 }}</span>
+                <button
+                  v-if="form.stats_cards.length > 1"
+                  type="button"
+                  class="text-xs text-red-500 hover:text-red-700"
+                  @click="form.stats_cards.splice(ci, 1)"
+                >Удалить</button>
+              </div>
+              <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600">Иконка</label>
+                  <IconPicker v-model="card.icon" />
+                </div>
+                <RInput v-model="card.label" label="Подпись *" placeholder="Атомных городов" />
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-gray-600">Источник</label>
+                  <select
+                    v-model="card.source"
+                    class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-[#003274] focus:ring-1 focus:ring-[#003274]/20"
+                  >
+                    <option value="cities">Города (авто)</option>
+                    <option value="tours">Туры (авто)</option>
+                    <option value="events">Хронология (авто)</option>
+                    <option value="custom">Своё значение</option>
+                  </select>
+                </div>
+                <RInput v-if="card.source === 'custom'" v-model="card.value" label="Значение *" placeholder="3000+" />
+              </div>
             </div>
+            <button
+              type="button"
+              class="mt-2 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-500 transition hover:border-gray-400 hover:text-gray-700"
+              @click="form.stats_cards.push({ icon: 'star', label: '', source: 'custom', value: '' })"
+            >+ Добавить карточку</button>
           </template>
 
           <template v-else-if="block.id === 'cta'">
@@ -284,6 +356,7 @@ import { useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import SectionHeader from '@/Pages/Admin/OpportunityToursPage/SectionHeader.vue'
 import DynamicList from '@/Pages/Admin/OpportunityToursPage/DynamicList.vue'
+import IconPicker from '@/Components/IconPicker.vue'
 
 const props = defineProps({
   pageData: { type: Object, default: () => ({}) },
@@ -363,6 +436,11 @@ const form = useForm({
   hero_title: d.hero_title ?? 'Гостеприимные города Росатома',
   hero_description: d.hero_description ?? '',
   hero_bg_image: d.hero_bg_image ?? '',
+  hero_bg_color_from: d.hero_bg_color_from ?? '',
+  hero_bg_color_via: d.hero_bg_color_via ?? '',
+  hero_bg_color_to: d.hero_bg_color_to ?? '',
+  hero_text_color: d.hero_text_color ?? '',
+  hero_bg_color_enabled: Boolean(Number(d.hero_bg_color_enabled ?? 0)),
 
   program_stages: d.program_stages ?? [{ step: '', title: '', description: '', image: '', buttonLabel: 'Скоро', href: '' }],
   program_cities: d.program_cities ?? [{ year: new Date().getFullYear(), cities: [{ name: '', region: '', image: '' }] }],
@@ -376,8 +454,12 @@ const form = useForm({
   moving_title: d.moving_title ?? 'Переезжаем',
   moving_description: d.moving_description ?? '',
 
-  stats_guests_value: d.stats_guests_value ?? '3000+',
-  stats_guests_label: d.stats_guests_label ?? 'Гостей',
+  stats_cards: d.stats_cards?.length ? d.stats_cards : [
+    { icon: 'building', label: 'Атомных городов', source: 'cities', value: '' },
+    { icon: 'map', label: 'Туров возможностей', source: 'tours', value: '' },
+    { icon: 'calendar', label: 'Событий в хронологии', source: 'events', value: '' },
+    { icon: 'users', label: 'Гостей', source: 'custom', value: '3000+' },
+  ],
 
   cta_title: d.cta_title ?? '',
   cta_description: d.cta_description ?? '',

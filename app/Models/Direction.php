@@ -11,6 +11,12 @@ class Direction extends Model
         'slug',
         'description',
         'image',
+        'hero_bg_color_from',
+        'hero_bg_color_via',
+        'hero_bg_color_to',
+        'hero_text_color',
+        'hero_bg_image',
+        'hero_bg_color_enabled',
         'project_key',
         'sub_directions_title',
         'sub_directions_description',
@@ -34,6 +40,7 @@ class Direction extends Model
         'paid_participation_steps' => 'array',
         'featured_tour_ids' => 'array',
         'is_active' => 'boolean',
+        'hero_bg_color_enabled' => 'boolean',
     ];
 
     public function featuredTours()

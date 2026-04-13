@@ -99,6 +99,8 @@ class MainPageSeeder extends Seeder
                 ['label' => 'Telegram', 'href' => 'https://t.me/gostepr', 'icon' => 'telegram'],
             ],
 
+            'stats_cards' => MainPageController::defaultStatsCards(),
+
             'section_titles' => [
                 'program_stages' => ['title' => 'Этапы программы', 'subtitle' => ''],
                 'program_cities' => ['title' => 'Города программы', 'subtitle' => 'Города-участники программы «Гостеприимные города Росатома» по годам'],

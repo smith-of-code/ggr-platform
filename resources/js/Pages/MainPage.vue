@@ -1,52 +1,51 @@
 <template>
   <MainLayout>
     <div class="flex flex-col">
-      <!-- Hero -->
-      <section v-if="isBlockVisible('hero')" :style="blockStyle('hero')" class="relative overflow-hidden bg-gradient-to-br from-[#003274] via-[#025ea1] to-[#0277bd] px-4 py-24 text-white sm:px-6 sm:py-32 lg:px-8 lg:py-40">
-        <img
-          :src="pd.hero_bg_image || '/images/unsplash/hero-bg.jpg'"
-          alt=""
-          class="absolute inset-0 h-full w-full object-cover opacity-15 mix-blend-luminosity"
-        />
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.1),transparent_70%)]" />
-        <div class="relative mx-auto max-w-7xl text-center">
-          <h1 class="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            {{ pd.hero_title || 'Гостеприимные города Росатома' }}
-          </h1>
-          <p class="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/85">
-            {{ pd.hero_description || 'Цифровая экосистема для развития туристического, образовательного и предпринимательского потенциала атомных городов' }}
-          </p>
-          <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              :href="route('tours.index')"
-              class="group rounded-xl bg-white px-8 py-3.5 font-semibold text-[#003274] shadow-lg shadow-black/10 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
-            >
-              Выбрать тур
-              <span class="ml-1 inline-block transition group-hover:translate-x-1">&rarr;</span>
-            </Link>
-            <Link
-              :href="route('cities.index')"
-              class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
-            >
-              Города
-            </Link>
-            <a
-              v-if="page.props.auth?.user && isLmsFullPageUrl(vshgrHref)"
-              :href="vshgrHref"
-              class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
-            >
-              ВШГР
-            </a>
-            <Link
-              v-else-if="page.props.auth?.user"
-              :href="vshgrHref"
-              class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
-            >
-              ВШГР
-            </Link>
-          </div>
+      <HeroSection
+        v-if="isBlockVisible('hero')"
+        :style="blockStyle('hero')"
+        :title="pd.hero_title || 'Гостеприимные города Росатома'"
+        :description="pd.hero_description || 'Цифровая экосистема для развития туристического, образовательного и предпринимательского потенциала атомных городов'"
+        :bg-image="pd.hero_bg_image || '/images/unsplash/hero-bg.jpg'"
+        :bg-color-from="pd.hero_bg_color_from"
+        :bg-color-via="pd.hero_bg_color_via"
+        :bg-color-to="pd.hero_bg_color_to"
+        :text-color="pd.hero_text_color"
+        :bg-color-enabled="Boolean(Number(pd.hero_bg_color_enabled))"
+        overlay
+        centered
+        size="lg"
+      >
+        <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <Link
+            :href="route('tours.index')"
+            class="group rounded-xl bg-white px-8 py-3.5 font-semibold text-[#003274] shadow-lg shadow-black/10 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+          >
+            Выбрать тур
+            <span class="ml-1 inline-block transition group-hover:translate-x-1">&rarr;</span>
+          </Link>
+          <Link
+            :href="route('cities.index')"
+            class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+          >
+            Города
+          </Link>
+          <a
+            v-if="page.props.auth?.user && isLmsFullPageUrl(vshgrHref)"
+            :href="vshgrHref"
+            class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+          >
+            ВШГР
+          </a>
+          <Link
+            v-else-if="page.props.auth?.user"
+            :href="vshgrHref"
+            class="rounded-xl border-2 border-white/40 px-8 py-3.5 font-semibold text-white transition duration-300 hover:border-white/70 hover:bg-white/10"
+          >
+            ВШГР
+          </Link>
         </div>
-      </section>
+      </HeroSection>
 
       <!-- Program stages -->
       <section v-if="isBlockVisible('program_stages') && programStages.length" :style="blockStyle('program_stages')" class="bg-[#f3f4fa] px-4 py-20 sm:px-6 lg:px-8">
@@ -970,8 +969,10 @@ import { computed, ref } from 'vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
 import { isLmsFullPageUrl } from '@/composables/useLmsFullPageNav'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import HeroSection from '@/Components/shared/HeroSection.vue'
 import YandexCityMap from '@/Components/YandexCityMap.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
+import { getIconSvg } from '@/utils/iconLibrary'
 
 useScrollReveal()
 
@@ -1040,6 +1041,7 @@ const contactItems = computed(() => {
 const socialIconSvgs = {
   vk: '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.785 16.241s.288-.032.436-.194c.136-.148.132-.427.132-.427s-.02-1.304.587-1.496c.598-.188 1.368 1.259 2.184 1.814.616.42 1.084.328 1.084.328l2.178-.03s1.14-.071.6-.964c-.045-.073-.32-.659-1.644-1.864-1.386-1.262-1.2-1.058.468-3.243.834-1.093 1.168-1.76 1.064-2.045-.1-.272-.708-.2-.708-.2h-2.476s-.184-.025-.32.056c-.133.08-.219.266-.219.266s-.392 1.044-.916 1.932c-1.104 1.872-1.546 1.972-1.728 1.856-.424-.272-.318-1.092-.318-1.674 0-1.82.276-2.58-.536-2.778-.27-.066-.468-.11-1.156-.116-.882-.01-1.628.002-2.05.209-.282.138-.498.444-.366.462.164.022.534.1.73.366.254.344.244 1.116.244 1.116s.146 2.14-.34 2.404c-.332.182-.788-.19-1.768-1.892-.502-.872-.882-1.836-.882-1.836s-.074-.18-.204-.276c-.158-.118-.378-.156-.378-.156h-2.354s-.354.01-.484.164c-.116.138-.01.422-.01.422s1.838 4.3 3.92 6.468c1.908 1.988 4.072 1.858 4.072 1.858h.98Z"/></svg>',
   telegram: '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0h-.056Zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635Z"/></svg>',
+  max: '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 720 720"><path d="M350.4,9.6C141.8,20.5,4.1,184.1,12.8,390.4c3.8,90.3,40.1,168,48.7,253.7,2.2,22.2-4.2,49.6,21.4,59.3,31.5,11.9,79.8-8.1,106.2-26.4,9-6.1,17.6-13.2,24.2-22,27.3,18.1,53.2,35.6,85.7,43.4,143.1,34.3,299.9-44.2,369.6-170.3C799.6,291.2,622.5-4.6,350.4,9.6h0ZM269.4,504c-11.3,8.8-22.2,20.8-34.7,27.7-18.1,9.7-23.7-.4-30.5-16.4-21.4-50.9-24-137.6-11.5-190.9,16.8-72.5,72.9-136.3,150-143.1,78-6.9,150.4,32.7,183.1,104.2,72.4,159.1-112.9,316.2-256.4,218.6h0Z"/></svg>',
 }
 
 const socialLinks = computed(() => {
@@ -1105,28 +1107,27 @@ const sortedTimelineEvents = computed(() => {
 
 const timelineEventsCount = computed(() => (props.timelineEvents || []).length)
 
-const statCards = computed(() => [
-  {
-    value: props.stats?.cities ?? 0,
-    label: 'Атомных городов',
-    icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" /></svg>',
-  },
-  {
-    value: props.stats?.tours ?? 0,
-    label: 'Туров возможностей',
-    icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" /></svg>',
-  },
-  {
-    value: timelineEventsCount.value,
-    label: 'Событий в хронологии',
-    icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5" /></svg>',
-  },
-  {
-    value: pd.stats_guests_value || '3000+',
-    label: pd.stats_guests_label || 'Гостей',
-    icon: '<svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>',
-  },
-])
+const sourceValues = computed(() => ({
+  cities: props.stats?.cities ?? 0,
+  tours: props.stats?.tours ?? 0,
+  events: timelineEventsCount.value,
+}))
+
+const defaultStatsCards = [
+  { icon: 'building', label: 'Атомных городов', source: 'cities', value: '' },
+  { icon: 'map', label: 'Туров возможностей', source: 'tours', value: '' },
+  { icon: 'calendar', label: 'Событий в хронологии', source: 'events', value: '' },
+  { icon: 'users', label: 'Гостей', source: 'custom', value: '3000+' },
+]
+
+const statCards = computed(() => {
+  const cards = pd.stats_cards?.length ? pd.stats_cards : defaultStatsCards
+  return cards.map(c => ({
+    value: c.source === 'custom' ? (c.value || '') : (sourceValues.value[c.source] ?? 0),
+    label: c.label,
+    icon: getIconSvg(c.icon, 'h-6 w-6 text-[#003274]'),
+  }))
+})
 
 const contactForm = useForm({
   name: '',

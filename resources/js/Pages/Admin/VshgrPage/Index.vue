@@ -142,6 +142,7 @@ const props = defineProps({
 const socialIconOptions = [
   { value: 'vk', label: 'ВКонтакте' },
   { value: 'telegram', label: 'Telegram' },
+  { value: 'max', label: 'Max' },
   { value: 'youtube', label: 'YouTube' },
   { value: 'rutube', label: 'Рутьюб' },
   { value: 'ok', label: 'Одноклассники' },
