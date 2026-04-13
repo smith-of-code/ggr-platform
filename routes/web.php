@@ -39,12 +39,15 @@ use Illuminate\Support\Facades\Route;
 
 // ── Public portal (no auth required) ──
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/mainpage', [HomeController::class, 'mainpage'])->name('home.mainpage');
 Route::get('/cities', [CityController::class, 'index'])->name('cities.index');
 Route::get('/cities/{slug}', [CityController::class, 'show'])->name('cities.show');
 Route::get('/tours', [TourController::class, 'index'])->name('tours.index');
 Route::get('/tours/{slug}', [TourController::class, 'show'])->name('tours.show');
 Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
 Route::post('/contact', [HomeController::class, 'contactSubmit'])->name('contact.submit');
+
+Route::get('/moving', [HomeController::class, 'moving'])->name('moving');
 
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::post('/blog/subscribe', [BlogSubscriptionController::class, 'subscribe'])->name('blog.subscribe');

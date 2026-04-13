@@ -7,6 +7,7 @@
 | Метод | URI | Controller@action | Name |
 |-------|-----|-------------------|------|
 | GET | `/` | HomeController@index | home |
+| GET | `/mainpage` | HomeController@mainpage | home.mainpage |
 | GET | `/cities` | CityController@index | cities.index |
 | GET | `/cities/{slug}` | CityController@show | cities.show |
 | GET | `/tours` | TourController@index | tours.index |

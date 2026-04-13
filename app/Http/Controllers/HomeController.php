@@ -6,6 +6,7 @@ use App\Models\City;
 use App\Models\Consent;
 use App\Models\ContactSubmission;
 use App\Models\Favorite;
+use App\Models\Post;
 use App\Models\Recipe;
 use App\Models\TimelineEvent;
 use App\Models\Tour;
@@ -19,6 +20,21 @@ use Inertia\Response;
 class HomeController extends Controller
 {
     public function index(Request $request): Response
+    {
+        return Inertia::render('Home', $this->buildHomePageProps($request));
+    }
+
+    public function mainpage(Request $request): Response
+    {
+        return Inertia::render('MainPage', $this->buildHomePageProps($request));
+    }
+
+    public function moving(): Response
+    {
+        return Inertia::render('Moving');
+    }
+
+    private function buildHomePageProps(Request $request): array
     {
         $featuredTours = Tour::where('is_featured', true)
             ->where('is_active', true)
@@ -62,6 +78,16 @@ class HomeController extends Controller
                 ->get();
         }
 
+        $latestPosts = [];
+        if (Schema::hasTable('posts')) {
+            $latestPosts = Post::query()
+                ->where('is_published', true)
+                ->whereNotNull('published_at')
+                ->orderByDesc('published_at')
+                ->limit(3)
+                ->get(['id', 'title', 'slug', 'excerpt', 'image', 'category', 'published_at']);
+        }
+
         $userFavorites = null;
         if ($request->user() && Schema::hasTable('favorites')) {
             $userFavorites = [
@@ -78,7 +104,7 @@ class HomeController extends Controller
             ];
         }
 
-        return Inertia::render('Home', [
+        return [
             'featuredTours' => $featuredTours,
             'cities' => $cities,
             'allCities' => $allCities,
@@ -87,9 +113,10 @@ class HomeController extends Controller
                 'tours' => $toursCount,
             ],
             'latestRecipes' => $latestRecipes,
+            'latestPosts' => $latestPosts,
             'timelineEvents' => $timelineEvents,
             'userFavorites' => $userFavorites,
-        ]);
+        ];
     }
 
     public function contactSubmit(Request $request): RedirectResponse
