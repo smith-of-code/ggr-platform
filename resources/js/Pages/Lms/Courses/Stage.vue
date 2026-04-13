@@ -376,11 +376,34 @@ function handleVisibilityChange() {
   }
 }
 
+function rutubeEmbedFromStoredUrl(raw) {
+  if (!raw || !/rutube\.ru/i.test(raw)) return ''
+  if (raw.includes('rutube.ru/play/embed/')) return raw
+  try {
+    const u = new URL(raw, 'https://rutube.ru')
+    const path = u.pathname || ''
+    const privateMatch = path.match(/\/video\/private\/([a-zA-Z0-9_-]+)/)
+    if (privateMatch) {
+      const id = privateMatch[1]
+      const p = u.searchParams.get('p')
+      const base = `https://rutube.ru/play/embed/${id}/`
+      return p ? `${base}?p=${encodeURIComponent(p)}` : base
+    }
+    const publicMatch = path.match(/\/video\/(?!private\/)([a-zA-Z0-9_-]+)/)
+    if (publicMatch) {
+      return `https://rutube.ru/play/embed/${publicMatch[1]}`
+    }
+  } catch {
+    return ''
+  }
+  return ''
+}
+
 function getVideoEmbedUrl(block) {
   const url = block.video?.url || block.content || props.linkedVideo?.url || props.stage?.content
   if (!url) return ''
-  const rutube = url.match(/rutube\.ru\/video\/([a-zA-Z0-9]+)/)
-  if (rutube) return `https://rutube.ru/play/embed/${rutube[1]}`
+  const rutubeEmbed = rutubeEmbedFromStoredUrl(url)
+  if (rutubeEmbed) return rutubeEmbed
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\s]+)/)
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`
   if (url.startsWith('http')) return url
