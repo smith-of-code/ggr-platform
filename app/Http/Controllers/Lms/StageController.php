@@ -22,25 +22,24 @@ class StageController extends Controller
 {
     private function ensureSequentialAccess(LmsCourse $course, LmsCourseStage $stage): void
     {
-        if (!$course->sequential) {
+        if (! $course->sequential) {
             return;
         }
 
-        $previousStage = $course->stages()
-            ->where('position', '<', $stage->position)
-            ->orderByDesc('position')
-            ->first();
-
-        if (!$previousStage) {
+        $orderedIds = $course->stagesInCurriculumOrder()->pluck('id')->all();
+        $idx = array_search($stage->id, $orderedIds, true);
+        if ($idx === false || $idx === 0) {
             return;
         }
 
-        $previousCompleted = LmsStageProgress::where('lms_course_stage_id', $previousStage->id)
+        $previousStageId = $orderedIds[$idx - 1];
+
+        $previousCompleted = LmsStageProgress::where('lms_course_stage_id', $previousStageId)
             ->where('user_id', auth()->id())
             ->where('status', 'completed')
             ->exists();
 
-        if (!$previousCompleted) {
+        if (! $previousCompleted) {
             abort(403, 'Необходимо сначала завершить предыдущий этап.');
         }
     }
@@ -50,14 +49,27 @@ class StageController extends Controller
         if ($course->lms_event_id !== $event->id || $stage->lms_course_id !== $course->id) {
             abort(404);
         }
-        $this->ensureSequentialAccess($course, $stage);
+
         $user = auth()->user();
+        $course->loadMissing(['modules', 'stages']);
+
+        $availability = $course->stageAvailabilityForUser($user);
+        if (! ($availability[$stage->id] ?? false)) {
+            abort(403, 'Этот этап пока недоступен.');
+        }
+
+        $this->ensureSequentialAccess($course, $stage);
+
         $stage->load(['test', 'assignment', 'video', 'blocks.test', 'blocks.assignment', 'blocks.video']);
         $progress = LmsStageProgress::where('lms_course_stage_id', $stage->id)
             ->where('user_id', $user->id)
             ->first();
 
-        $allStages = $course->stages()->orderBy('position')->get(['id', 'title', 'type', 'position']);
+        $ordered = $course->stagesInCurriculumOrder();
+        $allStages = $ordered->map(fn (LmsCourseStage $s) => array_merge(
+            $s->only(['id', 'title', 'type', 'position']),
+            ['is_available' => (bool) ($availability[$s->id] ?? false)],
+        ))->values()->all();
 
         $blocks = $stage->blocks->map(function ($block) {
             return [
