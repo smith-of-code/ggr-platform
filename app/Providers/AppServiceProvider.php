@@ -92,7 +92,17 @@ class AppServiceProvider extends ServiceProvider
 
         $observer = app(LmsProgressObserver::class);
 
-        LmsStageProgress::updated(fn ($model) => $observer->stageCompleted($model));
+        LmsStageProgress::created(function (LmsStageProgress $model) use ($observer) {
+            if ($model->status === 'completed') {
+                $observer->maybeAwardModuleComplete($model);
+            }
+        });
+        LmsStageProgress::updated(function (LmsStageProgress $model) use ($observer) {
+            if ($model->status !== 'completed' || ! $model->wasChanged('status')) {
+                return;
+            }
+            $observer->maybeAwardModuleComplete($model);
+        });
         LmsCourseEnrollment::updated(fn ($model) => $observer->courseCompleted($model));
         LmsTestAttempt::updated(fn ($model) => $observer->testPassed($model));
         LmsAssignmentReview::created(fn ($model) => $observer->assignmentApproved($model));

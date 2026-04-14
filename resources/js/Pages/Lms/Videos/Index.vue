@@ -1,8 +1,8 @@
 <template>
   <LmsLayout :event="event" :user="page.props.user" :profile="page.props.profile">
-    <Head :title="`Лекции – ${event?.title || event?.name}`" />
+    <Head :title="`Видео – ${event?.title || event?.name}`" />
     <div class="space-y-6">
-      <h1 class="font-brand text-2xl font-bold text-gray-900">Лекции</h1>
+      <h1 class="font-brand text-2xl font-bold text-gray-900">Видеоматериалы</h1>
 
       <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
@@ -68,7 +68,7 @@
 
       <div v-if="!(videos?.data?.length || videos?.length)" class="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">
         <VideoCameraIcon class="mx-auto h-10 w-10 text-gray-300" />
-        <p class="mt-3 text-sm text-gray-400">Лекции не найдены</p>
+        <p class="mt-3 text-sm text-gray-400">Видеоматериалы не найдены</p>
       </div>
 
       <div v-if="items.last_page > 1" class="flex items-center justify-between">

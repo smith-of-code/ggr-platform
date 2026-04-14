@@ -109,7 +109,7 @@ const searchPlaceholder = computed(() => {
 })
 
 const blockTypeLabels = {
-  content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Лекции',
+  content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Лекция',
   workshop: 'Воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
 }
 const blockTypeBadges = {

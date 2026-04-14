@@ -513,7 +513,7 @@ onUnmounted(() => {
 
 function typeLabel(type) {
   const map = {
-    content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Лекции',
+    content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео',
     workshop: 'Воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
   }
   return map[type] || type || 'Контент'

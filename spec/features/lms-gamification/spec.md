@@ -58,7 +58,7 @@
 
 | Код действия | Описание | Триггер |
 |---|---|---|
-| `stage_complete` | Прохождение этапа курса | `LmsStageProgress::updated` → Observer |
+| `module_complete` | Завершение модуля (все этапы модуля `lms_course_modules` со статусом completed; этап без модуля считается модулем из одного этапа) | `LmsStageProgress::created` / `updated` → `LmsProgressObserver::maybeAwardModuleComplete` |
 | `course_complete` | Завершение курса | `LmsCourseEnrollment::updated` → Observer |
 | `test_pass` | Успешное прохождение теста | `LmsTestAttempt::created` → Observer |
 | `assignment_approved` | Одобрение задания | `LmsAssignmentReview::created` → Observer |
