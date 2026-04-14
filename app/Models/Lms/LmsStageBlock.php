@@ -24,12 +24,14 @@ class LmsStageBlock extends Model
         'lms_video_id',
         'position',
         'scheduled_at',
+        'scheduled_ends_at',
     ];
 
     protected function casts(): array
     {
         return [
             'scheduled_at' => 'datetime',
+            'scheduled_ends_at' => 'datetime',
         ];
     }
 

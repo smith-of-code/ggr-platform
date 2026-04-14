@@ -118,9 +118,10 @@ class CourseController extends Controller
 
         $mapStage = function ($stage) use ($stageProgress, $stageAvailability) {
             $progress = $stageProgress->get($stage->id);
-            $scheduledAt = $stage->blocks->whereNotNull('scheduled_at')->first()?->scheduled_at;
+            $schedBlock = $stage->blocks->first(fn ($b) => $b->scheduled_at !== null);
             $data = $stage->only(['id', 'title', 'description', 'type', 'position', 'is_locked', 'available_from', 'duration_minutes']);
-            $data['scheduled_at'] = $scheduledAt?->format('Y-m-d\TH:i:s');
+            $data['scheduled_at'] = $schedBlock?->scheduled_at?->format('Y-m-d\TH:i:s');
+            $data['scheduled_ends_at'] = $schedBlock?->scheduled_ends_at?->format('Y-m-d\TH:i:s');
             return [
                 'stage' => $data,
                 'progress' => $progress?->only(['status', 'completed_at', 'score']),

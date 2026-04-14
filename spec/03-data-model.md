@@ -634,6 +634,7 @@
 | lms_video_id | FK → lms_videos | nullable |
 | position | integer | |
 | scheduled_at | datetime | cast: datetime, nullable |
+| scheduled_ends_at | datetime | cast: datetime, nullable; время окончания для воркшопа/встреч |
 | timestamps | | |
 
 **Связи**: `stage()` BelongsTo LmsCourseStage, `test()` BelongsTo LmsTest, `assignment()` BelongsTo LmsAssignment, `video()` BelongsTo LmsVideo

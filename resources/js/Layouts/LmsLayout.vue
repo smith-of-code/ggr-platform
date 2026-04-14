@@ -174,7 +174,7 @@ const sidebarItems = computed(() => {
   if (mc.tests) items.push({ id: 'lms.tests', label: 'Тестирование', icon: icons.tests })
   if (mc.assignments) items.push({ id: 'lms.assignments', label: 'Задания', icon: icons.assignments })
   if (mc.leaderboard && gamificationEnabled.value) items.push({ id: 'lms.gamification.leaderboard', label: 'Рейтинг', icon: icons.leaderboard })
-  if (mc.videos) items.push({ id: 'lms.videos', label: 'Видеоматериалы', icon: icons.videos })
+  if (mc.videos) items.push({ id: 'lms.videos', label: 'Лекции', icon: icons.videos })
   if (mc.kb) items.push({ id: 'lms.kb', label: 'База знаний', icon: icons.kb })
   if (mc.materials) items.push({ id: 'lms.materials', label: 'Материалы', icon: icons.materials })
 

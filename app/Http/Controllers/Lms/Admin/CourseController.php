@@ -168,6 +168,8 @@ class CourseController extends Controller
                 'lms_test_id' => $b->lms_test_id,
                 'lms_assignment_id' => $b->lms_assignment_id,
                 'lms_video_id' => $b->lms_video_id,
+                'scheduled_at' => $b->scheduled_at?->format('Y-m-d\TH:i:s'),
+                'scheduled_ends_at' => $b->scheduled_ends_at?->format('Y-m-d\TH:i:s'),
                 'stage_title' => $b->stage?->title,
                 'course_title' => $b->stage?->course?->title,
                 'module_title' => $b->stage?->module?->title,
@@ -287,6 +289,7 @@ class CourseController extends Controller
             'content' => ['nullable', 'string'],
             'position' => ['nullable', 'integer'],
             'scheduled_at' => ['nullable', 'date'],
+            'scheduled_ends_at' => ['nullable', 'date'],
         ];
 
         $rules = [
@@ -440,6 +443,7 @@ class CourseController extends Controller
                     'content' => $block['content'] ?? null,
                     'position' => $block['position'] ?? $bIndex,
                     'scheduled_at' => $block['scheduled_at'] ?? null,
+                    'scheduled_ends_at' => $block['scheduled_ends_at'] ?? null,
                 ];
                 $this->applyBlockTypeFields($blockData, $block['type'] ?? 'content', $block['content'] ?? null);
 

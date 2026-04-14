@@ -304,6 +304,7 @@ function handleBlockSelect(block) {
     content: block.content ?? '',
     position: target.blocks.length,
     scheduled_at: normalizeScheduledAt(block.scheduled_at),
+    scheduled_ends_at: normalizeScheduledAt(block.scheduled_ends_at),
   })
 }
 
@@ -313,7 +314,7 @@ function normalizeScheduledAt(val) {
 }
 
 function emptyBlock() {
-  return { type: 'content', content: '', position: 0, scheduled_at: '' }
+  return { type: 'content', content: '', position: 0, scheduled_at: '', scheduled_ends_at: '' }
 }
 
 function emptyStage() {
@@ -332,9 +333,10 @@ function stageBlocksFromServer(s) {
       content: b.content ?? '',
       position: b.position ?? 0,
       scheduled_at: normalizeScheduledAt(b.scheduled_at),
+      scheduled_ends_at: normalizeScheduledAt(b.scheduled_ends_at),
     }))
   }
-  return [{ type: s.type || 'content', content: s.content ?? '', position: 0, scheduled_at: '' }]
+  return [{ type: s.type || 'content', content: s.content ?? '', position: 0, scheduled_at: '', scheduled_ends_at: '' }]
 }
 
 function buildModules() {

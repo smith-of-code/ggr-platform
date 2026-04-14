@@ -108,13 +108,19 @@ const searchPlaceholder = computed(() => {
   return 'Название этапа...'
 })
 
-const blockTypeLabels = { content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео' }
+const blockTypeLabels = {
+  content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Лекции',
+  workshop: 'Воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
+}
 const blockTypeBadges = {
   content: 'bg-blue-100 text-blue-700',
   scorm: 'bg-purple-100 text-purple-700',
   test: 'bg-amber-100 text-amber-700',
   assignment: 'bg-green-100 text-green-700',
   video: 'bg-rose-100 text-rose-700',
+  workshop: 'bg-violet-100 text-violet-700',
+  city_meeting: 'bg-teal-100 text-teal-700',
+  curator_meeting: 'bg-amber-100 text-amber-800',
 }
 
 function blockTypeLabel(type) { return blockTypeLabels[type] || type }

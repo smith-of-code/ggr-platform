@@ -59,7 +59,7 @@ const menuSections = [
   { key: 'tests', label: 'Тестирование' },
   { key: 'assignments', label: 'Задания' },
   { key: 'leaderboard', label: 'Рейтинг' },
-  { key: 'videos', label: 'Видеоматериалы' },
+  { key: 'videos', label: 'Лекции' },
   { key: 'kb', label: 'База знаний' },
   { key: 'materials', label: 'Материалы' },
 ]

@@ -178,7 +178,7 @@
                     <span>{{ stageTypeLabel(item.stage.type) }}</span>
                     <span v-if="item.stage.scheduled_at" class="flex items-center gap-1">
                       <CalendarIcon class="h-3 w-3" />
-                      {{ formatScheduleDate(item.stage.scheduled_at) }}
+                      {{ formatStageSchedule(item.stage) }}
                     </span>
                     <span v-if="item.stage.duration_minutes">~{{ item.stage.duration_minutes }} мин</span>
                     <span v-if="item.stage.available_from && !item.is_available">
@@ -220,7 +220,7 @@
                   <span>{{ stageTypeLabel(item.stage.type) }}</span>
                   <span v-if="item.stage.scheduled_at" class="flex items-center gap-1">
                     <CalendarIcon class="h-3 w-3" />
-                    {{ formatScheduleDate(item.stage.scheduled_at) }}
+                    {{ formatStageSchedule(item.stage) }}
                   </span>
                   <span v-if="item.stage.duration_minutes">~{{ item.stage.duration_minutes }} мин</span>
                 </div>
@@ -334,8 +334,8 @@ function stageTypeIcon(type) {
 
 function stageTypeLabel(type) {
   return {
-    content: 'Теория', video: 'Видео', test: 'Тест', assignment: 'Задание', scorm: 'SCORM',
-    workshop: 'Живой воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
+    content: 'Теория', video: 'Лекции', test: 'Тест', assignment: 'Задание', scorm: 'SCORM',
+    workshop: 'Воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
   }[type] || 'Урок'
 }
 
@@ -361,5 +361,19 @@ function formatScheduleDate(d) {
     opts.minute = '2-digit'
   }
   return date.toLocaleDateString('ru-RU', opts)
+}
+
+function formatStageSchedule(stage) {
+  if (!stage?.scheduled_at) return ''
+  if (!stage.scheduled_ends_at) return formatScheduleDate(stage.scheduled_at)
+  const d1 = new Date(stage.scheduled_at)
+  const d2 = new Date(stage.scheduled_ends_at)
+  if (d1.toDateString() === d2.toDateString()) {
+    const datePart = d1.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+    const t1 = d1.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+    const t2 = d2.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+    return `${datePart}, ${t1}–${t2}`
+  }
+  return `${formatScheduleDate(stage.scheduled_at)} — ${formatScheduleDate(stage.scheduled_ends_at)}`
 }
 </script>

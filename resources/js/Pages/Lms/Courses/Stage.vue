@@ -126,7 +126,7 @@
                       'text-teal-600': block.type === 'city_meeting',
                       'text-amber-600': block.type === 'curator_meeting',
                     }">
-                      {{ formatScheduleDate(block.scheduled_at) }}
+                      {{ formatBlockSchedule(block) }}
                     </p>
                   </div>
                 </div>
@@ -513,8 +513,8 @@ onUnmounted(() => {
 
 function typeLabel(type) {
   const map = {
-    content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео',
-    workshop: 'Живой воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
+    content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Лекции',
+    workshop: 'Воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
   }
   return map[type] || type || 'Контент'
 }
@@ -530,6 +530,23 @@ function formatScheduleDate(dateStr) {
   }
   const formatted = d.toLocaleString('ru-RU', opts)
   return hasTime ? formatted.replace(',', ' в') : formatted
+}
+
+function formatBlockSchedule(block) {
+  if (!block.scheduled_at) return ''
+  if (!block.scheduled_ends_at) return formatScheduleDate(block.scheduled_at)
+  const d1 = new Date(block.scheduled_at)
+  const d2 = new Date(block.scheduled_ends_at)
+  const sameDay = d1.toDateString() === d2.toDateString()
+  const dateOpts = { day: 'numeric', month: 'long', year: 'numeric' }
+  const timeOpts = { hour: '2-digit', minute: '2-digit' }
+  if (sameDay) {
+    const datePart = d1.toLocaleDateString('ru-RU', dateOpts)
+    const t1 = d1.toLocaleTimeString('ru-RU', timeOpts)
+    const t2 = d2.toLocaleTimeString('ru-RU', timeOpts)
+    return `${datePart}, ${t1}–${t2}`
+  }
+  return `${formatScheduleDate(block.scheduled_at)} — ${formatScheduleDate(block.scheduled_ends_at)}`
 }
 
 function typeBadgeVariant(type) {
