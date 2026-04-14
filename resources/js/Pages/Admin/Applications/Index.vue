@@ -350,7 +350,7 @@ function statusLabel(s) {
 }
 
 function typeLabel(t) {
-  return { tour: 'Тур', research: 'Исследование', program_info: 'Информация' }[t] || t
+  return { tour: 'Тур', research: 'Исследование', program_info: 'Узнать подробнее' }[t] || t
 }
 
 function typeClass(t) {
@@ -368,6 +368,7 @@ function dataKeyLabel(key) {
     organization: 'Организация',
     topic: 'Тема',
     question: 'Вопрос',
+    message: 'Сообщение',
   }[key] || key
 }
 

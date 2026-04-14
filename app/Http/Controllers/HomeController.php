@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Admin\MainPageController;
+use App\Models\Application;
 use App\Models\City;
 use App\Models\Consent;
 use App\Models\ContactSubmission;
@@ -16,6 +17,7 @@ use App\Services\SettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -163,31 +165,62 @@ class HomeController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'phone' => 'nullable|string|max:50',
+            'email' => 'required|email:rfc,dns',
+            'phone' => 'required|string|max:50',
             'message' => 'required|string|max:5000',
             'consent' => ['accepted'],
         ], [
+            'email.email' => 'Введите корректный email-адрес.',
+            'phone.required' => 'Введите номер телефона.',
             'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
         ]);
 
-        if (!Schema::hasTable('contact_submissions')) {
-            return back()->with('success', 'Сообщение отправлено.');
-        }
+        $validated['phone'] = self::normalizePhone($validated['phone']);
 
-        ContactSubmission::query()->create([
+        Application::create([
+            'type' => 'program_info',
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? null,
-            'message' => $validated['message'],
-            'source' => 'home_contact',
+            'phone' => $validated['phone'],
+            'data' => ['message' => $validated['message']],
+            'status' => 'new',
         ]);
+
+        if (Schema::hasTable('contact_submissions')) {
+            ContactSubmission::query()->create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'message' => $validated['message'],
+                'source' => 'home_contact',
+            ]);
+        }
 
         ConsentService::log($request, Consent::TYPE_CONTACT_FORM, [
             'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? null,
+            'phone' => $validated['phone'],
         ]);
 
         return back()->with('success', 'Сообщение отправлено. Мы свяжемся с вами в ближайшее время.');
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private static function normalizePhone(string $value): string
+    {
+        $digits = preg_replace('/\D/', '', $value);
+
+        if (str_starts_with($digits, '8') && strlen($digits) === 11) {
+            $digits = '7' . substr($digits, 1);
+        }
+
+        if (!preg_match('/^7\d{10}$/', $digits)) {
+            throw ValidationException::withMessages([
+                'phone' => 'Введите корректный номер телефона в формате +7 (XXX) XXX-XX-XX',
+            ]);
+        }
+
+        return '+' . $digits;
     }
 }

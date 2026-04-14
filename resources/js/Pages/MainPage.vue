@@ -1041,14 +1041,18 @@
               </ul>
             </div>
             <div class="rounded-2xl border border-white/15 bg-white/10 p-6 shadow-2xl shadow-black/20 backdrop-blur-md sm:p-8">
-              <div
-                v-if="flashSuccess"
-                role="status"
-                class="mb-6 rounded-xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-3 text-sm text-emerald-50"
-              >
-                {{ flashSuccess }}
+              <div v-if="contactSent" class="flex flex-col items-center justify-center py-10 text-center">
+                <div class="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
+                  <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                </div>
+                <h3 class="mb-2 text-xl font-bold text-white">Сообщение отправлено!</h3>
+                <p class="max-w-xs text-sm text-white/80">
+                  Спасибо за обращение. Мы свяжемся с вами в ближайшее время.
+                </p>
               </div>
-              <form class="space-y-4" @submit.prevent="submitContact">
+              <form v-else class="space-y-4" @submit.prevent="submitContact">
                 <div>
                   <label for="contact-name" class="mb-1.5 block text-xs font-medium text-white/80">Имя</label>
                   <input
@@ -1081,9 +1085,11 @@
                     id="contact-phone"
                     v-model="contactForm.phone"
                     type="tel"
+                    required
                     autocomplete="tel"
                     class="w-full rounded-xl border border-white/20 bg-white/95 px-4 py-2.5 text-gray-900 shadow-inner outline-none ring-[#003274]/30 transition placeholder:text-gray-400 focus:border-white focus:ring-2"
-                    placeholder="+7 …"
+                    placeholder="+7 (XXX) XXX-XX-XX"
+                    @input="formatPhone"
                   />
                   <p v-if="contactForm.errors.phone" class="mt-1 text-xs text-amber-200">{{ contactForm.errors.phone }}</p>
                 </div>
@@ -1361,6 +1367,8 @@ const statCards = computed(() => {
   }))
 })
 
+const contactSent = ref(false)
+
 const contactForm = useForm({
   name: '',
   email: '',
@@ -1369,11 +1377,37 @@ const contactForm = useForm({
   consent: false,
 })
 
+function formatPhone() {
+  let digits = contactForm.phone.replace(/\D/g, '')
+  if (digits.startsWith('8') && digits.length > 1) {
+    digits = '7' + digits.slice(1)
+  }
+  if (!digits.startsWith('7') && digits.length > 0) {
+    digits = '7' + digits
+  }
+  let formatted = ''
+  if (digits.length > 0) formatted = '+' + digits.slice(0, 1)
+  if (digits.length > 1) formatted += ' (' + digits.slice(1, 4)
+  if (digits.length > 4) formatted += ') ' + digits.slice(4, 7)
+  if (digits.length > 7) formatted += '-' + digits.slice(7, 9)
+  if (digits.length > 9) formatted += '-' + digits.slice(9, 11)
+  contactForm.phone = formatted
+}
+
 function submitContact() {
+  contactForm.clearErrors()
+
+  const phoneDigits = contactForm.phone.replace(/\D/g, '')
+  if (!phoneDigits.match(/^7\d{10}$/)) {
+    contactForm.setError('phone', 'Введите корректный номер телефона в формате +7 (XXX) XXX-XX-XX')
+    return
+  }
+
   contactForm.post(route('contact.submit'), {
     preserveScroll: true,
     onSuccess: () => {
       contactForm.reset()
+      contactSent.value = true
     },
   })
 }
