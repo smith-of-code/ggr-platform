@@ -2,8 +2,9 @@
 
 namespace Tests\Feature\Lms;
 
+use App\Models\Lms\LmsCourse;
+use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
-use App\Models\Lms\LmsGroup;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsVideo;
 use App\Models\User;
@@ -20,8 +21,8 @@ class VideoPermissionsTest extends TestCase
      *     event: LmsEvent,
      *     admin: User,
      *     participant: User,
-     *     groupA: LmsGroup,
-     *     groupB: LmsGroup,
+     *     courseA: LmsCourse,
+     *     courseB: LmsCourse,
      *     vAll: LmsVideo,
      *     vA: LmsVideo,
      *     vB: LmsVideo
@@ -50,16 +51,29 @@ class VideoPermissionsTest extends TestCase
             'role' => 'participant',
         ]);
 
-        $groupA = LmsGroup::create([
+        $suffix = uniqid();
+        $courseA = LmsCourse::create([
             'lms_event_id' => $event->id,
-            'title' => 'Program A',
+            'title' => 'Course A',
+            'slug' => 'course-a-'.$suffix,
+            'sequential' => false,
+            'is_active' => true,
+            'position' => 1,
         ]);
-        $groupB = LmsGroup::create([
+        $courseB = LmsCourse::create([
             'lms_event_id' => $event->id,
-            'title' => 'Program B',
+            'title' => 'Course B',
+            'slug' => 'course-b-'.$suffix,
+            'sequential' => false,
+            'is_active' => true,
+            'position' => 2,
         ]);
 
-        $groupA->members()->attach($participant->id);
+        LmsCourseEnrollment::create([
+            'lms_course_id' => $courseA->id,
+            'user_id' => $participant->id,
+            'status' => 'enrolled',
+        ]);
 
         $vAll = LmsVideo::create([
             'lms_event_id' => $event->id,
@@ -78,7 +92,7 @@ class VideoPermissionsTest extends TestCase
             'is_active' => true,
             'visible_to_all' => false,
         ]);
-        $vA->groups()->attach($groupA->id);
+        $vA->courses()->attach($courseA->id);
 
         $vB = LmsVideo::create([
             'lms_event_id' => $event->id,
@@ -88,27 +102,27 @@ class VideoPermissionsTest extends TestCase
             'is_active' => true,
             'visible_to_all' => false,
         ]);
-        $vB->groups()->attach($groupB->id);
+        $vB->courses()->attach($courseB->id);
 
-        return compact('event', 'admin', 'participant', 'groupA', 'groupB', 'vAll', 'vA', 'vB');
+        return compact('event', 'admin', 'participant', 'courseA', 'courseB', 'vAll', 'vA', 'vB');
     }
 
-    public function test_admin_store_requires_program_when_not_visible_to_all(): void
+    public function test_admin_store_requires_course_when_not_visible_to_all(): void
     {
         extract($this->fixtures());
 
         $this->actingAs($admin)
             ->post(route('lms.admin.videos.store', $event->slug), [
-                'title' => 'No programs',
+                'title' => 'No courses',
                 'url' => 'https://www.youtube.com/watch?v=x',
                 'visible_to_all' => false,
-                'group_ids' => [],
+                'course_ids' => [],
                 'is_active' => true,
             ])
-            ->assertSessionHasErrors('group_ids');
+            ->assertSessionHasErrors('course_ids');
     }
 
-    public function test_admin_store_visible_to_all_creates_without_group_links(): void
+    public function test_admin_store_visible_to_all_creates_without_course_links(): void
     {
         extract($this->fixtures());
 
@@ -117,7 +131,7 @@ class VideoPermissionsTest extends TestCase
                 'title' => 'Everyone',
                 'url' => 'https://www.youtube.com/watch?v=y',
                 'visible_to_all' => true,
-                'group_ids' => [],
+                'course_ids' => [],
                 'is_active' => true,
             ])
             ->assertRedirect();
@@ -125,10 +139,10 @@ class VideoPermissionsTest extends TestCase
         $video = LmsVideo::where('title', 'Everyone')->first();
         $this->assertNotNull($video);
         $this->assertTrue($video->visible_to_all);
-        $this->assertSame(0, $video->groups()->count());
+        $this->assertSame(0, $video->courses()->count());
     }
 
-    public function test_participant_default_index_excludes_other_program_only_videos(): void
+    public function test_participant_default_index_excludes_other_course_only_videos(): void
     {
         extract($this->fixtures());
 
@@ -140,11 +154,11 @@ class VideoPermissionsTest extends TestCase
                 ->has('videos.data', 2));
     }
 
-    public function test_participant_index_filtered_by_program_b_shows_b_without_membership(): void
+    public function test_participant_index_filtered_by_course_b_shows_b_without_enrollment(): void
     {
         extract($this->fixtures());
 
-        $url = route('lms.videos.index', $event->slug).'?lms_group_id='.$groupB->id;
+        $url = route('lms.videos.index', $event->slug).'?lms_course_id='.$courseB->id;
 
         $this->actingAs($participant)
             ->get($url)
@@ -155,7 +169,7 @@ class VideoPermissionsTest extends TestCase
                 ->where('videos.data.0.id', $vB->id));
     }
 
-    public function test_participant_can_show_video_of_program_without_membership(): void
+    public function test_participant_can_show_video_of_course_without_enrollment(): void
     {
         extract($this->fixtures());
 

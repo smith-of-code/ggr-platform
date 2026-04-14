@@ -68,4 +68,10 @@ class LmsCourse extends Model
     {
         return $this->belongsToMany(LmsRole::class, 'lms_course_role_access', 'lms_course_id', 'lms_role_id');
     }
+
+    /** @return BelongsToMany<LmsVideo> */
+    public function videos(): BelongsToMany
+    {
+        return $this->belongsToMany(LmsVideo::class, 'lms_video_course_access', 'lms_course_id', 'lms_video_id');
+    }
 }

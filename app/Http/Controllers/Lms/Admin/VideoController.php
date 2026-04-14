@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Lms\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
-use App\Models\Lms\LmsGroup;
+use App\Models\Lms\LmsCourse;
 use App\Models\Lms\LmsVideo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +18,7 @@ class VideoController extends Controller
 {
     public function index(LmsEvent $event): Response
     {
-        $videos = $event->videos()->with('groups')->orderBy('created_at', 'desc')->paginate(15);
+        $videos = $event->videos()->with('courses')->orderBy('created_at', 'desc')->paginate(15);
 
         return Inertia::render('Lms/Admin/Videos/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -28,19 +28,19 @@ class VideoController extends Controller
 
     public function create(LmsEvent $event): Response
     {
-        $groups = $event->groups()->orderBy('title')->get(['id', 'title']);
+        $eventCourses = $event->courses()->orderBy('title')->get(['id', 'title']);
 
         return Inertia::render('Lms/Admin/Videos/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'video' => null,
-            'groups' => $groups,
+            'eventCourses' => $eventCourses,
         ]);
     }
 
     public function store(Request $request, LmsEvent $event): RedirectResponse
     {
         $validated = $this->validateVideo($request);
-        [$visibleToAll, $groupIds] = $this->normalizeVideoAccess($request, $event);
+        [$visibleToAll, $courseIds] = $this->normalizeVideoAccess($request, $event);
 
         $validated['lms_event_id'] = $event->id;
         $validated['visible_to_all'] = $visibleToAll;
@@ -51,7 +51,7 @@ class VideoController extends Controller
         $validated['thumbnail'] = $this->resolveThumbnail($request, $validated['url'] ?? null);
 
         $video = LmsVideo::create($validated);
-        $video->groups()->sync($groupIds);
+        $video->courses()->sync($courseIds);
 
         return redirect()->route('lms.admin.videos.index', $event)->with('success', 'Видео создано');
     }
@@ -60,13 +60,13 @@ class VideoController extends Controller
     {
         $this->ensureVideoBelongsToEvent($video, $event);
 
-        $video->load('groups');
-        $groups = $event->groups()->orderBy('title')->get(['id', 'title']);
+        $video->load('courses');
+        $eventCourses = $event->courses()->orderBy('title')->get(['id', 'title']);
 
         return Inertia::render('Lms/Admin/Videos/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'video' => $video,
-            'groups' => $groups,
+            'eventCourses' => $eventCourses,
         ]);
     }
 
@@ -75,7 +75,7 @@ class VideoController extends Controller
         $this->ensureVideoBelongsToEvent($video, $event);
 
         $validated = $this->validateVideo($request);
-        [$visibleToAll, $groupIds] = $this->normalizeVideoAccess($request, $event);
+        [$visibleToAll, $courseIds] = $this->normalizeVideoAccess($request, $event);
 
         $validated['visible_to_all'] = $visibleToAll;
         $validated['is_recording'] = $request->boolean('is_recording', false);
@@ -85,7 +85,7 @@ class VideoController extends Controller
         $validated['thumbnail'] = $this->resolveThumbnail($request, $validated['url'] ?? null, $video->thumbnail);
 
         $video->update($validated);
-        $video->groups()->sync($groupIds);
+        $video->courses()->sync($courseIds);
 
         return redirect()->route('lms.admin.videos.index', $event)->with('success', 'Видео обновлено');
     }
@@ -111,8 +111,8 @@ class VideoController extends Controller
             'thumbnail_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'remove_thumbnail' => ['nullable', 'boolean'],
             'visible_to_all' => ['sometimes', 'boolean'],
-            'group_ids' => ['nullable', 'array'],
-            'group_ids.*' => ['integer', 'exists:lms_groups,id'],
+            'course_ids' => ['nullable', 'array'],
+            'course_ids.*' => ['integer', 'exists:lms_courses,id'],
         ]);
     }
 
@@ -123,30 +123,30 @@ class VideoController extends Controller
     {
         $visibleToAll = $request->boolean('visible_to_all');
 
-        $rawIds = $request->input('group_ids', []);
+        $rawIds = $request->input('course_ids', []);
         if (! is_array($rawIds)) {
             $rawIds = [];
         }
-        $groupIds = array_values(array_unique(array_filter(array_map('intval', $rawIds))));
+        $courseIds = array_values(array_unique(array_filter(array_map('intval', $rawIds))));
 
         if ($visibleToAll) {
             return [true, []];
         }
 
-        if ($groupIds === []) {
+        if ($courseIds === []) {
             throw ValidationException::withMessages([
-                'group_ids' => ['Выберите хотя бы одну программу или отметьте «Всем пользователям».'],
+                'course_ids' => ['Выберите хотя бы одну учебную программу (курс) или отметьте «Всем пользователям».'],
             ]);
         }
 
-        $validCount = LmsGroup::where('lms_event_id', $event->id)->whereIn('id', $groupIds)->count();
-        if ($validCount !== count($groupIds)) {
+        $validCount = LmsCourse::where('lms_event_id', $event->id)->whereIn('id', $courseIds)->count();
+        if ($validCount !== count($courseIds)) {
             throw ValidationException::withMessages([
-                'group_ids' => ['Некорректный выбор программ.'],
+                'course_ids' => ['Некорректный выбор программ.'],
             ]);
         }
 
-        return [false, $groupIds];
+        return [false, $courseIds];
     }
 
     private function resolveThumbnail(Request $request, ?string $url, ?string $existing = null): ?string

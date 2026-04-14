@@ -16,12 +16,12 @@
           <label class="sr-only" for="video-program-filter">Программа</label>
           <select
             id="video-program-filter"
-            :value="filters?.lms_group_id != null && filters?.lms_group_id !== '' ? String(filters.lms_group_id) : ''"
+            :value="filters?.lms_course_id != null && filters?.lms_course_id !== '' ? String(filters.lms_course_id) : ''"
             class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
             @change="onProgramFilter"
           >
             <option value="">Все программы (по доступу)</option>
-            <option v-for="g in programFilterGroups" :key="g.id" :value="String(g.id)">{{ g.title }}</option>
+            <option v-for="c in programFilterCourses" :key="c.id" :value="String(c.id)">{{ c.title }}</option>
           </select>
         </div>
       </div>
@@ -100,7 +100,7 @@ const props = defineProps({
   user: { type: Object, default: () => ({}) },
   profile: { type: Object, default: () => ({}) },
   videos: { type: [Object, Array], default: () => [] },
-  programFilterGroups: { type: Array, default: () => [] },
+  programFilterCourses: { type: Array, default: () => [] },
   filters: { type: Object, default: () => ({}) },
 })
 
@@ -117,7 +117,7 @@ function debouncedSearch(e) {
   searchTimeout = setTimeout(() => {
     router.get(route('lms.videos.index', { event: props.event.slug }), {
       search: e.target.value || undefined,
-      lms_group_id: props.filters?.lms_group_id || undefined,
+      lms_course_id: props.filters?.lms_course_id || undefined,
     }, { preserveState: true })
   }, 400)
 }
@@ -126,7 +126,7 @@ function onProgramFilter(e) {
   const v = e.target.value
   router.get(route('lms.videos.index', { event: props.event.slug }), {
     search: props.filters?.search || undefined,
-    lms_group_id: v ? v : undefined,
+    lms_course_id: v ? v : undefined,
   }, { preserveState: true })
 }
 

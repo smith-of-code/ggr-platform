@@ -60,7 +60,7 @@ function visibilityLabel(v) {
   if (v.visible_to_all) {
     return 'Всем пользователям'
   }
-  const titles = (v.groups || []).map((g) => g.title).filter(Boolean)
+  const titles = (v.courses || []).map((c) => c.title).filter(Boolean)
   return titles.length ? titles.join(', ') : '—'
 }
 

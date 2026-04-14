@@ -141,20 +141,28 @@
           <p class="mb-3 text-sm font-medium text-gray-800">Кому показывать</p>
           <RCheckbox
             v-model="form.visible_to_all"
-            label="Всем пользователям (включая не записанных ни в одну программу)"
+            label="Всем пользователям (включая не записанных ни на один курс)"
           />
-          <p class="mb-3 mt-2 text-xs text-gray-500">Если снять галочку, отметьте хотя бы одну программу.</p>
-          <p class="mb-2 text-sm font-medium text-gray-700">Программы</p>
-          <div class="space-y-2" :class="form.visible_to_all ? 'pointer-events-none opacity-50' : ''">
-            <div v-for="g in groups" :key="g.id" class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-white" :class="form.group_ids.includes(g.id) ? 'bg-white ring-1 ring-rosatom-200' : ''">
+          <p class="mb-3 mt-2 text-xs text-gray-500">Если снять галочку, отметьте хотя бы одну учебную программу (курс).</p>
+          <p class="mb-1 text-sm font-medium text-gray-700">Учебные программы</p>
+          <p class="mb-3 text-xs text-gray-500">Те же курсы, что в разделе меню «Программы».</p>
+          <div v-if="!eventCourses.length" class="rounded-xl border border-dashed border-gray-300 bg-white/60 px-4 py-3 text-sm text-gray-600">
+            <p class="mb-2">Для этого события ещё нет ни одного курса — список пуст.</p>
+            <Link
+              :href="route('lms.admin.courses.index', event.slug)"
+              class="font-medium text-rosatom-600 hover:underline"
+            >Перейти в «Программы» и добавить</Link>
+          </div>
+          <div v-else class="space-y-2" :class="form.visible_to_all ? 'pointer-events-none opacity-50' : ''">
+            <div v-for="c in eventCourses" :key="c.id" class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-white" :class="form.course_ids.includes(c.id) ? 'bg-white ring-1 ring-rosatom-200' : ''">
               <RCheckbox
-                :model-value="form.group_ids.includes(g.id)"
-                @update:model-value="(v) => { if (v) { if (!form.group_ids.includes(g.id)) form.group_ids.push(g.id) } else { form.group_ids = form.group_ids.filter(id => id !== g.id) } }"
-                :label="g.title"
+                :model-value="form.course_ids.includes(c.id)"
+                @update:model-value="(v) => { if (v) { if (!form.course_ids.includes(c.id)) form.course_ids.push(c.id) } else { form.course_ids = form.course_ids.filter(id => id !== c.id) } }"
+                :label="c.title"
               />
             </div>
           </div>
-          <div v-if="form.errors.group_ids" class="mt-2 text-sm text-red-600">{{ form.errors.group_ids }}</div>
+          <div v-if="form.errors.course_ids" class="mt-2 text-sm text-red-600">{{ form.errors.course_ids }}</div>
         </div>
         <RCheckbox v-model="form.is_active" label="Активно" />
         <div class="flex gap-3 border-t border-gray-200 pt-6">
@@ -174,7 +182,12 @@ import { Link, useForm, router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
-const props = defineProps({ event: Object, video: Object, groups: Array })
+const props = defineProps({
+  event: Object,
+  video: Object,
+  /** Учебные программы события (LmsCourse), раздел «Программы» */
+  eventCourses: { type: Array, default: () => [] },
+})
 
 const isDragging = ref(false)
 const showUrlInput = ref(false)
@@ -193,7 +206,7 @@ const form = useForm({
   source: props.video?.source ?? '',
   url: props.video?.url ?? '',
   visible_to_all: props.video?.visible_to_all ?? true,
-  group_ids: props.video?.groups?.map(g => g.id) ?? [],
+  course_ids: props.video?.courses?.map(c => c.id) ?? [],
   is_active: props.video?.is_active ?? true,
   duration_seconds: props.video?.duration_seconds ?? null,
   thumbnail_file: null,
@@ -202,7 +215,7 @@ const form = useForm({
 
 watch(() => form.visible_to_all, (v) => {
   if (v) {
-    form.group_ids = []
+    form.course_ids = []
   }
 })
 
