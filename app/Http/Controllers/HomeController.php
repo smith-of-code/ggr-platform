@@ -41,7 +41,7 @@ class HomeController extends Controller
             'block_order', 'program_stages', 'program_cities', 'program_results',
             'city_benefits', 'additional_initiatives', 'videos',
             'contact_bullets', 'contacts', 'socials', 'section_titles',
-            'stats_cards',
+            'stats_cards', 'video_presentation',
         ];
 
         $data = [];
@@ -54,13 +54,20 @@ class HomeController extends Controller
             }
         }
         foreach ($jsonKeys as $key) {
-            if (isset($raw[$key])) {
-                $data[$key] = json_decode($raw[$key], true) ?? [];
+            if (isset($data[$key]) && is_string($data[$key])) {
+                $data[$key] = json_decode($data[$key], true) ?? [];
             }
         }
 
         if (empty($data['block_order'])) {
             $data['block_order'] = MainPageController::defaultBlockOrder();
+        } else {
+            $existingIds = array_column($data['block_order'], 'id');
+            foreach (MainPageController::defaultBlockOrder() as $block) {
+                if (!in_array($block['id'], $existingIds, true)) {
+                    $data['block_order'][] = $block;
+                }
+            }
         }
 
         return $data;

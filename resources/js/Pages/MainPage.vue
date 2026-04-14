@@ -383,6 +383,220 @@
         </Transition>
       </Teleport>
 
+      <!-- Video Presentation block -->
+      <section v-if="isBlockVisible('video_presentation')" :style="blockStyle('video_presentation')" class="overflow-hidden bg-gradient-to-b from-[#f8f9fc] to-white px-4 py-20 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl">
+          <div class="reveal mb-12 text-center">
+            <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ sectionTitle('video_presentation', 'О программе') }}</h2>
+            <p class="mx-auto mt-3 max-w-2xl text-gray-500">{{ sectionSubtitle('video_presentation', '') }}</p>
+          </div>
+
+          <!-- Video + Mission -->
+          <div class="reveal mb-16 grid items-center gap-10 lg:grid-cols-2">
+            <div
+              v-if="vp.video_file || vp.video_embed_url || vp.video_thumbnail"
+              class="group relative cursor-pointer overflow-hidden rounded-2xl shadow-xl"
+              @click="openPresentationVideo"
+            >
+              <div class="aspect-video bg-gray-200">
+                <img
+                  v-if="vp.video_thumbnail"
+                  :src="vp.video_thumbnail"
+                  :alt="vp.video_title || 'Видеопрезентация'"
+                  class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+              <div class="absolute inset-0 flex items-center justify-center bg-black/20 transition group-hover:bg-black/30">
+                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg transition group-hover:scale-110 sm:h-20 sm:w-20">
+                  <svg class="ml-1 h-8 w-8 text-[#003274] sm:h-10 sm:w-10" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+              <div v-if="vp.video_title" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-10">
+                <p class="text-sm font-semibold text-white sm:text-base">{{ vp.video_title }}</p>
+              </div>
+            </div>
+
+            <div v-if="vp.mission" class="flex flex-col justify-center">
+              <div class="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#003274]/10">
+                <svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                </svg>
+              </div>
+              <h3 class="mb-3 text-xl font-bold text-[#1f2b63]">Миссия</h3>
+              <p class="text-base leading-relaxed text-gray-600">{{ vp.mission }}</p>
+            </div>
+          </div>
+
+          <!-- Goals -->
+          <div v-if="vpGoals.length" class="reveal reveal-delay-1 mb-16">
+            <h3 class="mb-6 text-center text-xl font-bold text-[#1f2b63]">Цели программы</h3>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div
+                v-for="(goal, gi) in vpGoals"
+                :key="gi"
+                class="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md"
+              >
+                <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-sm font-bold text-emerald-600">
+                  {{ gi + 1 }}
+                </div>
+                <p class="text-sm leading-relaxed text-gray-700">{{ goal.text }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Values -->
+          <div v-if="vpValues.length" class="reveal reveal-delay-2 mb-16">
+            <h3 class="mb-6 text-center text-xl font-bold text-[#1f2b63]">Ключевые ценности</h3>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div
+                v-for="(val, vi) in vpValues"
+                :key="vi"
+                class="group rounded-xl bg-gradient-to-br from-[#003274]/5 to-[#003274]/10 p-5 text-center transition hover:from-[#003274]/10 hover:to-[#003274]/20"
+              >
+                <div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#003274]/10 transition group-hover:bg-[#003274]/20">
+                  <svg class="h-5 w-5 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                  </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-700">{{ val.text }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Organizers -->
+          <div v-if="vpOrganizers.length" class="reveal reveal-delay-3 mb-16">
+            <h3 class="mb-6 text-center text-xl font-bold text-[#1f2b63]">Организаторы</h3>
+            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div
+                v-for="(org, oi) in vpOrganizers"
+                :key="oi"
+                class="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md"
+              >
+                <div class="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-gray-200">
+                  <img
+                    v-if="org.image"
+                    :src="org.image"
+                    :alt="org.name"
+                    class="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div v-else class="flex h-full w-full items-center justify-center text-xl font-bold text-gray-400">
+                    {{ (org.name || '?')[0] }}
+                  </div>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">{{ org.name }}</p>
+                  <p v-if="org.role" class="text-sm text-gray-500">{{ org.role }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- History -->
+          <div v-if="vp.history" class="reveal reveal-delay-2 mb-16">
+            <div class="mx-auto max-w-3xl rounded-2xl bg-[#003274]/5 p-8 text-center">
+              <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#003274]/10">
+                <svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                </svg>
+              </div>
+              <h3 class="mb-3 text-xl font-bold text-[#1f2b63]">История</h3>
+              <p class="text-base leading-relaxed text-gray-600">{{ vp.history }}</p>
+            </div>
+          </div>
+
+          <!-- Facts -->
+          <div v-if="vpFacts.length" class="reveal reveal-delay-3 mb-16">
+            <h3 class="mb-6 text-center text-xl font-bold text-[#1f2b63]">Цифры и факты</h3>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div
+                v-for="(fact, fi) in vpFacts"
+                :key="fi"
+                class="rounded-xl bg-white p-6 text-center shadow-md transition hover:-translate-y-1 hover:shadow-lg"
+              >
+                <p class="text-3xl font-extrabold text-[#003274]">{{ fact.value }}</p>
+                <p class="mt-1 text-sm text-gray-500">{{ fact.label }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audience -->
+          <div v-if="vp.audience" class="reveal reveal-delay-4">
+            <div class="mx-auto max-w-3xl rounded-2xl border border-[#003274]/10 bg-gradient-to-r from-[#003274]/5 to-transparent p-8">
+              <div class="flex items-start gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#003274]/10">
+                  <svg class="h-6 w-6 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="mb-2 text-xl font-bold text-[#1f2b63]">Аудитория</h3>
+                  <p class="text-base leading-relaxed text-gray-600">{{ vp.audience }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Video Presentation modal -->
+      <Teleport to="body">
+        <Transition
+          enter-active-class="transition duration-200"
+          enter-from-class="opacity-0"
+          leave-active-class="transition duration-200"
+          leave-to-class="opacity-0"
+        >
+          <div
+            v-if="vpShowVideo"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            @click.self="closePresentationVideo"
+          >
+            <Transition
+              enter-active-class="transition duration-200"
+              enter-from-class="scale-95 opacity-0"
+              leave-active-class="transition duration-200"
+              leave-to-class="scale-95 opacity-0"
+            >
+              <div v-if="vpShowVideo" class="relative w-full max-w-4xl">
+                <button
+                  type="button"
+                  @click="closePresentationVideo"
+                  class="absolute -right-2 -top-10 rounded-full p-1.5 text-white/80 transition hover:text-white"
+                >
+                  <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <div class="overflow-hidden rounded-2xl bg-black">
+                  <div class="aspect-video">
+                    <video
+                      v-if="vp.video_file"
+                      :src="vp.video_file"
+                      controls
+                      autoplay
+                      class="h-full w-full"
+                      :poster="vp.video_thumbnail || undefined"
+                    />
+                    <iframe
+                      v-else-if="vp.video_embed_url"
+                      :src="vp.video_embed_url"
+                      class="h-full w-full"
+                      frameborder="0"
+                      allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                      allowfullscreen
+                    />
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </div>
+        </Transition>
+      </Teleport>
+
       <!-- News -->
       <section v-if="isBlockVisible('news') && latestPosts?.length" :style="blockStyle('news')" class="bg-[#f3f4fa] px-4 py-20 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
@@ -1027,6 +1241,24 @@ const programStages = computed(() => pd.program_stages || [])
 const cityBenefits = computed(() => pd.city_benefits || [])
 const additionalInitiatives = computed(() => pd.additional_initiatives || [])
 const videoItems = computed(() => pd.videos || [])
+const vp = computed(() => pd.video_presentation || {})
+const vpGoals = computed(() => vp.value.goals || [])
+const vpValues = computed(() => vp.value.values || [])
+const vpOrganizers = computed(() => vp.value.organizers || [])
+const vpFacts = computed(() => vp.value.facts || [])
+
+const vpShowVideo = ref(false)
+
+function openPresentationVideo() {
+  if (vp.value.video_file || vp.value.video_embed_url) {
+    vpShowVideo.value = true
+  }
+}
+
+function closePresentationVideo() {
+  vpShowVideo.value = false
+}
+
 const contactItems = computed(() => {
   const items = pd.contacts || []
   const icons = {

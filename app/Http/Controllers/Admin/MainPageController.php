@@ -26,6 +26,7 @@ class MainPageController extends Controller
         'socials',
         'section_titles',
         'stats_cards',
+        'video_presentation',
     ];
 
     public function __construct(
@@ -45,6 +46,13 @@ class MainPageController extends Controller
 
         if (empty($data['block_order'])) {
             $data['block_order'] = self::defaultBlockOrder();
+        } else {
+            $existingIds = array_column($data['block_order'], 'id');
+            foreach (self::defaultBlockOrder() as $block) {
+                if (!in_array($block['id'], $existingIds, true)) {
+                    $data['block_order'][] = $block;
+                }
+            }
         }
 
         return Inertia::render('Admin/MainPage/Index', [
@@ -99,6 +107,26 @@ class MainPageController extends Controller
             'videos.*.thumbnail' => 'nullable|string|max:500',
             'videos.*.embedUrl' => 'nullable|string|max:500',
             'videos.*.videoFile' => 'nullable|string|max:500',
+
+            'video_presentation' => 'nullable|array',
+            'video_presentation.video_embed_url' => 'nullable|string|max:500',
+            'video_presentation.video_file' => 'nullable|string|max:500',
+            'video_presentation.video_thumbnail' => 'nullable|string|max:500',
+            'video_presentation.video_title' => 'nullable|string|max:255',
+            'video_presentation.mission' => 'nullable|string|max:2000',
+            'video_presentation.goals' => 'nullable|array',
+            'video_presentation.goals.*.text' => 'required|string|max:500',
+            'video_presentation.values' => 'nullable|array',
+            'video_presentation.values.*.text' => 'required|string|max:500',
+            'video_presentation.organizers' => 'nullable|array',
+            'video_presentation.organizers.*.name' => 'required|string|max:255',
+            'video_presentation.organizers.*.role' => 'nullable|string|max:255',
+            'video_presentation.organizers.*.image' => 'nullable|string|max:500',
+            'video_presentation.history' => 'nullable|string|max:5000',
+            'video_presentation.facts' => 'nullable|array',
+            'video_presentation.facts.*.value' => 'required|string|max:100',
+            'video_presentation.facts.*.label' => 'required|string|max:255',
+            'video_presentation.audience' => 'nullable|string|max:2000',
 
             'moving_title' => 'required|string|max:255',
             'moving_description' => 'required|string|max:1000',
@@ -159,6 +187,7 @@ class MainPageController extends Controller
             ['id' => 'city_benefits', 'enabled' => true],
             ['id' => 'additional_initiatives', 'enabled' => true],
             ['id' => 'videos', 'enabled' => true],
+            ['id' => 'video_presentation', 'enabled' => true],
             ['id' => 'news', 'enabled' => true],
             ['id' => 'moving', 'enabled' => true],
             ['id' => 'stats', 'enabled' => true],
@@ -202,6 +231,40 @@ class MainPageController extends Controller
             'contact_description' => 'Заполните форму — мы ответим на вопросы о турах, городах и возможностях программы',
             'contact_left_text' => 'Команда проекта поможет подобрать маршрут, расскажет о датах и условиях участия.',
             'program_results_image' => 'https://optim.tildacdn.com/tild3735-3663-4333-b331-333938383739/-/format/webp/Mask_group.png.webp',
+            'video_presentation' => json_encode([
+                'video_embed_url' => 'https://vk.com/video_ext.php?oid=-227560448&id=456239017&hd=2',
+                'video_file' => '',
+                'video_thumbnail' => 'https://optim.tildacdn.com/tild6665-6230-4637-b062-623564353066/-/format/webp/Frame_427320811.png.webp',
+                'video_title' => 'О программе «Гостеприимные города Росатома»',
+                'mission' => 'Развитие туристического, образовательного и предпринимательского потенциала атомных городов России. Мы создаём условия для устойчивого роста территорий присутствия Росатома, объединяя жителей, бизнес и власть вокруг общей цели — сделать атомные города лучшими местами для жизни.',
+                'goals' => [
+                    ['text' => 'Повышение туристической привлекательности атомных городов'],
+                    ['text' => 'Развитие городской среды и инфраструктуры гостеприимства'],
+                    ['text' => 'Поддержка местных предпринимателей и креативных индустрий'],
+                    ['text' => 'Создание образовательных программ для жителей и гостей'],
+                    ['text' => 'Формирование позитивного имиджа атомной отрасли'],
+                    ['text' => 'Укрепление межгородского сотрудничества и обмена опытом'],
+                ],
+                'values' => [
+                    ['text' => 'Открытость и прозрачность'],
+                    ['text' => 'Устойчивое развитие'],
+                    ['text' => 'Инновации и технологии'],
+                    ['text' => 'Забота о людях'],
+                ],
+                'organizers' => [
+                    ['name' => 'Госкорпорация «Росатом»', 'role' => 'Генеральный партнёр программы', 'image' => ''],
+                    ['name' => 'АНО «Гостеприимные города»', 'role' => 'Оператор программы', 'image' => ''],
+                    ['name' => 'Администрации атомных городов', 'role' => 'Региональные партнёры', 'image' => ''],
+                ],
+                'history' => 'Программа «Гостеприимные города Росатома» стартовала в 2022 году как инициатива по развитию внутреннего туризма в городах присутствия Госкорпорации «Росатом». За время существования программа объединила десятки атомных городов по всей России, запустила образовательные проекты, туры возможностей и гастрономические фестивали. Сегодня это масштабная экосистема, которая помогает раскрывать потенциал территорий и создавать новые точки роста.',
+                'facts' => [
+                    ['value' => '50+', 'label' => 'городов-участников'],
+                    ['value' => '3 000+', 'label' => 'гостей программы'],
+                    ['value' => '100+', 'label' => 'проведённых мероприятий'],
+                    ['value' => '25+', 'label' => 'туров возможностей'],
+                ],
+                'audience' => 'Жители атомных городов, молодые специалисты, предприниматели, представители креативных индустрий, туристы, студенты и выпускники вузов, а также все, кто хочет узнать больше о жизни и возможностях в городах Росатома.',
+            ], JSON_UNESCAPED_UNICODE),
         ];
     }
 }

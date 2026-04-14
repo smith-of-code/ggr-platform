@@ -225,6 +225,64 @@
             />
           </template>
 
+          <template v-else-if="block.id === 'video_presentation'">
+            <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Видео</p>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <RInput v-model="form.video_presentation.video_title" label="Заголовок видео" placeholder="О программе «Гостеприимные города Росатома»" />
+              <RInput v-model="form.video_presentation.video_thumbnail" label="Обложка (URL)" placeholder="https://..." />
+              <RInput v-model="form.video_presentation.video_embed_url" label="Embed URL" placeholder="https://vk.com/video_ext.php?..." />
+              <RInput v-model="form.video_presentation.video_file" label="Видеофайл (URL)" placeholder="https://..." />
+            </div>
+
+            <p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-gray-400">Миссия</p>
+            <RInput v-model="form.video_presentation.mission" label="Текст миссии" placeholder="Развитие туристического и образовательного потенциала..." />
+
+            <p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-gray-400">Цели программы</p>
+            <DynamicList
+              v-model="form.video_presentation.goals"
+              :fields="[{ key: 'text', label: 'Цель', placeholder: 'Привлечение инвестиций...' }]"
+              add-label="Добавить цель"
+              :new-item="{ text: '' }"
+            />
+
+            <p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-gray-400">Ключевые ценности</p>
+            <DynamicList
+              v-model="form.video_presentation.values"
+              :fields="[{ key: 'text', label: 'Ценность', placeholder: 'Открытость и сотрудничество...' }]"
+              add-label="Добавить ценность"
+              :new-item="{ text: '' }"
+            />
+
+            <p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-gray-400">Организаторы</p>
+            <DynamicList
+              v-model="form.video_presentation.organizers"
+              :fields="[
+                { key: 'name', label: 'Имя', placeholder: 'Иван Иванов' },
+                { key: 'role', label: 'Должность / роль', placeholder: 'Директор программы' },
+                { key: 'image', label: 'Фото (URL)', placeholder: 'https://...' },
+              ]"
+              add-label="Добавить организатора"
+              :new-item="{ name: '', role: '', image: '' }"
+            />
+
+            <p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-gray-400">История</p>
+            <RInput v-model="form.video_presentation.history" label="Текст истории" placeholder="Программа основана в..." />
+
+            <p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-gray-400">Цифры и факты</p>
+            <DynamicList
+              v-model="form.video_presentation.facts"
+              :fields="[
+                { key: 'value', label: 'Значение', placeholder: '50+' },
+                { key: 'label', label: 'Подпись', placeholder: 'городов-участников' },
+              ]"
+              add-label="Добавить факт"
+              :new-item="{ value: '', label: '' }"
+            />
+
+            <p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-gray-400">Аудитория</p>
+            <RInput v-model="form.video_presentation.audience" label="Описание аудитории" placeholder="Жители атомных городов, молодые специалисты..." />
+          </template>
+
           <template v-else-if="block.id === 'moving'">
             <div class="grid gap-4 sm:grid-cols-2">
               <RInput v-model="form.moving_title" label="Заголовок *" :error="form.errors.moving_title" />
@@ -385,6 +443,7 @@ const blockLabels = {
   city_benefits: 'Что получает город',
   additional_initiatives: 'Дополнительные инициативы',
   videos: 'Видеоролики',
+  video_presentation: 'Видеопрезентация программы',
   news: 'Новости',
   moving: 'Переезжаем',
   stats: 'Статистика',
@@ -401,7 +460,7 @@ const blockLabels = {
 const sectionTitleKeys = new Set([
   'program_stages', 'program_cities', 'program_results',
   'city_benefits', 'additional_initiatives', 'videos',
-  'news', 'featured_tours', 'cities', 'map',
+  'video_presentation', 'news', 'featured_tours', 'cities', 'map',
   'recipes', 'timeline', 'contacts',
 ])
 
@@ -425,6 +484,7 @@ const defaultBlockOrder = [
   { id: 'city_benefits', enabled: true },
   { id: 'additional_initiatives', enabled: true },
   { id: 'videos', enabled: true },
+  { id: 'video_presentation', enabled: true },
   { id: 'news', enabled: true },
   { id: 'moving', enabled: true },
   { id: 'stats', enabled: true },
@@ -465,6 +525,20 @@ const form = useForm({
   city_benefits: d.city_benefits ?? [{ title: '', image: '' }],
   additional_initiatives: d.additional_initiatives ?? [{ title: '', image: '' }],
   videos: d.videos ?? [{ title: '', thumbnail: '', embedUrl: '', videoFile: '' }],
+
+  video_presentation: d.video_presentation ?? {
+    video_embed_url: '',
+    video_file: '',
+    video_thumbnail: '',
+    video_title: 'О программе «Гостеприимные города Росатома»',
+    mission: '',
+    goals: [],
+    values: [],
+    organizers: [],
+    history: '',
+    facts: [],
+    audience: '',
+  },
 
   moving_title: d.moving_title ?? 'Переезжаем',
   moving_description: d.moving_description ?? '',
