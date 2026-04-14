@@ -40,7 +40,6 @@ use Illuminate\Support\Facades\Route;
 
 // ── Public portal (no auth required) ──
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/mainpage', [HomeController::class, 'mainpage'])->name('home.mainpage');
 Route::get('/cities', [CityController::class, 'index'])->name('cities.index');
 Route::get('/cities/{slug}', [CityController::class, 'show'])->name('cities.show');
 Route::get('/tours', [TourController::class, 'index'])->name('tours.index');

@@ -13,7 +13,7 @@
         </p>
         <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link
-            :href="route('home.mainpage')"
+            :href="route('home')"
             class="inline-flex items-center rounded-xl bg-[#003274] px-8 py-3.5 font-semibold text-white shadow-lg transition duration-300 hover:-translate-y-0.5 hover:bg-[#025ea1] hover:shadow-xl"
           >
             На главную

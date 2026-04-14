@@ -23,11 +23,6 @@ class HomeController extends Controller
 {
     public function index(Request $request): Response
     {
-        return Inertia::render('Home', $this->buildHomePageProps($request));
-    }
-
-    public function mainpage(Request $request): Response
-    {
         return Inertia::render('MainPage', $this->buildHomePageProps($request));
     }
 
