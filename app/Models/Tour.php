@@ -105,6 +105,7 @@ class Tour extends Model
         'spring' => 'Весна',
         'summer' => 'Лето',
         'autumn' => 'Осень',
+        'all_season' => 'Всесезонный',
     ];
 
     public const PARTICIPATION_TYPES = [

@@ -239,18 +239,12 @@
               class="reveal group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#003274]/20 hover:shadow-lg"
               :class="'reveal-delay-' + ((i % 5) + 1)"
             >
-              <div class="aspect-[4/3] overflow-hidden bg-gray-100">
+              <div v-if="a.image" class="aspect-[4/3] overflow-hidden bg-gray-100">
                 <img
-                  v-if="a.image"
                   :src="a.image"
                   :alt="a.title || 'Достопримечательность'"
                   class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
-                <div v-else class="flex h-full items-center justify-center text-gray-300">
-                  <svg class="h-14 w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008H12V8.25Z" />
-                  </svg>
-                </div>
               </div>
               <div class="p-5">
                 <h3 class="font-semibold text-gray-900">{{ a.title }}</h3>
@@ -416,7 +410,7 @@
         </section>
 
         <!-- 12. Tours -->
-        <section v-if="city.tours?.length" class="reveal">
+        <section v-if="city.tours?.length" class="reveal mb-16">
           <h2 class="text-2xl font-bold text-gray-900">Туры в городе</h2>
           <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <Link

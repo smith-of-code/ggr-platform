@@ -242,12 +242,15 @@ const iconCert = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fi
 const iconTrophy = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-yellow-500"><path fill-rule="evenodd" d="M10 1c-1.716 0-3.408.106-5.07.31C3.806 1.45 3 2.414 3 3.517V5h-.5A1.5 1.5 0 0 0 1 6.5v1A2.5 2.5 0 0 0 3.5 10H4a6 6 0 0 0 5.25 5.944V17.5H7A.75.75 0 0 0 7 19h6a.75.75 0 0 0 0-1.5h-2.25v-1.556A6 6 0 0 0 16 10h.5A2.5 2.5 0 0 0 19 7.5v-1A1.5 1.5 0 0 0 17.5 5H17V3.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 1Z" clip-rule="evenodd"/></svg>'
 const iconCard = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-teal-500"><path fill-rule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clip-rule="evenodd"/></svg>'
 
+const iconGlobe = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-emerald-500"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0ZM10 3.5a.75.75 0 0 0-.75.75v.553a6.513 6.513 0 0 0-4.2 2.447H6.5a.75.75 0 0 0 0 1.5H4.25a6.5 6.5 0 0 0-.247 1.5H5.5a.75.75 0 0 0 0 1.5H4.003c.086.525.233 1.03.434 1.5H5.5a.75.75 0 0 0 0 1.5h-.563A6.513 6.513 0 0 0 10 17.5a6.513 6.513 0 0 0 5.063-2.75H14.5a.75.75 0 0 0 0-1.5h1.063c.201-.47.348-.975.434-1.5H14.5a.75.75 0 0 0 0-1.5h1.497a6.5 6.5 0 0 0-.247-1.5H13.5a.75.75 0 0 0 0-1.5h1.45a6.513 6.513 0 0 0-4.2-2.447V4.25A.75.75 0 0 0 10 3.5Z" clip-rule="evenodd"/></svg>'
+
 const seasonOptions = [
   { value: '', label: 'Любой сезон' },
   { value: 'winter', label: 'Зима', icon: iconSnowflake },
   { value: 'spring', label: 'Весна', icon: iconLeaf },
   { value: 'summer', label: 'Лето', icon: iconSun },
   { value: 'autumn', label: 'Осень', icon: iconMaple },
+  { value: 'all_season', label: 'Всесезонный', icon: iconGlobe },
 ]
 
 const participationOptions = [
@@ -294,7 +297,7 @@ function projectLabel(key) {
 }
 
 function seasonLabel(key) {
-  const labels = { winter: 'Зима', spring: 'Весна', summer: 'Лето', autumn: 'Осень' }
+  const labels = { winter: 'Зима', spring: 'Весна', summer: 'Лето', autumn: 'Осень', all_season: 'Всесезонный' }
   return labels[key] || key
 }
 

@@ -58,6 +58,9 @@
             <p class="mt-3 leading-relaxed text-gray-600">{{ ta.description }}</p>
           </div>
         </div>
+        <p v-if="direction.target_audience_note" class="mt-8 rounded-xl bg-sky-50 px-6 py-4 text-sm leading-relaxed text-gray-600">
+          {{ direction.target_audience_note }}
+        </p>
       </div>
     </section>
 

@@ -107,7 +107,7 @@ class TourController extends Controller
             'duration' => 'nullable|string|max:100',
             'project' => 'nullable|string|in:start_atomgrad,atoms_vkusa,llr',
             'participation_type' => 'nullable|string|in:contest,paid,bchp',
-            'season' => 'nullable|string|in:winter,spring,summer,autumn',
+            'season' => 'nullable|string|in:winter,spring,summer,autumn,all_season',
             'group_size' => 'nullable|string|max:100',
             'min_age' => 'nullable|integer|min:0',
             'price_from' => 'nullable|numeric|min:0',

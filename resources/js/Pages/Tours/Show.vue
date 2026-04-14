@@ -67,7 +67,7 @@
       </div>
 
       <!-- Tab Navigation -->
-      <nav class="reveal mb-8 overflow-x-auto border-b border-gray-200">
+      <nav class="sticky top-16 z-30 mb-8 overflow-x-auto border-b border-gray-200 bg-white/95 backdrop-blur-sm">
         <div class="flex gap-0">
           <button
             v-for="tab in visibleTabs"
@@ -120,21 +120,43 @@
           <section id="section-accommodation" v-if="tour.accommodations?.length || tour.accommodation_info" class="reveal mt-10">
             <h2 class="text-xl font-bold text-gray-900">Проживание</h2>
             <div v-if="tour.accommodation_info" class="html-content mt-4 text-base leading-relaxed text-gray-700" v-html="tour.accommodation_info" />
-            <div class="mt-6 grid gap-5 sm:grid-cols-2">
+            <div class="mt-6 space-y-5">
               <div v-for="(acc, ai) in tour.accommodations" :key="ai" class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div v-if="acc.images?.length" class="aspect-video overflow-hidden bg-gray-100">
-                  <img :src="acc.images[0]" :alt="acc.title" class="h-full w-full object-cover" />
-                </div>
-                <div class="p-5">
-                  <div class="flex items-center gap-2">
-                    <h3 class="font-semibold text-gray-900">{{ acc.title }}</h3>
-                    <RBadge v-if="acc.budget" :variant="budgetVariant(acc.budget)">{{ budgetLabel(acc.budget) }}</RBadge>
-                  </div>
-                  <p v-if="acc.description" class="mt-2 text-sm leading-relaxed text-gray-600">{{ acc.description }}</p>
-                  <div v-if="acc.images?.length > 1" class="mt-3 flex gap-1.5">
-                    <button v-for="(img, ii) in acc.images.slice(0, 4)" :key="ii" type="button" class="h-12 w-16 overflow-hidden rounded-lg border border-gray-200" @click="openLightbox(allMedia.indexOf(img) >= 0 ? allMedia.indexOf(img) : 0)">
-                      <img :src="img" alt="" class="h-full w-full object-cover" />
-                    </button>
+                <div class="flex flex-col sm:flex-row">
+                  <button v-if="acc.images?.length" type="button" class="relative shrink-0 sm:w-56 cursor-pointer focus:outline-none" @click="openLightbox(0, acc.images)">
+                    <div class="aspect-video sm:aspect-auto sm:h-full overflow-hidden bg-gray-100">
+                      <img :src="acc.images[0]" :alt="acc.title" class="h-full w-full object-cover transition duration-300 hover:scale-105" />
+                    </div>
+                    <div v-if="acc.images.length > 1" class="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white">
+                      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
+                      {{ acc.images.length }}
+                    </div>
+                  </button>
+                  <div class="flex min-w-0 flex-1 flex-col p-5">
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-base font-semibold text-gray-900">{{ acc.title }}</h3>
+                      <RBadge v-if="acc.budget" :variant="budgetVariant(acc.budget)">{{ budgetLabel(acc.budget) }}</RBadge>
+                    </div>
+                    <div v-if="acc.description" class="relative mt-2">
+                      <div
+                        class="html-content text-sm leading-relaxed text-gray-600"
+                        :class="!expandedAccommodations[ai] ? 'line-clamp-3' : ''"
+                        v-html="acc.description"
+                      />
+                      <button
+                        v-if="acc.description.length > 180"
+                        type="button"
+                        class="mt-1 text-sm font-medium text-[#003274] transition hover:text-[#004090]"
+                        @click="expandedAccommodations[ai] = !expandedAccommodations[ai]"
+                      >
+                        {{ expandedAccommodations[ai] ? 'Свернуть' : 'Подробнее' }}
+                      </button>
+                    </div>
+                    <div v-if="acc.images?.length > 1" class="mt-3 flex gap-1.5">
+                      <button v-for="(img, ii) in acc.images.slice(1, 5)" :key="ii" type="button" class="h-10 w-14 overflow-hidden rounded-lg border border-gray-200 transition hover:border-[#003274]/30 hover:shadow-sm" @click="openLightbox(ii + 1, acc.images)">
+                        <img :src="img" alt="" class="h-full w-full object-cover" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -181,6 +203,12 @@
                 </div>
               </div>
             </div>
+          </section>
+
+          <!-- Organizers -->
+          <section id="section-organizers" v-if="tour.organizer_info" class="reveal mt-10">
+            <h2 class="text-xl font-bold text-gray-900">Организаторы</h2>
+            <div class="html-content mt-4 text-base leading-relaxed text-gray-700" v-html="tour.organizer_info" />
           </section>
 
           <!-- Reviews -->
@@ -323,6 +351,16 @@
                 <div>
                   <dt class="text-xs font-medium uppercase tracking-wider text-gray-400">Группа</dt>
                   <dd class="mt-0.5 font-medium text-gray-900">{{ tour.group_size }}{{ tour.min_age ? `, от ${tour.min_age} лет` : '' }}</dd>
+                </div>
+              </div>
+
+              <div v-if="tour.season" class="flex items-start gap-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" :class="seasonStyle(tour.season).bg">
+                  <svg class="h-4 w-4" :class="seasonStyle(tour.season).text" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" :d="seasonStyle(tour.season).icon" /></svg>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium uppercase tracking-wider text-gray-400">Сезон</dt>
+                  <dd class="mt-0.5 font-medium text-gray-900">{{ seasonLabel(tour.season) }}</dd>
                 </div>
               </div>
 
@@ -520,25 +558,25 @@
     <!-- Lightbox -->
     <Teleport to="body">
       <div
-        v-if="lightboxIndex !== null && allMedia[lightboxIndex]"
+        v-if="lightboxIndex !== null && lightboxImages[lightboxIndex]"
         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
         role="dialog"
         aria-modal="true"
         aria-label="Просмотр фото"
-        @click.self="lightboxIndex = null"
+        @click.self="closeLightbox"
       >
-        <button type="button" class="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2.5 text-white transition hover:bg-white/20 focus:outline-none" @click="lightboxIndex = null">
+        <button type="button" class="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2.5 text-white transition hover:bg-white/20 focus:outline-none" @click="closeLightbox">
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
         <button v-if="lightboxIndex > 0" type="button" class="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 focus:outline-none" @click="lightboxIndex--">
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
         </button>
-        <button v-if="lightboxIndex < allMedia.length - 1" type="button" class="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 focus:outline-none" @click="lightboxIndex++">
+        <button v-if="lightboxIndex < lightboxImages.length - 1" type="button" class="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20 focus:outline-none" @click="lightboxIndex++">
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
         </button>
-        <img :src="allMedia[lightboxIndex]" :alt="`Фото ${lightboxIndex + 1}`" class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl" />
+        <img :src="lightboxImages[lightboxIndex]" :alt="`Фото ${lightboxIndex + 1}`" class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl" />
         <div class="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-white/80">
-          {{ lightboxIndex + 1 }} / {{ allMedia.length }}
+          {{ lightboxIndex + 1 }} / {{ lightboxImages.length }}
         </div>
       </div>
     </Teleport>
@@ -546,11 +584,22 @@
 </template>
 
 <style scoped>
+[id^="section-"] { scroll-margin-top: 7rem; }
 .html-content :deep(p) { margin-bottom: 1rem; }
 .html-content :deep(p:last-child) { margin-bottom: 0; }
 .html-content :deep(a) { color: #003274; text-decoration: underline; text-underline-offset: 2px; }
 .html-content :deep(ul), .html-content :deep(ol) { margin: 0.75rem 0 1rem; padding-left: 1.25rem; }
 .html-content :deep(ul) { list-style-type: disc; }
+.html-content :deep(ol) { list-style-type: decimal; }
+.html-content :deep(h2) { font-size: 1.25rem; font-weight: 700; margin: 1.5rem 0 0.75rem; color: #111827; }
+.html-content :deep(h3) { font-size: 1.125rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: #111827; }
+.html-content :deep(h2:first-child), .html-content :deep(h3:first-child) { margin-top: 0; }
+.html-content :deep(strong), .html-content :deep(b) { font-weight: 700; }
+.html-content :deep(em), .html-content :deep(i) { font-style: italic; }
+.html-content :deep(u) { text-decoration: underline; text-underline-offset: 2px; }
+.html-content :deep(s) { text-decoration: line-through; }
+.html-content :deep(blockquote) { border-left: 3px solid #d1d5db; padding-left: 1rem; margin: 1rem 0; color: #6b7280; font-style: italic; }
+.html-content :deep(li) { margin-bottom: 0.25rem; }
 .count-pop-enter-active, .count-pop-leave-active { transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.2, 0.64, 1); }
 .count-pop-enter-from { opacity: 0; transform: translateY(-5px) scale(0.85); }
 .count-pop-leave-to { opacity: 0; transform: translateY(5px) scale(0.85); }
@@ -565,8 +614,10 @@ import { useScrollReveal } from '@/composables/useScrollReveal'
 useScrollReveal()
 
 const lightboxIndex = ref(null)
+const lightboxImages = ref([])
 const activeTab = ref('description')
 const showReviewForm = ref(false)
+const expandedAccommodations = reactive({})
 
 const allTabs = [
   { id: 'description', label: 'Описание' },
@@ -575,13 +626,17 @@ const allTabs = [
   { id: 'accommodation', label: 'Проживание' },
   { id: 'dates', label: 'Даты тура' },
   { id: 'memo', label: 'Памятка участника' },
+  { id: 'organizers', label: 'Организаторы' },
   { id: 'reviews', label: 'Отзывы' },
 ]
 
 function scrollToSection(id) {
   activeTab.value = id
   const el = document.getElementById(`section-${id}`)
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  if (!el) return
+  const headerOffset = 64 + 45
+  const top = el.getBoundingClientRect().top + window.scrollY - headerOffset
+  window.scrollTo({ top, behavior: 'smooth' })
 }
 
 function reviewsWord(count) {
@@ -620,6 +675,7 @@ const visibleTabs = computed(() => {
     if (tab.id === 'accommodation') return props.tour.accommodations?.length || props.tour.accommodation_info
     if (tab.id === 'dates') return props.tour.departures?.length
     if (tab.id === 'memo') return props.tour.memo_text || props.tour.memo_pdf || props.tour.closed_city
+    if (tab.id === 'organizers') return !!props.tour.organizer_info
     if (tab.id === 'reviews') return true
     return false
   })
@@ -679,13 +735,21 @@ const sidebarDepartureItems = computed(() => {
   return items
 })
 
-function openLightbox(index) { lightboxIndex.value = index }
+function openLightbox(index, images = null) {
+  lightboxImages.value = images || allMedia.value
+  lightboxIndex.value = index
+}
+
+function closeLightbox() {
+  lightboxIndex.value = null
+  lightboxImages.value = []
+}
 
 function onLightboxKeydown(e) {
   if (lightboxIndex.value === null) return
-  if (e.key === 'Escape') lightboxIndex.value = null
+  if (e.key === 'Escape') closeLightbox()
   if (e.key === 'ArrowLeft' && lightboxIndex.value > 0) lightboxIndex.value--
-  if (e.key === 'ArrowRight' && lightboxIndex.value < allMedia.value.length - 1) lightboxIndex.value++
+  if (e.key === 'ArrowRight' && lightboxIndex.value < lightboxImages.value.length - 1) lightboxIndex.value++
 }
 
 onMounted(() => window.addEventListener('keydown', onLightboxKeydown))
@@ -808,6 +872,23 @@ function budgetVariant(key) {
 
 function projectLabel(key) {
   return { start_atomgrad: 'Старт в Атомград', atoms_vkusa: 'Атомы вкуса', llr: 'Лучшие люди Росатома' }[key] || key
+}
+
+function seasonLabel(key) {
+  return { winter: 'Зима', spring: 'Весна', summer: 'Лето', autumn: 'Осень', all_season: 'Всесезонный' }[key] || key
+}
+
+const SEASON_STYLES = {
+  winter: { bg: 'bg-sky-50', text: 'text-sky-600', icon: 'M12 3v1.5m0 15V21m-7.5-9H3m3.257-5.743L4.929 4.93m12.814 0-1.328 1.327M21 12h-1.5m-1.243 5.743 1.328 1.328M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z' },
+  spring: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: 'M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z' },
+  summer: { bg: 'bg-amber-50', text: 'text-amber-600', icon: 'M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z' },
+  autumn: { bg: 'bg-orange-50', text: 'text-orange-600', icon: 'M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z' },
+  all_season: { bg: 'bg-indigo-50', text: 'text-indigo-600', icon: 'M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5a17.92 17.92 0 0 1-8.716-2.247m0 0A8.966 8.966 0 0 1 3 12c0-1.264.26-2.467.732-3.558' },
+}
+const SEASON_DEFAULT = { bg: 'bg-gray-50', text: 'text-gray-500', icon: 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' }
+
+function seasonStyle(key) {
+  return SEASON_STYLES[key] || SEASON_DEFAULT
 }
 
 function formatPrice(value) {

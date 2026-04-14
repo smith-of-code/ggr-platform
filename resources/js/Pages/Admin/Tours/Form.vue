@@ -57,6 +57,7 @@
                     <option value="spring">Весна</option>
                     <option value="summer">Лето</option>
                     <option value="autumn">Осень</option>
+                    <option value="all_season">Всесезонный</option>
                   </select>
                 </div>
                 <div>
@@ -143,10 +144,7 @@
                       </select>
                     </div>
                   </div>
-                  <div>
-                    <label class="mb-2 block text-sm font-semibold text-gray-700">Описание</label>
-                    <textarea v-model="acc.description" rows="2" class="w-full rounded-xl border-gray-200 bg-white px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" placeholder="Описание проживания..." />
-                  </div>
+                  <RichTextEditor v-model="acc.description" label="Описание" />
                   <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">Фото</label>
                     <div class="flex flex-wrap gap-2">
@@ -487,7 +485,7 @@ const tourMeta = computed(() => {
   if (form.start_city) m.push({ label: form.start_city, class: 'bg-blue-50 text-blue-700' })
   if (form.duration) m.push({ label: form.duration, class: 'bg-purple-50 text-purple-700' })
   if (form.price_from) m.push({ label: `от ${Number(form.price_from).toLocaleString('ru-RU')} ₽`, class: 'bg-green-50 text-green-700' })
-  if (form.season) m.push({ label: { winter: 'Зима', spring: 'Весна', summer: 'Лето', autumn: 'Осень' }[form.season] || form.season })
+  if (form.season) m.push({ label: { winter: 'Зима', spring: 'Весна', summer: 'Лето', autumn: 'Осень', all_season: 'Всесезонный' }[form.season] || form.season })
   return m
 })
 
