@@ -1,33 +1,56 @@
 <template>
-  <div class="flex min-h-screen bg-gray-50 font-sans">
+  <div class="flex min-h-dvh bg-gray-50 font-sans">
     <ToastNotifications />
+
+    <div
+      v-show="sidebarOpen"
+      class="fixed inset-0 z-20 bg-gray-900/40 backdrop-blur-[1px] lg:hidden"
+      aria-hidden="true"
+      @click="sidebarOpen = false"
+    />
+
     <RSidebar
+      id="lms-admin-sidebar"
       :items="sidebarItems"
       :active-item="activeItemId"
       :collapsed="false"
-      class="fixed inset-y-0 left-0 z-30"
+      class="fixed inset-y-0 left-0 z-40 max-lg:!h-dvh max-lg:shadow-2xl transition-transform duration-200 ease-out lg:z-30 lg:translate-x-0"
+      :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
       @select="onSelect"
     >
       <template #logo>
-        <div class="flex items-center gap-3">
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
-            <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-            </svg>
+        <div class="flex items-start justify-end gap-2">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-3">
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <p class="truncate text-sm font-bold text-white" style="font-family: var(--font-primary)">ВШГР LMS</p>
+                <p class="text-xs" style="color: var(--color-primary-light)">Админ-панель</p>
+              </div>
+            </div>
+            <a
+              v-if="canAccessPortalAdmin"
+              :href="route('admin.dashboard')"
+              class="group mt-3 flex w-full items-center gap-2.5 rounded-lg bg-white/10 px-3 py-2 text-left text-xs font-semibold text-white/90 transition hover:bg-white/20 hover:text-white"
+              @click="sidebarOpen = false"
+            >
+              <svg class="h-4 w-4 shrink-0 text-white/60 transition group-hover:-translate-x-0.5 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+              <span>Админка портала</span>
+            </a>
           </div>
-          <div>
-            <p class="text-sm font-bold text-white" style="font-family: var(--font-primary)">ВШГР LMS</p>
-            <p class="text-xs" style="color: var(--color-primary-light)">Админ-панель</p>
-          </div>
+          <button
+            type="button"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/10 hover:text-white lg:hidden"
+            aria-label="Закрыть меню"
+            @click="sidebarOpen = false"
+          >
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+          </button>
         </div>
-        <a
-          v-if="canAccessPortalAdmin"
-          :href="route('admin.dashboard')"
-          class="group mt-3 flex w-full items-center gap-2.5 rounded-lg bg-white/10 px-3 py-2 text-left text-xs font-semibold text-white/90 transition hover:bg-white/20 hover:text-white"
-        >
-          <svg class="h-4 w-4 shrink-0 text-white/60 transition group-hover:-translate-x-0.5 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-          <span>Админка портала</span>
-        </a>
       </template>
       <template #footer>
         <RButton
@@ -35,7 +58,7 @@
           variant="ghost"
           size="sm"
           block
-          @click="navigateTo('lms.dashboard', { event: event.slug })"
+          @click="onReturnToLms"
         >
           <template #icon>
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
@@ -45,10 +68,21 @@
       </template>
     </RSidebar>
 
-    <div class="flex-1" style="margin-left: 240px">
-      <header class="sticky top-0 z-20 flex h-16 items-center border-b border-gray-200 bg-white/95 px-8 backdrop-blur-sm">
-        <div class="flex-1">
-          <p v-if="event" class="font-brand text-sm font-bold text-rosatom-700">{{ event.title }}</p>
+    <div class="flex min-w-0 flex-1 flex-col lg:ml-[240px]">
+      <header class="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
+        <button
+          type="button"
+          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 lg:hidden"
+          :aria-label="sidebarOpen ? 'Закрыть меню' : 'Открыть меню'"
+          :aria-expanded="sidebarOpen"
+          aria-controls="lms-admin-sidebar"
+          @click="sidebarOpen = !sidebarOpen"
+        >
+          <svg v-if="!sidebarOpen" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+          <svg v-else class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+        </button>
+        <div class="min-w-0 flex-1">
+          <p v-if="event" class="truncate font-brand text-sm font-bold text-rosatom-700">{{ event.title }}</p>
         </div>
         <Transition
           enter-active-class="transition duration-300 ease-out"
@@ -65,7 +99,7 @@
         </Transition>
       </header>
 
-      <main class="p-8">
+      <main class="min-w-0 flex-1 overflow-x-auto p-4 sm:p-6 lg:p-8">
         <slot />
       </main>
     </div>
@@ -74,7 +108,7 @@
 
 <script setup>
 import { usePage, router } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { CheckCircleIcon } from '@heroicons/vue/24/outline'
 import ToastNotifications from '@/Components/ToastNotifications.vue'
 
@@ -85,7 +119,29 @@ const props = defineProps({
 
 const page = usePage()
 
+const sidebarOpen = ref(false)
+
 const canAccessPortalAdmin = computed(() => Boolean(page.props.auth?.user?.is_admin))
+
+function closeMobileSidebar() {
+  sidebarOpen.value = false
+}
+
+let removeRouterListener
+
+function onEscapeKey(ev) {
+  if (ev.key === 'Escape') closeMobileSidebar()
+}
+
+onMounted(() => {
+  removeRouterListener = router.on('start', closeMobileSidebar)
+  window.addEventListener('keydown', onEscapeKey)
+})
+
+onUnmounted(() => {
+  removeRouterListener?.()
+  window.removeEventListener('keydown', onEscapeKey)
+})
 
 const icons = {
   events: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>',
@@ -181,6 +237,7 @@ const eventRouteMap = {
 }
 
 function onSelect(id) {
+  closeMobileSidebar()
   if (id === 'events') {
     router.visit(route('lms.admin.events.index'))
     return
@@ -198,5 +255,12 @@ function onSelect(id) {
 
 function navigateTo(routeName, params = {}) {
   router.visit(route(routeName, params))
+}
+
+function onReturnToLms() {
+  closeMobileSidebar()
+  if (props.event) {
+    navigateTo('lms.dashboard', { event: props.event.slug })
+  }
 }
 </script>
