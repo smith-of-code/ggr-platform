@@ -86,6 +86,16 @@
         </Link>
 
         <Link
+          :href="route('admin.tour-cabinet.index')"
+          :class="[isActive('admin.tour-cabinet') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
+        >
+          <svg :class="[isActive('admin.tour-cabinet') ? 'text-[#003274]' : 'text-gray-400 group-hover:text-gray-600']" class="h-5 w-5 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+          </svg>
+          ЛК туров
+        </Link>
+
+        <Link
           :href="route('admin.tour-reviews.index')"
           :class="[isActive('admin.tour-reviews') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
         >
@@ -331,6 +341,7 @@ function isActive(routePrefix) {
   if (routePrefix === 'admin.applications') return url.startsWith('/admin/applications')
   if (routePrefix === 'admin.cities') return url.startsWith('/admin/cities')
   if (routePrefix === 'admin.tours') return url.startsWith('/admin/tours')
+  if (routePrefix === 'admin.tour-cabinet') return url.startsWith('/admin/tour-cabinet')
   if (routePrefix === 'admin.tour-reviews') return url.startsWith('/admin/tour-reviews')
   if (routePrefix === 'admin.blog') return url.startsWith('/admin/blog') && !url.startsWith('/admin/blog-subscribers')
   if (routePrefix === 'admin.blog-subscribers') return url.startsWith('/admin/blog-subscribers')

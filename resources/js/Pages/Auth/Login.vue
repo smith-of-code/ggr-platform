@@ -1,6 +1,6 @@
 <template>
   <div class="flex min-h-screen font-sans">
-    <Head title="Высшая школа гостеприимства Росатома - 2026" />
+    <Head :title="pageTitle" />
 
     <!-- Left panel: branding -->
     <div class="hidden w-1/2 flex-col justify-between bg-rosatom-800 p-12 lg:flex">
@@ -8,8 +8,11 @@
         <img src="/images/logo-horizontal.svg" alt="ГГР" class="h-20 w-auto brightness-0 invert" />
       </div>
       <div>
-        <h2 class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
+        <h2 v-if="form.portal === 'student'" class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
           Высшая школа<br />гостеприимства Росатома - 2026
+        </h2>
+        <h2 v-else class="font-brand text-4xl font-bold leading-tight text-white lg:text-5xl">
+          Гостеприимные города<br />Росатома
         </h2>
         <!-- <p class="mt-6 max-w-lg text-lg text-rosatom-300">
           Образовательная платформа для подготовки специалистов в области гостеприимства гостеприимных городов Росатома
@@ -28,6 +31,27 @@
 
         <h1 class="text-2xl font-bold text-gray-900">Вход в систему</h1>
         <p class="mt-2 text-sm text-gray-500">Введите email и пароль для доступа к платформе</p>
+
+        <div class="mt-6" role="group" aria-label="Тип входа">
+          <div class="flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+            <button
+              type="button"
+              class="flex-1 cursor-pointer rounded-lg px-3 py-2.5 text-sm font-semibold transition"
+              :class="form.portal === 'client' ? 'bg-white text-rosatom-800 shadow-sm ring-1 ring-gray-200/80' : 'text-gray-600 hover:text-gray-900'"
+              @click="form.portal = 'client'"
+            >
+              Я клиент
+            </button>
+            <button
+              type="button"
+              class="flex-1 cursor-pointer rounded-lg px-3 py-2.5 text-sm font-semibold transition"
+              :class="form.portal === 'student' ? 'bg-white text-rosatom-800 shadow-sm ring-1 ring-gray-200/80' : 'text-gray-600 hover:text-gray-900'"
+              @click="form.portal = 'student'"
+            >
+              Я студент
+            </button>
+          </div>
+        </div>
 
         <div v-if="status" class="mt-4 rounded-lg bg-green-50 px-4 py-2 text-sm font-medium text-green-700">
           {{ status }}
@@ -70,14 +94,14 @@
 
           <div class="mt-4 flex flex-col gap-3">
             <a
-              :href="route('social.login', { provider: 'vkontakte' })"
+              :href="socialLoginHref('vkontakte')"
               class="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg bg-[#0077FF] px-5 text-sm font-medium text-white transition hover:bg-[#0071F2] active:bg-[#0069E0]"
             >
               <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.54 1.66h18.92c1.59 0 2.88 1.29 2.88 2.88v18.92c0 1.59-1.29 2.88-2.88 2.88H4.54c-1.59 0-2.88-1.29-2.88-2.88V4.54c0-1.59 1.29-2.88 2.88-2.88z" fill="#0077FF"/><path d="M14.67 19.47c-5.62 0-8.82-3.86-8.95-10.28h2.81c.09 4.71 2.17 6.71 3.81 7.12V9.19h2.65v4.07c1.62-.17 3.33-2.02 3.91-4.07h2.65c-.44 2.53-2.3 4.38-3.62 5.15 1.32.62 3.4 2.25 4.2 5.13h-2.92c-.63-1.95-2.18-3.46-4.22-3.66v3.66h-.32z" fill="white"/></svg>
               Войти с VK&nbsp;ID
             </a>
             <a
-              :href="route('social.login', { provider: 'yandex' })"
+              :href="socialLoginHref('yandex')"
               class="flex h-11 w-full items-center justify-center gap-2.5 rounded-lg bg-black px-5 text-sm font-medium text-white transition hover:bg-[#222] active:bg-[#333]"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0z" fill="#FC3F1D"/><path d="M13.63 18.71h1.67V5.29h-2.62c-2.79 0-4.25 1.4-4.25 3.49 0 1.71.79 2.74 2.44 3.83l-2.67 6.1h1.77l2.86-7.06-.76-.52c-1.35-.92-1.93-1.65-1.93-2.88 0-1.3.92-2.2 2.54-2.2h.95v12.66z" fill="white"/></svg>
@@ -85,32 +109,46 @@
             </a>
           </div>
         </div>
-
-        <p class="mt-8 text-center text-sm text-gray-400">
-          Для получения доступа обратитесь к администратору
-        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 
-defineProps({
+const props = defineProps({
   canResetPassword: { type: Boolean, default: false },
   status: { type: String, default: '' },
+  defaultPortal: { type: String, default: 'client' },
 })
 
 const form = useForm({
   email: '',
   password: '',
   remember: false,
+  portal: props.defaultPortal === 'student' ? 'student' : 'client',
 })
+
+const pageTitle = computed(() =>
+  form.portal === 'student'
+    ? 'Высшая школа гостеприимства Росатома - 2026'
+    : 'Гостеприимные города Росатома',
+)
 
 const submit = () => {
   form.post(route('login'), {
     onFinish: () => form.reset('password'),
   })
+}
+
+function socialLoginHref(provider) {
+  const base = route('social.login', { provider })
+  if (form.portal === 'student') {
+    const sep = base.includes('?') ? '&' : '?'
+    return `${base}${sep}portal=student`
+  }
+  return base
 }
 </script>

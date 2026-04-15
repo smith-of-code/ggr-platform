@@ -24,9 +24,13 @@ class User extends Authenticatable
         'last_name',
         'first_name',
         'patronymic',
+        'gender',
+        'birth_date',
         'email',
         'is_admin',
+        'is_tour_cabinet_user',
         'phone',
+        'avatar_path',
         'password',
     ];
 
@@ -51,6 +55,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_tour_cabinet_user' => 'boolean',
+            'birth_date' => 'date',
         ];
     }
 

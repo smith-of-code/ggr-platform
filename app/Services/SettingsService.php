@@ -10,6 +10,9 @@ class SettingsService
 {
     private const CACHE_TTL = 3600;
 
+    /** Настройки ЛК туров (переопределение env/config). */
+    private const GROUP_TOUR_CABINET = 'tour_cabinet';
+
     public function getMailSettings(): array
     {
         $defaults = [
@@ -63,7 +66,7 @@ class SettingsService
         $hidden = [];
         foreach ($settings as $slug => $value) {
             $decoded = is_string($value) ? json_decode($value, true) : $value;
-            if (is_array($decoded) && !empty($decoded['hidden'])) {
+            if (is_array($decoded) && ! empty($decoded['hidden'])) {
                 $hidden[] = $slug;
             }
         }
@@ -79,6 +82,44 @@ class SettingsService
         }
 
         $this->setGroup('page_visibility', $values);
+    }
+
+    /**
+     * Slug формы этапа 1 (стандартная анкета): сначала БД (группа tour_cabinet), иначе config/tour_cabinet.php.
+     */
+    public function getTourCabinetContestStage1FormSlugStandard(): ?string
+    {
+        return $this->resolveTourCabinetContestFormSlug('contest_stage1_form_slug_standard');
+    }
+
+    /**
+     * Slug формы этапа 1 («нужно больше данных»): сначала БД, иначе config.
+     */
+    public function getTourCabinetContestStage1FormSlugMoreData(): ?string
+    {
+        return $this->resolveTourCabinetContestFormSlug('contest_stage1_form_slug_more_data');
+    }
+
+    private function resolveTourCabinetContestFormSlug(string $key): ?string
+    {
+        $db = $this->getGroup(self::GROUP_TOUR_CABINET);
+        $raw = $db[$key] ?? null;
+        if (is_string($raw)) {
+            $trimmed = trim($raw);
+            if ($trimmed !== '') {
+                return $trimmed;
+            }
+        }
+
+        $cfg = config('tour_cabinet.'.$key);
+        if (is_string($cfg)) {
+            $trimmed = trim($cfg);
+            if ($trimmed !== '') {
+                return $trimmed;
+            }
+        }
+
+        return null;
     }
 
     public function applyMailConfig(): void

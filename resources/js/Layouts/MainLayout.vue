@@ -35,7 +35,7 @@
           </nav>
 
           <!-- Auth button (desktop) -->
-          <div class="hidden shrink-0 lg:flex">
+          <div class="hidden shrink-0 items-center gap-3 lg:flex">
             <a
               v-if="$page.props.auth?.user && isLmsFullPageUrl(cabinetUrl)"
               :href="cabinetUrl"
@@ -50,13 +50,20 @@
             >
               Личный кабинет
             </Link>
-            <Link
-              v-else
-              :href="route('login')"
-              class="rounded-lg border border-[#003274] px-4 py-2 text-sm font-medium text-[#003274] transition hover:bg-[#003274] hover:text-white"
-            >
-              Вход
-            </Link>
+            <template v-else>
+              <Link
+                :href="route('tour-cabinet.register')"
+                class="whitespace-nowrap rounded-lg bg-[#003274] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#025ea1] active:scale-[0.99]"
+              >
+                Зарегистрироваться
+              </Link>
+              <Link
+                :href="route('login')"
+                class="whitespace-nowrap rounded-lg border border-[#003274] bg-white px-4 py-2 text-sm font-medium text-[#003274] transition hover:bg-[#003274]/5"
+              >
+                Вход
+              </Link>
+            </template>
           </div>
 
           <!-- Mobile menu button -->
@@ -111,13 +118,26 @@
           >
             Личный кабинет
           </Link>
-          <Link
-            v-else
-            :href="route('login')"
-            class="block rounded-lg border border-[#003274] px-4 py-3 text-center text-[#003274]"
-          >
-            Вход
-          </Link>
+          <template v-else>
+            <Link
+              :href="route('tour-cabinet.register')"
+              class="mb-2 block rounded-lg bg-[#003274] px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-[#025ea1] active:scale-[0.99]"
+            >
+              Зарегистрироваться
+            </Link>
+            <Link
+              :href="route('tour-cabinet.login')"
+              class="block rounded-lg px-4 py-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Вход — участник конкурса
+            </Link>
+            <Link
+              :href="route('login')"
+              class="mt-1 block rounded-lg border border-[#003274] bg-white px-4 py-3 text-center text-sm font-medium text-[#003274] transition hover:bg-[#003274]/5"
+            >
+              Вход на сайт
+            </Link>
+          </template>
         </div>
       </Transition>
     </header>
@@ -154,6 +174,12 @@
                   class="text-sm text-gray-500 transition hover:text-[#003274]"
                 >{{ item.label }}</Link>
               </template>
+              <Link :href="route('tour-cabinet.register')" class="text-sm text-gray-500 transition hover:text-[#003274]">
+                Зарегистрироваться (личный кабинет туров)
+              </Link>
+              <Link :href="route('tour-cabinet.login')" class="text-sm text-gray-500 transition hover:text-[#003274]">
+                Вход — личный кабинет туров
+              </Link>
             </div>
           </div>
           <div>
@@ -186,6 +212,9 @@ const scrolled = ref(false)
 const cabinetUrl = computed(() => {
   if (page.props.auth?.user?.is_admin) {
     return route('admin.dashboard')
+  }
+  if (page.props.auth?.user?.is_tour_cabinet_user) {
+    return route('tour-cabinet.dashboard')
   }
   return page.props.lmsEntryUrl || route('profile.edit')
 })

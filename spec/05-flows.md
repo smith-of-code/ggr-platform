@@ -179,6 +179,8 @@
 | GET | `/reset-password/{token}` | Auth\NewPasswordController@create | password.reset |
 | POST | `/reset-password` | Auth\NewPasswordController@store | password.store |
 
+Форма `/login`: переключатель **«Я клиент»** (по умолчанию) / **«Я студент»** задаёт поле `portal` (`client` \| `student`). **Клиент:** после входа — `admin.dashboard` при `is_admin`, иначе `tour-cabinet.dashboard` при `is_tour_cabinet_user`, иначе `profile.edit` (без автоматического редиректа в LMS). **Студент:** только `lms.dashboard` по `LmsProfile` пользователя; при отсутствии профиля — выход из сессии и ошибка валидации. GET `/login?portal=student` задаёт начальный режим. Глобальный social login: query `?portal=student` сохраняется в сессии и влияет на редирект после callback.
+
 ### Auth-маршруты (middleware: auth)
 
 | Метод | URI | Controller@action | Name | Extra middleware |

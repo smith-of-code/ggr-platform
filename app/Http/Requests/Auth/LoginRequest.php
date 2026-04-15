@@ -30,6 +30,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+            'portal' => ['nullable', 'string', 'in:client,student'],
         ];
     }
 

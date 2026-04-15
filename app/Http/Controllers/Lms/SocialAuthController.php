@@ -8,6 +8,7 @@ use App\Models\Lms\LmsProfile;
 use App\Models\SocialAccount;
 use App\Services\GamificationService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -27,13 +28,19 @@ class SocialAuthController extends Controller
         return $this->buildDriver($provider)->redirect();
     }
 
-    public function redirectToGlobalLogin(string $provider): RedirectResponse
+    public function redirectToGlobalLogin(Request $request, string $provider): RedirectResponse
     {
         abort_unless(in_array($provider, self::ALLOWED_PROVIDERS), 404);
+
+        $portal = $request->query('portal', 'client');
+        if (! in_array($portal, ['client', 'student'], true)) {
+            $portal = 'client';
+        }
 
         session([
             'social_flow' => 'login_global',
             'social_event_slug' => null,
+            'login_portal' => $portal,
         ]);
 
         return $this->buildDriver($provider)->redirect();
@@ -145,16 +152,45 @@ class SocialAuthController extends Controller
         Auth::login($user, remember: true);
         request()->session()->regenerate();
 
-        $lmsProfile = LmsProfile::where('user_id', $user->id)->first();
-        if ($lmsProfile && $lmsProfile->role !== 'admin') {
-            $event = $lmsProfile->event;
-            if ($event) {
-                app(GamificationService::class)->awardPoints($event, $user, 'login_daily', 'Ежедневный вход');
-                return redirect()->intended(route('lms.dashboard', $event->slug, false));
-            }
+        $portal = session()->pull('login_portal', 'client');
+        if (! in_array($portal, ['client', 'student'], true)) {
+            $portal = 'client';
         }
 
-        return redirect()->intended(route('admin.dashboard', absolute: false));
+        if ($portal === 'student') {
+            $lmsProfile = LmsProfile::query()
+                ->where('user_id', $user->id)
+                ->with('event:id,slug,title')
+                ->orderByDesc('activated_at')
+                ->orderByDesc('id')
+                ->first();
+
+            $event = $lmsProfile?->event;
+            if (! $event) {
+                Auth::logout();
+                request()->session()->invalidate();
+                request()->session()->regenerateToken();
+
+                return redirect()->route('login')
+                    ->withErrors(['social' => 'Вход как студент недоступен: нет записи в образовательной программе.']);
+            }
+
+            if ($lmsProfile->role !== 'admin') {
+                app(GamificationService::class)->awardPoints($event, $user, 'login_daily', 'Ежедневный вход');
+            }
+
+            return redirect()->intended(route('lms.dashboard', ['event' => $event->slug], false));
+        }
+
+        if ($user->is_admin) {
+            return redirect()->intended(route('admin.dashboard', absolute: false));
+        }
+
+        if ($user->is_tour_cabinet_user) {
+            return redirect()->intended(route('tour-cabinet.dashboard', absolute: false));
+        }
+
+        return redirect()->intended(route('profile.edit', absolute: false));
     }
 
     private function handleLogin(LmsEvent $event, string $provider, $socialUser): RedirectResponse

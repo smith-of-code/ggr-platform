@@ -3,6 +3,8 @@
 use App\Http\Middleware\CheckPageVisibility;
 use App\Http\Middleware\EnsureLmsBackofficeAccess;
 use App\Http\Middleware\EnsurePortalAdmin;
+use App\Http\Middleware\EnsureTourCabinetUser;
+use App\Http\Middleware\RedirectTourCabinetGuest;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\LmsRole;
 use App\Http\Middleware\LogUserActivity;
@@ -42,6 +44,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'lms.role' => LmsRole::class,
             'lms.backoffice' => EnsureLmsBackofficeAccess::class,
             'portal.admin' => EnsurePortalAdmin::class,
+            'tour-cabinet' => EnsureTourCabinetUser::class,
+            'tour-cabinet.guest' => RedirectTourCabinetGuest::class,
         ]);
 
         // Доверяем всем прокси (т.к. Nginx на хосте + Nginx в контейнере,

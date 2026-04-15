@@ -8,6 +8,7 @@ use App\Models\Lms\LmsForm;
 use App\Models\Lms\LmsFormResponse;
 use App\Models\Lms\LmsFormSubmission;
 use App\Services\ConsentService;
+use App\Services\TourCabinetContestFormLinker;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -112,6 +113,8 @@ class FormPublicController extends Controller
             ], ['lms_form_id' => $form->id, 'lms_form_slug' => $form->slug]);
         }
 
+        TourCabinetContestFormLinker::tryLinkAfterSubmission($form, $submission);
+
         return response()->json([
             'message' => 'Ответ отправлен',
             'submission_id' => $submission->id,
@@ -197,6 +200,8 @@ class FormPublicController extends Controller
                 'phone' => $phoneKey ? ($answers[$phoneKey] ?? null) : null,
             ], ['lms_form_id' => $form->id, 'lms_form_slug' => $form->slug]);
         }
+
+        TourCabinetContestFormLinker::tryLinkAfterSubmission($form, $submission);
 
         if ($request->wantsJson() || $request->header('X-Inertia')) {
             return redirect()->back()->with('success', 'Ответ отправлен');

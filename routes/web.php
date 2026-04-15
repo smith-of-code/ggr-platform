@@ -18,6 +18,10 @@ use App\Http\Controllers\Admin\TimelineEventController as AdminTimelineControlle
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TourReviewController as AdminTourReviewController;
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
+use App\Http\Controllers\Admin\TourCabinetDirectionCitiesController as AdminTourCabinetDirectionCitiesController;
+use App\Http\Controllers\Admin\TourCabinetHubController as AdminTourCabinetHubController;
+use App\Http\Controllers\Admin\TourCabinetStage2QuestionsController as AdminTourCabinetStage2QuestionsController;
+use App\Http\Controllers\Admin\TourCabinetFormsController as AdminTourCabinetFormsController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\Admin\VshgrPageController as AdminVshgrPageController;
 use App\Http\Controllers\ApplicationController;
@@ -33,6 +37,8 @@ use App\Http\Controllers\OpportunityToursController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\ResearchPageController;
+use App\Http\Controllers\TourCabinetContestController;
+use App\Http\Controllers\TourCabinetController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\TourReviewController;
 use App\Http\Controllers\VacancyController;
@@ -62,6 +68,30 @@ Route::get('/recipes', [RecipeController::class, 'index'])->name('recipes.index'
 Route::get('/recipes/{slug}', [RecipeController::class, 'show'])->name('recipes.show');
 
 Route::get('/opportunity-tours', [OpportunityToursController::class, 'index'])->name('opportunity-tours.index');
+
+// Личный кабинет участника туров / конкурса (отдельная регистрация; формы из LMS события из config/tour_cabinet.php)
+Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
+    Route::middleware('tour-cabinet')->group(function () {
+        Route::get('/', [TourCabinetController::class, 'dashboard'])->name('dashboard');
+        Route::patch('/profile', [TourCabinetController::class, 'updateProfile'])->name('profile.update');
+        Route::get('/contest', [TourCabinetContestController::class, 'show'])->name('contest');
+        Route::post('/contest/direction', [TourCabinetContestController::class, 'storeDirection'])->name('contest.direction');
+        Route::post('/contest/cities', [TourCabinetContestController::class, 'storeCities'])->name('contest.cities');
+        Route::get('/contest/cities/{city}/form', [TourCabinetContestController::class, 'startCityForm'])->name('contest.city-form');
+        Route::post('/contest/complete-stage-1', [TourCabinetContestController::class, 'completeStage1'])->name('contest.complete-stage-1');
+        Route::get('/contest/stage-2', [TourCabinetContestController::class, 'showStage2'])->name('contest.stage2');
+        Route::post('/contest/stage-2', [TourCabinetContestController::class, 'storeStage2'])->name('contest.stage2.store');
+        Route::get('/contest/stage-3', [TourCabinetContestController::class, 'showStage3'])->name('contest.stage3');
+        Route::post('/contest/stage-3', [TourCabinetContestController::class, 'storeStage3'])->name('contest.stage3.store');
+    });
+    Route::middleware('tour-cabinet.guest')->group(function () {
+        Route::get('/login', [TourCabinetController::class, 'showLogin'])->name('login');
+        Route::post('/login', [TourCabinetController::class, 'login'])->name('login.store');
+        Route::get('/register', [TourCabinetController::class, 'showRegister'])->name('register');
+        Route::post('/register', [TourCabinetController::class, 'register'])->name('register.store');
+    });
+    Route::post('/logout', [TourCabinetController::class, 'logout'])->middleware('auth')->name('logout');
+});
 
 Route::get('/directions/{slug}', [DirectionController::class, 'show'])->name('directions.show');
 
@@ -131,6 +161,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
 
     Route::get('/vshgr-page', [AdminVshgrPageController::class, 'index'])->name('vshgr-page.index');
     Route::put('/vshgr-page', [AdminVshgrPageController::class, 'update'])->name('vshgr-page.update');
+
+    Route::get('/tour-cabinet', [AdminTourCabinetHubController::class, 'index'])->name('tour-cabinet.index');
+
+    Route::get('/tour-cabinet/forms', [AdminTourCabinetFormsController::class, 'index'])->name('tour-cabinet.forms.index');
+    Route::put('/tour-cabinet/forms/contest-form-slugs', [AdminTourCabinetFormsController::class, 'updateContestFormSlugs'])->name('tour-cabinet.forms.contest-form-slugs.update');
+
+    Route::get('/tour-cabinet/direction-cities', [AdminTourCabinetDirectionCitiesController::class, 'index'])->name('tour-cabinet.direction-cities.index');
+    Route::post('/tour-cabinet/direction-cities', [AdminTourCabinetDirectionCitiesController::class, 'store'])->name('tour-cabinet.direction-cities.store');
+    Route::patch('/tour-cabinet/direction-cities/{directionCity}', [AdminTourCabinetDirectionCitiesController::class, 'update'])->name('tour-cabinet.direction-cities.update');
+    Route::delete('/tour-cabinet/direction-cities/{directionCity}', [AdminTourCabinetDirectionCitiesController::class, 'destroy'])->name('tour-cabinet.direction-cities.destroy');
+
+    Route::get('/tour-cabinet/stage2-questions', [AdminTourCabinetStage2QuestionsController::class, 'index'])->name('tour-cabinet.stage2-questions.index');
+    Route::post('/tour-cabinet/stage2-questions', [AdminTourCabinetStage2QuestionsController::class, 'store'])->name('tour-cabinet.stage2-questions.store');
+    Route::patch('/tour-cabinet/stage2-questions/{question}', [AdminTourCabinetStage2QuestionsController::class, 'update'])->name('tour-cabinet.stage2-questions.update');
+    Route::delete('/tour-cabinet/stage2-questions/{question}', [AdminTourCabinetStage2QuestionsController::class, 'destroy'])->name('tour-cabinet.stage2-questions.destroy');
 
     Route::get('/research-page', [AdminResearchPageController::class, 'index'])->name('research-page.index');
     Route::put('/research-page', [AdminResearchPageController::class, 'update'])->name('research-page.update');
