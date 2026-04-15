@@ -140,7 +140,7 @@
           </div>
           <div v-for="(item, i) in form.results_videos" :key="i" class="mb-3 flex items-start gap-3">
             <div class="flex-1 space-y-2">
-              <RInput v-model="item.url" label="URL видео" />
+              <RInput v-model="item.url" label="URL видео (VK, RuTube, YouTube)" />
               <RInput v-model="item.title" label="Название" />
             </div>
             <button type="button" class="mt-6 text-red-500 hover:text-red-700" @click="removeItem('results_videos', i)">

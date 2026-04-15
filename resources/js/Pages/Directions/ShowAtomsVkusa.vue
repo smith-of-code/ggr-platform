@@ -202,9 +202,9 @@
 
         <!-- Видео -->
         <div v-if="content.results_videos?.length" class="mt-10 grid gap-6 sm:grid-cols-2">
-          <div v-for="(vid, i) in content.results_videos" :key="i" class="overflow-hidden rounded-xl border border-gray-200 bg-black shadow-md">
+          <div v-for="(vid, i) in content.results_videos" :key="i" class="overflow-hidden rounded-xl border border-gray-200 shadow-md">
             <div class="aspect-video w-full">
-              <iframe :src="parseEmbed(vid.url)" class="h-full w-full" :title="vid.title || `Видео ${i+1}`" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen />
+              <iframe :src="parseEmbed(vid.url)" class="h-full w-full" :title="vid.title || `Видео ${i+1}`" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen />
             </div>
             <p v-if="vid.title" class="bg-white px-4 py-2 text-sm font-medium text-gray-900">{{ vid.title }}</p>
           </div>
@@ -585,10 +585,19 @@ function formatDate(date) {
 
 function parseEmbed(url) {
   if (!url || typeof url !== 'string') return url
+
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/)
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}`
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`
+
   const rt = url.match(/rutube\.ru\/(?:video\/|play\/embed\/)([a-zA-Z0-9_-]+)/)
   if (rt) return `https://rutube.ru/play/embed/${rt[1]}`
+
+  if (/vk\.com\/video_ext\.php/.test(url)) return url
+
+  const vkId = url.match(/(?:vk\.com|vkvideo\.ru)\/(?:video|clip)(-?\d+)_(\d+)/)
+    || url.match(/[?&]z=video(-?\d+)_(\d+)/)
+  if (vkId) return `https://vk.com/video_ext.php?oid=${vkId[1]}&id=${vkId[2]}&hd=2`
+
   return url
 }
 
