@@ -88,6 +88,12 @@
 | POST | `/assignments/{assignment}/submissions/{submission}/review` | Admin\AssignmentController@review |
 | POST | `/assignments/{assignment}/submissions/{submission}/comment` | Admin\AssignmentController@comment |
 
+## Дедлайн (API и отображение)
+
+- В JSON для Inertia поле `deadline` у `LmsAssignment` сериализуется как **ISO 8601 в UTC с суффиксом `Z`** (`serializeDate`), чтобы в браузере однозначно определялся один и тот же момент времени.
+- На фронте дедлайн форматируется через `resources/js/utils/lmsAssignmentDeadline.js` (`toLocaleString('ru-RU', …)` с датой и временем): админ-таблица (краткий вид месяца), список и карточки участника, страница задания — **одинаковые часы в локальном времени браузера** при одной строке из API.
+- В админ-форме поле `datetime-local` заполняется функцией `lmsDeadlineToDatetimeLocal` (локальное представление того же момента, без обрезки ISO по `slice`).
+
 ## Ключевые workflow
 
 ### Создание задания (Admin)

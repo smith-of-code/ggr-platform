@@ -167,6 +167,7 @@ import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import { ChevronUpIcon, ChevronDownIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { lmsDeadlineToDatetimeLocal } from '@/utils/lmsAssignmentDeadline'
 
 const props = defineProps({ event: Object, assignment: Object })
 
@@ -198,7 +199,7 @@ const form = useForm({
   template_file: props.assignment?.template_file ?? '',
   template_file_name: props.assignment?.template_file_name ?? '',
   completion_mode: props.assignment?.completion_mode ?? 'on_review',
-  deadline: props.assignment?.deadline ? props.assignment.deadline.slice(0, 16) : '',
+  deadline: props.assignment?.deadline ? lmsDeadlineToDatetimeLocal(props.assignment.deadline) : '',
   is_active: props.assignment?.is_active ?? true,
   tasks: buildTasks(),
 })

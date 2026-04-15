@@ -218,6 +218,7 @@
 import { computed, reactive, ref } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import { fileUrl } from '@/lib/fileUrl'
+import { formatLmsAssignmentDeadline } from '@/utils/lmsAssignmentDeadline'
 import {
   PencilSquareIcon, ArrowDownTrayIcon, ArrowUpTrayIcon,
   ClockIcon, PaperClipIcon,
@@ -371,6 +372,6 @@ function fileWord(n) {
 
 function formatDate(dateStr) {
   if (!dateStr) return '–'
-  return new Date(dateStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return formatLmsAssignmentDeadline(dateStr, 'long')
 }
 </script>

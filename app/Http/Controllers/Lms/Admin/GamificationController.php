@@ -30,10 +30,17 @@ class GamificationController extends Controller
             ];
         })->filter()->unique('id')->values();
 
+        $gamification = app(GamificationService::class);
+        $leaderboard = $gamification->getAdminLeaderboardRows($event, 100);
+        $userIds = array_column($leaderboard, 'id');
+        $pointsByUser = $gamification->getRecentPointsByUserIds($event, $userIds, 100);
+
         return Inertia::render('Lms/Admin/Gamification/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
             'rules' => $rules,
             'users' => $users,
+            'leaderboard' => $leaderboard,
+            'pointsByUser' => $pointsByUser,
         ]);
     }
 

@@ -26,7 +26,7 @@
           <tr v-for="a in assignments.data" :key="a.id" class="transition hover:bg-gray-50">
             <td class="px-5 py-3.5 text-sm font-medium text-gray-900">{{ a.title }}</td>
             <td class="px-5 py-3.5 text-center text-sm text-gray-500">{{ a.submissions_count ?? 0 }}</td>
-            <td class="px-5 py-3.5 text-sm text-gray-500">{{ a.deadline ? formatDate(a.deadline) : '—' }}</td>
+            <td class="px-5 py-3.5 text-sm text-gray-500">{{ a.deadline ? formatLmsAssignmentDeadline(a.deadline, 'short') : '—' }}</td>
             <td class="px-5 py-3.5 text-center">
               <RBadge :variant="a.is_active ? 'primary' : 'neutral'" :dot="true">
                 {{ a.is_active ? 'Активно' : 'Скрыто' }}
@@ -58,14 +58,9 @@
 <script setup>
 import { Link, router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import { formatLmsAssignmentDeadline } from '@/utils/lmsAssignmentDeadline'
 
 const props = defineProps({ event: Object, assignments: Object })
-
-function formatDate(str) {
-  if (!str) return '—'
-  const d = new Date(str)
-  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
 
 function confirmDestroy(assignment) {
   if (confirm(`Удалить задание "${assignment.title}"?`)) {

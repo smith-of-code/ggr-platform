@@ -55,6 +55,7 @@ import { Head, router, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import { PencilSquareIcon } from '@heroicons/vue/24/outline'
+import { formatLmsAssignmentDeadline } from '@/utils/lmsAssignmentDeadline'
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -95,8 +96,7 @@ function stripHtml(html) {
 
 function formatDeadline(dateStr) {
   if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+  return formatLmsAssignmentDeadline(dateStr, 'long')
 }
 
 function mapStatus(status) {

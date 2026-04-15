@@ -381,6 +381,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3'
 import { ref, computed, reactive } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import { fileUrl } from '@/lib/fileUrl'
+import { formatLmsAssignmentDeadline } from '@/utils/lmsAssignmentDeadline'
 import {
   ArrowLeftIcon,
   ArrowDownTrayIcon,
@@ -546,7 +547,7 @@ function fileWord(n) {
 
 function formatDate(dateStr) {
   if (!dateStr) return '–'
-  return new Date(dateStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return formatLmsAssignmentDeadline(dateStr, 'long')
 }
 
 function buildFormData() {

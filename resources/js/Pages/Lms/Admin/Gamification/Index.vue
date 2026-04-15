@@ -3,7 +3,7 @@
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">Геймификация</h1>
-        <p class="mt-1 text-sm text-gray-500">Правила начисления баллов</p>
+        <p class="mt-1 text-sm text-gray-500">Правила начисления, рейтинг и расшифровка баллов</p>
       </div>
       <RButton variant="primary" @click="showManualDialog = true">
         <template #icon>
@@ -14,6 +14,9 @@
     </div>
 
     <RCard flush class="mb-6">
+      <template #header>
+        <h2 class="text-base font-bold text-gray-900">Правила начисления</h2>
+      </template>
       <table class="min-w-full">
         <thead>
           <tr class="border-b border-gray-200 bg-gray-50">
@@ -58,10 +61,77 @@
       <div v-if="rules.data.length === 0" class="px-5 py-16 text-center text-sm text-gray-500">Правил пока нет</div>
     </RCard>
 
-    <Link :href="route('lms.admin.gamification.create', event.slug)" class="inline-flex items-center gap-2 rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+    <Link :href="route('lms.admin.gamification.create', event.slug)" class="mb-6 inline-flex items-center gap-2 rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
       Создать правило
     </Link>
+
+    <RCard flush class="mb-6">
+      <template #header>
+        <h2 class="text-base font-bold text-gray-900">Рейтинг участников</h2>
+        <p class="mt-0.5 text-xs text-gray-500">Без учёта роли admin в событии, топ 100 по сумме баллов</p>
+      </template>
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50">
+              <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">#</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Участник</th>
+              <th class="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Баллы</th>
+              <th class="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500" />
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <template v-for="row in leaderboard" :key="row.id">
+              <tr class="transition hover:bg-gray-50">
+                <td class="px-4 py-2.5 text-sm font-semibold text-gray-500">{{ row.rank }}</td>
+                <td class="max-w-[200px] px-4 py-2.5">
+                  <p class="truncate text-sm font-medium text-gray-900">{{ row.name }}</p>
+                  <p class="truncate text-xs text-gray-400">{{ row.email }}</p>
+                </td>
+                <td class="px-4 py-2.5 text-right text-sm font-semibold text-rosatom-700">{{ row.total_points }}</td>
+                <td class="px-4 py-2.5 text-right">
+                  <RButton variant="outline" size="sm" @click="toggleExpandUser(row.id)">
+                    {{ expandedUserId === row.id ? 'Скрыть' : 'Расшифровка' }}
+                  </RButton>
+                </td>
+              </tr>
+              <tr v-if="expandedUserId === row.id" class="bg-gray-50/95">
+                <td colspan="4" class="px-4 py-3">
+                  <div v-if="pointsForUser(row.id).length" class="max-h-72 overflow-y-auto rounded-lg border border-gray-200 bg-white">
+                    <table class="min-w-full text-sm">
+                      <thead class="sticky top-0 border-b border-gray-200 bg-gray-50">
+                        <tr>
+                          <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Начисление</th>
+                          <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Дата</th>
+                          <th class="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Баллы</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-100">
+                        <tr v-for="p in pointsForUser(row.id)" :key="p.id" class="hover:bg-gray-50/80">
+                          <td class="px-3 py-2 align-top text-gray-900">
+                            <span class="font-medium">{{ reasonLabel(p) }}</span>
+                            <span v-if="p.rule_title && p.reason && p.rule_title !== p.reason" class="mt-0.5 block text-xs text-gray-500">Правило: {{ p.rule_title }}</span>
+                          </td>
+                          <td class="whitespace-nowrap px-3 py-2 align-top text-gray-500">{{ formatPointDate(p.created_at) }}</td>
+                          <td class="px-3 py-2 text-right align-top">
+                            <RBadge :variant="(p.points ?? 0) >= 0 ? 'success' : 'error'" class="font-bold">
+                              {{ (p.points ?? 0) >= 0 ? '+' : '' }}{{ p.points ?? 0 }}
+                            </RBadge>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p v-else class="py-4 text-center text-sm text-gray-500">Нет записей по начислениям</p>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <div v-if="!leaderboard.length" class="px-5 py-10 text-center text-sm text-gray-500">Пока нет начислений</div>
+      </div>
+    </RCard>
 
     <!-- Manual points dialog -->
     <RModal v-model="showManualDialog" title="Начислить баллы" size="lg" @update:model-value="onDialogClose">
@@ -160,12 +230,47 @@ import { Link, router } from '@inertiajs/vue3'
 import { ref, reactive, computed } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
-const props = defineProps({ event: Object, rules: Object, users: Array })
+const props = defineProps({
+  event: Object,
+  rules: Object,
+  users: Array,
+  leaderboard: { type: Array, default: () => [] },
+  pointsByUser: { type: Object, default: () => ({}) },
+})
+
+const leaderboard = computed(() => props.leaderboard || [])
 
 const showManualDialog = ref(false)
+const expandedUserId = ref(null)
 const searchQuery = ref('')
 const roleFilter = ref('')
 const manualForm = reactive({ user_ids: [], points: 0, reason: '' })
+
+function pointsForUser(userId) {
+  const m = props.pointsByUser || {}
+  return m[userId] ?? m[String(userId)] ?? []
+}
+
+function toggleExpandUser(userId) {
+  expandedUserId.value = expandedUserId.value === userId ? null : userId
+}
+
+function reasonLabel(p) {
+  return p.reason || p.rule_title || 'Начислены баллы'
+}
+
+function formatPointDate(dateStr) {
+  if (!dateStr) return '–'
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return String(dateStr)
+  return d.toLocaleString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 const availableRoles = computed(() => {
   const roles = new Set((props.users || []).map(u => u.role).filter(Boolean))

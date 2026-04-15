@@ -13,7 +13,7 @@
 - `App\Models\Lms\LmsGamificationPoint`
 
 ### Сервисы
-- `App\Services\GamificationService` — awardPoints, getLeaderboard, getUserPoints, getUserRank
+- `App\Services\GamificationService` — awardPoints, getLeaderboard, getAdminLeaderboardRows, getRecentPointsByUserIds, getUserPoints, getUserRank
 
 ### Observer
 - `App\Observers\LmsProgressObserver` — автоматические триггеры через Eloquent events
@@ -25,7 +25,7 @@
 ### Страницы
 - `Pages/Lms/Gamification/Leaderboard.vue` — рейтинг участников и групп (подиум, таблица, вкладки)
 - `Pages/Lms/Gamification/MyPoints.vue` — история баллов пользователя
-- `Pages/Lms/Admin/Gamification/Index.vue` — список правил + модалка ручного начисления
+- `Pages/Lms/Admin/Gamification/Index.vue` — список правил (первый блок), ссылка «Создать правило», рейтинг участников (топ 100, без admin в событии), расшифровка по пользователю (раскрывающаяся подстрока таблицы), модалка ручного начисления
 - `Pages/Lms/Admin/Gamification/Form.vue` — создание/редактирование правила
 
 ## Схема БД

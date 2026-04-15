@@ -2,6 +2,7 @@
 
 namespace App\Models\Lms;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +13,7 @@ class LmsAssignment extends Model
 
     protected function serializeDate(\DateTimeInterface $date): string
     {
-        return $date->format('Y-m-d\TH:i:s');
+        return Carbon::instance($date)->utc()->format('Y-m-d\TH:i:s\Z');
     }
 
     protected $fillable = [

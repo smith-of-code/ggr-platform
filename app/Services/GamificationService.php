@@ -83,6 +83,87 @@ class GamificationService
             ->toArray();
     }
 
+    /**
+     * Рейтинг для админки: участники без роли admin в событии, с email и местом.
+     *
+     * @return list<array{rank: int, id: int, name: string, email: string, total_points: int}>
+     */
+    public function getAdminLeaderboardRows(LmsEvent $event, int $limit = 100): array
+    {
+        $adminUserIds = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)
+            ->where('role', 'admin')
+            ->pluck('user_id');
+
+        $rows = DB::table('lms_gamification_points')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                DB::raw('SUM(lms_gamification_points.points) as total_points')
+            )
+            ->join('users', 'users.id', '=', 'lms_gamification_points.user_id')
+            ->where('lms_gamification_points.lms_event_id', $event->id)
+            ->whereNotIn('lms_gamification_points.user_id', $adminUserIds)
+            ->groupBy('users.id', 'users.name', 'users.email')
+            ->orderByDesc('total_points')
+            ->limit($limit)
+            ->get();
+
+        $rank = 1;
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'rank' => $rank++,
+                'id' => (int) $row->id,
+                'name' => (string) $row->name,
+                'email' => (string) ($row->email ?? ''),
+                'total_points' => (int) $row->total_points,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Последние начисления по каждому из указанных пользователей (для модалки расшифровки).
+     *
+     * @param  list<int>  $userIds
+     * @return array<int, list<array{id: int, points: int, reason: ?string, created_at: ?string, rule_title: ?string}>>
+     */
+    public function getRecentPointsByUserIds(LmsEvent $event, array $userIds, int $perUserLimit = 100): array
+    {
+        $userIds = array_values(array_unique(array_map('intval', $userIds)));
+        if ($userIds === []) {
+            return [];
+        }
+
+        $rows = LmsGamificationPoint::query()
+            ->where('lms_event_id', $event->id)
+            ->whereIn('user_id', $userIds)
+            ->with(['rule:id,title'])
+            ->orderByDesc('created_at')
+            ->get(['id', 'user_id', 'points', 'reason', 'lms_gamification_rule_id', 'created_at']);
+
+        $grouped = $rows->groupBy('user_id');
+        $out = [];
+        foreach ($userIds as $uid) {
+            $out[$uid] = $grouped->get($uid, collect())
+                ->sortByDesc('created_at')
+                ->take($perUserLimit)
+                ->values()
+                ->map(fn (LmsGamificationPoint $p) => [
+                    'id' => $p->id,
+                    'points' => (int) $p->points,
+                    'reason' => $p->reason,
+                    'created_at' => $p->created_at?->toIso8601String(),
+                    'rule_title' => $p->rule?->title,
+                ])
+                ->all();
+        }
+
+        return $out;
+    }
+
     public function getUserPoints(LmsEvent $event, User $user): int
     {
         return (int) LmsGamificationPoint::where('lms_event_id', $event->id)
