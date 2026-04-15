@@ -57,6 +57,7 @@ class AtomsVkusaController extends Controller
             'results_videos' => 'nullable|array',
             'results_videos.*.url' => 'required|string|max:500',
             'results_videos.*.title' => 'nullable|string|max:500',
+            'results_videos.*.thumbnail' => 'nullable|string|max:500',
             'results_cases' => 'nullable|array',
             'results_cases.*.name' => 'required|string|max:255',
             'results_cases.*.city' => 'nullable|string|max:255',
