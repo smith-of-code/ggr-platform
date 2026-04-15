@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Tour;
 use App\Models\TourCabinetContestStage2Question;
+use App\Services\Admin\TourCabinetHubPageData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -13,22 +14,16 @@ use Inertia\Response;
 
 class TourCabinetStage2QuestionsController extends Controller
 {
+    public function __construct(
+        private readonly TourCabinetHubPageData $hubPageData,
+    ) {}
+
     public function index(): Response
     {
-        $questions = TourCabinetContestStage2Question::query()
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get();
-
-        $directions = collect(Tour::PROJECTS)->map(fn (string $label, string $key) => [
-            'key' => $key,
-            'label' => $label,
-        ])->values()->all();
-
-        return Inertia::render('Admin/TourCabinet/Stage2Questions/Index', [
-            'questions' => $questions,
-            'directions' => $directions,
-        ]);
+        return Inertia::render(
+            'Admin/TourCabinet/Stage2Questions/Index',
+            $this->hubPageData->stage2QuestionsPayload(),
+        );
     }
 
     public function store(Request $request): RedirectResponse
@@ -62,7 +57,8 @@ class TourCabinetStage2QuestionsController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.tour-cabinet.stage2-questions.index')
+            ->route('admin.tour-cabinet.index')
+            ->withFragment('tour-cabinet-admin-stage2')
             ->with('success', 'Вопрос добавлен.');
     }
 
@@ -103,7 +99,8 @@ class TourCabinetStage2QuestionsController extends Controller
         }
 
         return redirect()
-            ->route('admin.tour-cabinet.stage2-questions.index')
+            ->route('admin.tour-cabinet.index')
+            ->withFragment('tour-cabinet-admin-stage2')
             ->with('success', 'Вопрос обновлён.');
     }
 
@@ -113,7 +110,8 @@ class TourCabinetStage2QuestionsController extends Controller
         $model->delete();
 
         return redirect()
-            ->route('admin.tour-cabinet.stage2-questions.index')
+            ->route('admin.tour-cabinet.index')
+            ->withFragment('tour-cabinet-admin-stage2')
             ->with('success', 'Вопрос удалён.');
     }
 }

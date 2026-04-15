@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Lms\LmsEvent;
+use App\Services\Admin\TourCabinetHubPageData;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -12,14 +13,12 @@ class TourCabinetHubController extends Controller
     /**
      * Обзор раздела настроек личного кабинета туров / конкурса в админке портала.
      */
-    public function index(): Response
+    public function index(Request $request, TourCabinetHubPageData $hubPageData): Response
     {
-        $slug = config('tour_cabinet.lms_event_slug');
-        $event = LmsEvent::where('slug', $slug)->first();
-
         return Inertia::render('Admin/TourCabinet/Hub', [
-            'lmsEvent' => $event?->only(['id', 'slug', 'title']),
-            'configSlug' => $slug,
+            'formsSection' => $hubPageData->formsPayload(),
+            'directionCitiesSection' => $hubPageData->directionCitiesPayloadFromRequest($request),
+            'stage2Section' => $hubPageData->stage2QuestionsPayload(),
         ]);
     }
 }

@@ -122,7 +122,7 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { usePage } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import axios from 'axios'
 
 const props = defineProps({
@@ -152,6 +152,27 @@ function toggleCheckbox(key, opt) {
   else answers[key].push(opt)
 }
 
+/** Возврат на страницу, с которой пришли (тот же origin), иначе history.back(), иначе экран «Спасибо». */
+function navigateBackAfterFormSubmit() {
+  try {
+    const ref = document.referrer
+    if (ref) {
+      const url = new URL(ref)
+      if (url.origin === window.location.origin) {
+        router.visit(`${url.pathname}${url.search}${url.hash}`, { preserveScroll: false })
+        return
+      }
+    }
+  } catch {
+    /* некорректный referrer */
+  }
+  if (window.history.length > 1) {
+    window.history.back()
+    return
+  }
+  submitted.value = true
+}
+
 async function submitForm() {
   processing.value = true
   errors.value = {}
@@ -163,8 +184,8 @@ async function submitForm() {
 
   try {
     await axios.post(`/forms/${props.form.slug}/submit`, payload)
-    submitted.value = true
     emit('submitted')
+    navigateBackAfterFormSubmit()
   } catch (err) {
     if (err.response?.status === 422) {
       errors.value = err.response.data.errors || {}

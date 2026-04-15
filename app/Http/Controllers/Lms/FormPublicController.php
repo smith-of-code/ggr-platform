@@ -203,10 +203,13 @@ class FormPublicController extends Controller
 
         TourCabinetContestFormLinker::tryLinkAfterSubmission($form, $submission);
 
-        if ($request->wantsJson() || $request->header('X-Inertia')) {
+        if ($request->header('X-Inertia')) {
             return redirect()->back()->with('success', 'Ответ отправлен');
         }
 
-        return response()->json(['message' => 'Ответ отправлен', 'submission_id' => $submission->id]);
+        return response()->json([
+            'message' => 'Ответ отправлен',
+            'submission_id' => $submission->id,
+        ]);
     }
 }

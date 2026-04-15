@@ -59,8 +59,8 @@ Slug двух форм этапа 1: `contest_stage1_form_slug_standard`, `conte
 
 ## Портальная админка (ЛК туров)
 
-Точка входа для редакторов: **GET** `/admin/tour-cabinet` (`admin.tour-cabinet.index`) — страница «ЛК туров» с карточками подразделов; для этапа 3 отдельного CRUD в админке нет (данные — в ЛК участника).
+Точка входа для редакторов: **GET** `/admin/tour-cabinet` (`admin.tour-cabinet.index`) — одна страница «ЛК туров» с тремя блоками на месте: города по направлениям (переключение направления через query `project_key` + якорь `#tour-cabinet-admin-cities`), формы этапа 1, вопросы этапа 2. Отдельного раздела «этап 3» в админке нет (данные — в ЛК участника). После POST-операций редирект обратно на эту страницу с якорем соответствующего блока.
 
-- **GET** `/admin/tour-cabinet/forms` (`admin.tour-cabinet.forms.index`) — список `LmsForm` события `tour_cabinet.lms_event_slug`, ссылки в LMS Admin и публичные страницы; выбор двух форм этапа 1 конкурса (`settings`, группа `tour_cabinet`).
-- **GET** `/admin/tour-cabinet/direction-cities` (`admin.tour-cabinet.direction-cities.index`, query `project_key`) — CRUD `tour_cabinet_direction_cities` по направлениям `Tour::PROJECTS`.
-- **GET** `/admin/tour-cabinet/stage2-questions` — CRUD `tour_cabinet_contest_stage2_questions`.
+- **GET** `/admin/tour-cabinet/forms` (`admin.tour-cabinet.forms.index`) — отдельная страница с тем же UI (ссылка «← ЛК туров» ведёт на хаб с `#tour-cabinet-admin-forms`); данные и **PUT** `admin.tour-cabinet.forms.contest-form-slugs.update` — как у блока форм на хабе.
+- **GET** `/admin/tour-cabinet/direction-cities` (`admin.tour-cabinet.direction-cities.index`, query `project_key`) — отдельная страница с тем же UI; CRUD через **POST/PATCH/DELETE** `admin.tour-cabinet.direction-cities.*`, редиректы на хаб с якорем `#tour-cabinet-admin-cities`.
+- **GET** `/admin/tour-cabinet/stage2-questions` — отдельная страница с тем же UI; CRUD через **POST/PATCH/DELETE** `admin.tour-cabinet.stage2-questions.*`, редиректы на хаб с якорем `#tour-cabinet-admin-stage2`.

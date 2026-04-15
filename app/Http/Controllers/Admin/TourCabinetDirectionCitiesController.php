@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\City;
 use App\Models\Tour;
 use App\Models\TourCabinetDirectionCity;
+use App\Services\Admin\TourCabinetHubPageData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,43 +14,16 @@ use Inertia\Response;
 
 class TourCabinetDirectionCitiesController extends Controller
 {
+    public function __construct(
+        private readonly TourCabinetHubPageData $hubPageData,
+    ) {}
+
     public function index(Request $request): Response
     {
-        $keys = array_keys(Tour::PROJECTS);
-        $projectKey = $request->query('project_key');
-        if (! is_string($projectKey) || ! in_array($projectKey, $keys, true)) {
-            $projectKey = $keys[0];
-        }
-
-        $rows = TourCabinetDirectionCity::query()
-            ->where('project_key', $projectKey)
-            ->with('city:id,name,slug,is_active')
-            ->orderBy('position')
-            ->orderBy('id')
-            ->get();
-
-        $usedCityIds = TourCabinetDirectionCity::query()
-            ->where('project_key', $projectKey)
-            ->pluck('city_id')
-            ->all();
-
-        $cityOptions = City::query()
-            ->where('is_active', true)
-            ->whereNotIn('id', $usedCityIds)
-            ->orderBy('name')
-            ->get(['id', 'name', 'slug']);
-
-        $directions = collect(Tour::PROJECTS)->map(fn (string $label, string $key) => [
-            'key' => $key,
-            'label' => $label,
-        ])->values()->all();
-
-        return Inertia::render('Admin/TourCabinet/DirectionCities/Index', [
-            'directions' => $directions,
-            'projectKey' => $projectKey,
-            'rows' => $rows,
-            'cityOptions' => $cityOptions,
-        ]);
+        return Inertia::render(
+            'Admin/TourCabinet/DirectionCities/Index',
+            $this->hubPageData->directionCitiesPayloadFromRequest($request),
+        );
     }
 
     public function store(Request $request): RedirectResponse
@@ -69,7 +42,8 @@ class TourCabinetDirectionCitiesController extends Controller
             ->exists();
         if ($exists) {
             return redirect()
-                ->route('admin.tour-cabinet.direction-cities.index', ['project_key' => $validated['project_key']])
+                ->route('admin.tour-cabinet.index', ['project_key' => $validated['project_key']])
+                ->withFragment('tour-cabinet-admin-cities')
                 ->with('error', 'Этот город уже добавлен в направление.');
         }
 
@@ -88,7 +62,8 @@ class TourCabinetDirectionCitiesController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.tour-cabinet.direction-cities.index', ['project_key' => $validated['project_key']])
+            ->route('admin.tour-cabinet.index', ['project_key' => $validated['project_key']])
+            ->withFragment('tour-cabinet-admin-cities')
             ->with('success', 'Город добавлен в направление.');
     }
 
@@ -116,7 +91,8 @@ class TourCabinetDirectionCitiesController extends Controller
         }
 
         return redirect()
-            ->route('admin.tour-cabinet.direction-cities.index', ['project_key' => $directionCity->project_key])
+            ->route('admin.tour-cabinet.index', ['project_key' => $directionCity->project_key])
+            ->withFragment('tour-cabinet-admin-cities')
             ->with('success', 'Запись обновлена.');
     }
 
@@ -126,7 +102,8 @@ class TourCabinetDirectionCitiesController extends Controller
         $directionCity->delete();
 
         return redirect()
-            ->route('admin.tour-cabinet.direction-cities.index', ['project_key' => $pk])
+            ->route('admin.tour-cabinet.index', ['project_key' => $pk])
+            ->withFragment('tour-cabinet-admin-cities')
             ->with('success', 'Город убран из направления.');
     }
 }

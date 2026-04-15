@@ -1,60 +1,64 @@
 <template>
   <AdminLayout>
     <Head title="ЛК туров" />
-    <div class="mb-8">
-      <h1 class="text-2xl font-bold text-gray-900">Личный кабинет туров</h1>
-      <p class="mt-1 text-sm text-gray-500">
-        Настройки раздела
-        <code class="rounded bg-gray-100 px-1 text-xs">/tour-cabinet</code>
-        для участников конкурса и туров. Событие LMS:
-        <span v-if="lmsEvent" class="font-medium text-gray-800">«{{ lmsEvent.title }}»</span>
-        <span v-else class="font-mono text-amber-800">{{ configSlug }}</span>
-        <span v-if="!lmsEvent" class="text-amber-700"> — событие не найдено в БД.</span>
-      </p>
-    </div>
+    <div class="mx-auto max-w-6xl">
+      <header class="border-b border-slate-200/80 pb-8">
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Портал</p>
+        <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">Личный кабинет туров</h1>
+      </header>
 
-    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-      <RCard elevation="raised" class="flex flex-col">
-        <h2 class="text-lg font-semibold text-gray-900">Формы и этап 1 конкурса</h2>
-        <div class="mt-6">
-          <Link :href="route('admin.tour-cabinet.forms.index')">
-            <RButton variant="primary" block>Открыть</RButton>
-          </Link>
-        </div>
-      </RCard>
+      <div v-if="$page.props.flash?.success" class="mt-8 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm">
+        {{ $page.props.flash.success }}
+      </div>
+      <div v-if="$page.props.flash?.error" class="mt-8 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm">
+        {{ $page.props.flash.error }}
+      </div>
 
-      <RCard elevation="raised" class="flex flex-col">
-        <h2 class="text-lg font-semibold text-gray-900">Города по направлениям</h2>
-        <div class="mt-6">
-          <Link :href="route('admin.tour-cabinet.direction-cities.index')">
-            <RButton variant="primary" block>Открыть</RButton>
-          </Link>
-        </div>
-      </RCard>
+      <div class="mt-10 space-y-12">
+        <section id="tour-cabinet-admin-cities" class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
+          <h2 class="text-xl font-bold tracking-tight text-slate-900">Города по направлениям</h2>
+          <p class="mt-2 text-sm text-slate-600">
+            Список для шага выбора городов в ЛК
+            <code class="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-800">/tour-cabinet</code>
+          </p>
+          <div class="mt-6">
+            <TourCabinetAdminDirectionCitiesPanel v-bind="directionCitiesSection" />
+          </div>
+        </section>
 
-      <RCard elevation="raised" class="flex flex-col">
-        <h2 class="text-lg font-semibold text-gray-900">Вопросы этапа 2</h2>
-        <div class="mt-6">
-          <Link :href="route('admin.tour-cabinet.stage2-questions.index')">
-            <RButton variant="primary" block>Открыть</RButton>
-          </Link>
-        </div>
-      </RCard>
+        <section id="tour-cabinet-admin-forms" class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
+          <h2 class="text-xl font-bold tracking-tight text-slate-900">Формы и этап 1</h2>
+          <p class="mt-2 text-sm text-slate-600">
+            Анкеты LMS для конкурса
+            <code class="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-800">{{ formsSection.configSlug }}</code>
+          </p>
+          <div class="mt-6">
+            <TourCabinetAdminFormsPanel v-bind="formsSection" />
+          </div>
+        </section>
 
-      <RCard elevation="raised" class="flex flex-col bg-gray-50/60">
-        <h2 class="text-lg font-semibold text-gray-900">Этап 3</h2>
-        <p class="mt-4 text-sm text-gray-500">Только в ЛК участника после этапа 2.</p>
-      </RCard>
+        <section id="tour-cabinet-admin-stage2" class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
+          <h2 class="text-xl font-bold tracking-tight text-slate-900">Вопросы этапа 2</h2>
+          <p class="mt-2 text-sm text-slate-600">Тексты вопросов конкурса и привязка к направлению.</p>
+          <div class="mt-6">
+            <TourCabinetAdminStage2QuestionsPanel v-bind="stage2Section" />
+          </div>
+        </section>
+      </div>
     </div>
   </AdminLayout>
 </template>
 
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
+import { Head } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import TourCabinetAdminDirectionCitiesPanel from './TourCabinetAdminDirectionCitiesPanel.vue'
+import TourCabinetAdminFormsPanel from './TourCabinetAdminFormsPanel.vue'
+import TourCabinetAdminStage2QuestionsPanel from './TourCabinetAdminStage2QuestionsPanel.vue'
 
 defineProps({
-  lmsEvent: { type: Object, default: null },
-  configSlug: { type: String, default: '' },
+  formsSection: { type: Object, required: true },
+  directionCitiesSection: { type: Object, required: true },
+  stage2Section: { type: Object, required: true },
 })
 </script>

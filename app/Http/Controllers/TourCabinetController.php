@@ -216,7 +216,7 @@ class TourCabinetController extends Controller
     }
 
     /**
-     * @return list<array{id: int, tour_title: string, date_range: ?string, status_label: string}>
+     * @return list<array{id: int, tour_title: string, date_range: ?string, status_label: string, status_key: 'pending'|'approved'|'rejected'}>
      */
     private function tourApplicationsForUser(User $user): array
     {
@@ -227,17 +227,26 @@ class TourCabinetController extends Controller
             ->orderByDesc('created_at')
             ->limit(30)
             ->get()
-            ->map(fn (Application $app): array => [
-                'id' => $app->id,
-                'tour_title' => $app->tour?->title ?? 'Заявка на тур',
-                'date_range' => $this->formatTourApplicationDateRange($app),
-                'status_label' => match ($app->status) {
-                    'new', 'in_progress' => 'На проверке',
-                    'approved' => 'Одобрена',
-                    'rejected' => 'Отклонена',
-                    default => 'На проверке',
-                },
-            ])
+            ->map(function (Application $app): array {
+                $statusKey = match ($app->status) {
+                    'approved' => 'approved',
+                    'rejected' => 'rejected',
+                    default => 'pending',
+                };
+
+                return [
+                    'id' => $app->id,
+                    'tour_title' => $app->tour?->title ?? 'Заявка на тур',
+                    'date_range' => $this->formatTourApplicationDateRange($app),
+                    'status_key' => $statusKey,
+                    'status_label' => match ($app->status) {
+                        'new', 'in_progress' => 'На проверке',
+                        'approved' => 'Одобрена',
+                        'rejected' => 'Отклонена',
+                        default => 'На проверке',
+                    },
+                ];
+            })
             ->all();
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsForm;
+use App\Services\Admin\TourCabinetHubPageData;
 use App\Services\SettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class TourCabinetFormsController extends Controller
 
     public function __construct(
         private readonly SettingsService $settings,
+        private readonly TourCabinetHubPageData $hubPageData,
     ) {}
 
     /**
@@ -25,38 +27,7 @@ class TourCabinetFormsController extends Controller
      */
     public function index(): Response
     {
-        $slug = config('tour_cabinet.lms_event_slug');
-        $event = LmsEvent::where('slug', $slug)->first();
-
-        $forms = collect();
-        if ($event) {
-            $forms = LmsForm::query()
-                ->where('lms_event_id', $event->id)
-                ->withCount('submissions')
-                ->orderByDesc('updated_at')
-                ->get();
-        }
-
-        $raw = $this->settings->getGroupFresh(self::SETTINGS_GROUP);
-
-        return Inertia::render('Admin/TourCabinet/Forms/Index', [
-            'lmsEvent' => $event?->only(['id', 'slug', 'title']),
-            'forms' => $forms,
-            'configSlug' => $slug,
-            'contestFormSlugOverrides' => [
-                'standard' => (string) ($raw['contest_stage1_form_slug_standard'] ?? ''),
-                'more_data' => (string) ($raw['contest_stage1_form_slug_more_data'] ?? ''),
-            ],
-            'contestFormSlugsEffective' => [
-                'standard' => $this->settings->getTourCabinetContestStage1FormSlugStandard(),
-                'more_data' => $this->settings->getTourCabinetContestStage1FormSlugMoreData(),
-            ],
-            'formOptions' => $forms->map(fn (LmsForm $f) => [
-                'slug' => $f->slug,
-                'title' => $f->title,
-                'is_active' => (bool) $f->is_active,
-            ])->values()->all(),
-        ]);
+        return Inertia::render('Admin/TourCabinet/Forms/Index', $this->hubPageData->formsPayload());
     }
 
     public function updateContestFormSlugs(Request $request): RedirectResponse
@@ -65,7 +36,8 @@ class TourCabinetFormsController extends Controller
         $event = LmsEvent::where('slug', $eventSlug)->first();
         if (! $event) {
             return redirect()
-                ->route('admin.tour-cabinet.forms.index')
+                ->route('admin.tour-cabinet.index')
+                ->withFragment('tour-cabinet-admin-forms')
                 ->with('error', 'Событие LMS не найдено — сначала настройте TOUR_CABINET_LMS_EVENT_SLUG.');
         }
 
@@ -98,7 +70,8 @@ class TourCabinetFormsController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.tour-cabinet.forms.index')
+            ->route('admin.tour-cabinet.index')
+            ->withFragment('tour-cabinet-admin-forms')
             ->with('success', 'Slug форм конкурса (этап 1) сохранены.');
     }
 }

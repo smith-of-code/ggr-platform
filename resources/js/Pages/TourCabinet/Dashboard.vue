@@ -1,40 +1,44 @@
 <template>
-  <div class="min-h-dvh bg-gray-50 px-4 py-8 font-sans">
+  <div class="min-h-dvh bg-gradient-to-b from-slate-100 to-slate-50 px-4 py-8 font-sans text-slate-900">
     <Head title="Личный кабинет туров" />
     <div class="mx-auto max-w-6xl">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Личный кабинет</h1>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Личный кабинет</h1>
+          <p class="mt-1.5 max-w-xl text-sm leading-relaxed text-slate-600">Профиль участника, заявки на туры и этапы конкурса.</p>
         </div>
-        <form @submit.prevent="logout">
+        <form @submit.prevent="logout" class="shrink-0">
           <RButton type="submit" variant="outline" size="sm">Выйти</RButton>
         </form>
       </div>
 
-      <div v-if="$page.props.flash?.success" class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+      <div v-if="$page.props.flash?.success" class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm">
         {{ $page.props.flash.success }}
       </div>
-      <div v-if="$page.props.flash?.error" class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <div v-if="$page.props.flash?.error" class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm">
         {{ $page.props.flash.error }}
       </div>
 
       <!-- Верхний ряд: карточка участника + статус заявок -->
       <div class="mt-8 grid gap-6 lg:grid-cols-3">
-        <div class="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-sm lg:col-span-2">
-          <div class="flex flex-col gap-5 sm:flex-row sm:items-stretch">
+        <div
+          class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 lg:col-span-2"
+        >
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Участник</p>
+          <div class="mt-4 flex flex-col gap-6 sm:flex-row sm:items-stretch">
             <div
-              class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-300 text-xs text-gray-500 sm:h-32 sm:w-32"
+              class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-xs text-slate-500 shadow-inner sm:h-32 sm:w-32"
             >
               <img v-if="avatarDisplayUrl" :src="avatarDisplayUrl" alt="" class="h-full w-full object-cover" />
               <span v-else>Нет фото</span>
             </div>
             <div class="min-w-0 flex-1">
-              <p class="text-xs text-gray-600">UserID: {{ profile.user_id }}</p>
-              <p class="mt-1 text-xl font-bold leading-tight text-gray-900 sm:text-2xl">{{ profile.display_name }}</p>
-              <p v-if="ageLabel" class="mt-2 text-sm text-gray-800">{{ ageLabel }}</p>
+              <p class="font-mono text-xs text-slate-500">ID {{ profile.user_id }}</p>
+              <p class="mt-1 text-xl font-bold leading-tight text-slate-900 sm:text-2xl">{{ profile.display_name }}</p>
+              <p v-if="ageLabel" class="mt-2 text-sm text-slate-600">{{ ageLabel }}</p>
               <button
                 type="button"
-                class="mt-4 text-left text-sm font-medium text-blue-600 underline decoration-blue-600/30 underline-offset-2 hover:text-blue-800"
+                class="mt-4 inline-flex cursor-pointer text-sm font-semibold text-rosatom-700 underline decoration-rosatom-300 decoration-2 underline-offset-4 transition hover:text-rosatom-900"
                 :aria-expanded="fullProfileVisible"
                 aria-controls="tour-cabinet-profile"
                 @click="toggleFullProfile"
@@ -45,21 +49,40 @@
           </div>
         </div>
 
-        <div class="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-sm">
-          <h2 class="text-lg font-bold text-gray-900">Статус заявок</h2>
-          <div class="mt-3 rounded-lg bg-gray-50 p-3">
+        <div class="flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/5">
+          <div class="flex items-center gap-2.5 border-b border-slate-100 bg-slate-50/90 px-5 py-4">
+            <ClipboardDocumentListIcon class="h-5 w-5 shrink-0 text-rosatom-600" aria-hidden="true" />
+            <h2 class="text-base font-bold text-slate-900">Статус заявок</h2>
+          </div>
+          <div class="flex-1 p-4 sm:p-5">
             <template v-if="tourApplications.length">
-              <ul class="divide-y divide-gray-200">
-                <li v-for="app in tourApplications" :key="app.id" class="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
-                  <div class="min-w-0">
-                    <p class="font-bold text-gray-900">{{ app.tour_title }}</p>
-                    <p v-if="app.date_range" class="mt-1 text-sm text-gray-600">{{ app.date_range }}</p>
+              <ul class="space-y-3">
+                <li
+                  v-for="app in tourApplications"
+                  :key="app.id"
+                  class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3.5 transition hover:border-slate-200 hover:bg-slate-50"
+                >
+                  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div class="min-w-0 flex-1">
+                      <p class="font-semibold leading-snug text-slate-900">{{ app.tour_title }}</p>
+                      <p v-if="app.date_range" class="mt-1.5 flex items-center gap-1.5 text-xs text-slate-600">
+                        <CalendarDaysIcon class="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                        {{ app.date_range }}
+                      </p>
+                    </div>
+                    <span
+                      class="inline-flex w-fit shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset"
+                      :class="tourApplicationStatusPillClass(app.status_key)"
+                    >
+                      {{ app.status_label }}
+                    </span>
                   </div>
-                  <p class="shrink-0 text-right text-sm font-bold text-gray-900">{{ app.status_label }}</p>
                 </li>
               </ul>
             </template>
-            <p v-else class="text-sm text-gray-500">Заявок на туры по этому аккаунту пока нет.</p>
+            <p v-else class="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm leading-relaxed text-slate-600">
+              Заявок на туры по этому аккаунту пока нет.
+            </p>
           </div>
         </div>
       </div>
@@ -67,28 +90,31 @@
       <!-- Полный профиль -->
       <section id="tour-cabinet-profile" class="mt-10 scroll-mt-8">
         <div v-show="fullProfileVisible">
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Полный профиль</h2>
-          <form class="mt-3 space-y-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm" @submit.prevent="submitProfile">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <div class="shrink-0">
-              <p class="mb-2 text-xs font-medium text-gray-600">Фото профиля</p>
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Полный профиль</h2>
+          <form
+            class="mt-3 space-y-5 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8"
+            @submit.prevent="submitProfile"
+          >
+          <div>
+            <p class="mb-3 text-xs font-medium text-slate-600">Фото профиля</p>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
               <div
-                class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-100 text-xs text-gray-500"
+                class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-xs text-slate-500 shadow-inner sm:h-32 sm:w-32"
               >
                 <img v-if="avatarDisplayUrl" :src="avatarDisplayUrl" alt="" class="h-full w-full object-cover" />
                 <span v-else>Нет фото</span>
               </div>
-            </div>
-            <div class="min-w-0 flex-1 space-y-2">
-              <input
-                :key="avatarInputKey"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-rosatom-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-rosatom-800 hover:file:bg-rosatom-100"
-                @change="onAvatarFile"
-              />
-              <p v-if="profileForm.errors.avatar" class="text-xs text-red-600">{{ profileForm.errors.avatar }}</p>
-              <p class="text-xs text-gray-500">JPEG, PNG, WebP или GIF, до 2 МБ.</p>
+              <div class="min-w-0 flex-1 space-y-2">
+                <input
+                  :key="avatarInputKey"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  class="block w-full cursor-pointer text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-rosatom-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-rosatom-800 hover:file:bg-rosatom-100"
+                  @change="onAvatarFile"
+                />
+                <p v-if="profileForm.errors.avatar" class="text-xs text-red-600">{{ profileForm.errors.avatar }}</p>
+                <p class="text-xs text-slate-500">JPEG, PNG, WebP или GIF, до 2 МБ.</p>
+              </div>
             </div>
           </div>
 
@@ -179,20 +205,20 @@
 
         <div
           id="tour-cabinet-contest-detail"
-          class="scroll-mt-8 rounded-xl border border-rosatom-200 bg-white p-4 shadow-sm sm:p-6"
+          class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-7"
         >
-          <div class="border-b border-gray-100 pb-4">
-            <h2 class="text-sm font-semibold text-gray-900">Конкурс</h2>
-            <p class="mt-1 text-sm text-gray-500">Сейчас в прогрессе: этап {{ contestProgress.current_stage }}.</p>
+          <div class="border-b border-slate-100 pb-4">
+            <h2 class="text-base font-bold text-slate-900">Конкурс</h2>
+            <p class="mt-1 text-sm text-slate-600">Сейчас в прогрессе: этап {{ contestProgress.current_stage }}.</p>
           </div>
 
           <div class="mt-5 space-y-6" role="tablist" aria-label="Этапы конкурса">
             <div v-for="(st, stageIdx) in contestStageSummary" :key="st.roman">
-              <h3 class="text-base font-bold text-gray-900">{{ st.title }}</h3>
+              <h3 class="text-base font-bold text-slate-900">{{ st.title }}</h3>
               <button
                 type="button"
                 role="tab"
-                class="mt-2 flex w-full cursor-pointer items-center gap-4 rounded-2xl bg-gray-200/90 px-4 py-4 text-left shadow-sm outline-none transition ring-offset-2 ring-offset-white hover:bg-gray-200 sm:gap-5 sm:px-6 sm:py-5"
+                class="mt-2 flex w-full cursor-pointer items-center gap-4 rounded-2xl border border-slate-100 bg-slate-100/90 px-4 py-4 text-left shadow-sm outline-none transition ring-offset-2 ring-offset-white hover:bg-slate-100 sm:gap-5 sm:px-6 sm:py-5"
                 :class="
                   activeContestTab === stageIdx + 1
                     ? 'ring-2 ring-rosatom-500'
@@ -201,14 +227,21 @@
                 :aria-selected="activeContestTab === stageIdx + 1"
                 @click="activeContestTab = stageIdx + 1"
               >
-                <div class="h-14 w-14 shrink-0 rounded-lg bg-gray-500" aria-hidden="true" />
-                <p class="min-w-0 flex-1 text-base font-semibold text-gray-900">{{ st.label }}</p>
-                <p class="shrink-0 text-sm font-normal lowercase text-gray-700">{{ st.status_label }}</p>
+                <div
+                  class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-rosatom-50 ring-1 ring-rosatom-100/80"
+                  aria-hidden="true"
+                >
+                  <UserCircleIcon v-if="stageIdx === 0" class="h-8 w-8 text-rosatom-700" />
+                  <ChatBubbleLeftRightIcon v-else-if="stageIdx === 1" class="h-8 w-8 text-rosatom-700" />
+                  <AcademicCapIcon v-else class="h-8 w-8 text-rosatom-700" />
+                </div>
+                <p class="min-w-0 flex-1 text-base font-semibold text-slate-900">{{ st.label }}</p>
+                <p class="shrink-0 text-sm font-medium lowercase text-slate-600">{{ st.status_label }}</p>
               </button>
 
               <div
                 v-show="activeContestTab === stageIdx + 1"
-                class="mt-3 rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-4 sm:px-5"
+                class="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-4 sm:px-5"
               >
                 <ContestStage1Panel v-if="stageIdx === 0" v-bind="contestStage1" />
                 <ContestStage2Panel
@@ -233,6 +266,13 @@
 </template>
 
 <script setup>
+import {
+  AcademicCapIcon,
+  CalendarDaysIcon,
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentListIcon,
+  UserCircleIcon,
+} from '@heroicons/vue/24/outline'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Head, router, useForm } from '@inertiajs/vue3'
 import ContestStage1Panel from './Contest/ContestStage1Panel.vue'
@@ -273,6 +313,17 @@ const props = defineProps({
     default: () => [],
   },
 })
+
+function tourApplicationStatusPillClass(statusKey) {
+  switch (statusKey) {
+    case 'approved':
+      return 'bg-emerald-50 text-emerald-900 ring-emerald-600/15'
+    case 'rejected':
+      return 'bg-red-50 text-red-900 ring-red-600/15'
+    default:
+      return 'bg-amber-50 text-amber-950 ring-amber-600/20'
+  }
+}
 
 /** Список «доступно участие в конкурсе…» скрыт по требованию UI; включите true, чтобы снова показать блок. */
 const showContestLocationOffers = false
