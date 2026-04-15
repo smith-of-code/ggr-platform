@@ -432,8 +432,13 @@ const prevStage = computed(() => {
 const nextStage = computed(() => {
   const i = currentIdx.value
   if (i < 0 || i >= allStages.value.length - 1) return null
-  const s = allStages.value[i + 1]
-  return s.stage || s
+  const raw = allStages.value[i + 1]
+  const candidate = raw.stage || raw
+  // Сервер отмечает недоступные этапы (закрытый модуль, sequential, is_locked) — не вести «Далее» туда
+  if (raw.is_available === false || candidate.is_available === false) {
+    return null
+  }
+  return candidate
 })
 
 const isCompleted = computed(() => {
@@ -513,7 +518,7 @@ onUnmounted(() => {
 
 function typeLabel(type) {
   const map = {
-    content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Лекции',
+    content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео',
     workshop: 'Воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
   }
   return map[type] || type || 'Контент'

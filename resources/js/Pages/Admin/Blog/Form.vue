@@ -104,6 +104,18 @@
 
         <RCheckbox v-model="form.is_published" label="Опубликовано" />
 
+        <div>
+          <label class="mb-2 block text-sm font-semibold text-gray-700">Дата и время публикации</label>
+          <input
+            v-model="form.published_at"
+            type="datetime-local"
+            :disabled="!form.is_published"
+            class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#003274]/10 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <p class="mt-1 text-xs text-gray-500">Активно для опубликованных записей. Если поле пустое: при создании подставится текущее время, при редактировании сохранится прежняя дата публикации.</p>
+          <p v-if="form.errors.published_at" class="mt-1 text-sm text-red-600">{{ form.errors.published_at }}</p>
+        </div>
+
         <div class="flex gap-3 border-t border-gray-100 pt-6">
           <RButton variant="primary" type="submit" :loading="form.processing" :disabled="form.processing">
             Сохранить
@@ -140,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
@@ -158,6 +170,14 @@ const mediaEntityId = props.post?.id || null
 
 let slugManuallyEdited = false
 
+function toDatetimeLocal(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 const form = useForm({
   title: props.post?.title ?? '',
   slug: props.post?.slug ?? '',
@@ -168,7 +188,17 @@ const form = useForm({
   tags: props.post?.tags?.length ? [...props.post.tags] : [],
   videos: props.post?.videos?.length ? [...props.post.videos] : [],
   is_published: props.post?.is_published ?? false,
+  published_at: props.post?.published_at ? toDatetimeLocal(props.post.published_at) : '',
 })
+
+watch(
+  () => form.is_published,
+  (pub) => {
+    if (pub && !form.published_at) {
+      form.published_at = toDatetimeLocal(new Date().toISOString())
+    }
+  }
+)
 
 function addVideo() {
   form.videos = [...form.videos, '']

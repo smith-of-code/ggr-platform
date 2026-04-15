@@ -91,30 +91,8 @@ class CourseController extends Controller
             ->get()
             ->keyBy('lms_course_stage_id');
 
-        $isSequential = (bool) $course->sequential;
-
-        $modulePositions = $course->modules->pluck('position', 'id');
-        $orderedStages = $course->stages->sortBy(function ($s) use ($modulePositions) {
-            $modulePos = $s->lms_course_module_id
-                ? ($modulePositions[$s->lms_course_module_id] ?? 9999)
-                : -1;
-            return [$modulePos, $s->position];
-        });
-
-        $stageAvailability = [];
-        $prevCompleted = true;
-        foreach ($orderedStages as $stage) {
-            $progress = $stageProgress->get($stage->id);
-            $isAvailable = true;
-            if ($stage->available_from && now()->lt($stage->available_from)) {
-                $isAvailable = false;
-            }
-            if ($isSequential && !$prevCompleted) {
-                $isAvailable = false;
-            }
-            $stageAvailability[$stage->id] = $isAvailable;
-            $prevCompleted = $progress?->status === 'completed';
-        }
+        $orderedStages = $course->stagesInCurriculumOrder();
+        $stageAvailability = $course->stageAvailabilityForUser($user);
 
         $mapStage = function ($stage) use ($stageProgress, $stageAvailability) {
             $progress = $stageProgress->get($stage->id);
@@ -173,7 +151,7 @@ class CourseController extends Controller
             'existingOtherEnrollment' => $existingOtherEnrollment,
             'modules' => $modules,
             'orphanStages' => $orphanStages,
-            'stages' => $course->stages->sortBy('position')->map(fn($s) => $s->only(['id', 'title', 'type', 'position']))->values(),
+            'stages' => $orderedStages->map(fn ($s) => $s->only(['id', 'title', 'type', 'position']))->values(),
             'hasMaterials' => $hasMaterials,
             'isProfileComplete' => $profile?->isProfileComplete() ?? false,
         ]);

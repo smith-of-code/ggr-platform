@@ -15,6 +15,7 @@
 - `App\Http\Controllers\Lms\Admin\EventController` — CRUD событий
 
 ### Страницы
+- `Layouts/LmsAdminLayout.vue` — на экранах ниже `lg` боковое меню (`RSidebar`) в режиме off-canvas (кнопка в шапке, затемнение, закрытие по навигации / Escape); основная колонка без фиксированного `margin-left` до `lg`; высота панели на мобильных через `dvh`, чтобы снизить обрывы при динамической высоте viewport.
 - `Pages/Lms/Admin/Events/Index.vue` — список событий
 - `Pages/Lms/Admin/Events/Create.vue` — создание события
 - `Pages/Lms/Admin/Events/Edit.vue` — редактирование события
@@ -55,6 +56,7 @@
 2. `LmsEvent::getMenuConfigAttribute()` мержит сохранённую конфигурацию с дефолтами
 3. Все participant-facing контроллеры передают `menu_config` в Inertia-ответе
 4. `LmsLayout.vue` фильтрует `sidebarItems` по `menu_config` события
+5. Участникский `LmsLayout.vue`: боковое меню на узких экранах off-canvas; отступ основной колонки под ширину сайдбара (`lg:pl-[240px]`) применяется только с breakpoint `lg`, иначе контент на полную ширину viewport.
 
 ## Изоляция контента по событию
 

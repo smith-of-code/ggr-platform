@@ -4,7 +4,7 @@
 
 1. Task 1: Уточнение модели видимости и контракт API — миграция `visible_to_all`, `normalizeVideoAccess`, валидация в `Admin\VideoController`, тесты
 2. Task 2: Список видео участника без фильтра — `VideoController::index` с `visible_to_all` и пересечением программ
-3. Task 3: Фильтр `lms_group_id` в `VideoController::index`, props `programFilterGroups`
+3. Task 3: Фильтр `lms_course_id` в `VideoController::index`, props `programFilterCourses`
 4. Task 4: `VideoController::show` — доступ по событию + `is_active`, без проверки членства в программе
 5. Task 5: UI админки «Кому показывать» в `Admin/Videos/Form.vue`
 6. Task 6: UI фильтра в `Lms/Videos/Index.vue`

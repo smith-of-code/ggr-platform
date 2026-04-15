@@ -334,7 +334,7 @@ function stageTypeIcon(type) {
 
 function stageTypeLabel(type) {
   return {
-    content: 'Теория', video: 'Лекции', test: 'Тест', assignment: 'Задание', scorm: 'SCORM',
+    content: 'Теория', video: 'Видео', test: 'Тест', assignment: 'Задание', scorm: 'SCORM',
     workshop: 'Воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
   }[type] || 'Урок'
 }

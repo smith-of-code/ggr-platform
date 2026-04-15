@@ -37,9 +37,9 @@ class LmsVideo extends Model
         return $this->belongsTo(LmsEvent::class, 'lms_event_id');
     }
 
-    /** @return BelongsToMany<LmsGroup> */
-    public function groups(): BelongsToMany
+    /** @return BelongsToMany<LmsCourse> */
+    public function courses(): BelongsToMany
     {
-        return $this->belongsToMany(LmsGroup::class, 'lms_video_access');
+        return $this->belongsToMany(LmsCourse::class, 'lms_video_course_access', 'lms_video_id', 'lms_course_id');
     }
 }

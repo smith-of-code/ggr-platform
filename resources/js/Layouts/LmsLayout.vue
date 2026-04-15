@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen bg-gray-50 font-sans">
+  <div class="flex min-h-dvh bg-gray-50 font-sans">
     <ToastNotifications />
     <!-- Mobile overlay -->
     <div
@@ -9,11 +9,15 @@
     />
 
     <!-- Sidebar -->
-    <div :class="[
-      'fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:translate-x-0',
-      sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-    ]">
+    <div
+      id="lms-sidebar-panel"
+      :class="[
+        'fixed inset-y-0 left-0 z-50 max-lg:shadow-2xl transition-transform duration-300 lg:translate-x-0',
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+      ]"
+    >
       <RSidebar
+        class="max-lg:!h-dvh"
         :items="sidebarItems"
         :active-item="activeItemId"
         :collapsed="false"
@@ -57,16 +61,20 @@
       </RSidebar>
     </div>
 
-    <!-- Main content -->
-    <div class="flex flex-1 flex-col" style="padding-left: 240px">
+    <!-- Main content: отступ под ширину RSidebar только с lg (на мобильных сайдбар off-canvas) -->
+    <div class="flex min-w-0 flex-1 flex-col lg:pl-[240px]">
       <!-- Top bar -->
-      <header class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm lg:px-8">
+      <header class="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-4 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm lg:px-8">
         <button
           type="button"
           class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-rosatom-700 lg:hidden"
-          @click="sidebarOpen = true"
+          :aria-label="sidebarOpen ? 'Закрыть меню' : 'Открыть меню'"
+          :aria-expanded="sidebarOpen"
+          aria-controls="lms-sidebar-panel"
+          @click="sidebarOpen = !sidebarOpen"
         >
-          <Bars3Icon class="h-6 w-6" />
+          <Bars3Icon v-if="!sidebarOpen" class="h-6 w-6" />
+          <XMarkIcon v-else class="h-6 w-6" />
         </button>
 
         <div class="min-w-0 flex-1">
@@ -100,7 +108,7 @@
         </button>
       </header>
 
-      <main class="flex-1 p-4 lg:p-8">
+      <main class="min-w-0 flex-1 overflow-x-auto p-4 lg:p-8">
         <slot />
       </main>
     </div>
@@ -109,7 +117,7 @@
 
 <script setup>
 import { usePage, router } from '@inertiajs/vue3'
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   Bars3Icon,
   XMarkIcon,
@@ -128,6 +136,26 @@ const props = defineProps({
 })
 
 const sidebarOpen = ref(false)
+
+function closeMobileSidebar() {
+  sidebarOpen.value = false
+}
+
+let removeRouterListener
+
+function onEscapeKey(ev) {
+  if (ev.key === 'Escape') closeMobileSidebar()
+}
+
+onMounted(() => {
+  removeRouterListener = router.on('start', closeMobileSidebar)
+  window.addEventListener('keydown', onEscapeKey)
+})
+
+onUnmounted(() => {
+  removeRouterListener?.()
+  window.removeEventListener('keydown', onEscapeKey)
+})
 
 const roleName = computed(() => {
   const map = { participant: 'Участник', curator: 'Куратор', leader: 'Лидер', admin: 'Администратор' }
@@ -174,7 +202,7 @@ const sidebarItems = computed(() => {
   if (mc.tests) items.push({ id: 'lms.tests', label: 'Тестирование', icon: icons.tests })
   if (mc.assignments) items.push({ id: 'lms.assignments', label: 'Задания', icon: icons.assignments })
   if (mc.leaderboard && gamificationEnabled.value) items.push({ id: 'lms.gamification.leaderboard', label: 'Рейтинг', icon: icons.leaderboard })
-  if (mc.videos) items.push({ id: 'lms.videos', label: 'Лекции', icon: icons.videos })
+  if (mc.videos) items.push({ id: 'lms.videos', label: 'Видеоматериалы', icon: icons.videos })
   if (mc.kb) items.push({ id: 'lms.kb', label: 'База знаний', icon: icons.kb })
   if (mc.materials) items.push({ id: 'lms.materials', label: 'Материалы', icon: icons.materials })
 
@@ -230,8 +258,8 @@ const routeMap = {
 }
 
 function onSelect(itemId) {
+  closeMobileSidebar()
   onNavigate(itemId)
-  sidebarOpen.value = false
 }
 
 function onNavigate(itemId) {
@@ -242,6 +270,7 @@ function onNavigate(itemId) {
 }
 
 function logout() {
+  closeMobileSidebar()
   router.post(route('lms.logout', { event: props.event?.slug }))
 }
 </script>

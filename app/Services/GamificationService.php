@@ -109,7 +109,7 @@ class GamificationService
 
     public static array $defaultActions = [
         'course_complete' => 'Завершение курса',
-        'stage_complete' => 'Прохождение этапа',
+        'module_complete' => 'Завершение модуля',
         'test_pass' => 'Успешное прохождение теста',
         'assignment_approved' => 'Одобрение задания',
         'trajectory_complete' => 'Завершение траектории',

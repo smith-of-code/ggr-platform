@@ -266,7 +266,7 @@ class LmsSeeder extends Seeder
 
         // ── Gamification Rules ──
         foreach ([
-            ['title' => 'Прохождение этапа курса', 'action' => 'stage_complete', 'points' => 10, 'max_times' => null],
+            ['title' => 'Завершение модуля', 'action' => 'module_complete', 'points' => 10, 'max_times' => null],
             ['title' => 'Завершение курса', 'action' => 'course_complete', 'points' => 50, 'max_times' => null],
             ['title' => 'Успешный тест', 'action' => 'test_pass', 'points' => 30, 'max_times' => null],
             ['title' => 'Одобренное задание', 'action' => 'assignment_approved', 'points' => 40, 'max_times' => null],

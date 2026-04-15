@@ -216,7 +216,7 @@ const blockTypes = [
   { value: 'scorm', label: 'SCORM' },
   { value: 'test', label: 'Тест' },
   { value: 'assignment', label: 'Задание' },
-  { value: 'video', label: 'Лекции' },
+  { value: 'video', label: 'Лекция' },
   { value: 'workshop', label: 'Воркшоп' },
   { value: 'city_meeting', label: 'Встреча города' },
   { value: 'curator_meeting', label: 'Встреча с куратором' },

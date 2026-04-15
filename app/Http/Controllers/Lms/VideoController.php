@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Lms;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
-use App\Models\Lms\LmsGroup;
+use App\Models\Lms\LmsCourse;
+use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsVideo;
 use App\Services\GamificationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,17 +18,19 @@ class VideoController extends Controller
     public function index(Request $request, LmsEvent $event): Response
     {
         $user = auth()->user();
-        $groupIds = DB::table('lms_group_members')
-            ->where('user_id', $user->id)
-            ->pluck('lms_group_id');
 
-        $filterGroupId = $request->integer('lms_group_id') ?: null;
-        if ($filterGroupId !== null) {
-            $belongs = LmsGroup::where('id', $filterGroupId)
+        $enrolledCourseIds = LmsCourseEnrollment::query()
+            ->where('user_id', $user->id)
+            ->whereHas('course', fn ($q) => $q->where('lms_event_id', $event->id))
+            ->pluck('lms_course_id');
+
+        $filterCourseId = $request->integer('lms_course_id') ?: null;
+        if ($filterCourseId !== null) {
+            $belongs = LmsCourse::where('id', $filterCourseId)
                 ->where('lms_event_id', $event->id)
                 ->exists();
             if (! $belongs) {
-                $filterGroupId = null;
+                $filterCourseId = null;
             }
         }
 
@@ -36,13 +38,13 @@ class VideoController extends Controller
             ->where('lms_event_id', $event->id)
             ->where('is_active', true);
 
-        if ($filterGroupId !== null) {
-            $videosQuery->whereHas('groups', fn ($q) => $q->where('lms_groups.id', $filterGroupId));
+        if ($filterCourseId !== null) {
+            $videosQuery->whereHas('courses', fn ($q) => $q->where('lms_courses.id', $filterCourseId));
         } else {
-            $videosQuery->where(function ($query) use ($groupIds) {
+            $videosQuery->where(function ($query) use ($enrolledCourseIds) {
                 $query->where('visible_to_all', true);
-                if ($groupIds->isNotEmpty()) {
-                    $query->orWhereHas('groups', fn ($gq) => $gq->whereIn('lms_groups.id', $groupIds));
+                if ($enrolledCourseIds->isNotEmpty()) {
+                    $query->orWhereHas('courses', fn ($cq) => $cq->whereIn('lms_courses.id', $enrolledCourseIds));
                 }
             });
         }
@@ -55,17 +57,17 @@ class VideoController extends Controller
 
         $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
 
-        $programFilterGroups = $event->groups()->orderBy('title')->get(['id', 'title']);
+        $programFilterCourses = $event->courses()->orderBy('title')->get(['id', 'title']);
 
         return Inertia::render('Lms/Videos/Index', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
             'videos' => $videos,
-            'programFilterGroups' => $programFilterGroups,
+            'programFilterCourses' => $programFilterCourses,
             'filters' => [
                 'search' => $request->get('search'),
-                'lms_group_id' => $filterGroupId,
+                'lms_course_id' => $filterCourseId,
             ],
         ]);
     }

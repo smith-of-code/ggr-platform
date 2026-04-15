@@ -1004,7 +1004,7 @@
 | is_active | boolean | |
 | timestamps | | |
 
-**Связи**: `event()` BelongsTo LmsEvent, `groups()` BelongsToMany LmsGroup через lms_video_access
+**Связи**: `event()` BelongsTo LmsEvent, `courses()` BelongsToMany LmsCourse через lms_video_course_access
 
 ---
 
@@ -1213,6 +1213,6 @@
 | city_tour | city_id → cities | tour_id → tours | — |
 | lms_group_members | lms_group_id → lms_groups | user_id → users | (lms_group_id, user_id) |
 | lms_kb_access | lms_kb_section_id → lms_kb_sections | lms_group_id → lms_groups | (lms_kb_section_id, lms_group_id) |
-| lms_video_access | lms_video_id → lms_videos | lms_group_id → lms_groups | (lms_video_id, lms_group_id) |
+| lms_video_course_access | lms_video_id → lms_videos | lms_course_id → lms_courses | (lms_video_id, lms_course_id) |
 | lms_material_access | lms_material_section_id → lms_material_sections | lms_group_id → lms_groups | (lms_material_section_id, lms_group_id) |
 | lms_course_role_access | lms_course_id → lms_courses | lms_role_id → lms_roles | (lms_course_id, lms_role_id) |

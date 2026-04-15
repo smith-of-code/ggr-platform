@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Lms\LmsCourseEnrollment;
+use App\Models\Lms\LmsCourseStage;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTestAttempt;
@@ -17,22 +18,51 @@ class LmsProgressObserver
         private GamificationService $gamification
     ) {}
 
-    public function stageCompleted(LmsStageProgress $progress): void
+    /**
+     * Баллы за завершение модуля: все этапы модуля (lms_course_module_id) со статусом completed,
+     * либо один «свободный» этап без модуля — как модуль из одного этапа.
+     */
+    public function maybeAwardModuleComplete(LmsStageProgress $progress): void
     {
         if ($progress->status !== 'completed') {
             return;
         }
 
-        $stage = $progress->stage()->with('course.event')->first();
+        $stage = $progress->stage()->with(['course.event', 'module'])->first();
         if (!$stage?->course?->event || !$stage->course->unlocks_gamification) {
             return;
         }
 
+        $stageIds = $stage->lms_course_module_id !== null
+            ? LmsCourseStage::query()
+                ->where('lms_course_module_id', $stage->lms_course_module_id)
+                ->pluck('id')
+            : collect([$stage->id]);
+
+        if ($stageIds->isEmpty()) {
+            return;
+        }
+
+        $total = $stageIds->count();
+        $completed = LmsStageProgress::query()
+            ->whereIn('lms_course_stage_id', $stageIds)
+            ->where('user_id', $progress->user_id)
+            ->where('status', 'completed')
+            ->count();
+
+        if ($completed < $total) {
+            return;
+        }
+
+        $reason = $stage->lms_course_module_id !== null && $stage->module
+            ? "Модуль: {$stage->module->title}"
+            : "Модуль: {$stage->title}";
+
         $this->gamification->awardPoints(
             $stage->course->event,
             User::find($progress->user_id),
-            'stage_complete',
-            "Этап: {$stage->title}"
+            'module_complete',
+            $reason
         );
     }
 

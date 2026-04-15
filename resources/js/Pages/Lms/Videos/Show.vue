@@ -7,7 +7,7 @@
         class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-rosatom-700"
       >
         <ArrowLeftIcon class="h-4 w-4" />
-        Назад к лекциям
+        Назад к видео
       </Link>
 
       <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">

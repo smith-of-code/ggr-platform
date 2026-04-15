@@ -1,18 +1,19 @@
 <template>
   <LmsAdminLayout :events="events.data">
-    <div class="mb-8 flex items-center justify-between">
-      <div>
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="min-w-0">
         <h1 class="text-2xl font-bold text-gray-900">События</h1>
         <p class="mt-1 text-sm text-gray-500">Управление событиями LMS</p>
       </div>
-      <Link :href="route('lms.admin.events.create')" class="inline-flex items-center gap-2 rounded-xl bg-rosatom-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rosatom-700">
+      <Link :href="route('lms.admin.events.create')" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rosatom-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rosatom-700 sm:w-auto">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
         Создать событие
       </Link>
     </div>
 
-    <RCard flush>
-      <table class="min-w-full">
+    <RCard flush class="min-w-0">
+      <div class="-mx-4 overflow-x-auto sm:mx-0">
+      <table class="min-w-[640px] w-full">
         <thead>
           <tr class="border-b border-gray-200 bg-gray-50">
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Название</th>
@@ -55,6 +56,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
       <div v-if="events.data.length === 0" class="px-5 py-16 text-center text-sm text-gray-500">Событий пока нет</div>
     </RCard>
   </LmsAdminLayout>
