@@ -204,13 +204,7 @@
         <div v-if="content.results_videos?.length" class="mt-10 grid gap-6 sm:grid-cols-2">
           <div v-for="(vid, i) in content.results_videos" :key="i" class="overflow-hidden rounded-xl border border-gray-200 shadow-md">
             <div class="aspect-video w-full">
-              <iframe v-if="activeVideos[i]" :src="parseEmbed(vid.url)" class="h-full w-full" :title="vid.title || `Видео ${i+1}`" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen />
-              <button v-else type="button" class="group relative flex h-full w-full cursor-pointer items-center justify-center bg-gray-900" @click="activeVideos[i] = true">
-                <img v-if="vid.thumbnail" :src="vid.thumbnail" :alt="vid.title || `Видео ${i+1}`" class="absolute inset-0 h-full w-full object-cover opacity-80 transition group-hover:opacity-60" />
-                <span class="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg transition group-hover:scale-110 group-hover:bg-white">
-                  <svg class="ml-1 h-7 w-7 text-[#003274]" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v14l11-7-11-7Z" /></svg>
-                </span>
-              </button>
+              <iframe :src="parseEmbed(vid.url)" class="h-full w-full" :title="vid.title || `Видео ${i+1}`" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen />
             </div>
             <p v-if="vid.title" class="bg-white px-4 py-2 text-sm font-medium text-gray-900">{{ vid.title }}</p>
           </div>
@@ -511,7 +505,6 @@ const props = defineProps({
 })
 
 const showFormModal = ref(false)
-const activeVideos = reactive({})
 
 const recipeCity = ref(props.recipeFilters?.recipe_city ?? '')
 const applicationSent = ref(false)
@@ -594,7 +587,7 @@ function parseEmbed(url) {
   if (!url || typeof url !== 'string') return url
 
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/)
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}`
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0`
 
   const rt = url.match(/rutube\.ru\/(?:video\/|play\/embed\/)([a-zA-Z0-9_-]+)/)
   if (rt) return `https://rutube.ru/play/embed/${rt[1]}`
