@@ -77,7 +77,7 @@
 
                   <!-- Course stages list -->
                   <div v-if="item.type === 'course' && item.enrolled && item.stages?.length" class="mb-4">
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Этапы</p>
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Темы</p>
                     <div class="space-y-1.5">
                       <div v-for="(stage, si) in item.stages" :key="si" class="flex items-center gap-2.5 rounded-lg px-2 py-1.5" :class="stage.completed ? 'bg-green-50' : 'bg-gray-50'">
                         <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" :class="stage.completed ? 'bg-green-500 text-white' : 'border border-gray-300 bg-white'">

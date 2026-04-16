@@ -121,27 +121,33 @@
               <!-- Этапы внутри модуля -->
               <div class="ml-4 border-l-2 border-rosatom-200 pl-4">
                 <h4 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Этапы модуля</h4>
-                <div class="space-y-3">
-                  <StageEditor
-                    v-for="(stage, sIdx) in mod.stages"
-                    :key="sIdx"
-                    :stage="stage"
-                    :index="sIdx"
-                    :total="mod.stages.length"
-                    :tests="tests"
-                    :assignments="assignments"
-                    :videos="videos"
-                    :event-slug="event.slug"
-                    @move="(delta) => moveModuleStage(mIdx, sIdx, delta)"
-                    @remove="removeModuleStage(mIdx, sIdx)"
-                    @search="openStageSearch(mIdx, sIdx)"
-                    @search-block="openBlockSearch(mIdx, sIdx)"
-                  />
+                <div class="space-y-2">
+                  <template v-for="(stage, sIdx) in mod.stages" :key="`m${mIdx}-s${sIdx}`">
+                    <StageEditor
+                      :stage="stage"
+                      :index="sIdx"
+                      :total="mod.stages.length"
+                      :tests="tests"
+                      :assignments="assignments"
+                      :videos="videos"
+                      :event-slug="event.slug"
+                      @move="(delta) => moveModuleStage(mIdx, sIdx, delta)"
+                      @remove="removeModuleStage(mIdx, sIdx)"
+                      @search="openStageSearch(mIdx, sIdx)"
+                      @search-block="openBlockSearch(mIdx, sIdx)"
+                    />
+                    <div class="flex justify-center pt-1">
+                      <button
+                        type="button"
+                        class="inline-flex w-full max-w-xl items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-medium text-gray-500 transition hover:border-rosatom-400 hover:bg-rosatom-50 hover:text-rosatom-600"
+                        @click="insertModuleStageAfter(mIdx, sIdx)"
+                      >
+                        <PlusIcon class="h-4 w-4" />
+                        Добавить этап
+                      </button>
+                    </div>
+                  </template>
                 </div>
-                <RButton variant="ghost" size="sm" type="button" class="mt-3" @click="addModuleStage(mIdx)">
-                  <template #icon><PlusIcon class="h-4 w-4" /></template>
-                  Добавить этап
-                </RButton>
               </div>
             </div>
 
@@ -160,27 +166,33 @@
         <template #header>
           <h2 class="text-base font-bold text-gray-900">Этапы без модуля</h2>
         </template>
-        <div class="space-y-4">
-          <StageEditor
-            v-for="(stage, idx) in form.stages"
-            :key="idx"
-            :stage="stage"
-            :index="idx"
-            :total="form.stages.length"
-            :tests="tests"
-            :assignments="assignments"
-            :videos="videos"
-            :event-slug="event.slug"
-            @move="(delta) => moveStage(idx, delta)"
-            @remove="form.stages.splice(idx, 1)"
-            @search="openStageSearch(null, idx)"
-            @search-block="openBlockSearch(null, idx)"
-          />
+        <div class="space-y-2">
+          <template v-for="(stage, idx) in form.stages" :key="`o-${idx}`">
+            <StageEditor
+              :stage="stage"
+              :index="idx"
+              :total="form.stages.length"
+              :tests="tests"
+              :assignments="assignments"
+              :videos="videos"
+              :event-slug="event.slug"
+              @move="(delta) => moveStage(idx, delta)"
+              @remove="form.stages.splice(idx, 1)"
+              @search="openStageSearch(null, idx)"
+              @search-block="openBlockSearch(null, idx)"
+            />
+            <div class="flex justify-center pt-1">
+              <button
+                type="button"
+                class="inline-flex w-full max-w-xl items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-medium text-gray-500 transition hover:border-rosatom-400 hover:bg-rosatom-50 hover:text-rosatom-600"
+                @click="insertOrphanStageAfter(idx)"
+              >
+                <PlusIcon class="h-4 w-4" />
+                Добавить этап
+              </button>
+            </div>
+          </template>
         </div>
-        <RButton variant="outline" block type="button" class="mt-4" @click="addStage">
-          <template #icon><PlusIcon class="h-4 w-4" /></template>
-          Добавить этап
-        </RButton>
       </RCard>
 
       <div class="flex gap-3">
@@ -421,8 +433,9 @@ function moveModule(idx, delta) {
   form.modules = arr
 }
 
-function addModuleStage(mIdx) {
-  form.modules[mIdx].stages.push(emptyStage())
+/** Новый этап сразу после этапа с индексом `afterStageIdx` (в конец — после последнего). */
+function insertModuleStageAfter(mIdx, afterStageIdx) {
+  form.modules[mIdx].stages.splice(afterStageIdx + 1, 0, emptyStage())
 }
 function removeModuleStage(mIdx, sIdx) {
   form.modules[mIdx].stages.splice(sIdx, 1)
@@ -434,8 +447,8 @@ function moveModuleStage(mIdx, sIdx, delta) {
   ;[stages[sIdx], stages[newIdx]] = [stages[newIdx], stages[sIdx]]
 }
 
-function addStage() {
-  form.stages.push(emptyStage())
+function insertOrphanStageAfter(afterIdx) {
+  form.stages.splice(afterIdx + 1, 0, emptyStage())
 }
 function moveStage(idx, delta) {
   const newIdx = idx + delta

@@ -18,7 +18,7 @@
 - `App\Http\Controllers\Lms\Admin\TrajectoryController` — админ: CRUD
 
 ### Страницы
-- `Pages/Lms/Trajectories/Index.vue`, `Show.vue`
+- `Pages/Lms/Trajectories/Index.vue`, `Show.vue` — в интерфейсе участника подпись **«Темы»** для списка этапов курса внутри карточки траектории и заголовок **«Темы траектории»** на странице траектории (вместо «Этапы»).
 - `Pages/Lms/Admin/Trajectories/Index.vue`, `Form.vue`
 
 ## Ключевые workflow

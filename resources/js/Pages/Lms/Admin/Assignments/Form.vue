@@ -167,7 +167,7 @@ import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import { ChevronUpIcon, ChevronDownIcon, XMarkIcon } from '@heroicons/vue/24/outline'
-import { lmsDeadlineToDatetimeLocal } from '@/utils/lmsAssignmentDeadline'
+import { lmsDeadlineToDatetimeLocalUtc, datetimeLocalToUtcIso } from '@/utils/lmsAssignmentDeadline'
 
 const props = defineProps({ event: Object, assignment: Object })
 
@@ -199,7 +199,7 @@ const form = useForm({
   template_file: props.assignment?.template_file ?? '',
   template_file_name: props.assignment?.template_file_name ?? '',
   completion_mode: props.assignment?.completion_mode ?? 'on_review',
-  deadline: props.assignment?.deadline ? lmsDeadlineToDatetimeLocal(props.assignment.deadline) : '',
+  deadline: props.assignment?.deadline ? lmsDeadlineToDatetimeLocalUtc(props.assignment.deadline) : '',
   is_active: props.assignment?.is_active ?? true,
   tasks: buildTasks(),
 })
@@ -251,10 +251,16 @@ function submit() {
       position: i,
     }))
 
+  const withPayload = data => ({
+    ...data,
+    tasks,
+    deadline: datetimeLocalToUtcIso(data.deadline),
+  })
+
   if (props.assignment) {
-    form.transform(data => ({ ...data, tasks })).put(route('lms.admin.assignments.update', [props.event.slug, props.assignment.id]))
+    form.transform(withPayload).put(route('lms.admin.assignments.update', [props.event.slug, props.assignment.id]))
   } else {
-    form.transform(data => ({ ...data, tasks })).post(route('lms.admin.assignments.store', props.event.slug))
+    form.transform(withPayload).post(route('lms.admin.assignments.store', props.event.slug))
   }
 }
 </script>

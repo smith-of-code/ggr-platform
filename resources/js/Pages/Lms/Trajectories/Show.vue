@@ -30,7 +30,7 @@
 
       <!-- Timeline of steps -->
       <div v-if="(steps || []).length > 0" class="space-y-4">
-        <h2 class="font-brand text-lg font-semibold text-gray-900">Этапы траектории</h2>
+        <h2 class="font-brand text-lg font-semibold text-gray-900">Темы траектории</h2>
         <div class="space-y-4">
           <div
             v-for="(s, idx) in steps"
@@ -101,7 +101,7 @@
         v-if="!(steps?.length) && enrollment"
         class="py-12 text-center text-gray-400"
       >
-        В траектории пока нет этапов
+        В траектории пока нет тем
       </RCard>
     </div>
   </LmsLayout>
