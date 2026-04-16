@@ -7,6 +7,7 @@ use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
 use App\Models\SocialAccount;
 use App\Services\GamificationService;
+use App\Support\PostAuthRedirect;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -179,18 +180,14 @@ class SocialAuthController extends Controller
                 app(GamificationService::class)->awardPoints($event, $user, 'login_daily', 'Ежедневный вход');
             }
 
-            return redirect()->intended(route('lms.dashboard', ['event' => $event->slug], false));
+            return redirect()->intended(route('lms.profile.edit', ['event' => $event->slug], false));
         }
 
         if ($user->is_admin) {
             return redirect()->intended(route('admin.dashboard', absolute: false));
         }
 
-        if ($user->is_tour_cabinet_user) {
-            return redirect()->intended(route('tour-cabinet.dashboard', absolute: false));
-        }
-
-        return redirect()->intended(route('profile.edit', absolute: false));
+        return redirect()->intended(PostAuthRedirect::clientPortalDefaultUrl($user));
     }
 
     private function handleLogin(LmsEvent $event, string $provider, $socialUser): RedirectResponse

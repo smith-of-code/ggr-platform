@@ -35,7 +35,7 @@
           </nav>
 
           <!-- Auth button (desktop) -->
-          <div class="hidden shrink-0 items-center gap-3 lg:flex">
+          <div class="hidden shrink-0 items-center gap-2 lg:flex">
             <a
               v-if="$page.props.auth?.user && isLmsFullPageUrl(cabinetUrl)"
               :href="cabinetUrl"
@@ -50,6 +50,13 @@
             >
               Личный кабинет
             </Link>
+            <a
+              v-if="$page.props.auth?.user && showTourCabinetSecondaryLink"
+              :href="$page.props.tourCabinetUrl"
+              class="whitespace-nowrap rounded-lg border border-[#003274]/30 bg-white px-3 py-2 text-sm font-medium text-[#003274] transition hover:bg-[#003274]/5"
+            >
+              ЛК туров
+            </a>
             <template v-else>
               <Link
                 :href="route('tour-cabinet.register')"
@@ -118,6 +125,13 @@
           >
             Личный кабинет
           </Link>
+          <a
+            v-if="$page.props.auth?.user && showTourCabinetSecondaryLink"
+            :href="$page.props.tourCabinetUrl"
+            class="mt-2 block rounded-lg border border-[#003274]/30 bg-white px-4 py-3 text-center text-sm font-medium text-[#003274]"
+          >
+            ЛК туров
+          </a>
           <template v-else>
             <Link
               :href="route('tour-cabinet.register')"
@@ -213,11 +227,20 @@ const cabinetUrl = computed(() => {
   if (page.props.auth?.user?.is_admin) {
     return route('admin.dashboard')
   }
-  if (page.props.auth?.user?.is_tour_cabinet_user) {
-    return route('tour-cabinet.dashboard')
+  if (page.props.lmsEntryUrl) {
+    return page.props.lmsEntryUrl
   }
-  return page.props.lmsEntryUrl || route('profile.edit')
+  if (page.props.tourCabinetUrl) {
+    return page.props.tourCabinetUrl
+  }
+
+  return route('home')
 })
+
+/** Участник ВШГР: основной ЛК — LMS, второй пункт — кабинет туров. */
+const showTourCabinetSecondaryLink = computed(
+  () => !!(page.props.lmsEntryUrl && page.props.tourCabinetUrl),
+)
 
 const hiddenPages = computed(() => page.props.hiddenPages || [])
 

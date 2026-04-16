@@ -92,10 +92,6 @@ class TourCabinetController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
-        if ($request->user() && ! $request->user()->is_tour_cabinet_user) {
-            return redirect()->route('home');
-        }
-
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

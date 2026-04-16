@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Lms\LmsProfile;
 use App\Services\GamificationService;
+use App\Support\PostAuthRedirect;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -74,25 +75,19 @@ class AuthenticatedSessionController extends Controller
                 app(GamificationService::class)->awardPoints($event, $user, 'login_daily', 'Ежедневный вход');
             }
 
-            $redirect = redirect()->intended(route('lms.dashboard', ['event' => $event->slug], false));
+            $redirect = redirect()->intended(route('lms.profile.edit', ['event' => $event->slug], false));
 
             return $this->redirectForInertia($request, $redirect);
         }
 
-        // Режим «Я клиент»: не отправляем в LMS автоматически
+        // Режим «Я клиент»
         if ($user->is_admin) {
             $redirect = redirect()->intended(route('admin.dashboard', absolute: false));
 
             return $this->redirectForInertia($request, $redirect);
         }
 
-        if ($user->is_tour_cabinet_user) {
-            $redirect = redirect()->intended(route('tour-cabinet.dashboard', absolute: false));
-
-            return $this->redirectForInertia($request, $redirect);
-        }
-
-        $redirect = redirect()->intended(route('profile.edit', absolute: false));
+        $redirect = redirect()->intended(PostAuthRedirect::clientPortalDefaultUrl($user));
 
         return $this->redirectForInertia($request, $redirect);
     }

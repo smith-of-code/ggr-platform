@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Lms\LmsProfile;
 use App\Services\GamificationService;
+use App\Support\PostAuthRedirect;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -76,24 +77,8 @@ class HandleInertiaRequests extends Middleware
                 ? []
                 : app(SettingsService::class)->getHiddenPages(),
             'consentDocumentUrl' => config('consent.document_url'),
-            'lmsEntryUrl' => function () use ($request) {
-                $user = $request->user();
-                if (!$user) {
-                    return null;
-                }
-
-                $profile = LmsProfile::where('user_id', $user->id)
-                    ->with('event:id,slug')
-                    ->orderByDesc('activated_at')
-                    ->orderByDesc('id')
-                    ->first();
-
-                if (!$profile?->event?->slug) {
-                    return null;
-                }
-
-                return route('lms.dashboard', ['event' => $profile->event->slug], false);
-            },
+            'lmsEntryUrl' => fn () => PostAuthRedirect::lmsProfileUrlForUser($request->user()),
+            'tourCabinetUrl' => fn () => PostAuthRedirect::tourCabinetDashboardUrl($request->user()),
             'gamificationEnabled' => function () use ($request) {
                 $user = $request->user();
                 if (!$user) return false;

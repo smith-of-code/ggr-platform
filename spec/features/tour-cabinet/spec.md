@@ -22,13 +22,16 @@ Slug двух форм этапа 1: `contest_stage1_form_slug_standard`, `conte
 - Колонка `users.is_tour_cabinet_user` (boolean).
 - Профиль ЛК: `last_name`, `first_name`, `patronymic`, `gender`, `birth_date`, `phone`, `email`, `avatar_path` (часть полей nullable; `name` синхронизируется из ФИО при сохранении профиля, если строка не пустая). Файл аватара: `POST` с `multipart` на `PATCH /tour-cabinet/profile` (method spoof), поле `avatar`, диск `filesystems.upload_disk`, каталог `tour-cabinet/avatars/{user_id}`; валидация изображения до 2 МБ (JPEG/PNG/WebP/GIF). На дашборде в props передаётся публичный `profile.avatar_url` при наличии файла.
 - Регистрация через `/tour-cabinet/register` выставляет флаг в `true`.
-- Вход в ЛК туров (`POST /tour-cabinet/login`) разрешён только при `is_tour_cabinet_user === true` (иначе сессия сбрасывается и показывается ошибка).
+- Вход в ЛК туров по **отдельной форме** (`POST /tour-cabinet/login`) по-прежнему только при `is_tour_cabinet_user === true` (самостоятельная регистрация в конкурсе).
+- Участник с **профилем LMS** (`lms_profiles`) может заходить в раздел `/tour-cabinet` через общий вход на сайт: middleware `tour-cabinet` допускает пользователя, если `is_tour_cabinet_user` **или** есть любая запись `lms_profiles` для этого пользователя (`PostAuthRedirect::canAccessTourCabinet`).
 
 ## Вход с портала
 
 В `MainLayout` для гостей: в шапке кнопка «Зарегистрироваться» (primary, как основной CTA) на `tour-cabinet.register` и контурная «Вход» на сайт; в мобильном меню — то же по смыслу; в футере — текстовые ссылки на регистрацию/вход ЛК туров.
 
-Для авторизованных с `is_tour_cabinet_user`: кнопка «Личный кабинет» ведёт на `tour-cabinet.dashboard` (приоритет выше, чем LMS `lmsEntryUrl` и `profile.edit`), чтобы участник всегда попадал в ЛК туров с любой страницы портала.
+В `MainLayout` для авторизованных: основная кнопка «Личный кабинет» ведёт на **`lmsEntryUrl`** (профиль LMS в событии), если профиль есть; иначе на **`tourCabinetUrl`** (`tour-cabinet.dashboard`), если доступен кабинет туров; иначе на главную. Если доступны **и** LMS, **и** туры, показывается дополнительная ссылка «ЛК туров». Проп `tourCabinetUrl` и `lmsEntryUrl` задаются в `HandleInertiaRequests` (см. `App\Support\PostAuthRedirect`).
+
+После входа на портале (`POST /login`, режим «Я клиент»): редирект по `PostAuthRedirect::clientPortalDefaultUrl` — сначала профиль LMS при наличии профиля, иначе дашборд туров для `is_tour_cabinet_user`, иначе главная.
 
 ## Маршруты (`routes/web.php`)
 

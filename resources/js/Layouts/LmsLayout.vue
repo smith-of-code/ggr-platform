@@ -53,6 +53,16 @@
             <template #icon><UserCircleIcon class="h-4 w-4" /></template>
             Мой профиль
           </RButton>
+          <RButton
+            v-if="tourCabinetUrl"
+            variant="ghost"
+            size="sm"
+            block
+            @click="visitTourCabinet"
+          >
+            <template #icon><ArrowTopRightOnSquareIcon class="h-4 w-4" /></template>
+            ЛК туров
+          </RButton>
           <RButton variant="ghost" size="sm" block @click="logout">
             <template #icon><ArrowRightOnRectangleIcon class="h-4 w-4" /></template>
             Выйти
@@ -124,6 +134,7 @@ import {
   CheckCircleIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
+  ArrowTopRightOnSquareIcon,
   WrenchScrewdriverIcon,
   Cog6ToothIcon,
 } from '@heroicons/vue/24/outline'
@@ -184,6 +195,16 @@ const icons = {
 }
 
 const gamificationEnabled = computed(() => usePage().props.gamificationEnabled ?? false)
+
+const tourCabinetUrl = computed(() => usePage().props.tourCabinetUrl || null)
+
+function visitTourCabinet() {
+  closeMobileSidebar()
+  const url = tourCabinetUrl.value
+  if (url) {
+    router.visit(url)
+  }
+}
 
 const menuConfig = computed(() => {
   const defaults = { courses: true, trajectories: true, grants: true, tests: true, assignments: true, leaderboard: true, videos: true, kb: true, materials: true }

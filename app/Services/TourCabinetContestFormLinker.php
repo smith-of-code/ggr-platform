@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Lms\LmsForm;
+use App\Support\PostAuthRedirect;
 use App\Models\Lms\LmsFormSubmission;
 use App\Models\TourCabinetContestCitySubmission;
 use App\Models\TourCabinetContestProgress;
@@ -14,7 +15,7 @@ class TourCabinetContestFormLinker
     public static function tryLinkAfterSubmission(LmsForm $form, LmsFormSubmission $submission): void
     {
         $user = Auth::user();
-        if (! $user || ! $user->is_tour_cabinet_user) {
+        if (! $user || ! PostAuthRedirect::canAccessTourCabinet($user)) {
             return;
         }
 
