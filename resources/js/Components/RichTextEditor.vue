@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount, computed } from 'vue'
+import { ref, watch, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -179,17 +179,31 @@ function setLink() {
   editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
 }
 
-function onMediaSelect(url) {
-  if (url) {
-    editor.value?.chain().focus().setImage({ src: url }).run()
-  }
+function onMediaSelect(urlOrUrls) {
+  const url = Array.isArray(urlOrUrls) ? urlOrUrls[0] : urlOrUrls
+  if (!url || !editor.value) return
+  const src = String(url)
+  // После закрытия модалки фокус/транзакция иногда не успевают — вставка в следующий tick надёжнее
+  nextTick(() => {
+    if (!editor.value) return
+    const e = editor.value
+    const ran = e.chain().focus().setImage({ src }).run()
+    if (!ran) {
+      e.chain().focus().insertContent({ type: 'image', attrs: { src } }).run()
+    }
+  })
 }
 
-watch(() => props.modelValue, (val) => {
-  if (editor.value && editor.value.getHTML() !== val) {
-    editor.value.commands.setContent(val, false)
-  }
-})
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (!editor.value) return
+    const next = val ?? ''
+    if (editor.value.getHTML() === next) return
+    editor.value.commands.setContent(next, false)
+  },
+  { flush: 'post' },
+)
 
 onBeforeUnmount(() => {
   editor.value?.destroy()

@@ -11,6 +11,7 @@ use App\Models\Lms\LmsMaterialSection;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTrajectory;
+use App\Models\Lms\LmsTrajectoryBlock;
 use App\Models\Lms\LmsTrajectoryEnrollment;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -31,10 +32,24 @@ class TrajectoryController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
+        $enrolledCourseIds = LmsCourseEnrollment::where('user_id', $user->id)
+            ->whereHas('course', fn ($q) => $q->where('lms_event_id', $event->id))
+            ->pluck('lms_course_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $needsCourseEnrollmentForTrajectory = (bool) $trajectory && count($enrolledCourseIds) === 0;
+
         $timeline = [];
 
-        if ($trajectory) {
+        if ($trajectory && ! $needsCourseEnrollmentForTrajectory) {
             foreach ($trajectory->blocks->sortBy('position') as $block) {
+                if (! $this->trajectoryBlockVisibleForUser($block, $enrolledCourseIds)) {
+                    continue;
+                }
+
                 $item = [
                     'type' => $block->type,
                     'title' => $block->title,
@@ -73,6 +88,7 @@ class TrajectoryController extends Controller
             usort($timeline, function ($a, $b) {
                 $da = $a['date_start'] ?? '9999-12-31';
                 $db = $b['date_start'] ?? '9999-12-31';
+
                 return strcmp($da, $db);
             });
         }
@@ -85,6 +101,7 @@ class TrajectoryController extends Controller
             'profile' => $profile,
             'trajectory' => $trajectory?->only(['id', 'title', 'description']),
             'timeline' => $timeline,
+            'needsCourseEnrollmentForTrajectory' => $needsCourseEnrollmentForTrajectory,
             'hasMaterials' => $hasMaterials,
         ]);
     }
@@ -223,6 +240,27 @@ class TrajectoryController extends Controller
         if ($end) {
             return 'до ' . $end->format('d.m.Y');
         }
+
         return null;
+    }
+
+    /**
+     * @param  array<int>  $enrolledCourseIds
+     */
+    private function trajectoryBlockVisibleForUser(LmsTrajectoryBlock $block, array $enrolledCourseIds): bool
+    {
+        $ids = $block->visible_course_ids;
+        if (empty($ids)) {
+            return true;
+        }
+
+        $ids = array_map('intval', $ids);
+        foreach ($enrolledCourseIds as $cid) {
+            if (in_array((int) $cid, $ids, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

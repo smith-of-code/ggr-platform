@@ -20,11 +20,13 @@ class LmsTrajectoryBlock extends Model
         'lms_assignment_id',
         'material_url',
         'position',
+        'visible_course_ids',
     ];
 
     protected $casts = [
         'date_start' => 'date',
         'date_end' => 'date',
+        'visible_course_ids' => 'array',
     ];
 
     public function trajectory(): BelongsTo

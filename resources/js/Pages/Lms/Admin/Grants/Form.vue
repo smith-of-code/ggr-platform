@@ -33,7 +33,14 @@
 
           <div>
             <label class="mb-2 block text-sm font-medium text-gray-500">Описание</label>
-            <RichTextEditor v-model="form.description" :media-picker-url="route('lms.admin.media.index', event.slug)" collection="lms_grants" :entity-type="mediaEntityType" :entity-id="mediaEntityId" />
+            <RichTextEditor
+              v-model="form.description"
+              :upload-url="route('lms.admin.upload.image', event.slug)"
+              :media-picker-url="route('lms.admin.media.index', event.slug)"
+              collection="lms_grants"
+              :entity-type="mediaEntityType"
+              :entity-id="mediaEntityId"
+            />
             <p v-if="form.errors.description" class="mt-1 text-sm text-red-600">{{ form.errors.description }}</p>
           </div>
 

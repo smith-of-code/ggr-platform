@@ -33,6 +33,7 @@
             Статические блоки — фиксированные этапы (отбор, очный старт и т.д.).
             Блоки «Задание» — ссылка на задание из LMS.
             Программы и гранты участника подтягиваются автоматически по датам.
+            По умолчанию каждый блок виден всем; при снятии «Для всех программ» блок показывается только записанным на выбранные программы.
           </p>
           <div v-for="(block, idx) in form.blocks" :key="idx" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
             <div class="flex items-start gap-3">
@@ -82,6 +83,29 @@
                     <option v-for="s in materialSections" :key="s.id" :value="materialUrl(s.id)">{{ s.title }}</option>
                   </select>
                 </div>
+
+                <div v-if="courses?.length" class="rounded-lg border border-gray-200 bg-white p-3">
+                  <RCheckbox
+                    :model-value="isBlockForAllPrograms(block)"
+                    label="Для всех программ (по умолчанию)"
+                    @update:model-value="(v) => setBlockForAllPrograms(block, v)"
+                  />
+                  <div v-if="!isBlockForAllPrograms(block)" class="mt-3 space-y-2 border-l-2 border-rosatom-200 pl-3">
+                    <p class="text-xs text-gray-500">Блок виден только участникам, записанным на отмеченные программы:</p>
+                    <div class="flex flex-col gap-2">
+                      <label v-for="c in courses" :key="c.id" class="flex cursor-pointer items-center gap-2 text-sm text-gray-800">
+                        <input
+                          type="checkbox"
+                          class="h-4 w-4 rounded border-gray-300 text-rosatom-600 focus:ring-rosatom-500"
+                          :checked="blockCourseSelected(block, c.id)"
+                          @change="toggleBlockCourse(block, Number(c.id), $event.target.checked)"
+                        />
+                        <span>{{ c.title }}</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-xs text-gray-400">Добавьте к событию хотя бы одну программу, чтобы ограничивать видимость блока по программам.</p>
               </div>
               <div class="flex flex-col gap-1 pt-5">
                 <button v-if="idx > 0" type="button" class="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600" @click="moveBlock(idx, -1)">
@@ -171,6 +195,9 @@ const buildBlocks = () => {
       date_end: b.date_end?.substring(0, 10) ?? '',
       lms_assignment_id: b.lms_assignment_id ?? null,
       material_url: b.material_url ?? '',
+      visible_course_ids: Array.isArray(b.visible_course_ids) && b.visible_course_ids.length
+        ? b.visible_course_ids.map(id => Number(id))
+        : [],
     }))
   }
   return []
@@ -189,7 +216,44 @@ function addStep() {
 }
 
 function addBlock() {
-  form.blocks.push({ type: 'static', title: '', description: '', date_label: '', date_start: '', date_end: '', lms_assignment_id: null, material_url: '' })
+  form.blocks.push({
+    type: 'static',
+    title: '',
+    description: '',
+    date_label: '',
+    date_start: '',
+    date_end: '',
+    lms_assignment_id: null,
+    material_url: '',
+    visible_course_ids: [],
+  })
+}
+
+function isBlockForAllPrograms(block) {
+  return !(Array.isArray(block.visible_course_ids) && block.visible_course_ids.length > 0)
+}
+
+function setBlockForAllPrograms(block, forAll) {
+  if (forAll) {
+    block.visible_course_ids = []
+  } else if (props.courses?.length) {
+    block.visible_course_ids = [Number(props.courses[0].id)]
+  }
+}
+
+function blockCourseSelected(block, courseId) {
+  const id = Number(courseId)
+  return (block.visible_course_ids || []).map(Number).includes(id)
+}
+
+function toggleBlockCourse(block, courseId, checked) {
+  const set = new Set((block.visible_course_ids || []).map(Number))
+  if (checked) {
+    set.add(Number(courseId))
+  } else {
+    set.delete(Number(courseId))
+  }
+  block.visible_course_ids = Array.from(set)
 }
 
 function materialUrl(sectionId) {

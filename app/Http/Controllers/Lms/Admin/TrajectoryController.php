@@ -66,6 +66,8 @@ class TrajectoryController extends Controller
             'blocks.*.lms_assignment_id' => ['nullable', 'exists:lms_assignments,id'],
             'blocks.*.material_url' => ['nullable', 'url', 'max:500'],
             'blocks.*.position' => ['nullable', 'integer'],
+            'blocks.*.visible_course_ids' => ['nullable', 'array'],
+            'blocks.*.visible_course_ids.*' => ['integer'],
         ]);
 
         $validated['lms_event_id'] = $event->id;
@@ -74,7 +76,7 @@ class TrajectoryController extends Controller
         $trajectory = LmsTrajectory::create($validated);
 
         $this->syncSteps($trajectory, $event, $validated['steps'] ?? []);
-        $this->syncBlocks($trajectory, $validated['blocks'] ?? []);
+        $this->syncBlocks($trajectory, $event, $validated['blocks'] ?? []);
 
         return redirect()->route('lms.admin.trajectories.index', $event)->with('success', 'Траектория создана');
     }
@@ -120,6 +122,8 @@ class TrajectoryController extends Controller
             'blocks.*.lms_assignment_id' => ['nullable', 'exists:lms_assignments,id'],
             'blocks.*.material_url' => ['nullable', 'url', 'max:500'],
             'blocks.*.position' => ['nullable', 'integer'],
+            'blocks.*.visible_course_ids' => ['nullable', 'array'],
+            'blocks.*.visible_course_ids.*' => ['integer'],
         ]);
 
         $validated['is_active'] = $request->boolean('is_active', true);
@@ -127,7 +131,7 @@ class TrajectoryController extends Controller
         $trajectory->update($validated);
 
         $this->syncSteps($trajectory, $event, $validated['steps'] ?? []);
-        $this->syncBlocks($trajectory, $validated['blocks'] ?? []);
+        $this->syncBlocks($trajectory, $event, $validated['blocks'] ?? []);
 
         return redirect()->route('lms.admin.trajectories.index', $event)->with('success', 'Траектория обновлена');
     }
@@ -159,7 +163,7 @@ class TrajectoryController extends Controller
         }
     }
 
-    private function syncBlocks(LmsTrajectory $trajectory, array $blocks): void
+    private function syncBlocks(LmsTrajectory $trajectory, LmsEvent $event, array $blocks): void
     {
         $trajectory->blocks()->delete();
 
@@ -175,8 +179,35 @@ class TrajectoryController extends Controller
                 'lms_assignment_id' => $block['lms_assignment_id'] ?? null,
                 'material_url' => $block['material_url'] ?? null,
                 'position' => $block['position'] ?? $index,
+                'visible_course_ids' => $this->normalizeBlockVisibleCourseIds($block['visible_course_ids'] ?? null, $event),
             ]);
         }
+    }
+
+    /**
+     * @param  mixed  $ids
+     * @return array<int>|null null — блок для всех программ события
+     */
+    private function normalizeBlockVisibleCourseIds($ids, LmsEvent $event): ?array
+    {
+        if ($ids === null || $ids === '' || $ids === []) {
+            return null;
+        }
+        if (! is_array($ids)) {
+            return null;
+        }
+
+        $allowed = $event->courses()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $filtered = [];
+        foreach ($ids as $id) {
+            $intId = (int) $id;
+            if ($intId > 0 && in_array($intId, $allowed, true)) {
+                $filtered[] = $intId;
+            }
+        }
+        $filtered = array_values(array_unique($filtered));
+
+        return $filtered === [] ? null : $filtered;
     }
 
     private function ensureTrajectoryBelongsToEvent(LmsTrajectory $trajectory, LmsEvent $event): void

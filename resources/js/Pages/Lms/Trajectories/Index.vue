@@ -4,7 +4,25 @@
     <div class="space-y-6">
       <h1 class="font-brand text-2xl font-bold text-gray-900">Траектория</h1>
 
-      <div v-if="trajectory && timeline?.length" class="relative mx-auto max-w-3xl">
+      <div
+        v-if="trajectory && needsCourseEnrollmentForTrajectory"
+        class="mx-auto max-w-3xl rounded-2xl border border-amber-200 bg-amber-50 px-6 py-10 text-center shadow-sm"
+      >
+        <p class="text-base font-medium text-amber-950">
+          Чтобы отобразилась траектория, запишитесь хотя бы на одну программу обучения.
+        </p>
+        <a
+          :href="route('lms.courses.index', { event: event.slug })"
+          class="mt-5 inline-flex items-center gap-2 rounded-xl bg-rosatom-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-rosatom-700"
+        >
+          К каталогу программ
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+          </svg>
+        </a>
+      </div>
+
+      <div v-else-if="trajectory && timeline?.length" class="relative mx-auto max-w-3xl">
         <div class="absolute left-6 top-0 bottom-8 w-0.5 bg-gray-200 sm:left-8" />
 
         <div v-for="(item, idx) in timeline" :key="idx" class="relative flex items-start gap-4 sm:gap-6" :class="idx < timeline.length - 1 ? 'mb-8' : ''">
@@ -131,6 +149,10 @@
         </div>
       </div>
 
+      <div v-else-if="trajectory" class="mx-auto max-w-3xl rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">
+        <p class="text-sm text-gray-500">Пока нет элементов в ленте траектории.</p>
+      </div>
+
       <div v-else class="rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">
         <p class="text-sm text-gray-400">Траектория пока не настроена</p>
       </div>
@@ -150,6 +172,7 @@ const props = defineProps({
   profile: { type: Object, default: () => ({}) },
   trajectory: { type: Object, default: null },
   timeline: { type: Array, default: () => [] },
+  needsCourseEnrollmentForTrajectory: { type: Boolean, default: false },
   hasMaterials: { type: Boolean, default: false },
 })
 
