@@ -148,7 +148,7 @@
                 </template>
                 <template v-else-if="block.content">
                   <svg class="mx-auto mb-2 h-8 w-8 text-accent-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                  <p class="text-sm font-medium text-gray-900">{{ block._fileFilename || fileDisplayName(block) }}</p>
+                  <p class="text-sm font-medium text-gray-900">{{ fileDisplayName(block) }}</p>
                   <p class="mt-1 text-xs text-gray-500">Участник сможет скачать файл на этапе курса</p>
                   <button type="button" class="mt-2 text-xs font-medium text-rosatom-600 hover:underline" @click="clearBlockFile(block)">Заменить файл</button>
                 </template>
@@ -233,6 +233,7 @@
 <script setup>
 import { computed } from 'vue'
 import axios from 'axios'
+import { encodeLmsStageFileBlockContent, parseLmsStageFileBlockContent } from '@/utils/lmsStageFileBlock.js'
 import SearchSelect from '@/Components/SearchSelect.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 
@@ -340,8 +341,8 @@ async function handleBlockFileUpload(event, block) {
       fd,
       { headers: { 'Content-Type': 'multipart/form-data' } },
     )
-    block.content = data.url
-    block._fileFilename = data.filename
+    block.content = data.content ?? encodeLmsStageFileBlockContent(data.url, data.filename)
+    block._fileFilename = null
   } catch (err) {
     block._fileError = err.response?.data?.message || err.response?.data?.error || 'Ошибка загрузки'
   } finally {
@@ -356,10 +357,11 @@ function clearBlockFile(block) {
 }
 
 function fileDisplayName(block) {
-  const u = block?.content
-  if (!u || typeof u !== 'string') return 'Файл загружен'
+  const { url, name } = parseLmsStageFileBlockContent(block?.content)
+  if (name) return name
+  if (!url) return 'Файл загружен'
   try {
-    const path = u.split('?')[0]
+    const path = url.split('?')[0]
     const seg = decodeURIComponent(path.split('/').pop() || '')
     const i = seg.indexOf('_')
     if (i > 0 && i < seg.length - 1) return seg.slice(i + 1)

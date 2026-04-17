@@ -198,7 +198,7 @@
                 <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                 Скачать файл
               </a>
-              <div v-if="isImageFileUrl(block.content)" class="mt-4">
+              <div v-if="isImageFileUrl(blockFileHref(block))" class="mt-4">
                 <img :src="blockFileHref(block)" alt="" class="max-h-96 max-w-full rounded-lg border border-gray-200 object-contain" />
               </div>
             </div>
@@ -254,6 +254,7 @@
 import { Head, Link, router } from '@inertiajs/vue3'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import axios from 'axios'
+import { parseLmsStageFileBlockContent } from '@/utils/lmsStageFileBlock.js'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import InlineTest from '@/Components/Lms/InlineTest.vue'
 import InlineAssignment from '@/Components/Lms/InlineAssignment.vue'
@@ -543,24 +544,31 @@ function typeLabel(type) {
 }
 
 function blockFileHref(block) {
-  const u = (block?.content && String(block.content).trim()) || ''
+  const raw = block?.type === 'file'
+    ? parseLmsStageFileBlockContent(block?.content).url
+    : ((block?.content && String(block.content).trim()) || '')
+  const u = raw
   if (!u) return null
   if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('/')) return u
   return `/${u.replace(/^\/+/, '')}`
 }
 
 function fileBlockTitle(block) {
-  const u = block?.content
-  if (!u || typeof u !== 'string') return 'Файл'
-  try {
-    const path = u.split('?')[0]
-    const seg = decodeURIComponent(path.split('/').pop() || '')
-    const i = seg.indexOf('_')
-    if (i > 0 && i < seg.length - 1) return seg.slice(i + 1)
-    return seg || 'Файл'
-  } catch {
-    return 'Файл'
+  if (block?.type === 'file') {
+    const { url, name } = parseLmsStageFileBlockContent(block?.content)
+    if (name) return name
+    if (!url) return 'Файл'
+    try {
+      const path = url.split('?')[0]
+      const seg = decodeURIComponent(path.split('/').pop() || '')
+      const i = seg.indexOf('_')
+      if (i > 0 && i < seg.length - 1) return seg.slice(i + 1)
+      return seg || 'Файл'
+    } catch {
+      return 'Файл'
+    }
   }
+  return 'Файл'
 }
 
 function isImageFileUrl(url) {

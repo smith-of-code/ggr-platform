@@ -132,7 +132,7 @@
 | `workshop` | Живой воркшоп | `content` (описание / ссылка) |
 | `city_meeting` | Встреча города | `content` |
 | `curator_meeting` | Встреча с куратором | `content` |
-| `file` | Файл для скачивания | `content` — публичный URL после загрузки (`POST …/stage-block-file-upload`) |
+| `file` | Файл для скачивания | `content` — JSON `{"url","name"}` (`name` — оригинальное имя с клиента); legacy: одна строка URL (`POST …/stage-block-file-upload` возвращает готовый `content`) |
 
 ### Как работает
 

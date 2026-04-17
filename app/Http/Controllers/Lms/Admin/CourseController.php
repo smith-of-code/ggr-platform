@@ -229,7 +229,7 @@ class CourseController extends Controller
     }
 
     /**
-     * Загрузка файла для блока этапа «Файл» (не SCORM): хранится URL в `lms_stage_blocks.content`.
+     * Загрузка файла для блока этапа «Файл» (не SCORM): в `lms_stage_blocks.content` JSON `{ "url", "name" }` (имя — оригинальное с клиента).
      */
     public function uploadStageBlockFile(Request $request, LmsEvent $event): JsonResponse
     {
@@ -248,10 +248,45 @@ class CourseController extends Controller
         $storeName = Str::uuid()->toString().'_'.$safe;
         $path = $file->storeAs('lms/stage-files/'.$event->slug, $storeName, $disk);
 
+        $url = Storage::disk($disk)->url($path);
+        $original = $file->getClientOriginalName();
+        $content = json_encode([
+            'url' => $url,
+            'name' => Str::limit($original, 500, ''),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
         return response()->json([
-            'url' => Storage::disk($disk)->url($path),
-            'filename' => $file->getClientOriginalName(),
+            'url' => $url,
+            'filename' => $original,
+            'content' => $content,
         ]);
+    }
+
+    /**
+     * Нормализация поля content для type=file: JSON {url,name} или legacy — только URL.
+     */
+    private function normalizeLmsFileBlockContent(?string $content): ?string
+    {
+        if ($content === null) {
+            return null;
+        }
+        $trim = trim($content);
+        if ($trim === '') {
+            return null;
+        }
+        if (! str_starts_with($trim, '{')) {
+            return $trim;
+        }
+        $decoded = json_decode($trim, true);
+        if (! is_array($decoded) || empty($decoded['url']) || ! is_string($decoded['url'])) {
+            return $trim;
+        }
+        $url = trim($decoded['url']);
+        $name = isset($decoded['name']) && is_string($decoded['name'])
+            ? Str::limit(trim($decoded['name']), 500, '')
+            : '';
+
+        return json_encode(['url' => $url, 'name' => $name], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     private function findScormLaunchFile(string $extractPath): string
@@ -422,6 +457,11 @@ class CourseController extends Controller
         if (!empty($blocks)) {
             $primaryType = $blocks[0]['type'] ?? 'content';
             $primaryContent = $blocks[0]['content'] ?? null;
+            if ($primaryType === 'file' && is_string($primaryContent)) {
+                $primaryContent = $this->normalizeLmsFileBlockContent($primaryContent);
+            } elseif ($primaryType === 'file') {
+                $primaryContent = null;
+            }
         } else {
             $primaryType = $stage['type'] ?? 'content';
             $primaryContent = $stage['content'] ?? null;
@@ -463,15 +503,24 @@ class CourseController extends Controller
 
         if (!empty($blocks)) {
             foreach ($blocks as $bIndex => $block) {
+                $blockType = $block['type'] ?? 'content';
+                $rawContent = $block['content'] ?? null;
+                $blockContent = $rawContent;
+                if ($blockType === 'file' && is_string($rawContent)) {
+                    $blockContent = $this->normalizeLmsFileBlockContent($rawContent);
+                } elseif ($blockType === 'file') {
+                    $blockContent = null;
+                }
+
                 $blockData = [
                     'lms_course_stage_id' => $stageModel->id,
-                    'type' => $block['type'] ?? 'content',
-                    'content' => $block['content'] ?? null,
+                    'type' => $blockType,
+                    'content' => $blockContent,
                     'position' => $block['position'] ?? $bIndex,
                     'scheduled_at' => $block['scheduled_at'] ?? null,
                     'scheduled_ends_at' => $block['scheduled_ends_at'] ?? null,
                 ];
-                $this->applyBlockTypeFields($blockData, $block['type'] ?? 'content', $block['content'] ?? null);
+                $this->applyBlockTypeFields($blockData, $blockType, $blockContent);
 
                 if (!empty($block['id'])) {
                     $existing = LmsStageBlock::find($block['id']);
