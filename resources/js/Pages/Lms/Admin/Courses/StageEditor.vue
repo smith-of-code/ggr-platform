@@ -137,6 +137,31 @@
               />
             </div>
 
+            <div v-else-if="block.type === 'file'" class="space-y-3">
+              <div
+                class="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-6 text-center transition hover:border-rosatom-400"
+                :class="{ 'border-rosatom-500 bg-rosatom-50': block._fileUploading }"
+              >
+                <template v-if="block._fileUploading">
+                  <svg class="mx-auto mb-2 h-8 w-8 animate-spin text-rosatom-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  <p class="text-sm font-medium text-rosatom-600">Загрузка файла…</p>
+                </template>
+                <template v-else-if="block.content">
+                  <svg class="mx-auto mb-2 h-8 w-8 text-accent-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                  <p class="text-sm font-medium text-gray-900">{{ block._fileFilename || fileDisplayName(block) }}</p>
+                  <p class="mt-1 text-xs text-gray-500">Участник сможет скачать файл на этапе курса</p>
+                  <button type="button" class="mt-2 text-xs font-medium text-rosatom-600 hover:underline" @click="clearBlockFile(block)">Заменить файл</button>
+                </template>
+                <template v-else>
+                  <svg class="mx-auto mb-2 h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m6.75 12-3-3m0 0-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                  <p class="text-sm font-medium text-gray-700">Загрузить файл</p>
+                  <p class="mt-1 text-xs text-gray-400">до 20 МБ: PDF, Office, изображения, ZIP и др.</p>
+                  <input type="file" class="absolute inset-0 cursor-pointer opacity-0" @change="handleBlockFileUpload($event, block)" />
+                </template>
+              </div>
+              <div v-if="block._fileError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{{ block._fileError }}</div>
+            </div>
+
             <div v-else-if="['workshop', 'city_meeting', 'curator_meeting'].includes(block.type)" class="space-y-3">
               <div class="flex items-center gap-2 rounded-lg bg-gradient-to-r px-3 py-2 text-sm font-medium"
                 :class="{
@@ -217,6 +242,7 @@ const blockTypes = [
   { value: 'test', label: 'Тест' },
   { value: 'assignment', label: 'Задание' },
   { value: 'video', label: 'Лекция' },
+  { value: 'file', label: 'Файл' },
   { value: 'workshop', label: 'Воркшоп' },
   { value: 'city_meeting', label: 'Встреча города' },
   { value: 'curator_meeting', label: 'Встреча с куратором' },
@@ -295,6 +321,52 @@ function clearBlockScorm(block) {
   block.content = ''
   block._scormFilename = null
   block._scormError = null
+}
+
+async function handleBlockFileUpload(event, block) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  event.target.value = ''
+
+  block._fileUploading = true
+  block._fileError = null
+
+  const fd = new FormData()
+  fd.append('file', file)
+
+  try {
+    const { data } = await axios.post(
+      route('lms.admin.stage-block-file.upload', props.eventSlug),
+      fd,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    block.content = data.url
+    block._fileFilename = data.filename
+  } catch (err) {
+    block._fileError = err.response?.data?.message || err.response?.data?.error || 'Ошибка загрузки'
+  } finally {
+    block._fileUploading = false
+  }
+}
+
+function clearBlockFile(block) {
+  block.content = ''
+  block._fileFilename = null
+  block._fileError = null
+}
+
+function fileDisplayName(block) {
+  const u = block?.content
+  if (!u || typeof u !== 'string') return 'Файл загружен'
+  try {
+    const path = u.split('?')[0]
+    const seg = decodeURIComponent(path.split('/').pop() || '')
+    const i = seg.indexOf('_')
+    if (i > 0 && i < seg.length - 1) return seg.slice(i + 1)
+    return seg || 'Файл загружен'
+  } catch {
+    return 'Файл загружен'
+  }
 }
 
 function scheduledDate(block) {

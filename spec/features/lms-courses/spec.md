@@ -69,7 +69,7 @@
 | lms_course_id | FK → lms_courses | cascade delete |
 | lms_course_module_id | FK → modules | nullable |
 | title | string | Название этапа |
-| type | enum | Тип первого блока (content, scorm, test, assignment, video) |
+| type | enum / CHECK | Тип первого блока (content, scorm, test, assignment, video, workshop, city_meeting, curator_meeting, file) |
 | content | text | Контент первого блока (обратная совместимость) |
 | scorm_package | string | SCORM URL |
 | lms_test_id | FK | nullable |
@@ -86,7 +86,7 @@
 |---|---|---|
 | id | bigint | PK |
 | lms_course_stage_id | FK → stages | cascade delete |
-| type | string(20) | content, scorm, test, assignment, video |
+| type | string(20) | content, scorm, test, assignment, video, workshop, city_meeting, curator_meeting, file |
 | content | text | HTML-контент или ID связанной сущности |
 | scorm_package | string | SCORM URL (для type=scorm) |
 | lms_test_id | FK | nullable (для type=test) |
@@ -129,6 +129,10 @@
 | `test` | Ссылка на тест | `lms_test_id` (id в `content`) |
 | `assignment` | Ссылка на задание | `lms_assignment_id` (id в `content`) |
 | `video` | Встроенное видео (YouTube, Rutube) | `lms_video_id` (id в `content`) |
+| `workshop` | Живой воркшоп | `content` (описание / ссылка) |
+| `city_meeting` | Встреча города | `content` |
+| `curator_meeting` | Встреча с куратором | `content` |
+| `file` | Файл для скачивания | `content` — публичный URL после загрузки (`POST …/stage-block-file-upload`) |
 
 ### Как работает
 

@@ -185,6 +185,24 @@
               </div>
             </div>
 
+            <!-- file (download) -->
+            <div v-else-if="block.type === 'file' && blockFileHref(block)" class="rounded-xl border border-gray-200 bg-gray-50 p-6">
+              <p class="text-sm font-medium text-gray-800">{{ fileBlockTitle(block) }}</p>
+              <a
+                :href="blockFileHref(block)"
+                class="mt-4 inline-flex items-center gap-2 rounded-lg bg-rosatom-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rosatom-700"
+                target="_blank"
+                rel="noopener noreferrer"
+                :download="fileBlockTitle(block)"
+              >
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                Скачать файл
+              </a>
+              <div v-if="isImageFileUrl(block.content)" class="mt-4">
+                <img :src="blockFileHref(block)" alt="" class="max-h-96 max-w-full rounded-lg border border-gray-200 object-contain" />
+              </div>
+            </div>
+
             <div v-else class="py-6 text-center text-gray-400">
               Контент не найден
             </div>
@@ -518,10 +536,37 @@ onUnmounted(() => {
 
 function typeLabel(type) {
   const map = {
-    content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео',
+    content: 'Контент', scorm: 'SCORM', test: 'Тест', assignment: 'Задание', video: 'Видео', file: 'Файл',
     workshop: 'Воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
   }
   return map[type] || type || 'Контент'
+}
+
+function blockFileHref(block) {
+  const u = (block?.content && String(block.content).trim()) || ''
+  if (!u) return null
+  if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('/')) return u
+  return `/${u.replace(/^\/+/, '')}`
+}
+
+function fileBlockTitle(block) {
+  const u = block?.content
+  if (!u || typeof u !== 'string') return 'Файл'
+  try {
+    const path = u.split('?')[0]
+    const seg = decodeURIComponent(path.split('/').pop() || '')
+    const i = seg.indexOf('_')
+    if (i > 0 && i < seg.length - 1) return seg.slice(i + 1)
+    return seg || 'Файл'
+  } catch {
+    return 'Файл'
+  }
+}
+
+function isImageFileUrl(url) {
+  if (!url || typeof url !== 'string') return false
+  const lower = url.split('?')[0].toLowerCase()
+  return /\.(jpe?g|png|webp|gif)$/i.test(lower)
 }
 
 function formatScheduleDate(dateStr) {
@@ -556,7 +601,7 @@ function formatBlockSchedule(block) {
 
 function typeBadgeVariant(type) {
   return {
-    content: 'neutral', scorm: 'primary', test: 'warning', assignment: 'info', video: 'error',
+    content: 'neutral', scorm: 'primary', test: 'warning', assignment: 'info', video: 'error', file: 'info',
     workshop: 'primary', city_meeting: 'success', curator_meeting: 'warning',
   }[type] || 'neutral'
 }

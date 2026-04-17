@@ -228,6 +228,32 @@ class CourseController extends Controller
         ]);
     }
 
+    /**
+     * Загрузка файла для блока этапа «Файл» (не SCORM): хранится URL в `lms_stage_blocks.content`.
+     */
+    public function uploadStageBlockFile(Request $request, LmsEvent $event): JsonResponse
+    {
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'max:20480',
+                'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,rtf,csv,jpeg,jpg,png,webp,gif,zip',
+            ],
+        ]);
+
+        $file = $request->file('file');
+        $disk = config('filesystems.upload_disk', 'public');
+        $safe = preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName()) ?? 'file';
+        $storeName = Str::uuid()->toString().'_'.$safe;
+        $path = $file->storeAs('lms/stage-files/'.$event->slug, $storeName, $disk);
+
+        return response()->json([
+            'url' => Storage::disk($disk)->url($path),
+            'filename' => $file->getClientOriginalName(),
+        ]);
+    }
+
     private function findScormLaunchFile(string $extractPath): string
     {
         $manifestPath = null;
@@ -285,7 +311,7 @@ class CourseController extends Controller
         ];
 
         $blockRules = [
-            'type' => ['required', 'string', 'in:content,scorm,test,assignment,video,workshop,city_meeting,curator_meeting'],
+            'type' => ['required', 'string', 'in:content,scorm,test,assignment,video,workshop,city_meeting,curator_meeting,file'],
             'content' => ['nullable', 'string'],
             'position' => ['nullable', 'integer'],
             'scheduled_at' => ['nullable', 'date'],
@@ -473,6 +499,11 @@ class CourseController extends Controller
 
     private function applyTypeFields(array &$data, ?string $type, ?string $content): void
     {
+        $data['lms_test_id'] = null;
+        $data['lms_assignment_id'] = null;
+        $data['lms_video_id'] = null;
+        $data['scorm_package'] = null;
+
         if ($type === 'test' && $content && is_numeric($content)) {
             $data['lms_test_id'] = (int) $content;
         }
@@ -484,11 +515,19 @@ class CourseController extends Controller
         }
         if ($type === 'scorm' && $content) {
             $data['scorm_package'] = $content;
+        }
+        if ($type === 'file' && $content) {
+            $data['content'] = $content;
         }
     }
 
     private function applyBlockTypeFields(array &$data, string $type, ?string $content): void
     {
+        $data['lms_test_id'] = null;
+        $data['lms_assignment_id'] = null;
+        $data['lms_video_id'] = null;
+        $data['scorm_package'] = null;
+
         if ($type === 'test' && $content && is_numeric($content)) {
             $data['lms_test_id'] = (int) $content;
         }
@@ -500,6 +539,9 @@ class CourseController extends Controller
         }
         if ($type === 'scorm' && $content) {
             $data['scorm_package'] = $content;
+        }
+        if ($type === 'file' && $content) {
+            $data['content'] = $content;
         }
     }
 

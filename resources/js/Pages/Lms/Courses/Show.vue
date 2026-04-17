@@ -255,6 +255,7 @@ import {
   DocumentTextIcon,
   ClockIcon,
   XCircleIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/vue/24/outline'
 import { CheckIcon, CheckCircleIcon } from '@heroicons/vue/24/solid'
 
@@ -329,6 +330,7 @@ function stageTypeIcon(type) {
     content: DocumentTextIcon, video: PlayIcon, test: ClipboardDocumentListIcon,
     assignment: PencilSquareIcon, scorm: BookOpenIcon,
     workshop: CalendarIcon, city_meeting: CalendarIcon, curator_meeting: CalendarIcon,
+    file: ArrowDownTrayIcon,
   }[type] || DocumentTextIcon
 }
 
@@ -336,6 +338,7 @@ function stageTypeLabel(type) {
   return {
     content: 'Теория', video: 'Видео', test: 'Тест', assignment: 'Задание', scorm: 'SCORM',
     workshop: 'Воркшоп', city_meeting: 'Встреча города', curator_meeting: 'Встреча с куратором',
+    file: 'Файл',
   }[type] || 'Урок'
 }
 
