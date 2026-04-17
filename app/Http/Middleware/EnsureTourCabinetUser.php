@@ -13,7 +13,8 @@ class EnsureTourCabinetUser
     {
         $user = $request->user();
         if (! $user) {
-            return redirect()->guest(route('tour-cabinet.login'));
+            // Общий вход портала (email / телефон / SSO по настройкам LoginRequest), затем возврат на запрошенную страницу ЛК.
+            return redirect()->guest(route('login'));
         }
         if (! PostAuthRedirect::canAccessTourCabinet($user)) {
             return redirect()

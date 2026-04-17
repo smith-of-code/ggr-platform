@@ -7,12 +7,14 @@ use App\Models\Consent;
 use App\Models\User;
 use App\Services\ConsentService;
 use App\Services\TourCabinetContestDashboardData;
+use App\Support\PostAuthRedirect;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
@@ -46,13 +48,13 @@ class TourCabinetController extends Controller
 
         $request->session()->regenerate();
 
-        if (! Auth::user()->is_tour_cabinet_user) {
+        if (! PostAuthRedirect::canAccessTourCabinet(Auth::user())) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             throw ValidationException::withMessages([
-                'email' => 'Вход в этот кабинет только для участников регистрации «Туры». Используйте другой email или зарегистрируйтесь.',
+                'email' => 'Нет доступа к этому разделу. Войдите через общую форму на сайте (если у вас аккаунт ВШГР / портала) или зарегистрируйтесь для участия в турах.',
             ]);
         }
 
@@ -61,13 +63,23 @@ class TourCabinetController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
+        if ($request->has('email')) {
+            $request->merge([
+                'email' => Str::lower(trim((string) $request->input('email', ''))),
+            ]);
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email:rfc,strict', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'consent' => ['accepted'],
         ], [
             'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
+            'email.email' => 'Укажите корректный адрес электронной почты (например, user@mail.ru).',
+            'email.unique' => 'Этот email уже зарегистрирован.',
+            'password.confirmed' => 'Пароль и поле подтверждения не совпадают.',
+            'password.min' => 'Пароль должен быть не короче :min символов.',
         ]);
 
         $user = User::create([
@@ -96,7 +108,9 @@ class TourCabinetController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('home');
+        return redirect()->route('login', [
+            'redirect' => route('tour-cabinet.dashboard', absolute: false),
+        ]);
     }
 
     public function dashboard(Request $request, TourCabinetContestDashboardData $contestDashboardData): Response
@@ -128,6 +142,12 @@ class TourCabinetController extends Controller
 
     public function updateProfile(Request $request): RedirectResponse
     {
+        if ($request->has('email')) {
+            $request->merge([
+                'email' => Str::lower(trim((string) $request->input('email', ''))),
+            ]);
+        }
+
         $namePattern = '/^[\p{L}\p{M}\s\-\.\']+$/u';
         $validated = $request->validate([
             'last_name' => ['nullable', 'string', 'max:255', Rule::when($request->filled('last_name'), ['regex:'.$namePattern])],
@@ -141,7 +161,7 @@ class TourCabinetController extends Controller
                 'max:32',
                 Rule::when($request->filled('phone'), ['regex:/^\+?[0-9\s\-\(\)]{7,32}$/']),
             ],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->ignore($request->user()->id)],
+            'email' => ['required', 'string', 'lowercase', 'email:rfc,strict', 'max:255', Rule::unique('users', 'email')->ignore($request->user()->id)],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:2048'],
         ], [
             'last_name.regex' => 'Фамилия может содержать только буквы, пробелы, дефис, точку и апостроф.',

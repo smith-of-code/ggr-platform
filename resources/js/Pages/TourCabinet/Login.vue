@@ -4,6 +4,13 @@
     <div class="mx-auto w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
       <h1 class="text-xl font-bold text-gray-900">Личный кабинет туров</h1>
       <p class="mt-1 text-sm text-gray-500">Вход для участников конкурса (отдельная регистрация от сайта)</p>
+      <p class="mt-3 rounded-lg border border-rosatom-100 bg-rosatom-50/80 px-3 py-2 text-sm leading-snug text-slate-700">
+        Аккаунт портала или ВШГР?
+        <Link :href="portalLoginUrl" class="font-semibold text-rosatom-700 underline decoration-rosatom-300 underline-offset-2 hover:text-rosatom-900">
+          Войти через общую форму
+        </Link>
+        — там вход по email и паролю; для обучения ВШГР переключите режим «Я студент».
+      </p>
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <RInput v-model="form.email" type="email" label="Email" required :error="form.errors.email" autocomplete="username" />
@@ -26,7 +33,12 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
+
+const portalLoginUrl = computed(() =>
+  route('login', { redirect: route('tour-cabinet.dashboard') }),
+)
 
 const form = useForm({
   email: '',
