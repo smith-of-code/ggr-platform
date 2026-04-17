@@ -17,10 +17,7 @@
       <div class="mt-10 space-y-12">
         <section id="tour-cabinet-admin-cities" class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
           <h2 class="text-xl font-bold tracking-tight text-slate-900">Города по направлениям</h2>
-          <p class="mt-2 text-sm text-slate-600">
-            Список для шага выбора городов в ЛК
-            <code class="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-800">/tour-cabinet</code>
-          </p>
+          <p class="mt-2 text-sm text-slate-600">Список для шага выбора городов в ЛК.</p>
           <div class="mt-6">
             <TourCabinetAdminDirectionCitiesPanel v-bind="directionCitiesSection" />
           </div>

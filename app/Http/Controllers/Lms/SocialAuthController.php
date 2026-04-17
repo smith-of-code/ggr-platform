@@ -11,6 +11,7 @@ use App\Support\PostAuthRedirect;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class SocialAuthController extends Controller
@@ -153,6 +154,12 @@ class SocialAuthController extends Controller
         Auth::login($user, remember: true);
         request()->session()->regenerate();
 
+        if ($user->is_admin) {
+            $adminUrl = Str::finish(route('admin.dashboard', absolute: false), '/');
+
+            return redirect()->to($adminUrl);
+        }
+
         $portal = session()->pull('login_portal', 'client');
         if (! in_array($portal, ['client', 'student'], true)) {
             $portal = 'client';
@@ -181,10 +188,6 @@ class SocialAuthController extends Controller
             }
 
             return redirect()->intended(route('lms.profile.edit', ['event' => $event->slug], false));
-        }
-
-        if ($user->is_admin) {
-            return redirect()->intended(route('admin.dashboard', absolute: false));
         }
 
         return redirect()->intended(PostAuthRedirect::clientPortalDefaultUrl($user));

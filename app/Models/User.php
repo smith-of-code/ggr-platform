@@ -64,4 +64,55 @@ class User extends Authenticatable
     {
         return $this->hasMany(SocialAccount::class);
     }
+
+    /** @return HasMany<TourCabinetSupportTicket, $this> */
+    public function tourCabinetSupportTickets(): HasMany
+    {
+        return $this->hasMany(TourCabinetSupportTicket::class);
+    }
+
+    /**
+     * Цифры телефона для сопоставления при входе: РФ 8xxxxxxxxxx → 7xxxxxxxxxx, 10 цифр с 9 → 7…
+     */
+    public static function normalizePhoneDigitsForLogin(?string $phone): ?string
+    {
+        if ($phone === null || $phone === '') {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', $phone);
+        if ($digits === '' || strlen($digits) < 10) {
+            return null;
+        }
+
+        if (strlen($digits) === 11 && str_starts_with($digits, '8')) {
+            $digits = '7'.substr($digits, 1);
+        }
+
+        if (strlen($digits) === 10 && str_starts_with($digits, '9')) {
+            $digits = '7'.$digits;
+        }
+
+        return $digits;
+    }
+
+    /**
+     * Один пользователь с уникальным нормализованным телефоном; при коллизии вход по телефону отклоняется.
+     */
+    public static function findSingleUserByLoginPhone(string $raw): ?self
+    {
+        $want = self::normalizePhoneDigitsForLogin($raw);
+        if ($want === null) {
+            return null;
+        }
+
+        $matched = self::query()
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->get()
+            ->filter(fn (self $user) => self::normalizePhoneDigitsForLogin($user->phone) === $want)
+            ->values();
+
+        return $matched->count() === 1 ? $matched->first() : null;
+    }
 }

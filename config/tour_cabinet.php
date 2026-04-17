@@ -26,4 +26,11 @@ return [
 
     'contest_stage1_form_slug_more_data' => env('TOUR_CABINET_CONTEST_STAGE1_FORM_SLUG_MORE_DATA'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Контакт для альтернативного канала (email), показывается в ЛК поддержки
+    |--------------------------------------------------------------------------
+    */
+    'support_contact_email' => env('TOUR_CABINET_SUPPORT_CONTACT_EMAIL'),
+
 ];

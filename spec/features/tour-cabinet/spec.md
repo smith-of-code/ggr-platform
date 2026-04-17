@@ -48,6 +48,12 @@ Slug двух форм этапа 1: `contest_stage1_form_slug_standard`, `conte
 | POST | `/tour-cabinet/contest/stage-2` | Сохранение ответов этапа 2, переход на этап 3; редирект на дашборд |
 | GET | `/tour-cabinet/contest/stage-3` | Редирект на дашборд `#tour-cabinet-contest` |
 | POST | `/tour-cabinet/contest/stage-3` | Первичное сохранение `stage3_text` / `stage3_video_url` (повторное недоступно: в ЛК только просмотр) |
+| GET | `/tour-cabinet/support` | Список обращений в поддержку (`TourCabinetSupportController@index`) |
+| GET | `/tour-cabinet/support/create` | Форма нового обращения |
+| POST | `/tour-cabinet/support` | Создать тикет + первое сообщение (throttle `tour-cabinet-support-ticket`) |
+| GET | `/tour-cabinet/support/attachments/{attachment}` | Скачивание вложения (владелец тикета или админ) |
+| GET | `/tour-cabinet/support/{ticket}` | Карточка тикета и переписка |
+| POST | `/tour-cabinet/support/{ticket}/messages` | Сообщение участника (throttle `tour-cabinet-support-message`) |
 | GET/POST | `/tour-cabinet/login` | Гостевые страницы входа |
 | GET/POST | `/tour-cabinet/register` | Регистрация |
 | POST | `/tour-cabinet/logout` | Выход (требуется `auth`); после выхода редирект на `home` |
@@ -60,6 +66,10 @@ Slug двух форм этапа 1: `contest_stage1_form_slug_standard`, `conte
 
 Используются существующие маршруты `forms.public.show` / `forms.public.submit`; при авторизованном пользователе ответы привязываются к `user_id` в логике `FormPublicController`.
 
+## Поддержка (обращения из ЛК)
+
+Спецификация: **`support.md`** — тикеты, сообщения, вложения в MVP; ответы только админы портала; опционально в UI текст «напишите на …» через `config('tour_cabinet.support_contact_email')` / `TOUR_CABINET_SUPPORT_CONTACT_EMAIL`; **авто-письма из приложения не отправляются** — только ЛК и админка. Раздел «Поддержка» виден всем с доступом к `/tour-cabinet` (в т.ч. LMS без `is_tour_cabinet_user`).
+
 ## Портальная админка (ЛК туров)
 
 Точка входа для редакторов: **GET** `/admin/tour-cabinet` (`admin.tour-cabinet.index`) — одна страница «ЛК туров» с тремя блоками на месте: города по направлениям (переключение направления через query `project_key` + якорь `#tour-cabinet-admin-cities`), формы этапа 1, вопросы этапа 2. Отдельного раздела «этап 3» в админке нет (данные — в ЛК участника). После POST-операций редирект обратно на эту страницу с якорем соответствующего блока.
@@ -67,3 +77,5 @@ Slug двух форм этапа 1: `contest_stage1_form_slug_standard`, `conte
 - **GET** `/admin/tour-cabinet/forms` (`admin.tour-cabinet.forms.index`) — отдельная страница с тем же UI (ссылка «← ЛК туров» ведёт на хаб с `#tour-cabinet-admin-forms`); данные и **PUT** `admin.tour-cabinet.forms.contest-form-slugs.update` — как у блока форм на хабе.
 - **GET** `/admin/tour-cabinet/direction-cities` (`admin.tour-cabinet.direction-cities.index`, query `project_key`) — отдельная страница с тем же UI; CRUD через **POST/PATCH/DELETE** `admin.tour-cabinet.direction-cities.*`, редиректы на хаб с якорем `#tour-cabinet-admin-cities`.
 - **GET** `/admin/tour-cabinet/stage2-questions` — отдельная страница с тем же UI; CRUD через **POST/PATCH/DELETE** `admin.tour-cabinet.stage2-questions.*`, редиректы на хаб с якорем `#tour-cabinet-admin-stage2`.
+- **GET** `/admin/tour-cabinet/support` (`admin.tour-cabinet.support.index`) — очередь обращений участников ЛК туров; фильтры query `status`, `category`.
+- **GET** `/admin/tour-cabinet/support/{ticket}` (`admin.tour-cabinet.support.show`) — переписка, смена статуса (**PATCH** `admin.tour-cabinet.support.status.update`), ответ (**POST** `admin.tour-cabinet.support.messages.store`, throttle `tour-cabinet-support-message`).

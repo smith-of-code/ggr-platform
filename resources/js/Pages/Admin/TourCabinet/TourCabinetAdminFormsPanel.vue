@@ -30,7 +30,6 @@
               clear-label="—"
               :searchable="formSelectOptions.length > 5"
               :error="slugForm.errors.contest_stage1_form_slug_standard || ''"
-              :hint="`Итог: «${contestFormSlugsEffective.standard || '—'}»`"
               @update:model-value="(v) => { slugForm.contest_stage1_form_slug_standard = v ?? '' }"
             />
           </div>
@@ -45,7 +44,6 @@
               clear-label="—"
               :searchable="formSelectOptions.length > 5"
               :error="slugForm.errors.contest_stage1_form_slug_more_data || ''"
-              :hint="`Итог: «${contestFormSlugsEffective.more_data || '—'}»`"
               @update:model-value="(v) => { slugForm.contest_stage1_form_slug_more_data = v ?? '' }"
             />
           </div>
@@ -132,10 +130,6 @@ const props = defineProps({
   contestFormSlugOverrides: {
     type: Object,
     default: () => ({ standard: '', more_data: '' }),
-  },
-  contestFormSlugsEffective: {
-    type: Object,
-    default: () => ({ standard: null, more_data: null }),
   },
   formOptions: { type: Array, default: () => [] },
 })

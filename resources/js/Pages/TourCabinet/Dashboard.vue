@@ -6,6 +6,12 @@
         <div>
           <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Личный кабинет</h1>
           <p class="mt-1.5 max-w-xl text-sm leading-relaxed text-slate-600">Профиль участника, заявки на туры и этапы конкурса.</p>
+          <Link
+            :href="route('tour-cabinet.support.index')"
+            class="mt-3 inline-flex text-sm font-semibold text-rosatom-700 underline decoration-rosatom-300 decoration-2 underline-offset-4 transition hover:text-rosatom-900"
+          >
+            Поддержка
+          </Link>
           <a
             v-if="$page.props.lmsEntryUrl"
             :href="$page.props.lmsEntryUrl"
@@ -96,6 +102,92 @@
           </div>
         </div>
       </div>
+
+      <!-- Избранное: города и туры с портала -->
+      <section id="tour-cabinet-favorites" class="mt-10 scroll-mt-8">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Избранное на сайте</h2>
+          <Link
+            :href="route('favorites.index')"
+            class="text-sm font-semibold text-rosatom-700 underline decoration-rosatom-300 decoration-2 underline-offset-4 transition hover:text-rosatom-900"
+          >
+            Вся страница избранного
+          </Link>
+        </div>
+        <p class="mt-2 max-w-2xl text-sm text-slate-600">
+          Города и туры, которые вы отметили на портале. Управлять списком можно и здесь, и на странице тура или города.
+        </p>
+
+        <div class="mt-6 grid gap-8 lg:grid-cols-2">
+          <div class="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-6">
+            <h3 class="text-sm font-bold text-slate-900">Города</h3>
+            <ul v-if="favoriteCities.length" class="mt-4 space-y-3">
+              <li
+                v-for="city in favoriteCities"
+                :key="city.id"
+                class="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <Link
+                  :href="route('cities.show', city.slug)"
+                  class="min-w-0 font-semibold text-slate-900 underline decoration-slate-300 decoration-2 underline-offset-2 transition hover:text-rosatom-800"
+                >
+                  {{ city.name }}
+                </Link>
+                <button
+                  type="button"
+                  class="shrink-0 text-left text-sm font-semibold text-rosatom-700 transition hover:text-rosatom-900 disabled:opacity-50"
+                  :disabled="favoriteRemoving === `city-${city.id}`"
+                  @click="removeFavorite('city', city.id)"
+                >
+                  Убрать из избранного
+                </button>
+              </li>
+            </ul>
+            <p v-else class="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm text-slate-600">
+              Нет избранных городов — добавьте со страницы города на сайте.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-6">
+            <h3 class="text-sm font-bold text-slate-900">Туры</h3>
+            <ul v-if="favoriteTours.length" class="mt-4 space-y-3">
+              <li
+                v-for="tour in favoriteTours"
+                :key="tour.id"
+                class="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3"
+              >
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div class="min-w-0 flex-1">
+                    <Link
+                      :href="route('tours.show', tour.slug)"
+                      class="font-semibold text-slate-900 underline decoration-slate-300 decoration-2 underline-offset-2 transition hover:text-rosatom-800"
+                    >
+                      {{ tour.title }}
+                    </Link>
+                    <div v-if="tour.cities?.length" class="mt-2 flex flex-wrap gap-1.5">
+                      <RBadge v-for="c in tour.cities" :key="c.id" variant="info" size="md">{{ c.name }}</RBadge>
+                    </div>
+                    <p v-if="tour.start_city" class="mt-1.5 text-xs text-slate-600">
+                      <span class="font-medium text-slate-700">Логистика:</span> {{ tour.start_city }}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="shrink-0 text-left text-sm font-semibold text-rosatom-700 transition hover:text-rosatom-900 disabled:opacity-50 sm:text-right"
+                    :disabled="favoriteRemoving === `tour-${tour.id}`"
+                    @click="removeFavorite('tour', tour.id)"
+                  >
+                    Убрать из избранного
+                  </button>
+                </div>
+              </li>
+            </ul>
+            <p v-else class="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm text-slate-600">
+              Нет избранных туров — добавьте со страницы тура на сайте.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <!-- Полный профиль -->
       <section id="tour-cabinet-profile" class="mt-10 scroll-mt-8">
@@ -284,7 +376,7 @@ import {
   UserCircleIcon,
 } from '@heroicons/vue/24/outline'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Head, router, useForm } from '@inertiajs/vue3'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import ContestStage1Panel from './Contest/ContestStage1Panel.vue'
 import ContestStage2Panel from './Contest/ContestStage2Panel.vue'
 import ContestStage3Panel from './Contest/ContestStage3Panel.vue'
@@ -314,6 +406,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  favorites: {
+    type: Object,
+    default: () => ({ cities: [], tours: [] }),
+  },
   contestLocationOffers: {
     type: Array,
     default: () => [],
@@ -333,6 +429,25 @@ function tourApplicationStatusPillClass(statusKey) {
     default:
       return 'bg-amber-50 text-amber-950 ring-amber-600/20'
   }
+}
+
+const favoriteCities = computed(() => props.favorites?.cities ?? [])
+const favoriteTours = computed(() => props.favorites?.tours ?? [])
+const favoriteRemoving = ref(null)
+
+function removeFavorite(type, id) {
+  const key = `${type}-${id}`
+  favoriteRemoving.value = key
+  router.post(
+    route('favorites.toggle', { type, id }),
+    {},
+    {
+      preserveScroll: true,
+      onFinish: () => {
+        favoriteRemoving.value = null
+      },
+    },
+  )
 }
 
 /** Список «доступно участие в конкурсе…» скрыт по требованию UI; включите true, чтобы снова показать блок. */

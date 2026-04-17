@@ -50,13 +50,6 @@
             >
               Личный кабинет
             </Link>
-            <a
-              v-if="$page.props.auth?.user && showTourCabinetSecondaryLink"
-              :href="$page.props.tourCabinetUrl"
-              class="whitespace-nowrap rounded-lg border border-[#003274]/30 bg-white px-3 py-2 text-sm font-medium text-[#003274] transition hover:bg-[#003274]/5"
-            >
-              ЛК туров
-            </a>
             <template v-else>
               <Link
                 :href="route('tour-cabinet.register')"
@@ -125,13 +118,6 @@
           >
             Личный кабинет
           </Link>
-          <a
-            v-if="$page.props.auth?.user && showTourCabinetSecondaryLink"
-            :href="$page.props.tourCabinetUrl"
-            class="mt-2 block rounded-lg border border-[#003274]/30 bg-white px-4 py-3 text-center text-sm font-medium text-[#003274]"
-          >
-            ЛК туров
-          </a>
           <template v-else>
             <Link
               :href="route('tour-cabinet.register')"
@@ -236,11 +222,6 @@ const cabinetUrl = computed(() => {
 
   return route('home')
 })
-
-/** Участник ВШГР: основной ЛК — LMS, второй пункт — кабинет туров. */
-const showTourCabinetSecondaryLink = computed(
-  () => !!(page.props.lmsEntryUrl && page.props.tourCabinetUrl),
-)
 
 const hiddenPages = computed(() => page.props.hiddenPages || [])
 

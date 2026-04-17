@@ -30,7 +30,7 @@
         </div>
 
         <h1 class="text-2xl font-bold text-gray-900">Вход в систему</h1>
-        <p class="mt-2 text-sm text-gray-500">Введите email и пароль для доступа к платформе</p>
+        <p class="mt-2 text-sm text-gray-500">Введите email или телефон и пароль для доступа к платформе</p>
 
         <div class="mt-6" role="group" aria-label="Тип входа">
           <div class="flex rounded-xl border border-gray-200 bg-gray-50 p-1">
@@ -58,7 +58,16 @@
         </div>
 
         <form @submit.prevent="submit" class="mt-8 space-y-5">
-          <RInput v-model="form.email" type="email" label="Email" placeholder="your@email.com" :error="form.errors.email" required id="email" />
+          <RInput
+            v-model="form.login"
+            type="text"
+            label="Email или телефон"
+            placeholder="you@mail.ru или +7 916 123-45-67"
+            :error="form.errors.login"
+            required
+            id="login"
+            autocomplete="username"
+          />
 
           <RInput v-model="form.password" type="password" label="Пароль" placeholder="••••••••" :error="form.errors.password" required id="password" />
 
@@ -125,7 +134,7 @@ const props = defineProps({
 })
 
 const form = useForm({
-  email: '',
+  login: '',
   password: '',
   remember: false,
   portal: props.defaultPortal === 'student' ? 'student' : 'client',

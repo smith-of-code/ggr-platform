@@ -9,7 +9,7 @@
         <Link :href="portalLoginUrl" class="font-semibold text-rosatom-700 underline decoration-rosatom-300 underline-offset-2 hover:text-rosatom-900">
           Войти через общую форму
         </Link>
-        — там вход по email и паролю; для обучения ВШГР переключите режим «Я студент».
+        — там вход по email или телефону и паролю; для обучения ВШГР переключите режим «Я студент».
       </p>
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">

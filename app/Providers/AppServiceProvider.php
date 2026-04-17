@@ -15,8 +15,11 @@ use App\Services\SettingsService;
 use App\Socialite\VkIdProvider;
 use App\Support\MailDisplayName;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -35,6 +38,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        RateLimiter::for('tour-cabinet-support-ticket', function (Request $request) {
+            return Limit::perMinute(6)->by((string) ($request->user()?->id ?? $request->ip()));
+        });
+
+        RateLimiter::for('tour-cabinet-support-message', function (Request $request) {
+            return Limit::perMinute(30)->by((string) ($request->user()?->id ?? $request->ip()));
+        });
+
+        RateLimiter::for('tour-cabinet-support-download', function (Request $request) {
+            return Limit::perMinute(60)->by((string) ($request->user()?->id ?? $request->ip()));
+        });
 
         app(SettingsService::class)->applyMailConfig();
 

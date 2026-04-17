@@ -46,10 +46,6 @@ class TourCabinetHubPageData
                 'standard' => (string) ($raw['contest_stage1_form_slug_standard'] ?? ''),
                 'more_data' => (string) ($raw['contest_stage1_form_slug_more_data'] ?? ''),
             ],
-            'contestFormSlugsEffective' => [
-                'standard' => $this->settings->getTourCabinetContestStage1FormSlugStandard(),
-                'more_data' => $this->settings->getTourCabinetContestStage1FormSlugMoreData(),
-            ],
             'formOptions' => $forms->map(fn (LmsForm $f) => [
                 'slug' => $f->slug,
                 'title' => $f->title,

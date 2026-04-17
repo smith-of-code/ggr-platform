@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Application;
 use App\Models\Consent;
+use App\Models\Favorite;
 use App\Models\User;
 use App\Services\ConsentService;
 use App\Services\TourCabinetContestDashboardData;
@@ -13,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -122,9 +124,14 @@ class TourCabinetController extends Controller
             fn ($v) => $v !== null && $v !== ''
         )));
 
+        $favorites = Schema::hasTable('favorites')
+            ? Favorite::groupedFavorablesFor($user->id)
+            : ['cities' => collect(), 'tours' => collect()];
+
         return Inertia::render('TourCabinet/Dashboard', [
             ...$contestDashboardData->forUser($user),
             'tourApplications' => $this->tourApplicationsForUser($user),
+            'favorites' => $favorites,
             'profile' => [
                 'user_id' => $user->id,
                 'display_name' => $composed !== '' ? $composed : (string) ($user->name ?: 'Участник'),

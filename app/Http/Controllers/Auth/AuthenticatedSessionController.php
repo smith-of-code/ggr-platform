@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -47,6 +48,15 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         $user = $request->user();
+
+        if ($user->is_admin) {
+            // Не используем intended(): в сессии может лежать url.intended с ЛК туров / LMS и перекроет админку.
+            $adminUrl = Str::finish(route('admin.dashboard', absolute: false), '/');
+            $redirect = redirect()->to($adminUrl);
+
+            return $this->redirectForInertia($request, $redirect);
+        }
+
         $portal = $request->input('portal', 'client');
         if (! in_array($portal, ['client', 'student'], true)) {
             $portal = 'client';
@@ -67,7 +77,7 @@ class AuthenticatedSessionController extends Controller
                 $request->session()->regenerateToken();
 
                 throw ValidationException::withMessages([
-                    'email' => 'Вход как студент недоступен: для этого аккаунта нет записи в образовательной программе.',
+                    'login' => 'Вход как студент недоступен: для этого аккаунта нет записи в образовательной программе.',
                 ]);
             }
 
@@ -76,13 +86,6 @@ class AuthenticatedSessionController extends Controller
             }
 
             $redirect = redirect()->intended(route('lms.profile.edit', ['event' => $event->slug], false));
-
-            return $this->redirectForInertia($request, $redirect);
-        }
-
-        // Режим «Я клиент»
-        if ($user->is_admin) {
-            $redirect = redirect()->intended(route('admin.dashboard', absolute: false));
 
             return $this->redirectForInertia($request, $redirect);
         }

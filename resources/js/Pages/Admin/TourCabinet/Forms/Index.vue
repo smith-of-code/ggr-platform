@@ -30,7 +30,6 @@
         :forms="forms"
         :config-slug="configSlug"
         :contest-form-slug-overrides="contestFormSlugOverrides"
-        :contest-form-slugs-effective="contestFormSlugsEffective"
         :form-options="formOptions"
       />
     </div>
@@ -51,10 +50,6 @@ defineProps({
   contestFormSlugOverrides: {
     type: Object,
     default: () => ({ standard: '', more_data: '' }),
-  },
-  contestFormSlugsEffective: {
-    type: Object,
-    default: () => ({ standard: null, more_data: null }),
   },
   formOptions: { type: Array, default: () => [] },
 })

@@ -49,30 +49,8 @@ class FavoriteController extends Controller
 
     public function index(Request $request): Response
     {
-        $favorites = Favorite::query()
-            ->where('user_id', $request->user()->id)
-            ->with('favorable')
-            ->get();
-
-        $cities = $favorites
-            ->where('favorable_type', City::class)
-            ->pluck('favorable')
-            ->filter()
-            ->values();
-
-        $tours = $favorites
-            ->where('favorable_type', Tour::class)
-            ->pluck('favorable')
-            ->filter()
-            ->values();
-
-        $tours->load('cities');
-
         return Inertia::render('Favorites/Index', [
-            'favorites' => [
-                'cities' => $cities,
-                'tours' => $tours,
-            ],
+            'favorites' => Favorite::groupedFavorablesFor($request->user()->id),
         ]);
     }
 }

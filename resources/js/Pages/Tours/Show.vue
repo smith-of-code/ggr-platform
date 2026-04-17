@@ -513,20 +513,27 @@
           <h3 class="mt-4 text-xl font-bold text-gray-900">Заявка отправлена!</h3>
           <p class="mt-2 max-w-sm text-gray-600">Спасибо за интерес к туру. Мы свяжемся с вами в ближайшее время.</p>
         </div>
-        <form v-else @submit.prevent="submitApplication" class="space-y-4">
-          <RInput v-model="appForm.name" label="Имя" placeholder="Ваше имя" required />
-          <RInput v-model="appForm.email" type="email" label="Email" placeholder="your@email.com" required />
-          <RInput v-model="appForm.phone" type="tel" label="Телефон" placeholder="+7 (___) ___-__-__" />
-          <div v-if="appForm.participation_variant" class="rounded-lg bg-blue-50 p-3">
+        <form v-else class="space-y-4" @submit.prevent="submitApplication">
+          <RInput v-model="appForm.name" label="Имя" placeholder="Ваше имя" required :error="appForm.errors.name" />
+          <RInput v-model="appForm.email" type="email" label="Email" placeholder="your@email.com" required :error="appForm.errors.email" />
+          <RInput v-model="appForm.phone" type="tel" label="Телефон" placeholder="+7 (___) ___-__-__" :error="appForm.errors.phone" />
+          <div v-if="participationVariant" class="rounded-lg bg-blue-50 p-3">
             <p class="text-sm font-medium text-blue-800">
-              <template v-if="appForm.participation_variant === 'bchp'">Вариант: Сертификат «Больше, чем путешествие»</template>
-              <template v-else-if="appForm.participation_variant === 'contest'">Вариант: Участие в конкурсе</template>
+              <template v-if="participationVariant === 'bchp'">Вариант: Сертификат «Больше, чем путешествие»</template>
+              <template v-else-if="participationVariant === 'contest'">Вариант: Участие в конкурсе</template>
               <template v-else>Вариант: За свой счёт</template>
             </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Сообщение</label>
-            <textarea v-model="appForm.message" rows="3" placeholder="Ваше сообщение..." class="mt-1.5 w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20" />
+            <textarea
+              v-model="appForm.message"
+              rows="3"
+              placeholder="Ваше сообщение..."
+              class="mt-1.5 w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20"
+              :class="appForm.errors.message ? 'border-red-500 ring-1 ring-red-500/20' : ''"
+            />
+            <p v-if="appForm.errors.message" class="mt-1 text-sm text-red-600">{{ appForm.errors.message }}</p>
           </div>
           <div>
             <label class="flex items-start gap-3 cursor-pointer">
@@ -534,12 +541,15 @@
                 v-model="appForm.consent"
                 type="checkbox"
                 class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
+                :true-value="true"
+                :false-value="false"
               />
               <span class="text-sm text-gray-600">
                 Отправляя заявку, вы даете
                 <a :href="$page.props.consentDocumentUrl" target="_blank" class="text-[#003274] underline hover:text-[#025ea1]">согласие на обработку персональных данных</a>
               </span>
             </label>
+            <p v-if="appForm.errors.consent" class="mt-1 text-sm text-red-600">{{ appForm.errors.consent }}</p>
           </div>
         </form>
 
@@ -548,8 +558,16 @@
             <RButton variant="primary" @click="closeApplicationModal">Закрыть</RButton>
           </template>
           <template v-else>
-            <RButton variant="outline" @click="showModal = false">Отмена</RButton>
-            <RButton variant="primary" :disabled="!appForm.consent" @click="submitApplication">Отправить</RButton>
+            <RButton type="button" variant="outline" @click="closeApplicationModal">Отмена</RButton>
+            <RButton
+              type="button"
+              variant="primary"
+              :disabled="!appForm.consent || appForm.processing"
+              :loading="appForm.processing"
+              @click="submitApplication"
+            >
+              Отправить
+            </RButton>
           </template>
         </template>
       </RModal>
@@ -607,7 +625,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
-import { router, usePage, Link } from '@inertiajs/vue3'
+import { router, useForm, usePage, Link } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
@@ -797,51 +815,76 @@ function toggleFavorite() {
 
 const showModal = ref(false)
 const applicationSent = ref(false)
-const appForm = reactive({
+const participationVariant = ref(null)
+
+const appForm = useForm({
+  type: 'tour',
+  tour_id: null,
+  tour_departure_id: null,
   name: '',
   email: '',
   phone: '',
   message: '',
-  tour_departure_id: null,
-  participation_variant: null,
   consent: false,
 })
 
+function applicationDisplayName(user) {
+  if (!user) return ''
+  const parts = [user.last_name, user.first_name, user.patronymic].filter(Boolean)
+  if (parts.length) return parts.join(' ')
+  return user.name || ''
+}
+
 function openApplicationModal(departureId = null, variant = null) {
+  appForm.clearErrors()
+  appForm.reset()
   appForm.tour_departure_id = departureId
-  appForm.participation_variant = variant
+  participationVariant.value = variant
   applicationSent.value = false
   showModal.value = true
+  const u = page.props.auth?.user
+  if (u) {
+    appForm.name = applicationDisplayName(u)
+    appForm.email = u.email || ''
+    appForm.phone = u.phone || ''
+  }
 }
 
 function closeApplicationModal() {
   showModal.value = false
   applicationSent.value = false
-  appForm.name = appForm.email = appForm.phone = appForm.message = ''
-  appForm.participation_variant = null
+  appForm.reset()
+  appForm.clearErrors()
+  participationVariant.value = null
 }
 
 function submitApplication() {
-  const payload = {
-    type: 'tour',
-    tour_id: props.tour.id,
-    tour_departure_id: appForm.tour_departure_id,
-    name: appForm.name,
-    email: appForm.email,
-    phone: appForm.phone,
-    message: appForm.message,
-    consent: appForm.consent,
-  }
-  if (appForm.participation_variant) {
-    payload.message = `[${appForm.participation_variant === 'bchp' ? 'Сертификат БЧП' : appForm.participation_variant === 'contest' ? 'Конкурс' : 'За свой счёт'}] ${appForm.message || ''}`
-  }
-  router.post(route('applications.store'), payload, {
-    preserveScroll: true,
-    onSuccess: () => {
-      applicationSent.value = true
-      appForm.name = appForm.email = appForm.phone = appForm.message = ''
-    },
-  })
+  appForm.tour_id = props.tour.id
+  appForm.type = 'tour'
+  appForm
+    .transform((data) => {
+      let message = data.message || ''
+      const v = participationVariant.value
+      if (v === 'bchp') {
+        message = `[Сертификат БЧП] ${message}`.trim()
+      } else if (v === 'contest') {
+        message = `[Конкурс] ${message}`.trim()
+      } else if (v === 'paid') {
+        message = `[За свой счёт] ${message}`.trim()
+      }
+      return {
+        ...data,
+        message: message || null,
+      }
+    })
+    .post(route('applications.store'), {
+      preserveScroll: true,
+      onSuccess: () => {
+        applicationSent.value = true
+        appForm.reset()
+        participationVariant.value = null
+      },
+    })
 }
 
 const reviewForm = reactive({ rating: 0, text: '' })

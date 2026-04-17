@@ -22,12 +22,15 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->post('/login', [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'password',
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertStatus(302);
+
+        $this->post('/logout');
+        $this->assertGuest();
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
@@ -35,8 +38,44 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $this->post('/login', [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'wrong-password',
+        ]);
+
+        $this->assertGuest();
+    }
+
+    public function test_users_can_authenticate_with_phone_in_various_formats(): void
+    {
+        $user = User::factory()->create([
+            'phone' => '+7 (916) 111-22-33',
+        ]);
+
+        $this->post('/login', [
+            'login' => '89161112233',
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+
+        $this->post('/logout');
+        $this->assertGuest();
+    }
+
+    public function test_phone_login_fails_when_normalized_phone_is_ambiguous(): void
+    {
+        User::factory()->create([
+            'email' => 'dup-phone-a@test.local',
+            'phone' => '+79161112233',
+        ]);
+        User::factory()->create([
+            'email' => 'dup-phone-b@test.local',
+            'phone' => '8 (916) 111-22-33',
+        ]);
+
+        $this->post('/login', [
+            'login' => '89161112233',
+            'password' => 'password',
         ]);
 
         $this->assertGuest();

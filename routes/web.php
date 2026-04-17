@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\TourReviewController as AdminTourReviewController
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\TourCabinetDirectionCitiesController as AdminTourCabinetDirectionCitiesController;
 use App\Http\Controllers\Admin\TourCabinetHubController as AdminTourCabinetHubController;
+use App\Http\Controllers\Admin\TourCabinetSupportController as AdminTourCabinetSupportController;
 use App\Http\Controllers\Admin\TourCabinetStage2QuestionsController as AdminTourCabinetStage2QuestionsController;
 use App\Http\Controllers\Admin\TourCabinetFormsController as AdminTourCabinetFormsController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
@@ -39,6 +40,7 @@ use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\ResearchPageController;
 use App\Http\Controllers\TourCabinetContestController;
 use App\Http\Controllers\TourCabinetController;
+use App\Http\Controllers\TourCabinetSupportController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\TourReviewController;
 use App\Http\Controllers\VacancyController;
@@ -83,6 +85,19 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
         Route::post('/contest/stage-2', [TourCabinetContestController::class, 'storeStage2'])->name('contest.stage2.store');
         Route::get('/contest/stage-3', [TourCabinetContestController::class, 'showStage3'])->name('contest.stage3');
         Route::post('/contest/stage-3', [TourCabinetContestController::class, 'storeStage3'])->name('contest.stage3.store');
+
+        Route::get('/support', [TourCabinetSupportController::class, 'index'])->name('support.index');
+        Route::get('/support/create', [TourCabinetSupportController::class, 'create'])->name('support.create');
+        Route::post('/support', [TourCabinetSupportController::class, 'store'])
+            ->middleware('throttle:tour-cabinet-support-ticket')
+            ->name('support.store');
+        Route::get('/support/attachments/{attachment}', [TourCabinetSupportController::class, 'downloadAttachment'])
+            ->middleware('throttle:tour-cabinet-support-download')
+            ->name('support.attachments.show');
+        Route::get('/support/{ticket}', [TourCabinetSupportController::class, 'show'])->name('support.show');
+        Route::post('/support/{ticket}/messages', [TourCabinetSupportController::class, 'storeMessage'])
+            ->middleware('throttle:tour-cabinet-support-message')
+            ->name('support.messages.store');
     });
     Route::middleware('tour-cabinet.guest')->group(function () {
         Route::get('/login', [TourCabinetController::class, 'showLogin'])->name('login');
@@ -163,6 +178,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::put('/vshgr-page', [AdminVshgrPageController::class, 'update'])->name('vshgr-page.update');
 
     Route::get('/tour-cabinet', [AdminTourCabinetHubController::class, 'index'])->name('tour-cabinet.index');
+
+    Route::get('/tour-cabinet/support', [AdminTourCabinetSupportController::class, 'index'])->name('tour-cabinet.support.index');
+    Route::get('/tour-cabinet/support/{ticket}', [AdminTourCabinetSupportController::class, 'show'])->name('tour-cabinet.support.show');
+    Route::post('/tour-cabinet/support/{ticket}/messages', [AdminTourCabinetSupportController::class, 'storeMessage'])
+        ->middleware('throttle:tour-cabinet-support-message')
+        ->name('tour-cabinet.support.messages.store');
+    Route::patch('/tour-cabinet/support/{ticket}/status', [AdminTourCabinetSupportController::class, 'updateStatus'])->name('tour-cabinet.support.status.update');
 
     Route::get('/tour-cabinet/forms', [AdminTourCabinetFormsController::class, 'index'])->name('tour-cabinet.forms.index');
     Route::put('/tour-cabinet/forms/contest-form-slugs', [AdminTourCabinetFormsController::class, 'updateContestFormSlugs'])->name('tour-cabinet.forms.contest-form-slugs.update');

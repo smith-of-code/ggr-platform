@@ -61,7 +61,7 @@
             @click="visitTourCabinet"
           >
             <template #icon><ArrowTopRightOnSquareIcon class="h-4 w-4" /></template>
-            ЛК туров
+            Туры и конкурс
           </RButton>
           <RButton variant="ghost" size="sm" block @click="logout">
             <template #icon><ArrowRightOnRectangleIcon class="h-4 w-4" /></template>
