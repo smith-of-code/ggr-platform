@@ -168,11 +168,12 @@ class CourseController extends Controller
             ->where('lms_event_id', $event->id)
             ->first();
 
-        if (! $course->is_mandatory && (! $profile || ! $profile->isProfileComplete())) {
-            return redirect()->back()->withErrors([
-                'enroll' => 'Для записи на курс необходимо заполнить профиль.',
-            ]);
-        }
+        // NOTE: проверка заполненности профиля временно отключена по запросу заказчика
+        // if (! $course->is_mandatory && (! $profile || ! $profile->isProfileComplete())) {
+        //     return redirect()->back()->withErrors([
+        //         'enroll' => 'Для записи на курс необходимо заполнить профиль.',
+        //     ]);
+        // }
 
         $existingInOtherCourse = LmsCourseEnrollment::where('user_id', $user->id)
             ->where('lms_course_id', '!=', $course->id)

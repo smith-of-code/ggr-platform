@@ -81,12 +81,15 @@
                 </p>
                 <p class="mt-1 text-sm text-blue-700">Чтобы записаться на другой, отмените текущую заявку.</p>
               </div>
+              <!-- NOTE: блок «заполните профиль» временно скрыт по запросу заказчика -->
+              <!--
               <div v-else-if="!isProfileComplete && !course?.is_mandatory" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
                 <p class="text-sm font-medium text-amber-800">Для записи на программу необходимо заполнить профиль</p>
                 <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-1 inline-block text-sm font-medium text-rosatom-600 hover:underline">
                   Перейти в личный кабинет
                 </Link>
               </div>
+              -->
               <div v-else-if="$page.props.errors?.enroll" class="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
                 <p class="text-sm font-medium text-red-800">{{ $page.props.errors.enroll }}</p>
               </div>
