@@ -4,7 +4,8 @@
     <div class="space-y-6">
       <h1 class="font-brand text-2xl font-bold text-gray-900">Личный кабинет</h1>
 
-      <!-- Profile completed banner -->
+      <!-- NOTE: баннеры «Профиль заполнен» и «Заполните профиль» временно скрыты по запросу заказчика -->
+      <!--
       <div
         v-if="showCompletedBanner"
         class="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-4"
@@ -20,7 +21,6 @@
         </div>
       </div>
 
-      <!-- Profile incomplete banner -->
       <div
         v-if="!isProfileComplete && missingFields.length > 0 && !showCompletedBanner"
         class="rounded-xl border border-amber-300 bg-amber-50 px-5 py-4"
@@ -40,6 +40,7 @@
           </div>
         </div>
       </div>
+      -->
 
       <!-- Avatar card -->
       <ProfileCard
