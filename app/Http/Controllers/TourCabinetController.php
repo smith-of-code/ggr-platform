@@ -37,6 +37,10 @@ class TourCabinetController extends Controller
 
     public function login(Request $request): RedirectResponse
     {
+        $request->merge([
+            'email' => mb_strtolower(trim((string) $request->input('email', ''))),
+        ]);
+
         $credentials = $request->validate([
             'email' => ['required', 'string', 'lowercase', 'email'],
             'password' => ['required', 'string'],
