@@ -166,6 +166,8 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::post('users/{user}/documents/{document}/annul', [AdminUserController::class, 'annulProfileDocument'])->name('users.documents.annul');
         Route::post('users/{user}/document-replace-requests/{replaceRequest}/approve', [AdminUserController::class, 'approveDocumentReplaceRequest'])->name('users.document-replace-requests.approve');
         Route::post('users/{user}/document-replace-requests/{replaceRequest}/reject', [AdminUserController::class, 'rejectDocumentReplaceRequest'])->name('users.document-replace-requests.reject');
+        Route::post('users/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::post('users/{user}/toggle-email-verified', [AdminUserController::class, 'toggleEmailVerified'])->name('users.toggle-email-verified');
         Route::post('users/{user}/approve-direction', [AdminUserController::class, 'approveDirection'])->name('users.approve-direction');
         Route::post('users/{user}/reject-direction', [AdminUserController::class, 'rejectDirection'])->name('users.reject-direction');
         Route::post('invitations', [AdminInvitationController::class, 'store'])->name('invitations.store');

@@ -195,7 +195,7 @@ class UserController extends Controller
             ->with(['lmsRole:id,name,slug', 'documents'])
             ->firstOrFail();
 
-        $profile->load('user:id,name,last_name,first_name,patronymic,email,phone,created_at');
+        $profile->load('user:id,name,last_name,first_name,patronymic,email,phone,created_at,email_verified_at');
 
         $enrollments = LmsCourseEnrollment::where('user_id', $user->id)
             ->whereHas('course', fn($q) => $q->where('lms_event_id', $event->id))
@@ -752,6 +752,27 @@ class UserController extends Controller
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="import_template.xlsx"',
         ]);
+    }
+
+    public function resetPassword(LmsEvent $event, User $user): RedirectResponse
+    {
+        $newPassword = Str::random(10);
+        $user->update(['password' => Hash::make($newPassword)]);
+
+        return redirect()->back()->with('success', "Пароль сброшен. Новый пароль: {$newPassword}");
+    }
+
+    public function toggleEmailVerified(LmsEvent $event, User $user): RedirectResponse
+    {
+        if ($user->email_verified_at) {
+            $user->update(['email_verified_at' => null]);
+
+            return redirect()->back()->with('success', 'Email отмечен как неподтверждённый');
+        }
+
+        $user->update(['email_verified_at' => now()]);
+
+        return redirect()->back()->with('success', 'Email подтверждён');
     }
 
     public function approveDirection(LmsEvent $event, User $user): RedirectResponse

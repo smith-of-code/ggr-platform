@@ -84,6 +84,72 @@
             </RCard>
           </form>
 
+          <!-- Account management -->
+          <RCard elevation="raised">
+            <h3 class="mb-4 text-lg font-bold text-gray-900">Управление аккаунтом</h3>
+
+            <div class="space-y-4">
+              <!-- Email verification toggle -->
+              <div class="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Подтверждение email</p>
+                  <p class="text-xs text-gray-500">{{ profile.user?.email }}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <RBadge :variant="profile.user?.email_verified_at ? 'success' : 'warning'" size="sm">
+                    {{ profile.user?.email_verified_at ? 'Подтверждён' : 'Не подтверждён' }}
+                  </RBadge>
+                  <button
+                    type="button"
+                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-rosatom-500 focus:ring-offset-2"
+                    :class="profile.user?.email_verified_at ? 'bg-green-500' : 'bg-gray-300'"
+                    @click="toggleEmailVerified"
+                  >
+                    <span
+                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                      :class="profile.user?.email_verified_at ? 'translate-x-5' : 'translate-x-0'"
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Reset password -->
+              <div class="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Сброс пароля</p>
+                  <p class="text-xs text-gray-500">Сгенерировать новый случайный пароль</p>
+                </div>
+                <RButton
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  :loading="resetPasswordProcessing"
+                  :disabled="resetPasswordProcessing"
+                  @click="resetPassword"
+                >
+                  <template #icon><KeyIcon class="h-4 w-4" /></template>
+                  Сбросить пароль
+                </RButton>
+              </div>
+
+              <!-- New password display -->
+              <div v-if="newPasswordValue" class="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+                <p class="text-sm font-medium text-green-800">Новый пароль:</p>
+                <div class="mt-1 flex items-center gap-2">
+                  <code class="rounded-lg bg-white px-3 py-1.5 text-sm font-mono font-bold text-gray-900">{{ newPasswordValue }}</code>
+                  <button
+                    type="button"
+                    class="rounded-lg bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-200"
+                    @click="copyPassword"
+                  >
+                    {{ passwordCopied ? 'Скопировано!' : 'Копировать' }}
+                  </button>
+                </div>
+                <p class="mt-1.5 text-xs text-green-600">Сообщите этот пароль участнику</p>
+              </div>
+            </div>
+          </RCard>
+
           <!-- Course assignment -->
           <RCard elevation="raised">
             <h3 class="mb-4 text-lg font-bold text-gray-900">Назначенные программы</h3>
@@ -260,7 +326,7 @@ import { router, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import SearchSelect from '@/Components/SearchSelect.vue'
 import MultiSelect from '@/Components/MultiSelect.vue'
-import { ArrowLeftIcon, ArrowDownTrayIcon, DocumentIcon } from '@heroicons/vue/24/outline'
+import { ArrowLeftIcon, ArrowDownTrayIcon, DocumentIcon, KeyIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   event: Object,
@@ -276,6 +342,46 @@ const props = defineProps({
 
 const directionLabel = computed(() => props.directionLabels[props.profile?.direction] || '')
 const facultyLabel = computed(() => props.facultyLabels[props.profile?.faculty] || '')
+
+const resetPasswordProcessing = ref(false)
+const newPasswordValue = ref(null)
+const passwordCopied = ref(false)
+
+function resetPassword() {
+  if (!confirm('Сбросить пароль? Текущий пароль пользователя перестанет работать.')) return
+  resetPasswordProcessing.value = true
+  router.post(
+    route('lms.admin.users.reset-password', [props.event.slug, props.profile.user_id]),
+    {},
+    {
+      preserveScroll: true,
+      onSuccess: (page) => {
+        const msg = page.props.flash?.success || ''
+        const match = msg.match(/Новый пароль:\s*(.+)/)
+        if (match) newPasswordValue.value = match[1].trim()
+      },
+      onFinish: () => { resetPasswordProcessing.value = false },
+    }
+  )
+}
+
+function copyPassword() {
+  if (!newPasswordValue.value) return
+  navigator.clipboard.writeText(newPasswordValue.value).then(() => {
+    passwordCopied.value = true
+    setTimeout(() => { passwordCopied.value = false }, 2000)
+  })
+}
+
+function toggleEmailVerified() {
+  const action = props.profile.user?.email_verified_at ? 'снять подтверждение' : 'подтвердить'
+  if (!confirm(`${action} email для этого пользователя?`)) return
+  router.post(
+    route('lms.admin.users.toggle-email-verified', [props.event.slug, props.profile.user_id]),
+    {},
+    { preserveScroll: true }
+  )
+}
 
 
 const editForm = useForm({
