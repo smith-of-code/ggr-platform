@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -58,6 +59,13 @@ class User extends Authenticatable
             'is_tour_cabinet_user' => 'boolean',
             'birth_date' => 'date',
         ];
+    }
+
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn (mixed $value) => mb_strtolower(trim((string) $value)),
+        );
     }
 
     public function socialAccounts(): HasMany

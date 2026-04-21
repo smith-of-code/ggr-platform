@@ -62,11 +62,17 @@ class AuthController extends Controller
                 ->withErrors(['token' => 'Ссылка недействительна или срок её действия истёк.']);
         }
 
+        if ($request->has('email')) {
+            $request->merge([
+                'email' => mb_strtolower(trim((string) $request->input('email', ''))),
+            ]);
+        }
+
         $validated = $request->validate([
             'last_name' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
             'patronymic' => ['nullable', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'consent' => ['accepted'],
