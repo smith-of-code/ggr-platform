@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGrant;
 use App\Models\Lms\LmsGrantDocument;
+use App\Models\Lms\LmsGrantEnrollment;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -97,6 +99,25 @@ class GrantController extends Controller
         $this->syncDocuments($request, $grant);
 
         return redirect()->route('lms.admin.grants.index', $event->slug);
+    }
+
+    public function enrollments(LmsEvent $event, LmsGrant $grant): JsonResponse
+    {
+        if ($grant->lms_event_id !== $event->id) {
+            abort(404);
+        }
+
+        $enrollments = LmsGrantEnrollment::where('lms_grant_id', $grant->id)
+            ->with('user:id,name,last_name,first_name,patronymic,email,phone')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn ($e) => [
+                'id' => $e->id,
+                'user' => $e->user?->only(['id', 'name', 'last_name', 'first_name', 'patronymic', 'email', 'phone']),
+                'created_at' => $e->created_at?->format('d.m.Y H:i'),
+            ]);
+
+        return response()->json($enrollments);
     }
 
     public function destroy(LmsEvent $event, LmsGrant $grant): RedirectResponse
