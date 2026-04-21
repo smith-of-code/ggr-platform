@@ -163,6 +163,18 @@
           :searchable="true"
         />
       </div>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition"
+        :class="filters?.docs_no_direction
+          ? 'border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100'
+          : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'"
+        @click="applyFilter('docs_no_direction', filters?.docs_no_direction ? '' : '1')"
+        title="Участники с документами, но без выбранного направления"
+      >
+        <ExclamationTriangleIcon class="h-4 w-4" />
+        Документы без направления
+      </button>
     </div>
 
     <!-- Success flash -->
@@ -223,6 +235,10 @@
               <div v-if="profile.direction" class="space-y-0.5">
                 <p class="text-xs font-medium text-gray-700">{{ directionLabels[profile.direction] || '—' }}</p>
                 <p class="text-[11px] text-gray-400">{{ facultyLabels[profile.faculty] || '—' }}</p>
+              </div>
+              <div v-else-if="profile.documents_count > 0" class="flex items-center gap-1">
+                <ExclamationTriangleIcon class="h-4 w-4 text-amber-500" />
+                <span class="text-xs font-medium text-amber-600">Не выбрано</span>
               </div>
               <span v-else class="text-xs text-gray-400">—</span>
             </td>
@@ -484,6 +500,7 @@ import {
   EnvelopeIcon,
   ClipboardDocumentIcon,
   AcademicCapIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({

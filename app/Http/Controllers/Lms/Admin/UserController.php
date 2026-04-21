@@ -30,7 +30,9 @@ class UserController extends Controller
 {
     public function index(Request $request, LmsEvent $event): Response
     {
-        $query = $event->profiles()->with(['user:id,name,last_name,first_name,patronymic,email,phone', 'lmsRole:id,name,slug']);
+        $query = $event->profiles()
+            ->with(['user:id,name,last_name,first_name,patronymic,email,phone', 'lmsRole:id,name,slug'])
+            ->withCount('documents');
 
         if ($request->filled('role_id')) {
             $query->where('lms_role_id', $request->role_id);
@@ -59,6 +61,10 @@ class UserController extends Controller
                     ->from('lms_group_members')
                     ->where('lms_group_id', $request->group);
             });
+        }
+
+        if ($request->filled('docs_no_direction')) {
+            $query->whereNull('direction')->whereHas('documents');
         }
 
         $profiles = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
@@ -99,7 +105,7 @@ class UserController extends Controller
             'groups' => $groups,
             'courses' => $courses,
             'cities' => $cities,
-            'filters' => $request->only(['role_id', 'group', 'search', 'status', 'city']),
+            'filters' => $request->only(['role_id', 'group', 'search', 'status', 'city', 'docs_no_direction']),
             'invitations' => $invitations,
             'directionLabels' => LmsProfile::DIRECTION_LABELS,
             'facultyLabels' => LmsProfile::FACULTY_LABELS,
