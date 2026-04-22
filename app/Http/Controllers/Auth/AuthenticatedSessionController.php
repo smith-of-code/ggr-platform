@@ -85,7 +85,8 @@ class AuthenticatedSessionController extends Controller
                 app(GamificationService::class)->awardPoints($event, $user, 'login_daily', 'Ежедневный вход');
             }
 
-            $redirect = redirect()->intended(route('lms.profile.edit', ['event' => $event->slug], false));
+            $defaultLms = route('lms.profile.edit', ['event' => $event->slug], false);
+            $redirect = redirect()->to(PostAuthRedirect::studentLoginTargetUrl($defaultLms));
 
             return $this->redirectForInertia($request, $redirect);
         }

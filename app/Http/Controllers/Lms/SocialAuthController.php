@@ -187,7 +187,9 @@ class SocialAuthController extends Controller
                 app(GamificationService::class)->awardPoints($event, $user, 'login_daily', 'Ежедневный вход');
             }
 
-            return redirect()->intended(route('lms.profile.edit', ['event' => $event->slug], false));
+            $defaultLms = route('lms.profile.edit', ['event' => $event->slug], false);
+
+            return redirect()->to(PostAuthRedirect::studentLoginTargetUrl($defaultLms));
         }
 
         return redirect()->intended(PostAuthRedirect::clientPortalDefaultUrl($user));
