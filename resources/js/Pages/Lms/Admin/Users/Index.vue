@@ -6,6 +6,13 @@
         <p class="mt-1 text-sm text-gray-500">Управление участниками события «{{ event.title }}»</p>
       </div>
       <div class="flex gap-2">
+        <a
+          :href="exportUrl"
+          class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+        >
+          <ArrowDownTrayIcon class="h-4 w-4" />
+          Скачать Excel
+        </a>
         <RButton variant="outline" @click="showImportModal = true">
           <template #icon><ArrowUpTrayIcon class="h-4 w-4" /></template>
           Импорт из Excel
@@ -537,6 +544,19 @@ const statusOptions = [
 const cityOptions = computed(() =>
   (props.cities || []).map(c => ({ value: c, label: c }))
 )
+
+const exportUrl = computed(() => {
+  const params = new URLSearchParams()
+  const f = props.filters || {}
+  if (f.role_id) params.set('role_id', f.role_id)
+  if (f.search) params.set('search', f.search)
+  if (f.status) params.set('status', f.status)
+  if (f.city) params.set('city', f.city)
+  if (f.group) params.set('group', f.group)
+  if (f.docs_no_direction) params.set('docs_no_direction', f.docs_no_direction)
+  const qs = params.toString()
+  return route('lms.admin.users.export', props.event.slug) + (qs ? '?' + qs : '')
+})
 
 const allOnPageSelected = computed(() => {
   if (!props.profiles.data.length) return false

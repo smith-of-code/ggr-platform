@@ -162,6 +162,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::post('users-send-invitations', [AdminUserController::class, 'sendInvitations'])->name('users.send-invitations');
         Route::post('users-bulk-enroll', [AdminUserController::class, 'bulkEnroll'])->name('users.bulk-enroll');
         Route::get('users-template', [AdminUserController::class, 'downloadTemplate'])->name('users.template');
+        Route::get('users-export', [AdminUserController::class, 'export'])->name('users.export');
         Route::get('users/{user}/documents', [AdminUserController::class, 'downloadUserDocuments'])->name('users.download-documents');
         Route::post('users/{user}/documents/{document}/approve', [AdminUserController::class, 'approveProfileDocument'])->name('users.documents.approve');
         Route::post('users/{user}/documents/{document}/annul', [AdminUserController::class, 'annulProfileDocument'])->name('users.documents.annul');

@@ -807,6 +807,106 @@ class UserController extends Controller
         return redirect()->back()->with('success', 'Одобрение направления отменено');
     }
 
+    public function export(Request $request, LmsEvent $event)
+    {
+        $query = $event->profiles()
+            ->with([
+                'user:id,name,last_name,first_name,patronymic,email,phone',
+                'lmsRole:id,name,slug',
+                'documents:id,lms_profile_id,type,status',
+            ])
+            ->withCount('documents');
+
+        if ($request->filled('role_id')) {
+            $query->where('lms_role_id', $request->role_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('email', 'ilike', "%{$search}%")
+                  ->orWhere('phone', 'ilike', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('city')) {
+            $query->where('city', 'ilike', "%{$request->city}%");
+        }
+
+        if ($request->filled('group')) {
+            $query->whereIn('user_id', function ($q) use ($request) {
+                $q->select('user_id')
+                    ->from('lms_group_members')
+                    ->where('lms_group_id', $request->group);
+            });
+        }
+
+        if ($request->filled('docs_no_direction')) {
+            $query->whereNull('direction')->whereHas('documents');
+        }
+
+        $profiles = $query->orderBy('created_at', 'desc')->get();
+
+        $statusLabels = [
+            'imported' => 'Импортирован',
+            'invited' => 'Приглашён',
+            'active' => 'Активен',
+        ];
+
+        $directionLabels = LmsProfile::DIRECTION_LABELS;
+        $facultyLabels = LmsProfile::FACULTY_LABELS;
+
+        $headers = [
+            'Фамилия', 'Имя', 'Отчество', 'Email', 'Телефон',
+            'Город', 'Должность', 'Организация', 'Роль',
+            'Направление', 'Факультет', 'Статус',
+            'Зашёл на платформу', 'Дата активации',
+            'Документы загружены', 'Кол-во документов',
+        ];
+
+        $rows = [];
+        foreach ($profiles as $p) {
+            $u = $p->user;
+            $hasEntered = $p->status === 'active' ? 'Да' : 'Нет';
+            $activatedAt = $p->activated_at
+                ? \Carbon\Carbon::parse($p->activated_at)->format('d.m.Y H:i')
+                : '—';
+            $docsCount = $p->documents_count;
+            $hasDocs = $docsCount > 0 ? 'Да' : 'Нет';
+
+            $rows[] = [
+                (string) ($u?->last_name ?? ''),
+                (string) ($u?->first_name ?? ''),
+                (string) ($u?->patronymic ?? ''),
+                (string) ($u?->email ?? ''),
+                (string) ($u?->phone ?? $p->phone ?? ''),
+                (string) ($p->city ?? ''),
+                (string) ($p->position ?? ''),
+                (string) ($p->organization ?? ''),
+                (string) ($p->lmsRole?->name ?? $statusLabels[$p->role] ?? $p->role ?? ''),
+                (string) ($directionLabels[$p->direction] ?? ''),
+                (string) ($facultyLabels[$p->faculty] ?? ''),
+                (string) ($statusLabels[$p->status] ?? $p->status ?? ''),
+                $hasEntered,
+                $activatedAt,
+                $hasDocs,
+                (string) $docsCount,
+            ];
+        }
+
+        $xlsx = $this->buildXlsx($headers, $rows);
+
+        return response($xlsx, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="participants-' . now()->format('Y-m-d') . '.xlsx"',
+        ]);
+    }
+
     private function buildXlsx(array $headers, array $rows): string
     {
         $escXml = fn(string $s) => htmlspecialchars($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
