@@ -61,7 +61,7 @@
             @click="visitTourCabinet"
           >
             <template #icon><ArrowTopRightOnSquareIcon class="h-4 w-4" /></template>
-            Туры и конкурс
+            ЛК Туров
           </RButton>
           <RButton variant="ghost" size="sm" block @click="logout">
             <template #icon><ArrowRightOnRectangleIcon class="h-4 w-4" /></template>
@@ -197,13 +197,31 @@ const icons = {
 const gamificationEnabled = computed(() => usePage().props.gamificationEnabled ?? false)
 
 const tourCabinetUrl = computed(() => usePage().props.tourCabinetUrl || null)
+const tourCabinetPortalUrl = computed(() => usePage().props.tourCabinetPortalUrl || null)
 
+/**
+ * Inertia XHR на /tour-cabinet с хоста LMS → 301 на main → 302 на login HTML: не JSON Inertia, тост «некорректный ответ».
+ * Уходим обычной навигацией на портал.
+ */
 function visitTourCabinet() {
   closeMobileSidebar()
-  const url = tourCabinetUrl.value
-  if (url) {
-    router.visit(url)
+  const portal = tourCabinetPortalUrl.value
+  if (portal) {
+    window.location.assign(portal)
+    return
   }
+  const path = tourCabinetUrl.value
+  if (!path) {
+    return
+  }
+  const host = window.location.hostname
+  if (host.startsWith('lms.')) {
+    const protocol = window.location.protocol
+    const mainHost = host.replace(/^lms\./, 'main.')
+    window.location.assign(`${protocol}//${mainHost}${path.startsWith('/') ? path : `/${path}`}`)
+    return
+  }
+  router.visit(path)
 }
 
 const menuConfig = computed(() => {

@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'csrf' => csrf_token(),
+                'portal' => fn () => $request->session()->get(PostAuthRedirect::LOGIN_PORTAL_SESSION_KEY),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
@@ -79,6 +80,7 @@ class HandleInertiaRequests extends Middleware
             'consentDocumentUrl' => config('consent.document_url'),
             'lmsEntryUrl' => fn () => PostAuthRedirect::lmsProfileUrlForUser($request->user()),
             'tourCabinetUrl' => fn () => PostAuthRedirect::tourCabinetDashboardUrl($request->user()),
+            'tourCabinetPortalUrl' => fn () => PostAuthRedirect::tourCabinetPortalAbsoluteUrl(),
             'gamificationEnabled' => function () use ($request) {
                 $user = $request->user();
                 if (!$user) return false;

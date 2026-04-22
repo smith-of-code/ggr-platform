@@ -1,20 +1,39 @@
 <template>
-  <div class="min-h-dvh bg-gradient-to-b from-slate-100 to-slate-50 px-4 py-8 font-sans text-slate-900">
+  <div class="min-h-dvh bg-gradient-to-b from-slate-100 to-slate-50 font-sans text-slate-900">
     <Head title="Новое обращение — ЛК туров" />
-    <div class="mx-auto max-w-2xl">
-      <Link :href="route('tour-cabinet.support.index')" class="text-sm font-semibold text-rosatom-700 underline decoration-rosatom-300 underline-offset-4 hover:text-rosatom-900">
-        ← Все обращения
-      </Link>
-      <h1 class="mt-4 text-2xl font-bold tracking-tight text-slate-900">Новое обращение</h1>
-      <p class="mt-2 text-sm text-slate-600">
-        Опишите вопрос. Файлы — скриншоты, PDF, документы (до 5 файлов по 5 МБ). Документы уровня паспорта в этот канал загружать не стоит.
-      </p>
-      <p v-if="supportContactEmail" class="mt-2 text-sm text-slate-600">
-        Альтернатива:
-        <a :href="`mailto:${supportContactEmail}`" class="font-semibold text-rosatom-700 underline hover:text-rosatom-900">{{ supportContactEmail }}</a>
-      </p>
+    <TourCabinetHeader max-width-class="max-w-2xl">
+      <template #breadcrumb>
+        <Link
+          :href="route('tour-cabinet.support.index')"
+          class="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-rosatom-700 transition hover:text-rosatom-900"
+        >
+          <span aria-hidden="true">←</span>
+          Все обращения
+        </Link>
+      </template>
+      <template #title>
+        <h1 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Новое обращение</h1>
+      </template>
+      <template #subtitle>
+        <p class="text-sm text-slate-600">
+          Опишите вопрос. Файлы — скриншоты, PDF, документы (до 5 файлов по 5 МБ). Документы уровня паспорта в этот канал загружать не стоит.
+        </p>
+        <p v-if="supportContactEmail" class="mt-2 text-sm text-slate-600">
+          Альтернатива:
+          <a :href="`mailto:${supportContactEmail}`" class="font-semibold text-rosatom-700 underline hover:text-rosatom-900">{{ supportContactEmail }}</a>
+        </p>
+      </template>
+      <template #toolbar>
+        <form @submit.prevent="logout" class="w-full sm:w-auto">
+          <RButton type="submit" variant="outline" size="sm" class="w-full min-h-[2.75rem] sm:min-h-0 sm:w-auto">
+            Выйти
+          </RButton>
+        </form>
+      </template>
+    </TourCabinetHeader>
 
-      <form class="mt-8 space-y-5 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5" @submit.prevent="submit">
+    <div class="mx-auto max-w-2xl px-3 pb-10 pt-4 sm:px-4 lg:px-6 sm:pt-6">
+      <form class="space-y-5 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm ring-1 ring-slate-900/5 sm:p-6" @submit.prevent="submit">
         <div>
           <label class="mb-1.5 block text-sm font-medium text-slate-700">Тема</label>
           <input
@@ -53,10 +72,12 @@
           <p v-if="form.errors.attachments" class="mt-1 text-sm text-red-600">{{ form.errors.attachments }}</p>
           <p v-for="(err, i) in attachmentErrors" :key="i" class="mt-1 text-sm text-red-600">{{ err }}</p>
         </div>
-        <div class="flex flex-wrap gap-3">
-          <RButton type="submit" variant="primary" :loading="form.processing" :disabled="form.processing">Отправить</RButton>
-          <Link :href="route('tour-cabinet.support.index')">
-            <RButton type="button" variant="outline" :disabled="form.processing">Отмена</RButton>
+        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
+          <RButton type="submit" variant="primary" class="min-h-[2.75rem] w-full sm:w-auto" :loading="form.processing" :disabled="form.processing">
+            Отправить
+          </RButton>
+          <Link :href="route('tour-cabinet.support.index')" class="w-full sm:w-auto">
+            <RButton type="button" variant="outline" class="min-h-[2.75rem] w-full sm:w-auto" :disabled="form.processing">Отмена</RButton>
           </Link>
         </div>
       </form>
@@ -65,8 +86,9 @@
 </template>
 
 <script setup>
+import TourCabinetHeader from '@/Components/TourCabinet/TourCabinetHeader.vue'
 import { computed } from 'vue'
-import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
 
 const props = defineProps({
   categoryOptions: { type: Array, required: true },
@@ -96,5 +118,9 @@ function submit() {
     forceFormData: true,
     preserveScroll: true,
   })
+}
+
+function logout() {
+  router.post(route('tour-cabinet.logout'))
 }
 </script>

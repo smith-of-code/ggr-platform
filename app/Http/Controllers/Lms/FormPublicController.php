@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Lms;
 use App\Http\Controllers\Controller;
 use App\Models\Consent;
 use App\Models\Lms\LmsForm;
+use App\Models\Lms\LmsFormField;
 use App\Models\Lms\LmsFormResponse;
 use App\Models\Lms\LmsFormSubmission;
 use App\Services\ConsentService;
 use App\Services\TourCabinetContestFormLinker;
+use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Email;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -58,28 +61,12 @@ class FormPublicController extends Controller
             ->with('fields')
             ->firstOrFail();
 
-        $rules = [];
-        foreach ($form->fields as $field) {
-            $fieldRules = [];
-            $fieldRules[] = $field->required ? 'required' : 'nullable';
-
-            if ($field->type === 'email') {
-                $fieldRules[] = 'email';
-            } elseif (in_array($field->type, ['number', 'rating'])) {
-                $fieldRules[] = 'numeric';
-            }
-
-            $fieldRules[] = 'max:5000';
-            $rules["answers.{$field->key}"] = $fieldRules;
-        }
-
+        $rules = $this->buildPublicFormAnswerRules($form);
         if ($form->require_consent) {
             $rules['consent'] = ['accepted'];
         }
 
-        $validated = $request->validate($rules, [
-            'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
-        ]);
+        $validated = $request->validate($rules, $this->publicFormValidationMessages($form));
         $answers = $validated['answers'] ?? [];
 
         $submission = LmsFormSubmission::create([
@@ -142,32 +129,12 @@ class FormPublicController extends Controller
             ->with('fields')
             ->firstOrFail();
 
-        $rules = [];
-        foreach ($form->fields as $field) {
-            $fieldRules = [];
-            if ($field->required) {
-                $fieldRules[] = 'required';
-            } else {
-                $fieldRules[] = 'nullable';
-            }
-
-            if ($field->type === 'email') {
-                $fieldRules[] = 'email';
-            } elseif ($field->type === 'number' || $field->type === 'rating') {
-                $fieldRules[] = 'numeric';
-            }
-
-            $fieldRules[] = 'max:5000';
-            $rules["answers.{$field->key}"] = $fieldRules;
-        }
-
+        $rules = $this->buildPublicFormAnswerRules($form);
         if ($form->require_consent) {
             $rules['consent'] = ['accepted'];
         }
 
-        $validated = $request->validate($rules, [
-            'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
-        ]);
+        $validated = $request->validate($rules, $this->publicFormValidationMessages($form));
         $answers = $validated['answers'] ?? [];
 
         $submission = LmsFormSubmission::create([
@@ -211,5 +178,109 @@ class FormPublicController extends Controller
             'message' => 'Ответ отправлен',
             'submission_id' => $submission->id,
         ]);
+    }
+
+    /**
+     * @return array<string, list<string|\Closure|Email>>
+     */
+    private function buildPublicFormAnswerRules(LmsForm $form): array
+    {
+        $rules = [];
+        foreach ($form->fields as $field) {
+            $fieldRules = [];
+            if ($field->required) {
+                $fieldRules[] = 'required';
+            } else {
+                $fieldRules[] = 'nullable';
+            }
+
+            if ($this->fieldIsEmail($field)) {
+                $fieldRules[] = (new Email)->rfcCompliant()->withNativeValidation();
+            } elseif ($this->fieldIsPhone($field)) {
+                $fieldRules[] = $this->phoneDigitsRule();
+            } elseif ($field->type === 'number' || $field->type === 'rating') {
+                $fieldRules[] = 'numeric';
+            }
+
+            $fieldRules[] = 'max:5000';
+            $rules['answers.'.$field->key] = $fieldRules;
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function publicFormValidationMessages(LmsForm $form): array
+    {
+        $messages = [
+            'consent.accepted' => 'Необходимо дать согласие на обработку персональных данных.',
+        ];
+
+        foreach ($form->fields as $field) {
+            $k = $field->key;
+            $label = '«'.str_replace(['<', '>'], '', (string) $field->label).'»';
+            $messages["answers.{$k}.required"] = "Заполните поле {$label}.";
+            if ($this->fieldIsEmail($field)) {
+                $messages["answers.{$k}.email"] = 'Укажите корректный адрес электронной почты.';
+            }
+        }
+
+        return $messages;
+    }
+
+    private function fieldIsEmail(LmsFormField $field): bool
+    {
+        if ($field->type === 'email') {
+            return true;
+        }
+        if (! in_array($field->type, ['text', 'textarea'], true)) {
+            return false;
+        }
+        $k = mb_strtolower((string) $field->key);
+        $l = mb_strtolower((string) $field->label);
+
+        return str_contains($k, 'email')
+            || str_contains($k, 'mail')
+            || str_contains($l, 'электронн')
+            || str_contains($l, 'e-mail')
+            || str_contains($l, 'email');
+    }
+
+    private function fieldIsPhone(LmsFormField $field): bool
+    {
+        if ($field->type === 'phone') {
+            return true;
+        }
+        if (! in_array($field->type, ['text', 'textarea'], true)) {
+            return false;
+        }
+        $k = mb_strtolower((string) $field->key);
+        $l = mb_strtolower((string) $field->label);
+
+        return str_contains($k, 'phone')
+            || str_contains($k, 'tel')
+            || str_contains($l, 'телефон')
+            || (str_contains($l, 'номер') && str_contains($l, 'тел'));
+    }
+
+    /**
+     * @return Closure(string, mixed, \Closure): void
+     */
+    private function phoneDigitsRule(): Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '' || (is_string($value) && trim($value) === '')) {
+                return;
+            }
+            $digits = preg_replace('/\D/u', '', (string) $value) ?? '';
+            if (strlen($digits) < 10) {
+                $fail('Укажите номер телефона полностью (не менее 10 цифр, допускаются +7, 8, скобки и пробелы).');
+            }
+            if (strlen($digits) > 15) {
+                $fail('Номер телефона указан некорректно.');
+            }
+        };
     }
 }

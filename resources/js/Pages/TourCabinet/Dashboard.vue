@@ -1,39 +1,33 @@
 <template>
-  <div class="min-h-dvh bg-gradient-to-b from-slate-100 to-slate-50 px-4 py-8 font-sans text-slate-900">
+  <div class="min-h-dvh bg-gradient-to-b from-slate-100 to-slate-50 font-sans text-slate-900">
     <Head title="Личный кабинет туров" />
-    <div class="mx-auto max-w-6xl">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Личный кабинет</h1>
-          <p class="mt-1.5 max-w-xl text-sm leading-relaxed text-slate-600">Профиль участника, заявки на туры и этапы конкурса.</p>
-          <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Link
-              :href="route('tour-cabinet.support.index')"
-              class="inline-flex text-sm font-semibold text-rosatom-700 underline decoration-rosatom-300 decoration-2 underline-offset-4 transition hover:text-rosatom-900"
-            >
-              Поддержка
-            </Link>
-            <a
-              v-if="$page.props.lmsEntryUrl"
-              :href="$page.props.lmsEntryUrl"
-              class="inline-flex items-center gap-2 text-sm font-semibold text-rosatom-700 underline decoration-rosatom-300 decoration-2 underline-offset-4 transition hover:text-rosatom-900"
-            >
-              Образовательная платформа (ВШГР)
-              <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-              </svg>
-            </a>
-          </div>
-        </div>
-        <form @submit.prevent="logout" class="shrink-0">
-          <RButton type="submit" variant="outline" size="sm">Выйти</RButton>
+    <TourCabinetHeader>
+      <template #title>
+        <h1 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-3xl">Личный кабинет</h1>
+      </template>
+      <template #subtitle>
+        <p class="text-sm leading-relaxed text-slate-600">Профиль участника, заявки на туры и этапы конкурса.</p>
+      </template>
+      <template #toolbar>
+        <form @submit.prevent="logout" class="w-full sm:w-auto">
+          <RButton type="submit" variant="outline" size="sm" class="w-full min-h-[2.75rem] sm:min-h-0 sm:w-auto">
+            Выйти
+          </RButton>
         </form>
-      </div>
+      </template>
+    </TourCabinetHeader>
 
-      <div v-if="$page.props.flash?.success" class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm">
+    <div class="mx-auto max-w-6xl px-3 pb-10 pt-4 sm:px-4 lg:px-6 sm:pt-6">
+      <div
+        v-if="$page.props.flash?.success"
+        class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm sm:mb-6"
+      >
         {{ $page.props.flash.success }}
       </div>
-      <div v-if="$page.props.flash?.error" class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm">
+      <div
+        v-if="$page.props.flash?.error"
+        class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm sm:mt-6"
+      >
         {{ $page.props.flash.error }}
       </div>
 
@@ -379,6 +373,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Head, Link, router, useForm } from '@inertiajs/vue3'
+import TourCabinetHeader from '@/Components/TourCabinet/TourCabinetHeader.vue'
 import ContestStage1Panel from './Contest/ContestStage1Panel.vue'
 import ContestStage2Panel from './Contest/ContestStage2Panel.vue'
 import ContestStage3Panel from './Contest/ContestStage3Panel.vue'

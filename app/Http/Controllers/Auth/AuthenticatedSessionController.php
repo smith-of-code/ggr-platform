@@ -50,6 +50,7 @@ class AuthenticatedSessionController extends Controller
         $user = $request->user();
 
         if ($user->is_admin) {
+            $request->session()->forget(PostAuthRedirect::LOGIN_PORTAL_SESSION_KEY);
             // Не используем intended(): в сессии может лежать url.intended с ЛК туров / LMS и перекроет админку.
             $adminUrl = Str::finish(route('admin.dashboard', absolute: false), '/');
             $redirect = redirect()->to($adminUrl);
@@ -86,11 +87,13 @@ class AuthenticatedSessionController extends Controller
             }
 
             $defaultLms = route('lms.profile.edit', ['event' => $event->slug], false);
+            PostAuthRedirect::rememberLoginPortal($request, 'student');
             $redirect = redirect()->to(PostAuthRedirect::studentLoginTargetUrl($defaultLms));
 
             return $this->redirectForInertia($request, $redirect);
         }
 
+        PostAuthRedirect::rememberLoginPortal($request, 'client');
         $redirect = redirect()->intended(PostAuthRedirect::clientPortalDefaultUrl($user));
 
         return $this->redirectForInertia($request, $redirect);

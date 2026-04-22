@@ -9,6 +9,7 @@ use App\Services\ConsentService;
 use App\Models\Lms\LmsInvitation;
 use App\Models\Lms\LmsProfile;
 use App\Models\User;
+use App\Support\PostAuthRedirect;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -113,6 +114,8 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        PostAuthRedirect::rememberLoginPortal($request, 'student');
+
         return redirect()->route('lms.dashboard', $event);
     }
 
@@ -179,6 +182,8 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+
+        PostAuthRedirect::rememberLoginPortal($request, 'student');
 
         return redirect()->route('lms.dashboard', $event);
     }

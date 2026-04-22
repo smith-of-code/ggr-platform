@@ -9,6 +9,8 @@
       </Link>
       <Link
         :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.create', lmsEvent.slug, false))"
+        target="_blank"
+        rel="noopener noreferrer"
         class="inline-flex items-center justify-center rounded-lg bg-[#003274] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#025ea1]"
       >
         Создать форму
@@ -95,7 +97,11 @@
             <Link :href="sameOriginHref(route('forms.public.show', form.slug, false))" class="min-w-[7rem] flex-1">
               <RButton variant="outline" size="sm" block>Публичная страница</RButton>
             </Link>
-            <Link :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.stats', [lmsEvent.slug, form.id], false))">
+            <Link
+              :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.stats', [lmsEvent.slug, form.id], false))"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <RButton variant="outline" size="sm">Статистика</RButton>
             </Link>
             <Link :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.edit', [lmsEvent.slug, form.id], false))">

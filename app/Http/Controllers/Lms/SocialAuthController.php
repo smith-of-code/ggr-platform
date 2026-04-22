@@ -155,6 +155,7 @@ class SocialAuthController extends Controller
         request()->session()->regenerate();
 
         if ($user->is_admin) {
+            request()->session()->forget(PostAuthRedirect::LOGIN_PORTAL_SESSION_KEY);
             $adminUrl = Str::finish(route('admin.dashboard', absolute: false), '/');
 
             return redirect()->to($adminUrl);
@@ -164,6 +165,8 @@ class SocialAuthController extends Controller
         if (! in_array($portal, ['client', 'student'], true)) {
             $portal = 'client';
         }
+
+        PostAuthRedirect::rememberLoginPortal(request(), $portal);
 
         if ($portal === 'student') {
             $lmsProfile = LmsProfile::query()
@@ -214,6 +217,8 @@ class SocialAuthController extends Controller
 
         Auth::login($account->user, remember: true);
         request()->session()->regenerate();
+
+        PostAuthRedirect::rememberLoginPortal(request(), 'student');
 
         app(GamificationService::class)->awardPoints($event, $account->user, 'login_daily', 'Ежедневный вход');
 

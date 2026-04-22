@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Lms\LmsProfile;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
 /**
@@ -11,6 +12,9 @@ use Illuminate\Support\Facades\Session;
  */
 final class PostAuthRedirect
 {
+    /** После входа: «клиент» → ЛК туров в приоритете; «студент» → ВШГР (LMS). */
+    public const LOGIN_PORTAL_SESSION_KEY = 'auth.portal';
+
     /**
      * После входа в режиме «Я студент»: session url.intended часто указывает на ЛК туров (/tour-cabinet).
      * Для студента учитываем intended только если это путь внутри LMS (/lms/...), иначе — дефолтный URL профиля.
@@ -77,10 +81,28 @@ final class PostAuthRedirect
     }
 
     /**
+     * Абсолютный URL ЛК туров на портале (main), если задан PORTAL_PUBLIC_URL / tour_cabinet.portal_public_url.
+     */
+    public static function tourCabinetPortalAbsoluteUrl(): ?string
+    {
+        $base = rtrim((string) config('tour_cabinet.portal_public_url', ''), '/');
+        if ($base === '') {
+            return null;
+        }
+
+        return $base.route('tour-cabinet.dashboard', absolute: false);
+    }
+
+    /**
      * Режим «Я клиент», пользователь не админ: URL по умолчанию для intended().
+     * Сначала ЛК туров (если есть доступ), иначе LMS, иначе главная.
      */
     public static function clientPortalDefaultUrl(User $user): string
     {
+        if (self::canAccessTourCabinet($user)) {
+            return route('tour-cabinet.dashboard', absolute: false);
+        }
+
         $lms = self::lmsProfileUrlForUser($user);
         if ($lms) {
             return $lms;
@@ -91,5 +113,13 @@ final class PostAuthRedirect
         }
 
         return route('home', absolute: false);
+    }
+
+    public static function rememberLoginPortal(Request $request, string $portal): void
+    {
+        if (! in_array($portal, ['client', 'student'], true)) {
+            $portal = 'client';
+        }
+        $request->session()->put(self::LOGIN_PORTAL_SESSION_KEY, $portal);
     }
 }

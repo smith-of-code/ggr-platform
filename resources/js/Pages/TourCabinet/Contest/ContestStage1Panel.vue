@@ -60,6 +60,17 @@
     <!-- Шаг: формы по городам -->
     <div v-else class="mt-8">
       <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Анкеты по выбранным городам</h3>
+      <p v-if="$page.props.errors?.city" class="mt-2 text-sm text-red-600">{{ $page.props.errors.city }}</p>
+      <p v-if="!stage1Complete" class="mt-2 text-sm text-gray-600">
+        <button
+          type="button"
+          class="font-medium text-rosatom-700 underline decoration-rosatom-700/30 hover:text-rosatom-900"
+          @click="reopenCitySelection"
+        >
+          Изменить список городов
+        </button>
+        <span class="text-gray-500"> — добавить или заменить города (до трёх), пока не отправлены все анкеты.</span>
+      </p>
       <p
         v-if="!formSlugsConfigured.standard || !formSlugsConfigured.more_data"
         class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
@@ -86,7 +97,15 @@
             <p v-if="c.needs_more_data" class="mt-1 text-xs font-medium text-amber-800">Нужно больше данных — отдельная анкета</p>
             <p v-else class="mt-1 text-xs text-gray-500">Стандартная анкета</p>
           </div>
-          <div class="flex shrink-0 flex-wrap gap-2">
+          <div class="flex shrink-0 flex-wrap items-center gap-2">
+            <button
+              v-if="!c.submitted"
+              type="button"
+              class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-800"
+              @click="removeCity(c.id)"
+            >
+              Убрать город
+            </button>
             <span
               v-if="c.submitted"
               class="inline-flex items-center rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800"
@@ -164,5 +183,16 @@ function isCityCheckboxDisabled(id) {
 
 function advanceToStage2() {
   router.post(route('tour-cabinet.contest.complete-stage-1'), {}, { preserveScroll: true })
+}
+
+function removeCity(cityId) {
+  if (!window.confirm('Убрать этот город из списка? Пока анкета не отправлена, вы сможете выбрать другой город на шаге выбора.')) {
+    return
+  }
+  router.delete(route('tour-cabinet.contest.remove-city', cityId), { preserveScroll: true })
+}
+
+function reopenCitySelection() {
+  router.post(route('tour-cabinet.contest.reopen-city-selection'), {}, { preserveScroll: true })
 }
 </script>

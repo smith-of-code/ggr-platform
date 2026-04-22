@@ -13,6 +13,7 @@ use App\Models\TourDeparture;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Session;
 
 final class TourCabinetContestDashboardData
 {
@@ -86,12 +87,15 @@ final class TourCabinetContestDashboardData
             }
         }
 
+        $stage1Complete = $this->stage1Complete($progress, $user->id);
+
         $step = 'direction';
         if ($progress->project_key) {
             $step = $selectedIds !== [] ? 'forms' : 'cities';
+            if ($step === 'forms' && ! $stage1Complete && Session::get('tour_cabinet_contest_reopen_cities')) {
+                $step = 'cities';
+            }
         }
-
-        $stage1Complete = $this->stage1Complete($progress, $user->id);
 
         $contestLocationOffers = $this->contestLocationOffers($progress, $user);
         $contestStageSummary = $this->contestStageSummary($progress, $stage1Complete);

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -231,6 +232,65 @@ class TourCabinetContestController extends Controller
         }
 
         $progress->update(['selected_city_ids' => $ids]);
+
+        Session::forget('tour_cabinet_contest_reopen_cities');
+
+        return $this->redirectToContestBlock();
+    }
+
+    /**
+     * Вернуться к выбору городов (до завершения этапа 1), чтобы добавить или заменить города.
+     */
+    public function reopenCitySelection(Request $request): RedirectResponse
+    {
+        $progress = TourCabinetContestProgress::query()->where('user_id', $request->user()->id)->firstOrFail();
+        $selected = array_map('intval', $progress->selected_city_ids ?? []);
+        if (! $progress->project_key || $selected === []) {
+            return $this->redirectToContestBlock();
+        }
+        if ($this->stage1Complete($progress, $request->user()->id)) {
+            return $this->redirectToContestBlock();
+        }
+
+        Session::put('tour_cabinet_contest_reopen_cities', true);
+
+        return $this->redirectToContestBlock();
+    }
+
+    /**
+     * Убрать город из выбранных до отправки анкеты по этому городу.
+     */
+    public function removeSelectedCity(Request $request, City $city): RedirectResponse
+    {
+        $userId = $request->user()->id;
+        $progress = TourCabinetContestProgress::query()->where('user_id', $userId)->firstOrFail();
+        $selected = array_map('intval', $progress->selected_city_ids ?? []);
+        if (! in_array($city->id, $selected, true)) {
+            abort(404);
+        }
+
+        if (TourCabinetContestCitySubmission::query()
+            ->where('user_id', $userId)
+            ->where('city_id', $city->id)
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'city' => 'Нельзя убрать город после отправки анкеты.',
+            ]);
+        }
+
+        $newIds = array_values(array_filter($selected, fn (int $id) => $id !== $city->id));
+
+        if ((int) session('tour_cabinet_contest_form_city_id') === $city->id) {
+            session()->forget('tour_cabinet_contest_form_city_id');
+        }
+
+        $progress->update([
+            'selected_city_ids' => $newIds === [] ? null : $newIds,
+        ]);
+
+        if ($newIds === []) {
+            Session::forget('tour_cabinet_contest_reopen_cities');
+        }
 
         return $this->redirectToContestBlock();
     }

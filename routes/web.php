@@ -80,6 +80,8 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
         Route::get('/contest', [TourCabinetContestController::class, 'show'])->name('contest');
         Route::post('/contest/direction', [TourCabinetContestController::class, 'storeDirection'])->name('contest.direction');
         Route::post('/contest/cities', [TourCabinetContestController::class, 'storeCities'])->name('contest.cities');
+        Route::post('/contest/cities/reopen-selection', [TourCabinetContestController::class, 'reopenCitySelection'])->name('contest.reopen-city-selection');
+        Route::delete('/contest/selected-cities/{city}', [TourCabinetContestController::class, 'removeSelectedCity'])->name('contest.remove-city');
         Route::get('/contest/cities/{city}/form', [TourCabinetContestController::class, 'startCityForm'])->name('contest.city-form');
         Route::post('/contest/complete-stage-1', [TourCabinetContestController::class, 'completeStage1'])->name('contest.complete-stage-1');
         Route::get('/contest/stage-2', [TourCabinetContestController::class, 'showStage2'])->name('contest.stage2');

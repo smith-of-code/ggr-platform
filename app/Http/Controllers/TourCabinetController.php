@@ -64,6 +64,8 @@ class TourCabinetController extends Controller
             ]);
         }
 
+        PostAuthRedirect::rememberLoginPortal($request, 'client');
+
         return redirect()->intended(route('tour-cabinet.dashboard'));
     }
 
@@ -104,6 +106,8 @@ class TourCabinetController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+
+        PostAuthRedirect::rememberLoginPortal($request, 'client');
 
         return redirect()->route('tour-cabinet.dashboard');
     }

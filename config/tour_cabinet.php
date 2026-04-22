@@ -33,4 +33,16 @@ return [
     */
     'support_contact_email' => env('TOUR_CABINET_SUPPORT_CONTACT_EMAIL'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Публичный URL портала (main), если ЛК туров открывают с поддомена LMS
+    |--------------------------------------------------------------------------
+    |
+    | Для ссылки «ЛК Туров» из LmsLayout: полная перезагрузка на этот origin,
+    | иначе Inertia-запрос на lms → 301 → main → login HTML даёт «некорректный ответ».
+    | Пример: https://main.rosatom-travel.ru
+    |
+    */
+    'portal_public_url' => env('PORTAL_PUBLIC_URL', ''),
+
 ];

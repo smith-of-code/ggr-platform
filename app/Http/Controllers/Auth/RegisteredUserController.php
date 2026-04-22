@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Consent;
 use App\Models\User;
 use App\Services\ConsentService;
+use App\Support\PostAuthRedirect;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,6 +56,8 @@ class RegisteredUserController extends Controller
         ]);
 
         Auth::login($user);
+
+        PostAuthRedirect::rememberLoginPortal($request, 'client');
 
         return redirect(route('dashboard', absolute: false));
     }

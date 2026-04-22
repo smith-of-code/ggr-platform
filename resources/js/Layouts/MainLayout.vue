@@ -210,14 +210,37 @@ const page = usePage()
 const mobileOpen = ref(false)
 const scrolled = ref(false)
 const cabinetUrl = computed(() => {
-  if (page.props.auth?.user?.is_admin) {
+  const user = page.props.auth?.user
+  if (!user) {
+    return route('home')
+  }
+  if (user.is_admin) {
     return route('admin.dashboard')
   }
-  if (page.props.lmsEntryUrl) {
-    return page.props.lmsEntryUrl
+
+  const portal = page.props.auth?.portal
+  const lms = page.props.lmsEntryUrl
+  const tour = page.props.tourCabinetUrl
+
+  if (portal === 'student') {
+    if (lms) return lms
+    if (tour) return tour
+    return route('home')
   }
-  if (page.props.tourCabinetUrl) {
-    return page.props.tourCabinetUrl
+  if (portal === 'client') {
+    if (tour) return tour
+    if (lms) return lms
+    return route('home')
+  }
+
+  if (user.is_tour_cabinet_user && tour) {
+    return tour
+  }
+  if (lms) {
+    return lms
+  }
+  if (tour) {
+    return tour
   }
 
   return route('home')
