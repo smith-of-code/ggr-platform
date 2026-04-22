@@ -30,6 +30,7 @@ class FormController extends Controller
         return Inertia::render('Lms/Admin/Forms/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
             'forms' => $forms,
+            'lmsFormsRouteNames' => $this->lmsFormsRouteNamesForInertia(),
         ]);
     }
 
@@ -38,6 +39,7 @@ class FormController extends Controller
         return Inertia::render('Lms/Admin/Forms/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'form' => null,
+            'lmsFormsRouteNames' => $this->lmsFormsRouteNamesForInertia(),
         ]);
     }
 
@@ -85,7 +87,7 @@ class FormController extends Controller
         $form = LmsForm::create($validated);
         $this->syncFields($form, $validated['fields'] ?? []);
 
-        return redirect()->route('lms.admin.forms.index', $event)->with('success', 'Форма создана');
+        return $this->redirectToFormsIndex($event)->with('success', 'Форма создана');
     }
 
     public function edit(LmsEvent $event, LmsForm $form): Response
@@ -96,6 +98,7 @@ class FormController extends Controller
         return Inertia::render('Lms/Admin/Forms/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
             'form' => $form,
+            'lmsFormsRouteNames' => $this->lmsFormsRouteNamesForInertia(),
         ]);
     }
 
@@ -108,7 +111,7 @@ class FormController extends Controller
         $form->update($validated);
         $this->syncFields($form, $validated['fields'] ?? []);
 
-        return redirect()->route('lms.admin.forms.index', $event)->with('success', 'Форма обновлена');
+        return $this->redirectToFormsIndex($event)->with('success', 'Форма обновлена');
     }
 
     public function destroy(LmsEvent $event, LmsForm $form): RedirectResponse
@@ -116,7 +119,7 @@ class FormController extends Controller
         $this->ensureFormBelongsToEvent($form, $event);
         $form->delete();
 
-        return redirect()->route('lms.admin.forms.index', $event)->with('success', 'Форма удалена');
+        return $this->redirectToFormsIndex($event)->with('success', 'Форма удалена');
     }
 
     public function stats(LmsEvent $event, LmsForm $form): Response
@@ -155,6 +158,7 @@ class FormController extends Controller
             'embedUrl' => $embedUrl,
             'embedScript' => $embedScript,
             'embedIframe' => $embedIframe,
+            'lmsFormsRouteNames' => $this->lmsFormsRouteNamesForInertia(),
         ]);
     }
 
@@ -285,5 +289,51 @@ class FormController extends Controller
         if ($form->lms_event_id !== $event->id) {
             abort(404);
         }
+    }
+
+    private function usesPortalLmsFormShell(): bool
+    {
+        $name = request()->route()?->getName();
+
+        return is_string($name) && str_starts_with($name, 'admin.tour-cabinet.lms.');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function lmsFormsRouteNamesForInertia(): array
+    {
+        if ($this->usesPortalLmsFormShell()) {
+            return [
+                'index' => 'admin.tour-cabinet.lms.forms.index',
+                'create' => 'admin.tour-cabinet.lms.forms.create',
+                'store' => 'admin.tour-cabinet.lms.forms.store',
+                'edit' => 'admin.tour-cabinet.lms.forms.edit',
+                'update' => 'admin.tour-cabinet.lms.forms.update',
+                'stats' => 'admin.tour-cabinet.lms.forms.stats',
+                'checkSlug' => 'admin.tour-cabinet.lms.forms.check-slug',
+                'createUsers' => 'admin.tour-cabinet.lms.forms.create-users',
+            ];
+        }
+
+        return [
+            'index' => 'lms.admin.forms.index',
+            'create' => 'lms.admin.forms.create',
+            'store' => 'lms.admin.forms.store',
+            'edit' => 'lms.admin.forms.edit',
+            'update' => 'lms.admin.forms.update',
+            'stats' => 'lms.admin.forms.stats',
+            'checkSlug' => 'lms.admin.forms.check-slug',
+            'createUsers' => 'lms.admin.forms.create-users',
+        ];
+    }
+
+    private function redirectToFormsIndex(LmsEvent $event): RedirectResponse
+    {
+        $name = $this->usesPortalLmsFormShell()
+            ? 'admin.tour-cabinet.lms.forms.index'
+            : 'lms.admin.forms.index';
+
+        return redirect()->route($name, $event);
     }
 }

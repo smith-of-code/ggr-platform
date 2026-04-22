@@ -1,7 +1,7 @@
 <template>
   <LmsAdminLayout :event="event">
     <div class="mb-8">
-      <Link :href="route('lms.admin.forms.index', event.slug)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-900">
+      <Link :href="route(routeNames.index, event.slug, false)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-900">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
         Назад к формам
       </Link>
@@ -14,7 +14,7 @@
           <RButton v-if="form.create_users && selectedIds.length > 0" variant="primary" @click="createUsers">
             Создать пользователей ({{ selectedIds.length }})
           </RButton>
-          <Link :href="route('lms.admin.forms.edit', [event.slug, form.id])">
+          <Link :href="route(routeNames.edit, [event.slug, form.id], false)">
             <RButton variant="outline">Редактировать</RButton>
           </Link>
         </div>
@@ -139,6 +139,8 @@ import { ref, computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
+import { defaultLmsAdminFormRouteNames } from '@/constants/lmsAdminFormRoutes.js'
+
 const props = defineProps({
   event: Object,
   form: Object,
@@ -147,7 +149,10 @@ const props = defineProps({
   embedUrl: String,
   embedScript: String,
   embedIframe: String,
+  lmsFormsRouteNames: { type: Object, default: null },
 })
+
+const routeNames = computed(() => ({ ...defaultLmsAdminFormRouteNames, ...props.lmsFormsRouteNames }))
 
 const tabs = ['Ответы', 'Статистика']
 const activeTab = ref('Ответы')
@@ -192,7 +197,7 @@ function copyToClipboard(text) {
 }
 
 function createUsers() {
-  router.post(route('lms.admin.forms.create-users', [props.event.slug, props.form.id]), {
+  router.post(route(routeNames.value.createUsers, [props.event.slug, props.form.id], false), {
     submission_ids: selectedIds.value,
   }, {
     onSuccess: () => { selectedIds.value = [] },

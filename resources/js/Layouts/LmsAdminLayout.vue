@@ -123,6 +123,9 @@ const sidebarOpen = ref(false)
 
 const canAccessPortalAdmin = computed(() => Boolean(page.props.auth?.user?.is_admin))
 
+/** Оболочка форм с портала: пути /admin/tour-cabinet/lms/... без редиректа с /lms-admin. */
+const usePortalLmsFormShell = computed(() => page.url.startsWith('/admin/tour-cabinet/lms/'))
+
 function closeMobileSidebar() {
   sidebarOpen.value = false
 }
@@ -249,6 +252,10 @@ function onSelect(id) {
   }
   const routeName = eventRouteMap[id]
   if (routeName && props.event) {
+    if (usePortalLmsFormShell.value && id === 'forms') {
+      router.visit(route('admin.tour-cabinet.lms.forms.index', props.event.slug))
+      return
+    }
     router.visit(route(routeName, props.event.slug))
   }
 }

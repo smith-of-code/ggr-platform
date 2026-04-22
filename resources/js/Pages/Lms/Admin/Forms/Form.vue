@@ -1,7 +1,7 @@
 <template>
   <LmsAdminLayout :event="event">
     <div class="mb-8">
-      <Link :href="route('lms.admin.forms.index', event.slug)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-900">
+      <Link :href="route(routeNames.index, event.slug, false)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-900">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
         Назад к формам
       </Link>
@@ -142,19 +142,26 @@
 
       <div class="flex gap-3">
         <RButton type="submit" variant="primary" :loading="form.processing">Сохранить</RButton>
-        <Link :href="route('lms.admin.forms.index', event.slug)" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">Отмена</Link>
+        <Link :href="route(routeNames.index, event.slug, false)" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">Отмена</Link>
       </div>
     </form>
   </LmsAdminLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import axios from 'axios'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import { defaultLmsAdminFormRouteNames } from '@/constants/lmsAdminFormRoutes.js'
 
-const props = defineProps({ event: Object, form: Object })
+const props = defineProps({
+  event: Object,
+  form: Object,
+  lmsFormsRouteNames: { type: Object, default: null },
+})
+
+const routeNames = computed(() => ({ ...defaultLmsAdminFormRouteNames, ...props.lmsFormsRouteNames }))
 
 const slugChecking = ref(false)
 const slugAvailable = ref(null)
@@ -233,7 +240,7 @@ async function checkSlug() {
   slugAvailable.value = null
   slugSuggestions.value = []
   try {
-    const { data } = await axios.get(route('lms.admin.forms.check-slug', props.event.slug), {
+    const { data } = await axios.get(route(routeNames.value.checkSlug, props.event.slug, false), {
       params: { title: form.slug, exclude_id: formData?.id },
     })
     if (data.available) {
@@ -263,9 +270,9 @@ function moveField(idx, delta) {
 function submit() {
   const fields = form.fields.filter(f => f.label?.trim() && f.key?.trim()).map((f, i) => ({ ...f, position: i }))
   if (formData) {
-    form.transform(d => ({ ...d, fields })).put(route('lms.admin.forms.update', [props.event.slug, formData.id]))
+    form.transform(d => ({ ...d, fields })).put(route(routeNames.value.update, [props.event.slug, formData.id], false))
   } else {
-    form.transform(d => ({ ...d, fields })).post(route('lms.admin.forms.store', props.event.slug))
+    form.transform(d => ({ ...d, fields })).post(route(routeNames.value.store, props.event.slug, false))
   }
 }
 </script>

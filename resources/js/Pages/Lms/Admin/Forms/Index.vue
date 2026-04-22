@@ -5,7 +5,7 @@
         <h1 class="text-2xl font-bold text-gray-900">Формы и опросы</h1>
         <p class="mt-1 text-sm text-gray-500">Конструктор анкет, опросов и форм обратной связи</p>
       </div>
-      <Link :href="route('lms.admin.forms.create', event.slug)">
+      <Link :href="route(routeNames.create, event.slug, false)">
         <RButton variant="primary">
           <template #icon>
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -47,10 +47,10 @@
         </div>
 
         <div class="flex gap-2">
-          <Link :href="route('lms.admin.forms.stats', [event.slug, form.id])" class="flex-1">
+          <Link :href="route(routeNames.stats, [event.slug, form.id], false)" class="flex-1">
             <RButton variant="outline" size="sm" block>Статистика</RButton>
           </Link>
-          <Link :href="route('lms.admin.forms.edit', [event.slug, form.id])">
+          <Link :href="route(routeNames.edit, [event.slug, form.id], false)">
             <RButton variant="ghost" size="sm">Редактировать</RButton>
           </Link>
         </div>
@@ -66,8 +66,16 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import { defaultLmsAdminFormRouteNames } from '@/constants/lmsAdminFormRoutes.js'
 
-defineProps({ event: Object, forms: Object })
+const props = defineProps({
+  event: Object,
+  forms: Object,
+  lmsFormsRouteNames: { type: Object, default: null },
+})
+
+const routeNames = computed(() => ({ ...defaultLmsAdminFormRouteNames, ...props.lmsFormsRouteNames }))
 </script>

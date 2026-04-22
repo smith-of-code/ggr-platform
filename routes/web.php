@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\TourCabinetFormsController as AdminTourCabinetFor
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\Admin\VshgrPageController as AdminVshgrPageController;
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\Lms\Admin\FormController as LmsAdminFormController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogSubscriptionController;
 use App\Http\Controllers\CityController;
@@ -188,6 +189,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
 
     Route::get('/tour-cabinet/forms', [AdminTourCabinetFormsController::class, 'index'])->name('tour-cabinet.forms.index');
     Route::put('/tour-cabinet/forms/contest-form-slugs', [AdminTourCabinetFormsController::class, 'updateContestFormSlugs'])->name('tour-cabinet.forms.contest-form-slugs.update');
+
+    // Те же экраны, что /lms-admin/.../forms, но под /admin/... — обход редиректа main→lms для префикса lms-admin.
+    Route::prefix('tour-cabinet/lms/{event:slug}')
+        ->name('tour-cabinet.lms.')
+        ->middleware('lms.backoffice')
+        ->group(function () {
+            Route::get('forms/check-slug', [LmsAdminFormController::class, 'checkSlug'])->name('forms.check-slug');
+            Route::resource('forms', LmsAdminFormController::class)->except(['show']);
+            Route::get('forms/{form}/stats', [LmsAdminFormController::class, 'stats'])->name('forms.stats');
+            Route::post('forms/{form}/create-users', [LmsAdminFormController::class, 'createUsersFromSubmissions'])->name('forms.create-users');
+        });
 
     Route::get('/tour-cabinet/direction-cities', [AdminTourCabinetDirectionCitiesController::class, 'index'])->name('tour-cabinet.direction-cities.index');
     Route::post('/tour-cabinet/direction-cities', [AdminTourCabinetDirectionCitiesController::class, 'store'])->name('tour-cabinet.direction-cities.store');

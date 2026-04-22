@@ -2,13 +2,13 @@
   <div>
     <div v-if="lmsEvent" class="mb-6 flex flex-wrap justify-end gap-2">
       <Link
-        :href="sameOriginHref(route('lms.admin.forms.index', lmsEvent.slug, false))"
+        :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.index', lmsEvent.slug, false))"
         class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
       >
         Все формы в LMS Admin
       </Link>
       <Link
-        :href="sameOriginHref(route('lms.admin.forms.create', lmsEvent.slug, false))"
+        :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.create', lmsEvent.slug, false))"
         class="inline-flex items-center justify-center rounded-lg bg-[#003274] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#025ea1]"
       >
         Создать форму
@@ -95,10 +95,10 @@
             <Link :href="sameOriginHref(route('forms.public.show', form.slug, false))" class="min-w-[7rem] flex-1">
               <RButton variant="outline" size="sm" block>Публичная страница</RButton>
             </Link>
-            <Link :href="sameOriginHref(route('lms.admin.forms.stats', [lmsEvent.slug, form.id], false))">
+            <Link :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.stats', [lmsEvent.slug, form.id], false))">
               <RButton variant="outline" size="sm">Статистика</RButton>
             </Link>
-            <Link :href="sameOriginHref(route('lms.admin.forms.edit', [lmsEvent.slug, form.id], false))">
+            <Link :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.edit', [lmsEvent.slug, form.id], false))">
               <RButton variant="ghost" size="sm">Редактировать</RButton>
             </Link>
           </div>
@@ -110,7 +110,7 @@
           <p>Форм для этого события пока нет.</p>
           <p class="mt-2">
             Создайте их в
-            <Link :href="sameOriginHref(route('lms.admin.forms.index', lmsEvent.slug, false))" class="font-medium text-[#003274] underline hover:text-[#025ea1]">LMS Admin → формы</Link>.
+            <Link :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.index', lmsEvent.slug, false))" class="font-medium text-[#003274] underline hover:text-[#025ea1]">LMS Admin → формы</Link>.
           </p>
         </div>
       </RCard>
