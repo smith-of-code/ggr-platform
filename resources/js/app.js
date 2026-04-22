@@ -1,17 +1,33 @@
 import '../css/app.css';
 import './bootstrap';
 
-/** @routes может зашить APP_URL другого хоста (напр. lms при открытии main) — все route() тогда ведут на чужой origin и CORS. */
-if (typeof window !== 'undefined' && window.Ziggy?.url) {
+/**
+ * @routes выводит `const Ziggy = {...}` — это не window.Ziggy, а глобальный Ziggy.
+ * APP_URL с сервера может быть чужим хостом → правим объект, который реально читает route().
+ */
+function normalizeZiggyBaseUrl() {
+    if (typeof window === 'undefined') {
+        return
+    }
+    const z =
+        typeof Ziggy !== 'undefined'
+            ? Ziggy
+            : typeof globalThis !== 'undefined' && globalThis.Ziggy
+              ? globalThis.Ziggy
+              : undefined
+    if (!z?.url) {
+        return
+    }
     try {
-        const ziggyOrigin = new URL(window.Ziggy.url).origin
+        const ziggyOrigin = new URL(z.url).origin
         if (ziggyOrigin !== window.location.origin) {
-            window.Ziggy.url = `${window.location.origin}/`
+            z.url = `${window.location.origin}/`
         }
     } catch {
-        window.Ziggy.url = `${window.location.origin}/`
+        z.url = `${window.location.origin}/`
     }
 }
+normalizeZiggyBaseUrl()
 
 import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
