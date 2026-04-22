@@ -4,6 +4,7 @@ use App\Http\Middleware\CheckPageVisibility;
 use App\Http\Middleware\EnsureLmsBackofficeAccess;
 use App\Http\Middleware\EnsurePortalAdmin;
 use App\Http\Middleware\EnsureTourCabinetUser;
+use App\Http\Middleware\ForceRequestRootUrl;
 use App\Http\Middleware\RedirectTourCabinetGuest;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\LmsRole;
@@ -29,6 +30,10 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(prepend: [
+            ForceRequestRootUrl::class,
+        ]);
+
         $middleware->web(append: [
             SetContentLanguage::class,
             AddLinkHeadersForPreloadedAssets::class,
