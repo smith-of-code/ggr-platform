@@ -79,6 +79,12 @@ class User extends Authenticatable
         return $this->hasMany(TourCabinetSupportTicket::class);
     }
 
+    /** @return HasMany<TourCabinetDocument, $this> */
+    public function tourCabinetDocuments(): HasMany
+    {
+        return $this->hasMany(TourCabinetDocument::class);
+    }
+
     /**
      * Цифры телефона для сопоставления при входе: РФ 8xxxxxxxxxx → 7xxxxxxxxxx, 10 цифр с 9 → 7…
      */

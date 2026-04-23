@@ -77,6 +77,13 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
     Route::middleware('tour-cabinet')->group(function () {
         Route::get('/', [TourCabinetController::class, 'dashboard'])->name('dashboard');
         Route::patch('/profile', [TourCabinetController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/profile/documents', [TourCabinetController::class, 'uploadProfileDocument'])
+            ->middleware('throttle:tour-cabinet-profile-document')
+            ->name('profile.documents.upload');
+        Route::delete('/profile/documents/{document}', [TourCabinetController::class, 'deleteProfileDocument'])
+            ->middleware('throttle:tour-cabinet-profile-document')
+            ->name('profile.documents.delete');
+        Route::get('/profile/templates/{type}', [TourCabinetController::class, 'downloadProfileTemplate'])->name('profile.templates.download');
         Route::get('/contest', [TourCabinetContestController::class, 'show'])->name('contest');
         Route::post('/contest/direction', [TourCabinetContestController::class, 'storeDirection'])->name('contest.direction');
         Route::post('/contest/cities', [TourCabinetContestController::class, 'storeCities'])->name('contest.cities');

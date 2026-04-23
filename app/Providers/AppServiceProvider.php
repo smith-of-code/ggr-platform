@@ -51,6 +51,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by((string) ($request->user()?->id ?? $request->ip()));
         });
 
+        RateLimiter::for('tour-cabinet-profile-document', function (Request $request) {
+            return Limit::perMinute(30)->by((string) ($request->user()?->id ?? $request->ip()));
+        });
+
         app(SettingsService::class)->applyMailConfig();
 
         ResetPassword::toMailUsing(function (object $notifiable, string $token): MailMessage {

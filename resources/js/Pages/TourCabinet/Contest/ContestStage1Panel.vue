@@ -94,7 +94,7 @@
         >
           <div class="min-w-0">
             <p class="font-semibold text-gray-900">{{ c.name }}</p>
-            <p v-if="c.needs_more_data" class="mt-1 text-xs font-medium text-amber-800">Нужно больше данных — отдельная анкета</p>
+            <p v-if="c.needs_more_data" class="mt-1 text-xs font-medium text-amber-800">Необходимо заполнение дополнительных персональных данных</p>
             <p v-else class="mt-1 text-xs text-gray-500">Стандартная анкета</p>
           </div>
           <div class="flex shrink-0 flex-wrap items-center gap-2">

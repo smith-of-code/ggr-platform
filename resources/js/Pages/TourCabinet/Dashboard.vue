@@ -99,6 +99,150 @@
         </div>
       </div>
 
+      <!-- Полный профиль -->
+      <section id="tour-cabinet-profile" class="mt-10 scroll-mt-8">
+        <div v-show="fullProfileVisible">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Полный профиль</h2>
+          <form
+            class="mt-3 space-y-5 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8"
+            @submit.prevent="submitProfile"
+          >
+          <div>
+            <p class="mb-3 text-xs font-medium text-slate-600">Фото профиля</p>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+              <div
+                class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-xs text-slate-500 shadow-inner sm:h-32 sm:w-32"
+              >
+                <img v-if="avatarDisplayUrl" :src="avatarDisplayUrl" alt="" class="h-full w-full object-cover" />
+                <span v-else>Нет фото</span>
+              </div>
+              <div class="min-w-0 flex-1 space-y-2">
+                <input
+                  :key="avatarInputKey"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  class="block w-full cursor-pointer text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-rosatom-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-rosatom-800 hover:file:bg-rosatom-100"
+                  @change="onAvatarFile"
+                />
+                <p v-if="profileForm.errors.avatar" class="text-xs text-red-600">{{ profileForm.errors.avatar }}</p>
+                <p class="text-xs text-slate-500">JPEG, PNG, WebP или GIF, до 2 МБ.</p>
+              </div>
+            </div>
+          </div>
+
+          <RInput v-model="profileForm.last_name" label="Фамилия" :error="profileForm.errors.last_name" autocomplete="family-name" />
+          <RInput v-model="profileForm.first_name" label="Имя" :error="profileForm.errors.first_name" autocomplete="given-name" />
+          <RInput v-model="profileForm.patronymic" label="Отчество" :error="profileForm.errors.patronymic" autocomplete="additional-name" />
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-600">Пол</label>
+            <select
+              v-model="profileForm.gender"
+              class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-rosatom-500 focus:ring-1 focus:ring-rosatom-500/20"
+            >
+              <option value="">Не указано</option>
+              <option value="male">Мужской</option>
+              <option value="female">Женский</option>
+            </select>
+            <p v-if="profileForm.errors.gender" class="mt-1 text-xs text-red-600">{{ profileForm.errors.gender }}</p>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-600">Дата рождения</label>
+            <input
+              v-model="profileForm.birth_date"
+              type="date"
+              class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-rosatom-500 focus:ring-1 focus:ring-rosatom-500/20"
+            />
+            <p v-if="profileForm.errors.birth_date" class="mt-1 text-xs text-red-600">{{ profileForm.errors.birth_date }}</p>
+          </div>
+
+          <RInput v-model="profileForm.phone" type="tel" label="Телефон" :error="profileForm.errors.phone" autocomplete="tel" />
+          <RInput v-model="profileForm.email" type="email" label="Email" :error="profileForm.errors.email" required autocomplete="email" />
+
+          <div class="flex flex-wrap gap-3 pt-2">
+            <RButton type="submit" variant="primary" :loading="profileForm.processing" :disabled="profileForm.processing">Сохранить профиль</RButton>
+          </div>
+        </form>
+        </div>
+      </section>
+
+      <!-- Документы (как в профиле ВШГР) -->
+      <section id="tour-cabinet-documents" class="mt-10 scroll-mt-8">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Документы</h2>
+        <div class="mt-3 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-6">
+          <p v-if="$page.props.errors?.file" class="mb-4 text-sm text-red-600">{{ $page.props.errors.file }}</p>
+
+          <div class="space-y-4">
+            <div
+              v-for="dt in docConfig"
+              :key="dt.type"
+              class="rounded-xl border border-slate-100 bg-slate-50/40 p-4"
+            >
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-medium text-slate-900">{{ dt.label }}</p>
+                  <p v-if="hasDocFile(uploadedDoc(dt.type))" class="mt-1 text-xs text-emerald-700">
+                    Загружен: {{ uploadedDoc(dt.type).original_name }}
+                  </p>
+                  <p v-if="documentLockedNotice(dt.type)" class="mt-2 text-xs text-slate-600">
+                    {{ documentLockedNotice(dt.type) }}
+                  </p>
+                  <p v-if="documentAnnulledNotice(dt.type)" class="mt-2 text-xs font-medium text-red-600">
+                    {{ documentAnnulledNotice(dt.type) }}
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <label v-if="!docIsLocked(uploadedDoc(dt.type))" class="cursor-pointer">
+                    <input
+                      type="file"
+                      class="hidden"
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      @change="(e) => uploadDoc(dt.type, e)"
+                    />
+                    <span
+                      class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                      <ArrowUpTrayIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+                      {{ hasDocFile(uploadedDoc(dt.type)) ? 'Заменить' : 'Загрузить' }}
+                    </span>
+                  </label>
+                  <button
+                    v-if="hasDocFile(uploadedDoc(dt.type)) && !docIsLocked(uploadedDoc(dt.type))"
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-100"
+                    :disabled="docDeleteProcessing"
+                    @click="deleteDoc(uploadedDoc(dt.type).id)"
+                  >
+                    Удалить
+                  </button>
+                </div>
+              </div>
+
+              <div
+                v-if="dt.type === 'enrollment_application' && enrollmentTemplates.length"
+                class="mt-3 border-t border-slate-100 pt-3"
+              >
+                <p class="mb-2 text-xs font-medium text-amber-800">
+                  Скачайте шаблон заявления строго в соответствии с выбранным направлением обучения
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <a
+                    v-for="tpl in enrollmentTemplates"
+                    :key="tpl.key"
+                    :href="route('tour-cabinet.profile.templates.download', { type: 'enrollment_' + tpl.key })"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-rosatom-50 px-3 py-1.5 text-xs font-medium text-rosatom-800 transition hover:bg-rosatom-100"
+                  >
+                    <ArrowDownTrayIcon class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    {{ tpl.label }}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Избранное: города и туры с портала -->
       <section id="tour-cabinet-favorites" class="mt-10 scroll-mt-8">
         <div class="flex flex-wrap items-end justify-between gap-3">
@@ -182,74 +326,6 @@
               Нет избранных туров — добавьте со страницы тура на сайте.
             </p>
           </div>
-        </div>
-      </section>
-
-      <!-- Полный профиль -->
-      <section id="tour-cabinet-profile" class="mt-10 scroll-mt-8">
-        <div v-show="fullProfileVisible">
-          <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Полный профиль</h2>
-          <form
-            class="mt-3 space-y-5 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8"
-            @submit.prevent="submitProfile"
-          >
-          <div>
-            <p class="mb-3 text-xs font-medium text-slate-600">Фото профиля</p>
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-              <div
-                class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-xs text-slate-500 shadow-inner sm:h-32 sm:w-32"
-              >
-                <img v-if="avatarDisplayUrl" :src="avatarDisplayUrl" alt="" class="h-full w-full object-cover" />
-                <span v-else>Нет фото</span>
-              </div>
-              <div class="min-w-0 flex-1 space-y-2">
-                <input
-                  :key="avatarInputKey"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  class="block w-full cursor-pointer text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-rosatom-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-rosatom-800 hover:file:bg-rosatom-100"
-                  @change="onAvatarFile"
-                />
-                <p v-if="profileForm.errors.avatar" class="text-xs text-red-600">{{ profileForm.errors.avatar }}</p>
-                <p class="text-xs text-slate-500">JPEG, PNG, WebP или GIF, до 2 МБ.</p>
-              </div>
-            </div>
-          </div>
-
-          <RInput v-model="profileForm.last_name" label="Фамилия" :error="profileForm.errors.last_name" autocomplete="family-name" />
-          <RInput v-model="profileForm.first_name" label="Имя" :error="profileForm.errors.first_name" autocomplete="given-name" />
-          <RInput v-model="profileForm.patronymic" label="Отчество" :error="profileForm.errors.patronymic" autocomplete="additional-name" />
-
-          <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600">Пол</label>
-            <select
-              v-model="profileForm.gender"
-              class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-rosatom-500 focus:ring-1 focus:ring-rosatom-500/20"
-            >
-              <option value="">Не указано</option>
-              <option value="male">Мужской</option>
-              <option value="female">Женский</option>
-            </select>
-            <p v-if="profileForm.errors.gender" class="mt-1 text-xs text-red-600">{{ profileForm.errors.gender }}</p>
-          </div>
-
-          <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600">Дата рождения</label>
-            <input
-              v-model="profileForm.birth_date"
-              type="date"
-              class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-rosatom-500 focus:ring-1 focus:ring-rosatom-500/20"
-            />
-            <p v-if="profileForm.errors.birth_date" class="mt-1 text-xs text-red-600">{{ profileForm.errors.birth_date }}</p>
-          </div>
-
-          <RInput v-model="profileForm.phone" type="tel" label="Телефон" :error="profileForm.errors.phone" autocomplete="tel" />
-          <RInput v-model="profileForm.email" type="email" label="Email" :error="profileForm.errors.email" required autocomplete="email" />
-
-          <div class="flex flex-wrap gap-3 pt-2">
-            <RButton type="submit" variant="primary" :loading="profileForm.processing" :disabled="profileForm.processing">Сохранить профиль</RButton>
-          </div>
-        </form>
         </div>
       </section>
 
@@ -366,6 +442,8 @@
 <script setup>
 import {
   AcademicCapIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
   CalendarDaysIcon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
@@ -412,6 +490,14 @@ const props = defineProps({
     default: () => [],
   },
   contestStageSummary: {
+    type: Array,
+    default: () => [],
+  },
+  profileDocuments: {
+    type: Array,
+    default: () => [],
+  },
+  enrollmentTemplates: {
     type: Array,
     default: () => [],
   },
@@ -616,5 +702,65 @@ function submitProfile() {
 
 function logout() {
   router.post(route('tour-cabinet.logout'))
+}
+
+const docConfig = [
+  { type: 'enrollment_application', label: 'Заявление на зачисление *' },
+  { type: 'snils', label: 'Скан СНИЛС *' },
+  { type: 'diploma', label: 'Скан диплома о высшем или среднем образовании *' },
+  { type: 'name_change_certificate', label: 'Свидетельство о перемене фамилии (при наличии)' },
+]
+
+const docDeleteProcessing = ref(false)
+
+function uploadedDoc(type) {
+  return props.profileDocuments?.find((d) => d.type === type) || null
+}
+
+function hasDocFile(doc) {
+  return !!(doc && doc.file_path)
+}
+
+function docIsLocked(doc) {
+  return doc != null && doc.status === 'approved' && hasDocFile(doc)
+}
+
+function documentLockedNotice(type) {
+  const d = uploadedDoc(type)
+  if (!d || !docIsLocked(d)) return ''
+  return 'Документ подтверждён модератором. Заменить или удалить его можно только через поддержку.'
+}
+
+function documentAnnulledNotice(type) {
+  const d = uploadedDoc(type)
+  if (!d || hasDocFile(d) || d.status !== 'annulled') return ''
+  return d.admin_comment
+    ? `Документ отклонён модератором: ${d.admin_comment}`
+    : 'Документ отклонён. Загрузите файл заново.'
+}
+
+function uploadDoc(type, e) {
+  const file = e.target?.files?.[0]
+  if (!file) return
+
+  const docForm = useForm({ type, file })
+  docForm.post(route('tour-cabinet.profile.documents.upload'), {
+    forceFormData: true,
+    preserveScroll: true,
+    onFinish: () => {
+      e.target.value = ''
+    },
+  })
+}
+
+function deleteDoc(docId) {
+  if (!confirm('Удалить документ?')) return
+  docDeleteProcessing.value = true
+  router.delete(route('tour-cabinet.profile.documents.delete', { document: docId }), {
+    preserveScroll: true,
+    onFinish: () => {
+      docDeleteProcessing.value = false
+    },
+  })
 }
 </script>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Application;
 use App\Models\Consent;
 use App\Models\Favorite;
+use App\Models\Lms\LmsProfileDocument;
+use App\Models\TourCabinetDocument;
 use App\Models\User;
 use App\Services\ConsentService;
 use App\Services\TourCabinetContestDashboardData;
@@ -136,10 +138,33 @@ class TourCabinetController extends Controller
             ? Favorite::groupedFavorablesFor($user->id)
             : ['cities' => collect(), 'tours' => collect()];
 
+        $profileDocuments = [];
+        if (Schema::hasTable('tour_cabinet_documents')) {
+            $user->loadMissing('tourCabinetDocuments');
+            $profileDocuments = $user->tourCabinetDocuments
+                ->map(fn (TourCabinetDocument $d) => [
+                    'id' => $d->id,
+                    'type' => $d->type,
+                    'file_path' => $d->file_path,
+                    'original_name' => $d->original_name,
+                    'status' => $d->status,
+                    'admin_comment' => $d->admin_comment,
+                ])
+                ->values()
+                ->all();
+        }
+
         return Inertia::render('TourCabinet/Dashboard', [
             ...$contestDashboardData->forUser($user),
             'tourApplications' => $this->tourApplicationsForUser($user),
             'favorites' => $favorites,
+            'profileDocuments' => $profileDocuments,
+            'enrollmentTemplates' => [
+                ['key' => 'management', 'label' => 'Управление муниципальными проектами'],
+                ['key' => 'guide', 'label' => 'Гид-экскурсовод промышленного туризма'],
+                ['key' => 'excursion', 'label' => 'Экскурсионная деятельность'],
+                ['key' => 'entrepreneurial', 'label' => 'Управление предпринимательскими проектами'],
+            ],
             'profile' => [
                 'user_id' => $user->id,
                 'display_name' => $composed !== '' ? $composed : (string) ($user->name ?: 'Участник'),
@@ -233,6 +258,121 @@ class TourCabinetController extends Controller
             ->route('tour-cabinet.dashboard')
             ->with('success', 'Профиль сохранён.')
             ->withFragment('tour-cabinet-profile');
+    }
+
+    public function uploadProfileDocument(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'type' => ['required', Rule::in(TourCabinetDocument::allowedTypes())],
+            'file' => ['required', 'file', 'max:51200', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
+        ]);
+
+        $user = $request->user();
+        $type = $validated['type'];
+
+        $existing = TourCabinetDocument::query()
+            ->where('user_id', $user->id)
+            ->where('type', $type)
+            ->first();
+
+        if ($existing && $existing->isLockedForParticipant()) {
+            return redirect()
+                ->route('tour-cabinet.dashboard')
+                ->withErrors([
+                    'file' => 'Этот документ подтверждён модератором. Для изменения обратитесь в поддержку.',
+                ])
+                ->withFragment('tour-cabinet-documents');
+        }
+
+        $disk = config('filesystems.upload_disk', 'public');
+        if ($existing && $existing->hasFile()) {
+            Storage::disk($disk)->delete($existing->file_path);
+        }
+
+        $path = $request->file('file')->store('tour-cabinet/documents/'.$user->id, $disk);
+
+        TourCabinetDocument::query()->updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'type' => $type,
+            ],
+            [
+                'file_path' => $path,
+                'original_name' => $request->file('file')->getClientOriginalName(),
+                'status' => TourCabinetDocument::STATUS_PENDING_REVIEW,
+                'admin_comment' => null,
+                'reviewed_at' => null,
+            ]
+        );
+
+        return redirect()
+            ->route('tour-cabinet.dashboard')
+            ->with('success', 'Документ сохранён.')
+            ->withFragment('tour-cabinet-documents');
+    }
+
+    public function deleteProfileDocument(Request $request, TourCabinetDocument $document): RedirectResponse
+    {
+        if ($document->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        if ($document->isLockedForParticipant()) {
+            return redirect()
+                ->route('tour-cabinet.dashboard')
+                ->withErrors([
+                    'file' => 'Подтверждённый документ можно удалить только через поддержку.',
+                ])
+                ->withFragment('tour-cabinet-documents');
+        }
+
+        $disk = config('filesystems.upload_disk', 'public');
+        if ($document->hasFile()) {
+            Storage::disk($disk)->delete($document->file_path);
+        }
+        $document->delete();
+
+        return redirect()
+            ->route('tour-cabinet.dashboard')
+            ->with('success', 'Документ удалён.')
+            ->withFragment('tour-cabinet-documents');
+    }
+
+    public function downloadProfileTemplate(string $type)
+    {
+        $enrollmentTemplates = [
+            'enrollment_management' => ['file' => 'management_municipal_projects.doc', 'name' => 'Заявление_Управление_муниципальными_проектами.doc'],
+            'enrollment_guide' => ['file' => 'industrial_tourism_guide.doc', 'name' => 'Заявление_Гид_промышленного_туризма.doc'],
+            'enrollment_excursion' => ['file' => 'excursion_activity.doc', 'name' => 'Заявление_Экскурсионная_деятельность.doc'],
+            'enrollment_entrepreneurial' => ['file' => 'entrepreneurial_projects.doc', 'name' => 'Заявление_Управление_предпринимательскими_проектами.doc'],
+        ];
+
+        if (isset($enrollmentTemplates[$type])) {
+            $tpl = $enrollmentTemplates[$type];
+            $templatePath = resource_path("templates/profile/enrollment/{$tpl['file']}");
+
+            if (! file_exists($templatePath)) {
+                abort(404, 'Шаблон пока не загружен');
+            }
+
+            return response()->download($templatePath, $tpl['name']);
+        }
+
+        if (! in_array($type, LmsProfileDocument::TYPES_WITH_TEMPLATE, true)) {
+            abort(404);
+        }
+
+        $templatePath = resource_path("templates/profile/{$type}.docx");
+
+        if (! file_exists($templatePath)) {
+            abort(404, 'Шаблон пока не загружен');
+        }
+
+        $names = [
+            LmsProfileDocument::TYPE_PERSONAL_DATA_CONSENT => 'Согласие_на_обработку_ПД.docx',
+        ];
+
+        return response()->download($templatePath, $names[$type] ?? "{$type}.docx");
     }
 
     private function tourCabinetAvatarPublicUrl(User $user): ?string
