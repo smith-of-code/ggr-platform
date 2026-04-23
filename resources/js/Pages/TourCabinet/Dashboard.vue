@@ -218,26 +218,6 @@
                   </button>
                 </div>
               </div>
-
-              <div
-                v-if="dt.type === 'enrollment_application' && enrollmentTemplates.length"
-                class="mt-3 border-t border-slate-100 pt-3"
-              >
-                <p class="mb-2 text-xs font-medium text-amber-800">
-                  Скачайте шаблон заявления строго в соответствии с выбранным направлением обучения
-                </p>
-                <div class="flex flex-wrap gap-2">
-                  <a
-                    v-for="tpl in enrollmentTemplates"
-                    :key="tpl.key"
-                    :href="route('tour-cabinet.profile.templates.download', { type: 'enrollment_' + tpl.key })"
-                    class="inline-flex items-center gap-1.5 rounded-lg bg-rosatom-50 px-3 py-1.5 text-xs font-medium text-rosatom-800 transition hover:bg-rosatom-100"
-                  >
-                    <ArrowDownTrayIcon class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    {{ tpl.label }}
-                  </a>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -442,7 +422,6 @@
 <script setup>
 import {
   AcademicCapIcon,
-  ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   CalendarDaysIcon,
   ChatBubbleLeftRightIcon,
@@ -494,10 +473,6 @@ const props = defineProps({
     default: () => [],
   },
   profileDocuments: {
-    type: Array,
-    default: () => [],
-  },
-  enrollmentTemplates: {
     type: Array,
     default: () => [],
   },
@@ -705,7 +680,6 @@ function logout() {
 }
 
 const docConfig = [
-  { type: 'enrollment_application', label: 'Заявление на зачисление *' },
   { type: 'snils', label: 'Скан СНИЛС *' },
   { type: 'diploma', label: 'Скан диплома о высшем или среднем образовании *' },
   { type: 'name_change_certificate', label: 'Свидетельство о перемене фамилии (при наличии)' },

@@ -35,7 +35,6 @@ class TourCabinetDocument extends Model
     public static function allowedTypes(): array
     {
         return [
-            LmsProfileDocument::TYPE_ENROLLMENT_APPLICATION,
             LmsProfileDocument::TYPE_SNILS,
             LmsProfileDocument::TYPE_DIPLOMA,
             LmsProfileDocument::TYPE_NAME_CHANGE_CERTIFICATE,

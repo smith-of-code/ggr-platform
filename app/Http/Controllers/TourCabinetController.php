@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Application;
 use App\Models\Consent;
 use App\Models\Favorite;
-use App\Models\Lms\LmsProfileDocument;
 use App\Models\TourCabinetDocument;
 use App\Models\User;
 use App\Services\ConsentService;
@@ -159,12 +158,6 @@ class TourCabinetController extends Controller
             'tourApplications' => $this->tourApplicationsForUser($user),
             'favorites' => $favorites,
             'profileDocuments' => $profileDocuments,
-            'enrollmentTemplates' => [
-                ['key' => 'management', 'label' => 'Управление муниципальными проектами'],
-                ['key' => 'guide', 'label' => 'Гид-экскурсовод промышленного туризма'],
-                ['key' => 'excursion', 'label' => 'Экскурсионная деятельность'],
-                ['key' => 'entrepreneurial', 'label' => 'Управление предпринимательскими проектами'],
-            ],
             'profile' => [
                 'user_id' => $user->id,
                 'display_name' => $composed !== '' ? $composed : (string) ($user->name ?: 'Участник'),
@@ -336,43 +329,6 @@ class TourCabinetController extends Controller
             ->route('tour-cabinet.dashboard')
             ->with('success', 'Документ удалён.')
             ->withFragment('tour-cabinet-documents');
-    }
-
-    public function downloadProfileTemplate(string $type)
-    {
-        $enrollmentTemplates = [
-            'enrollment_management' => ['file' => 'management_municipal_projects.doc', 'name' => 'Заявление_Управление_муниципальными_проектами.doc'],
-            'enrollment_guide' => ['file' => 'industrial_tourism_guide.doc', 'name' => 'Заявление_Гид_промышленного_туризма.doc'],
-            'enrollment_excursion' => ['file' => 'excursion_activity.doc', 'name' => 'Заявление_Экскурсионная_деятельность.doc'],
-            'enrollment_entrepreneurial' => ['file' => 'entrepreneurial_projects.doc', 'name' => 'Заявление_Управление_предпринимательскими_проектами.doc'],
-        ];
-
-        if (isset($enrollmentTemplates[$type])) {
-            $tpl = $enrollmentTemplates[$type];
-            $templatePath = resource_path("templates/profile/enrollment/{$tpl['file']}");
-
-            if (! file_exists($templatePath)) {
-                abort(404, 'Шаблон пока не загружен');
-            }
-
-            return response()->download($templatePath, $tpl['name']);
-        }
-
-        if (! in_array($type, LmsProfileDocument::TYPES_WITH_TEMPLATE, true)) {
-            abort(404);
-        }
-
-        $templatePath = resource_path("templates/profile/{$type}.docx");
-
-        if (! file_exists($templatePath)) {
-            abort(404, 'Шаблон пока не загружен');
-        }
-
-        $names = [
-            LmsProfileDocument::TYPE_PERSONAL_DATA_CONSENT => 'Согласие_на_обработку_ПД.docx',
-        ];
-
-        return response()->download($templatePath, $names[$type] ?? "{$type}.docx");
     }
 
     private function tourCabinetAvatarPublicUrl(User $user): ?string

@@ -83,7 +83,6 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
         Route::delete('/profile/documents/{document}', [TourCabinetController::class, 'deleteProfileDocument'])
             ->middleware('throttle:tour-cabinet-profile-document')
             ->name('profile.documents.delete');
-        Route::get('/profile/templates/{type}', [TourCabinetController::class, 'downloadProfileTemplate'])->name('profile.templates.download');
         Route::get('/contest', [TourCabinetContestController::class, 'show'])->name('contest');
         Route::post('/contest/direction', [TourCabinetContestController::class, 'storeDirection'])->name('contest.direction');
         Route::post('/contest/cities', [TourCabinetContestController::class, 'storeCities'])->name('contest.cities');
