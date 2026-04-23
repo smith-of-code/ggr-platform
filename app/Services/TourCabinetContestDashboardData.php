@@ -98,7 +98,8 @@ final class TourCabinetContestDashboardData
         }
 
         $contestLocationOffers = $this->contestLocationOffers($progress, $user);
-        $contestStageSummary = $this->contestStageSummary($progress, $stage1Complete);
+        $stageDeadlines = $this->settings->getTourCabinetContestStageDeadlines();
+        $contestStageSummary = $this->contestStageSummary($progress, $stage1Complete, $stageDeadlines);
 
         $questions = $this->activeStage2QuestionsQuery($progress->project_key)
             ->orderBy('sort_order')
@@ -238,9 +239,19 @@ final class TourCabinetContestDashboardData
     }
 
     /**
-     * @return list<array{roman: string, title: string, label: string, status_key: string, status_label: string}>
+     * @param  array<int, array{start: ?string, end: ?string}>  $stageDeadlines
+     * @return list<array{
+     *     roman: string,
+     *     title: string,
+     *     label: string,
+     *     status_key: string,
+     *     status_label: string,
+     *     deadline_start: ?string,
+     *     deadline_end: ?string,
+     *     deadline_display: ?string
+     * }>
      */
-    private function contestStageSummary(TourCabinetContestProgress $progress, bool $stage1Complete): array
+    private function contestStageSummary(TourCabinetContestProgress $progress, bool $stage1Complete, array $stageDeadlines): array
     {
         $st = (int) $progress->current_stage;
         $stage3Filled = filled($progress->stage3_text);
@@ -251,6 +262,7 @@ final class TourCabinetContestDashboardData
             'Анкета персональных данных',
             $stage1Complete,
             $progress->project_key !== null && ! $stage1Complete,
+            $stageDeadlines[1] ?? ['start' => null, 'end' => null],
         );
 
         $s2 = $this->stageSummaryRow(
@@ -259,6 +271,7 @@ final class TourCabinetContestDashboardData
             'Развернутые ответы на вопросы',
             $st >= 3,
             $st === 2,
+            $stageDeadlines[2] ?? ['start' => null, 'end' => null],
         );
 
         $s3 = $this->stageSummaryRow(
@@ -267,16 +280,31 @@ final class TourCabinetContestDashboardData
             'Проверочное задание',
             $stage3Filled,
             $st >= 3 && ! $stage3Filled,
+            $stageDeadlines[3] ?? ['start' => null, 'end' => null],
         );
 
         return [$s1, $s2, $s3];
     }
 
     /**
-     * @return array{roman: string, title: string, label: string, status_key: string, status_label: string}
+     * @param  array{start: ?string, end: ?string}  $deadline
+     * @return array{
+     *     roman: string,
+     *     title: string,
+     *     label: string,
+     *     status_key: string,
+     *     status_label: string,
+     *     deadline_start: ?string,
+     *     deadline_end: ?string,
+     *     deadline_display: ?string
+     * }
      */
-    private function stageSummaryRow(string $roman, string $title, string $label, bool $done, bool $inProgress): array
+    private function stageSummaryRow(string $roman, string $title, string $label, bool $done, bool $inProgress, array $deadline): array
     {
+        $deadlineStart = $deadline['start'] ?? null;
+        $deadlineEnd = $deadline['end'] ?? null;
+        $deadlineDisplay = $this->formatContestDeadlineLabel($deadlineStart, $deadlineEnd);
+
         if ($done) {
             return [
                 'roman' => $roman,
@@ -284,6 +312,9 @@ final class TourCabinetContestDashboardData
                 'label' => $label,
                 'status_key' => 'done',
                 'status_label' => 'заполнено',
+                'deadline_start' => $deadlineStart,
+                'deadline_end' => $deadlineEnd,
+                'deadline_display' => $deadlineDisplay,
             ];
         }
         if ($inProgress) {
@@ -293,6 +324,9 @@ final class TourCabinetContestDashboardData
                 'label' => $label,
                 'status_key' => 'in_progress',
                 'status_label' => 'в процессе',
+                'deadline_start' => $deadlineStart,
+                'deadline_end' => $deadlineEnd,
+                'deadline_display' => $deadlineDisplay,
             ];
         }
 
@@ -302,7 +336,31 @@ final class TourCabinetContestDashboardData
             'label' => $label,
             'status_key' => 'todo',
             'status_label' => 'не начато',
+            'deadline_start' => $deadlineStart,
+            'deadline_end' => $deadlineEnd,
+            'deadline_display' => $deadlineDisplay,
         ];
+    }
+
+    private function formatContestDeadlineLabel(?string $start, ?string $end): ?string
+    {
+        if ($start === null && $end === null) {
+            return null;
+        }
+        $fmt = fn (?string $iso) => $iso === null ? null : Carbon::parse($iso)->format('d.m.Y');
+        $a = $fmt($start);
+        $b = $fmt($end);
+        if ($a !== null && $b !== null) {
+            return "с {$a} по {$b}";
+        }
+        if ($a !== null) {
+            return "с {$a}";
+        }
+        if ($b !== null) {
+            return "до {$b}";
+        }
+
+        return null;
     }
 
     private function stage1Complete(TourCabinetContestProgress $progress, int $userId): bool

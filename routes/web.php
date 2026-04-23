@@ -197,6 +197,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
 
     Route::get('/tour-cabinet/forms', [AdminTourCabinetFormsController::class, 'index'])->name('tour-cabinet.forms.index');
     Route::put('/tour-cabinet/forms/contest-form-slugs', [AdminTourCabinetFormsController::class, 'updateContestFormSlugs'])->name('tour-cabinet.forms.contest-form-slugs.update');
+    Route::put('/tour-cabinet/contest-stage-deadlines', [AdminTourCabinetFormsController::class, 'updateContestStageDeadlines'])->name('tour-cabinet.contest-stage-deadlines.update');
 
     // Те же экраны, что /lms-admin/.../forms, но под /admin/... — обход редиректа main→lms для префикса lms-admin.
     Route::prefix('tour-cabinet/lms/{event:slug}')

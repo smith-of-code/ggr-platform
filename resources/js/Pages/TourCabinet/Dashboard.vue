@@ -372,7 +372,7 @@
               <button
                 type="button"
                 role="tab"
-                class="mt-2 flex w-full cursor-pointer items-center gap-4 rounded-2xl border border-slate-100 bg-slate-100/90 px-4 py-4 text-left shadow-sm outline-none transition ring-offset-2 ring-offset-white hover:bg-slate-100 sm:gap-5 sm:px-6 sm:py-5"
+                class="mt-2 flex w-full cursor-pointer items-start gap-4 rounded-2xl border border-slate-100 bg-slate-100/90 px-4 py-4 text-left shadow-sm outline-none transition ring-offset-2 ring-offset-white hover:bg-slate-100 sm:items-center sm:gap-5 sm:px-6 sm:py-5"
                 :class="
                   activeContestTab === stageIdx + 1
                     ? 'ring-2 ring-rosatom-500'
@@ -390,7 +390,15 @@
                   <AcademicCapIcon v-else class="h-8 w-8 text-rosatom-700" />
                 </div>
                 <p class="min-w-0 flex-1 text-base font-semibold text-slate-900">{{ st.label }}</p>
-                <p class="shrink-0 text-sm font-medium lowercase text-slate-600">{{ st.status_label }}</p>
+                <div class="flex w-full shrink-0 flex-col items-stretch gap-1 border-t border-slate-200/80 pt-3 sm:ml-auto sm:w-auto sm:items-end sm:border-0 sm:pt-0">
+                  <p class="text-right text-sm font-medium lowercase text-slate-600">{{ st.status_label }}</p>
+                  <p
+                    v-if="st.deadline_display"
+                    class="text-right text-xs font-normal normal-case leading-snug text-slate-500"
+                  >
+                    {{ st.deadline_display }}
+                  </p>
+                </div>
               </button>
 
               <div

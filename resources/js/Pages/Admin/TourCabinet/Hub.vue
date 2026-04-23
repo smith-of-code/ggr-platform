@@ -34,6 +34,16 @@
           </div>
         </section>
 
+        <section id="tour-cabinet-admin-deadlines" class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
+          <h2 class="text-xl font-bold tracking-tight text-slate-900">Сроки этапов конкурса</h2>
+          <p class="mt-2 max-w-3xl text-sm text-slate-600">
+            Общие даты начала и окончания для каждого из трёх этапов — одинаковые для всех участников. Отображаются в ЛК туров рядом со статусом этапа.
+          </p>
+          <div class="mt-6">
+            <TourCabinetAdminContestDeadlinesPanel v-bind="contestDeadlinesSection" />
+          </div>
+        </section>
+
         <section id="tour-cabinet-admin-stage2" class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
           <h2 class="text-xl font-bold tracking-tight text-slate-900">Вопросы этапа 2</h2>
           <p class="mt-2 text-sm text-slate-600">Тексты вопросов конкурса и привязка к направлению.</p>
@@ -49,6 +59,7 @@
 <script setup>
 import { Head } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import TourCabinetAdminContestDeadlinesPanel from './TourCabinetAdminContestDeadlinesPanel.vue'
 import TourCabinetAdminDirectionCitiesPanel from './TourCabinetAdminDirectionCitiesPanel.vue'
 import TourCabinetAdminFormsPanel from './TourCabinetAdminFormsPanel.vue'
 import TourCabinetAdminStage2QuestionsPanel from './TourCabinetAdminStage2QuestionsPanel.vue'
@@ -56,6 +67,7 @@ import TourCabinetAdminStage2QuestionsPanel from './TourCabinetAdminStage2Questi
 defineProps({
   formsSection: { type: Object, required: true },
   directionCitiesSection: { type: Object, required: true },
+  contestDeadlinesSection: { type: Object, required: true },
   stage2Section: { type: Object, required: true },
 })
 </script>

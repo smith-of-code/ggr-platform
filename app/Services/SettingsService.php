@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
@@ -98,6 +99,41 @@ class SettingsService
     public function getTourCabinetContestStage1FormSlugMoreData(): ?string
     {
         return $this->resolveTourCabinetContestFormSlug('contest_stage1_form_slug_more_data');
+    }
+
+    /**
+     * Общие сроки этапов конкурса в ЛК туров (даты Y-m-d или null).
+     *
+     * @return array<int, array{start: ?string, end: ?string}>
+     */
+    public function getTourCabinetContestStageDeadlines(): array
+    {
+        $db = $this->getGroup(self::GROUP_TOUR_CABINET);
+        $out = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $out[$i] = [
+                'start' => $this->normalizeTourCabinetDeadline($db["contest_stage_{$i}_deadline_start"] ?? null),
+                'end' => $this->normalizeTourCabinetDeadline($db["contest_stage_{$i}_deadline_end"] ?? null),
+            ];
+        }
+
+        return $out;
+    }
+
+    private function normalizeTourCabinetDeadline(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+        $t = trim($value);
+        if ($t === '') {
+            return null;
+        }
+        try {
+            return Carbon::parse($t)->format('Y-m-d');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function resolveTourCabinetContestFormSlug(string $key): ?string

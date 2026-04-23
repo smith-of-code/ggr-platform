@@ -74,4 +74,53 @@ class TourCabinetFormsController extends Controller
             ->withFragment('tour-cabinet-admin-forms')
             ->with('success', 'Slug форм конкурса (этап 1) сохранены.');
     }
+
+    public function updateContestStageDeadlines(Request $request): RedirectResponse
+    {
+        $merged = $request->all();
+        foreach ([1, 2, 3] as $i) {
+            foreach (['deadline_start', 'deadline_end'] as $part) {
+                $k = "stage_{$i}_{$part}";
+                if (array_key_exists($k, $merged) && $merged[$k] === '') {
+                    $merged[$k] = null;
+                }
+            }
+        }
+        $request->merge($merged);
+
+        $rules = [];
+        foreach ([1, 2, 3] as $i) {
+            $rules["stage_{$i}_deadline_start"] = ['nullable', 'date'];
+            $rules["stage_{$i}_deadline_end"] = ['nullable', 'date'];
+        }
+
+        $validated = $request->validate($rules);
+
+        foreach ([1, 2, 3] as $i) {
+            $start = $validated["stage_{$i}_deadline_start"] ?? null;
+            $end = $validated["stage_{$i}_deadline_end"] ?? null;
+            $start = is_string($start) ? trim($start) : '';
+            $end = is_string($end) ? trim($end) : '';
+            if ($start !== '' && $end !== '' && $end < $start) {
+                throw ValidationException::withMessages([
+                    "stage_{$i}_deadline_end" => 'Дата окончания не может быть раньше даты начала.',
+                ]);
+            }
+        }
+
+        $payload = [];
+        foreach ([1, 2, 3] as $i) {
+            $s = $validated["stage_{$i}_deadline_start"] ?? null;
+            $e = $validated["stage_{$i}_deadline_end"] ?? null;
+            $payload["contest_stage_{$i}_deadline_start"] = is_string($s) ? trim($s) : '';
+            $payload["contest_stage_{$i}_deadline_end"] = is_string($e) ? trim($e) : '';
+        }
+
+        $this->settings->setGroup(self::SETTINGS_GROUP, $payload);
+
+        return redirect()
+            ->route('admin.tour-cabinet.index')
+            ->withFragment('tour-cabinet-admin-deadlines')
+            ->with('success', 'Сроки этапов конкурса сохранены.');
+    }
 }

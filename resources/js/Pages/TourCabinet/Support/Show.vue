@@ -5,7 +5,7 @@
       <template #breadcrumb>
         <Link
           :href="route('tour-cabinet.support.index')"
-          class="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-rosatom-700 transition hover:text-rosatom-900"
+          class="inline-flex items-center gap-1.5 text-sm font-semibold text-rosatom-700 transition hover:text-rosatom-900"
         >
           <span aria-hidden="true">←</span>
           Все обращения

@@ -2,29 +2,25 @@
   <div class="min-h-dvh bg-gradient-to-b from-slate-100 to-slate-50 font-sans text-slate-900">
     <Head title="Поддержка — ЛК туров" />
     <TourCabinetHeader max-width-class="max-w-4xl">
-      <template #breadcrumb>
-        <Link
-          :href="route('tour-cabinet.dashboard')"
-          class="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-rosatom-700 transition hover:text-rosatom-900"
-        >
-          <span aria-hidden="true">←</span>
-          Личный кабинет
-        </Link>
-      </template>
       <template #title>
-        <h1 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Поддержка</h1>
+        <h1 class="text-xl font-bold leading-tight tracking-tight text-slate-900 sm:text-2xl lg:text-3xl">Поддержка</h1>
       </template>
       <template #subtitle>
-        <p class="text-sm text-slate-600">История обращений и ответов команды.</p>
-        <p v-if="supportContactEmail" class="mt-2 text-sm text-slate-600">
+        <p class="text-sm leading-relaxed text-slate-600">История обращений и ответов команды.</p>
+        <p v-if="supportContactEmail" class="text-sm leading-relaxed text-slate-600">
           Также можно написать на
           <a :href="`mailto:${supportContactEmail}`" class="font-semibold text-rosatom-700 underline hover:text-rosatom-900">{{ supportContactEmail }}</a>
         </p>
       </template>
       <template #toolbar>
         <div class="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+          <Link :href="route('tour-cabinet.dashboard')" class="w-full sm:w-auto">
+            <RButton type="button" variant="outline" size="sm" class="w-full min-h-[2.75rem] sm:min-h-0 sm:w-auto">
+              Личный кабинет
+            </RButton>
+          </Link>
           <Link :href="route('tour-cabinet.support.create')" class="w-full sm:w-auto">
-            <RButton variant="primary" size="sm" class="w-full min-h-[2.75rem] sm:min-h-0 sm:w-auto">
+            <RButton type="button" variant="primary" size="sm" class="w-full min-h-[2.75rem] sm:min-h-0 sm:w-auto">
               Новое обращение
             </RButton>
           </Link>

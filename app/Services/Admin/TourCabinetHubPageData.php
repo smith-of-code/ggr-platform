@@ -126,4 +126,35 @@ class TourCabinetHubPageData
             'directions' => $directions,
         ];
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function contestStageDeadlinesPayload(): array
+    {
+        $d = $this->settings->getTourCabinetContestStageDeadlines();
+
+        return [
+            'stages' => [
+                [
+                    'num' => 1,
+                    'title' => 'Этап I — анкета персональных данных',
+                    'deadline_start' => $d[1]['start'] ?? '',
+                    'deadline_end' => $d[1]['end'] ?? '',
+                ],
+                [
+                    'num' => 2,
+                    'title' => 'Этап II — развёрнутые ответы на вопросы',
+                    'deadline_start' => $d[2]['start'] ?? '',
+                    'deadline_end' => $d[2]['end'] ?? '',
+                ],
+                [
+                    'num' => 3,
+                    'title' => 'Этап III — проверочное задание',
+                    'deadline_start' => $d[3]['start'] ?? '',
+                    'deadline_end' => $d[3]['end'] ?? '',
+                ],
+            ],
+        ];
+    }
 }
