@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Application;
 use App\Models\Consent;
+use App\Models\Tour;
+use App\Models\TourDeparture;
 use App\Services\ConsentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,12 +45,32 @@ class ApplicationController extends Controller
             $validated['phone'] = '+'.self::phoneDigitsRu($validated['phone']);
         }
 
+        $data = ['message' => $validated['message'] ?? null];
+        if ($validated['type'] === 'tour') {
+            $snapshotTitle = null;
+            if (! empty($validated['tour_id'])) {
+                $snapshotTitle = Tour::query()->whereKey($validated['tour_id'])->value('title');
+            }
+            if (! is_string($snapshotTitle) || trim($snapshotTitle) === '') {
+                $depId = $validated['tour_departure_id'] ?? null;
+                if (! empty($depId)) {
+                    $tourIdFromDeparture = TourDeparture::query()->whereKey($depId)->value('tour_id');
+                    if ($tourIdFromDeparture) {
+                        $snapshotTitle = Tour::query()->whereKey($tourIdFromDeparture)->value('title');
+                    }
+                }
+            }
+            if (is_string($snapshotTitle) && trim($snapshotTitle) !== '') {
+                $data['tour_title'] = trim($snapshotTitle);
+            }
+        }
+
         $application = Application::create([
             'type' => $validated['type'],
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
-            'data' => ['message' => $validated['message'] ?? null],
+            'data' => $data,
             'tour_id' => $validated['tour_id'] ?? null,
             'tour_departure_id' => $validated['tour_departure_id'] ?? null,
             'status' => 'new',

@@ -254,7 +254,11 @@ class TourCabinetController extends Controller
         return Application::query()
             ->where('type', 'tour')
             ->whereRaw('LOWER(TRIM(email)) = LOWER(TRIM(?))', [$user->email])
-            ->with(['tour:id,title', 'tourDeparture:id,start_date,end_date'])
+            ->with([
+                'tour:id,title',
+                'tourDeparture:id,tour_id,start_date,end_date',
+                'tourDeparture.tour:id,title',
+            ])
             ->orderByDesc('created_at')
             ->limit(30)
             ->get()
@@ -267,7 +271,7 @@ class TourCabinetController extends Controller
 
                 return [
                     'id' => $app->id,
-                    'tour_title' => $app->tour?->title ?? 'Заявка на тур',
+                    'tour_title' => $this->tourApplicationTitle($app),
                     'date_range' => $this->formatTourApplicationDateRange($app),
                     'status_key' => $statusKey,
                     'status_label' => match ($app->status) {
@@ -279,6 +283,21 @@ class TourCabinetController extends Controller
                 ];
             })
             ->all();
+    }
+
+    private function tourApplicationTitle(Application $app): string
+    {
+        foreach ([
+            $app->tour?->title,
+            $app->tourDeparture?->tour?->title,
+            data_get($app->data, 'tour_title'),
+        ] as $candidate) {
+            if (is_string($candidate) && trim($candidate) !== '') {
+                return trim($candidate);
+            }
+        }
+
+        return Application::TYPES['tour'] ?? 'Заявка на тур';
     }
 
     private function formatTourApplicationDateRange(Application $app): ?string
