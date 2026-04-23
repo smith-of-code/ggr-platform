@@ -46,9 +46,27 @@
 
         <section id="tour-cabinet-admin-stage2" class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
           <h2 class="text-xl font-bold tracking-tight text-slate-900">Вопросы этапа 2</h2>
-          <p class="mt-2 text-sm text-slate-600">Тексты вопросов конкурса и привязка к направлению.</p>
+          <p class="mt-2 text-sm text-slate-600">
+            Тексты вопросов конкурса и привязка к направлению.
+            <Link :href="route('admin.tour-cabinet.stage2-answers.index')" class="font-medium text-[#003274] hover:underline">
+              Ответы участников
+            </Link>
+          </p>
           <div class="mt-6">
             <TourCabinetAdminStage2QuestionsPanel v-bind="stage2Section" />
+          </div>
+        </section>
+
+        <section id="tour-cabinet-admin-stage3" class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
+          <h2 class="text-xl font-bold tracking-tight text-slate-900">Этап 3 — проверочное задание</h2>
+          <p class="mt-2 text-sm text-slate-600">
+            Название и описание задания, формат ответа участника (текст + видео или текст + файл) задаются отдельно для каждого направления конкурса.
+            <Link :href="route('admin.tour-cabinet.stage3-answers.index')" class="font-medium text-[#003274] hover:underline">
+              Ответы участников
+            </Link>
+          </p>
+          <div class="mt-6">
+            <TourCabinetAdminStage3ConfigsPanel :configs="stage3ConfigSection.configs" />
           </div>
         </section>
       </div>
@@ -57,17 +75,19 @@
 </template>
 
 <script setup>
-import { Head } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import TourCabinetAdminContestDeadlinesPanel from './TourCabinetAdminContestDeadlinesPanel.vue'
 import TourCabinetAdminDirectionCitiesPanel from './TourCabinetAdminDirectionCitiesPanel.vue'
 import TourCabinetAdminFormsPanel from './TourCabinetAdminFormsPanel.vue'
 import TourCabinetAdminStage2QuestionsPanel from './TourCabinetAdminStage2QuestionsPanel.vue'
+import TourCabinetAdminStage3ConfigsPanel from './TourCabinetAdminStage3ConfigsPanel.vue'
 
 defineProps({
   formsSection: { type: Object, required: true },
   directionCitiesSection: { type: Object, required: true },
   contestDeadlinesSection: { type: Object, required: true },
   stage2Section: { type: Object, required: true },
+  stage3ConfigSection: { type: Object, required: true },
 })
 </script>

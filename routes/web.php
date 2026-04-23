@@ -21,7 +21,10 @@ use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\Admin\TourCabinetDirectionCitiesController as AdminTourCabinetDirectionCitiesController;
 use App\Http\Controllers\Admin\TourCabinetHubController as AdminTourCabinetHubController;
 use App\Http\Controllers\Admin\TourCabinetSupportController as AdminTourCabinetSupportController;
+use App\Http\Controllers\Admin\TourCabinetStage2AnswersController as AdminTourCabinetStage2AnswersController;
 use App\Http\Controllers\Admin\TourCabinetStage2QuestionsController as AdminTourCabinetStage2QuestionsController;
+use App\Http\Controllers\Admin\TourCabinetStage3AnswersController as AdminTourCabinetStage3AnswersController;
+use App\Http\Controllers\Admin\TourCabinetStage3ConfigsController as AdminTourCabinetStage3ConfigsController;
 use App\Http\Controllers\Admin\TourCabinetFormsController as AdminTourCabinetFormsController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\Admin\VshgrPageController as AdminVshgrPageController;
@@ -93,7 +96,12 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
         Route::get('/contest/stage-2', [TourCabinetContestController::class, 'showStage2'])->name('contest.stage2');
         Route::post('/contest/stage-2', [TourCabinetContestController::class, 'storeStage2'])->name('contest.stage2.store');
         Route::get('/contest/stage-3', [TourCabinetContestController::class, 'showStage3'])->name('contest.stage3');
-        Route::post('/contest/stage-3', [TourCabinetContestController::class, 'storeStage3'])->name('contest.stage3.store');
+        Route::post('/contest/stage-3', [TourCabinetContestController::class, 'storeStage3'])
+            ->middleware('throttle:tour-cabinet-profile-document')
+            ->name('contest.stage3.store');
+        Route::get('/contest/stage-3/attachment', [TourCabinetContestController::class, 'downloadStage3Attachment'])
+            ->middleware('throttle:tour-cabinet-support-download')
+            ->name('contest.stage3.attachment');
 
         Route::get('/support', [TourCabinetSupportController::class, 'index'])->name('support.index');
         Route::get('/support/create', [TourCabinetSupportController::class, 'create'])->name('support.create');
@@ -214,6 +222,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::post('/tour-cabinet/direction-cities', [AdminTourCabinetDirectionCitiesController::class, 'store'])->name('tour-cabinet.direction-cities.store');
     Route::patch('/tour-cabinet/direction-cities/{directionCity}', [AdminTourCabinetDirectionCitiesController::class, 'update'])->name('tour-cabinet.direction-cities.update');
     Route::delete('/tour-cabinet/direction-cities/{directionCity}', [AdminTourCabinetDirectionCitiesController::class, 'destroy'])->name('tour-cabinet.direction-cities.destroy');
+
+    Route::get('/tour-cabinet/stage2-answers', [AdminTourCabinetStage2AnswersController::class, 'index'])->name('tour-cabinet.stage2-answers.index');
+
+    Route::put('/tour-cabinet/stage3-config/{project_key}', [AdminTourCabinetStage3ConfigsController::class, 'update'])
+        ->where('project_key', '[a-z_]+')
+        ->name('tour-cabinet.stage3-config.update');
+    Route::get('/tour-cabinet/stage3-answers', [AdminTourCabinetStage3AnswersController::class, 'index'])->name('tour-cabinet.stage3-answers.index');
+    Route::get('/tour-cabinet/stage3-answers/{id}/attachment', [AdminTourCabinetStage3AnswersController::class, 'downloadAttachment'])
+        ->whereNumber('id')
+        ->name('tour-cabinet.stage3-answers.attachment');
 
     Route::get('/tour-cabinet/stage2-questions', [AdminTourCabinetStage2QuestionsController::class, 'index'])->name('tour-cabinet.stage2-questions.index');
     Route::post('/tour-cabinet/stage2-questions', [AdminTourCabinetStage2QuestionsController::class, 'store'])->name('tour-cabinet.stage2-questions.store');

@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\City;
 use App\Models\Tour;
 use App\Models\TourCabinetContestCitySubmission;
+use App\Models\TourCabinetContestDirectionSetting;
 use App\Models\TourCabinetContestProgress;
 use App\Models\TourCabinetContestStage2Answer;
 use App\Models\TourCabinetContestStage2Question;
+use App\Models\TourCabinetContestStage3Config;
 use App\Models\TourCabinetDirectionCity;
 use App\Models\TourDeparture;
 use App\Models\User;
@@ -99,7 +101,16 @@ final class TourCabinetContestDashboardData
 
         $contestLocationOffers = $this->contestLocationOffers($progress, $user);
         $stageDeadlines = $this->settings->getTourCabinetContestStageDeadlines();
-        $contestStageSummary = $this->contestStageSummary($progress, $stage1Complete, $stageDeadlines);
+        $stage3Config = TourCabinetContestStage3Config::forProjectKey($progress->project_key);
+        $stage3Filled = $this->isStage3ResponseComplete($progress, $stage3Config);
+        $maxContestStages = TourCabinetContestDirectionSetting::maxContestStagesForProjectKey($progress->project_key);
+        $contestStageSummary = $this->contestStageSummary(
+            $progress,
+            $stage1Complete,
+            $stageDeadlines,
+            $stage3Filled,
+            $maxContestStages
+        );
 
         $questions = $this->activeStage2QuestionsQuery($progress->project_key)
             ->orderBy('sort_order')
@@ -121,6 +132,9 @@ final class TourCabinetContestDashboardData
         return [
             'contestProgress' => [
                 'current_stage' => (int) $progress->current_stage,
+                'stage2_submitted_at' => $progress->stage2_submitted_at?->toIso8601String(),
+                'max_contest_stages' => $maxContestStages,
+                'stage2_locked' => $this->isStage2LockedForParticipant($progress, $maxContestStages),
             ],
             'contestStage1' => [
                 'step' => $step,
@@ -139,11 +153,7 @@ final class TourCabinetContestDashboardData
                 'stage1Complete' => $stage1Complete,
             ],
             'contestStage2Questions' => $questionsPayload,
-            'contestStage3Progress' => [
-                'current_stage' => (int) $progress->current_stage,
-                'stage3_text' => $progress->stage3_text,
-                'stage3_video_url' => $progress->stage3_video_url,
-            ],
+            'contestStage3Progress' => $this->contestStage3ProgressPayload($progress, $stage3Config, $stage3Filled),
             'contestLocationOffers' => $contestLocationOffers,
             'contestStageSummary' => $contestStageSummary,
         ];
@@ -251,10 +261,78 @@ final class TourCabinetContestDashboardData
      *     deadline_display: ?string
      * }>
      */
-    private function contestStageSummary(TourCabinetContestProgress $progress, bool $stage1Complete, array $stageDeadlines): array
+    /**
+     * Этап 3 считается завершённым при заполненном тексте и втором поле по формату (или только текст, если настройки направления ещё не заданы).
+     */
+    private function isStage3ResponseComplete(TourCabinetContestProgress $progress, ?TourCabinetContestStage3Config $config): bool
     {
+        if (! filled($progress->stage3_text) || trim((string) $progress->stage3_text) === '') {
+            return false;
+        }
+        if ($config === null) {
+            return true;
+        }
+        if ($config->usesFileUpload()) {
+            return filled($progress->stage3_attachment_path);
+        }
+
+        return filled($progress->stage3_video_url) && trim((string) $progress->stage3_video_url) !== '';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function contestStage3ProgressPayload(
+        TourCabinetContestProgress $progress,
+        ?TourCabinetContestStage3Config $config,
+        bool $isComplete,
+    ): array {
+        $format = $config?->response_format ?? TourCabinetContestStage3Config::FORMAT_VIDEO_LINK;
+
+        return [
+            'current_stage' => (int) $progress->current_stage,
+            'stage3_text' => $progress->stage3_text,
+            'stage3_video_url' => $progress->stage3_video_url,
+            'stage3_attachment_original_name' => $progress->stage3_attachment_original_name,
+            'stage3_has_attachment' => filled($progress->stage3_attachment_path),
+            'is_complete' => $isComplete,
+            'assignment' => [
+                'title' => $config?->title ?? 'Проверочное задание',
+                'task_body' => $config?->task_body ?? '',
+                'response_format' => $format,
+                'from_config' => $config !== null,
+            ],
+        ];
+    }
+
+    private function isStage2LockedForParticipant(TourCabinetContestProgress $progress, int $maxContestStages): bool
+    {
+        if ($maxContestStages < 2) {
+            return true;
+        }
         $st = (int) $progress->current_stage;
-        $stage3Filled = filled($progress->stage3_text);
+        if ($st > 2) {
+            return true;
+        }
+        if ($st === 2 && filled($progress->stage2_submitted_at)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function contestStageSummary(
+        TourCabinetContestProgress $progress,
+        bool $stage1Complete,
+        array $stageDeadlines,
+        bool $stage3Filled,
+        int $maxContestStages,
+    ): array {
+        $st = (int) $progress->current_stage;
+        $maxContestStages = min(3, max(1, $maxContestStages));
 
         $s1 = $this->stageSummaryRow(
             'I',
@@ -265,25 +343,33 @@ final class TourCabinetContestDashboardData
             $stageDeadlines[1] ?? ['start' => null, 'end' => null],
         );
 
-        $s2 = $this->stageSummaryRow(
-            'II',
-            'Этап II',
-            'Развернутые ответы на вопросы',
-            $st >= 3,
-            $st === 2,
-            $stageDeadlines[2] ?? ['start' => null, 'end' => null],
-        );
+        $rows = [$s1];
 
-        $s3 = $this->stageSummaryRow(
-            'III',
-            'Этап III',
-            'Проверочное задание',
-            $stage3Filled,
-            $st >= 3 && ! $stage3Filled,
-            $stageDeadlines[3] ?? ['start' => null, 'end' => null],
-        );
+        if ($maxContestStages >= 2) {
+            $stage2Done = filled($progress->stage2_submitted_at) || $st > 2;
+            $stage2InProgress = $st === 2 && ! $stage2Done;
+            $rows[] = $this->stageSummaryRow(
+                'II',
+                'Этап II',
+                'Развернутые ответы на вопросы',
+                $stage2Done,
+                $stage2InProgress,
+                $stageDeadlines[2] ?? ['start' => null, 'end' => null],
+            );
+        }
 
-        return [$s1, $s2, $s3];
+        if ($maxContestStages >= 3) {
+            $rows[] = $this->stageSummaryRow(
+                'III',
+                'Этап III',
+                'Проверочное задание',
+                $stage3Filled,
+                $st >= 3 && ! $stage3Filled,
+                $stageDeadlines[3] ?? ['start' => null, 'end' => null],
+            );
+        }
+
+        return $rows;
     }
 
     /**

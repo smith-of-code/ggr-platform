@@ -5,7 +5,7 @@
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Конкурс: этап 3</h1>
-          <p class="mt-1 text-sm text-gray-500">Проверочное задание: текст и ссылка на видео</p>
+          <p class="mt-1 text-sm text-gray-500">Проверочное задание</p>
         </div>
         <div class="flex flex-wrap gap-4 text-sm">
           <Link :href="route('tour-cabinet.dashboard')" class="font-medium text-rosatom-600 hover:text-rosatom-800">Главная ЛК</Link>
@@ -32,13 +32,23 @@ const props = defineProps({
   contestProgress: { type: Object, required: true },
 })
 
+const contestMaxStages = computed(() => {
+  const m = Number(props.contestProgress?.max_contest_stages)
+  if (Number.isFinite(m) && m >= 1 && m <= 3) {
+    return m
+  }
+  return 3
+})
+
 const contestStage3LockNotice = computed(() => {
+  if (contestMaxStages.value < 3) {
+    return 'early'
+  }
   const st = Number(props.contestProgress?.current_stage)
   if (!Number.isFinite(st) || st < 3) {
     return 'early'
   }
-  const t = props.contestStage3Progress?.stage3_text
-  if (typeof t === 'string' && t.trim() !== '') {
+  if (props.contestStage3Progress?.is_complete) {
     return 'saved'
   }
 

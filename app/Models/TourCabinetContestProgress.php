@@ -14,14 +14,18 @@ class TourCabinetContestProgress extends Model
         'project_key',
         'selected_city_ids',
         'current_stage',
+        'stage2_submitted_at',
         'stage3_text',
         'stage3_video_url',
+        'stage3_attachment_path',
+        'stage3_attachment_original_name',
     ];
 
     protected function casts(): array
     {
         return [
             'selected_city_ids' => 'array',
+            'stage2_submitted_at' => 'datetime',
         ];
     }
 

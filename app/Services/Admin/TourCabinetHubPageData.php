@@ -6,8 +6,11 @@ use App\Models\City;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsForm;
 use App\Models\Tour;
+use App\Models\TourCabinetContestDirectionSetting;
 use App\Models\TourCabinetContestStage2Question;
+use App\Models\TourCabinetContestStage3Config;
 use App\Models\TourCabinetDirectionCity;
+use Illuminate\Support\Facades\Schema;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 
@@ -123,6 +126,49 @@ class TourCabinetHubPageData
 
         return [
             'questions' => $questions,
+            'directions' => $directions,
+        ];
+    }
+
+    /**
+     * Настройки проверочного задания (этап 3) по направлениям конкурса.
+     *
+     * @return array<string, mixed>
+     */
+    public function stage3ConfigsPayload(): array
+    {
+        $directions = collect(Tour::PROJECTS)->map(fn (string $label, string $key) => [
+            'key' => $key,
+            'label' => $label,
+        ])->values()->all();
+
+        $saved = Schema::hasTable('tour_cabinet_contest_stage3_configs')
+            ? TourCabinetContestStage3Config::query()->get()->keyBy('project_key')
+            : collect();
+
+        $directionMax = Schema::hasTable('tour_cabinet_contest_direction_settings')
+            ? TourCabinetContestDirectionSetting::query()->get()->keyBy('project_key')
+            : collect();
+
+        $configs = [];
+        foreach (Tour::PROJECTS as $key => $label) {
+            $row = $saved->get($key);
+            $maxRow = $directionMax->get($key);
+            $configs[] = [
+                'project_key' => $key,
+                'direction_label' => $label,
+                'title' => $row?->title ?? '',
+                'task_body' => $row?->task_body ?? '',
+                'response_format' => $row?->response_format ?? TourCabinetContestStage3Config::FORMAT_VIDEO_LINK,
+                'is_saved' => $row !== null,
+                'max_contest_stages' => $maxRow !== null
+                    ? min(3, max(1, (int) $maxRow->max_contest_stages))
+                    : 3,
+            ];
+        }
+
+        return [
+            'configs' => $configs,
             'directions' => $directions,
         ];
     }

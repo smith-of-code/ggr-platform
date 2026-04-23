@@ -363,7 +363,9 @@
         >
           <div class="border-b border-slate-100 pb-4">
             <h2 class="text-base font-bold text-slate-900">Конкурс</h2>
-            <p class="mt-1 text-sm text-slate-600">Сейчас в прогрессе: этап {{ contestProgress.current_stage }}.</p>
+            <p class="mt-1 text-sm text-slate-600">
+              Сейчас в прогрессе: этап {{ contestEffectiveStage }} из {{ contestMaxStages }}.
+            </p>
           </div>
 
           <div class="mt-5 space-y-6" role="tablist" aria-label="Этапы конкурса">
@@ -405,11 +407,11 @@
                 v-show="activeContestTab === stageIdx + 1"
                 class="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-4 sm:px-5"
               >
-                <ContestStage1Panel v-if="stageIdx === 0" v-bind="contestStage1" />
+                <ContestStage1Panel v-if="stageIdx === 0" v-bind="contestStage1Props" />
                 <ContestStage2Panel
                   v-else-if="stageIdx === 1"
                   :questions="contestStage2Questions"
-                  :locked="contestProgress.current_stage !== 2"
+                  :locked="contestStage2Locked"
                   :contest-stage="contestProgress.current_stage"
                 />
                 <ContestStage3Panel
@@ -605,21 +607,45 @@ onUnmounted(() => {
   revokeAvatarPreview()
 })
 
+const contestMaxStages = computed(() => {
+  const m = Number(props.contestProgress?.max_contest_stages)
+  if (Number.isFinite(m) && m >= 1 && m <= 3) {
+    return m
+  }
+  return 3
+})
+
+const contestEffectiveStage = computed(() => {
+  const st = Number(props.contestProgress?.current_stage)
+  const n = Number.isFinite(st) ? st : 1
+  return Math.min(n, contestMaxStages.value)
+})
+
 function defaultContestTab() {
   const s = Number(props.contestProgress?.current_stage)
   const n = Number.isFinite(s) ? s : 1
-  return Math.min(Math.max(n, 1), 3)
+  const cap = contestMaxStages.value
+  return Math.min(Math.max(n, 1), cap)
 }
 
 const activeContestTab = ref(defaultContestTab())
 
+const contestStage2Locked = computed(() => props.contestProgress?.stage2_locked === true)
+
+const contestStage1Props = computed(() => ({
+  ...props.contestStage1,
+  maxContestStages: contestMaxStages.value,
+}))
+
 const contestStage3LockNotice = computed(() => {
+  if (contestMaxStages.value < 3) {
+    return 'early'
+  }
   const st = Number(props.contestProgress?.current_stage)
   if (!Number.isFinite(st) || st < 3) {
     return 'early'
   }
-  const t = props.contestStage3Progress?.stage3_text
-  if (typeof t === 'string' && t.trim() !== '') {
+  if (props.contestStage3Progress?.is_complete) {
     return 'saved'
   }
 
@@ -629,7 +655,7 @@ const contestStage3LockNotice = computed(() => {
 const contestStage3Locked = computed(() => contestStage3LockNotice.value !== null)
 
 watch(
-  () => props.contestProgress?.current_stage,
+  () => [props.contestProgress?.current_stage, props.contestProgress?.max_contest_stages],
   () => {
     activeContestTab.value = defaultContestTab()
   },

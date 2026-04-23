@@ -124,13 +124,21 @@
       </div>
 
       <div
-        v-if="stage1Complete && formSlugsConfigured.standard && formSlugsConfigured.more_data"
+        v-if="stage1Complete && formSlugsConfigured.standard && formSlugsConfigured.more_data && maxContestStages >= 2"
         class="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
       >
         <p class="text-sm font-medium text-emerald-900">Этап 1 выполнен: все анкеты по выбранным городам отправлены.</p>
         <form class="mt-3" @submit.prevent="advanceToStage2">
           <RButton type="submit" variant="primary" size="sm">Перейти к этапу 2</RButton>
         </form>
+      </div>
+      <div
+        v-else-if="stage1Complete && formSlugsConfigured.standard && formSlugsConfigured.more_data && maxContestStages < 2"
+        class="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+      >
+        <p class="text-sm font-medium text-emerald-900">
+          Этап 1 выполнен. Для выбранного направления дальнейшие этапы конкурса в личном кабинете не проводятся.
+        </p>
       </div>
     </div>
   </div>
@@ -148,6 +156,8 @@ const props = defineProps({
   selectedCitiesForForms: { type: Array, default: () => [] },
   formSlugsConfigured: { type: Object, default: () => ({ standard: false, more_data: false }) },
   stage1Complete: { type: Boolean, default: false },
+  /** Сколько этапов конкурса доступно для направления (1–3). */
+  maxContestStages: { type: Number, default: 3 },
 })
 
 const cityForm = useForm({ city_ids: [] })

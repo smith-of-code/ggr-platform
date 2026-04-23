@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -83,6 +84,12 @@ class User extends Authenticatable
     public function tourCabinetDocuments(): HasMany
     {
         return $this->hasMany(TourCabinetDocument::class);
+    }
+
+    /** @return HasOne<TourCabinetContestProgress, $this> */
+    public function tourCabinetContestProgress(): HasOne
+    {
+        return $this->hasOne(TourCabinetContestProgress::class);
     }
 
     /**

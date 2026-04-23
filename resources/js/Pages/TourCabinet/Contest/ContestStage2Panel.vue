@@ -5,31 +5,42 @@
       <template v-else>Просмотр ответов этапа 2. Редактирование недоступно после перехода к этапу 3.</template>
     </p>
 
-    <form v-if="!locked" class="mt-8 space-y-6" @submit.prevent="submit">
+    <div v-if="!locked" class="mt-8 space-y-6">
       <template v-if="questions.length">
         <div v-for="q in questions" :key="q.id" class="rounded-xl border border-gray-200 bg-white p-4">
           <p class="text-sm font-medium text-gray-900">{{ q.body }}</p>
           <textarea
             v-model="form.answers[q.id]"
-            rows="4"
+            rows="6"
             class="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-rosatom-500 focus:ring-1 focus:ring-rosatom-500/20"
-            required
+            placeholder="Развёрнутый ответ…"
           />
           <p v-if="form.errors['answers.' + q.id]" class="mt-1 text-xs text-red-600">{{ form.errors['answers.' + q.id] }}</p>
         </div>
+        <p class="text-xs text-gray-500">
+          «Сохранить» — черновик только у вас. «Отправить» — ответы уйдут организаторам, этап 2 будет считаться завершённым.
+        </p>
       </template>
       <div v-else class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        Для вашего направления пока нет активных вопросов этапа 2. Нажмите «Далее», чтобы перейти к этапу 3.
+        Для вашего направления пока нет активных вопросов этапа 2. Нажмите кнопку ниже, чтобы перейти к этапу 3.
       </div>
 
       <div v-if="form.errors.answers" class="text-sm text-red-600">{{ form.errors.answers }}</div>
 
       <div class="flex flex-wrap gap-3">
-        <RButton type="submit" variant="primary" :loading="form.processing" :disabled="form.processing">
-          {{ questions.length ? 'Сохранить и перейти к этапу 3' : 'Перейти к этапу 3' }}
+        <template v-if="questions.length">
+          <RButton type="button" variant="outline" :loading="form.processing" :disabled="form.processing" @click="saveDraft">
+            Сохранить
+          </RButton>
+          <RButton type="button" variant="primary" :loading="form.processing" :disabled="form.processing" @click="submitFinalize">
+            Отправить
+          </RButton>
+        </template>
+        <RButton v-else type="button" variant="primary" :loading="form.processing" :disabled="form.processing" @click="submitFinalize">
+          Перейти к этапу 3
         </RButton>
       </div>
-    </form>
+    </div>
 
     <div v-else-if="questions.length" class="mt-8 space-y-4">
       <div v-for="q in questions" :key="q.id" class="rounded-xl border border-gray-200 bg-white p-4">
@@ -50,7 +61,10 @@ const props = defineProps({
   contestStage: { type: Number, default: 1 },
 })
 
-const form = useForm({ answers: {} })
+const form = useForm({
+  answers: {},
+  finalize: false,
+})
 
 watch(
   () => props.questions,
@@ -64,7 +78,13 @@ watch(
   { immediate: true },
 )
 
-function submit() {
+function saveDraft() {
+  form.finalize = false
+  form.post(route('tour-cabinet.contest.stage2.store'), { preserveScroll: true })
+}
+
+function submitFinalize() {
+  form.finalize = true
   form.post(route('tour-cabinet.contest.stage2.store'), { preserveScroll: true })
 }
 </script>
