@@ -24,6 +24,13 @@ class DashboardController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
+        if ($profile && in_array($profile->status, ['imported', 'invited'])) {
+            $profile->update([
+                'status' => 'active',
+                'activated_at' => $profile->activated_at ?? now(),
+            ]);
+        }
+
         $courseEnrollments = LmsCourseEnrollment::whereHas('course', fn($q) => $q->where('lms_event_id', $event->id))
             ->where('user_id', $user->id)
             ->whereNotIn('status', ['pending', 'rejected'])
