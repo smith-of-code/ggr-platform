@@ -19,23 +19,40 @@ class TourCabinetStage3ConfigsController extends Controller
             abort(404);
         }
 
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:500'],
+        $maxStages = (int) $request->input('max_contest_stages', 3);
+        $maxStages = min(3, max(1, $maxStages));
+
+        $rules = [
             'task_body' => ['nullable', 'string', 'max:50000'],
-            'response_format' => ['required', 'string', Rule::in([
+            'max_contest_stages' => ['required', 'integer', 'min:1', 'max:3'],
+        ];
+        $rules['title'] = $maxStages >= 3
+            ? ['required', 'string', 'max:500']
+            : ['nullable', 'string', 'max:500'];
+        $rules['response_format'] = $maxStages >= 3
+            ? ['required', 'string', Rule::in([
                 TourCabinetContestStage3Config::FORMAT_VIDEO_LINK,
                 TourCabinetContestStage3Config::FORMAT_FILE_UPLOAD,
-            ])],
-            'max_contest_stages' => ['required', 'integer', 'min:1', 'max:3'],
-        ]);
+            ])]
+            : ['nullable', 'string', Rule::in([
+                TourCabinetContestStage3Config::FORMAT_VIDEO_LINK,
+                TourCabinetContestStage3Config::FORMAT_FILE_UPLOAD,
+            ])];
 
-        DB::transaction(function () use ($projectKey, $validated): void {
+        $validated = $request->validate($rules);
+
+        $title = $maxStages >= 3
+            ? (string) $validated['title']
+            : (string) ($validated['title'] ?? '');
+        $responseFormat = $validated['response_format'] ?? TourCabinetContestStage3Config::FORMAT_VIDEO_LINK;
+
+        DB::transaction(function () use ($projectKey, $validated, $title, $responseFormat): void {
             TourCabinetContestStage3Config::query()->updateOrCreate(
                 ['project_key' => $projectKey],
                 [
-                    'title' => $validated['title'],
+                    'title' => $title,
                     'task_body' => $validated['task_body'],
-                    'response_format' => $validated['response_format'],
+                    'response_format' => $responseFormat,
                 ]
             );
             TourCabinetContestDirectionSetting::query()->updateOrCreate(

@@ -13,27 +13,6 @@
       </div>
       <form class="mt-4 space-y-4" @submit.prevent="save(c.project_key)">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600">Название задания</label>
-          <input
-            v-model="drafts[c.project_key].title"
-            type="text"
-            maxlength="500"
-            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#003274] focus:ring-1 focus:ring-[#003274]/20"
-            required
-          />
-          <p v-if="errorsFor(c.project_key).title" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).title }}</p>
-        </div>
-        <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600">Описание задания</label>
-          <textarea
-            v-model="drafts[c.project_key].task_body"
-            rows="6"
-            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#003274] focus:ring-1 focus:ring-[#003274]/20"
-            placeholder="Что нужно сделать участнику…"
-          />
-          <p v-if="errorsFor(c.project_key).task_body" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).task_body }}</p>
-        </div>
-        <div>
           <label class="mb-1 block text-xs font-medium text-gray-600">Сколько этапов конкурса доступно в ЛК</label>
           <select
             v-model.number="drafts[c.project_key].max_contest_stages"
@@ -46,17 +25,45 @@
           <p class="mt-1 text-xs text-gray-500">Вкладки и переходы в личном кабинете ограничиваются этим числом.</p>
           <p v-if="errorsFor(c.project_key).max_contest_stages" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).max_contest_stages }}</p>
         </div>
-        <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600">Формат ответа в ЛК участника</label>
-          <select
-            v-model="drafts[c.project_key].response_format"
-            class="mt-1 w-full max-w-md rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm sm:w-auto"
-          >
-            <option value="video_link">Текст + ссылка на видео</option>
-            <option value="file_upload">Текст + загрузка файла</option>
-          </select>
-          <p v-if="errorsFor(c.project_key).response_format" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).response_format }}</p>
+
+        <div v-if="drafts[c.project_key].max_contest_stages < 3" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+          Этап 3 в ЛК не используется — название и описание задания не обязательны. При выборе «Все три этапа» поля задания станут обязательными.
         </div>
+
+        <template v-else>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-600">Название задания (этап 3)</label>
+            <input
+              v-model="drafts[c.project_key].title"
+              type="text"
+              maxlength="500"
+              class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#003274] focus:ring-1 focus:ring-[#003274]/20"
+              required
+            />
+            <p v-if="errorsFor(c.project_key).title" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).title }}</p>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-600">Описание задания</label>
+            <textarea
+              v-model="drafts[c.project_key].task_body"
+              rows="6"
+              class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#003274] focus:ring-1 focus:ring-[#003274]/20"
+              placeholder="Что нужно сделать участнику…"
+            />
+            <p v-if="errorsFor(c.project_key).task_body" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).task_body }}</p>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-600">Формат ответа в ЛК участника</label>
+            <select
+              v-model="drafts[c.project_key].response_format"
+              class="mt-1 w-full max-w-md rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm sm:w-auto"
+            >
+              <option value="video_link">Текст + ссылка на видео</option>
+              <option value="file_upload">Текст + загрузка файла</option>
+            </select>
+            <p v-if="errorsFor(c.project_key).response_format" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).response_format }}</p>
+          </div>
+        </template>
         <RButton type="submit" variant="primary" size="sm" :loading="savingKey === c.project_key" :disabled="savingKey !== null">
           Сохранить для этого направления
         </RButton>
