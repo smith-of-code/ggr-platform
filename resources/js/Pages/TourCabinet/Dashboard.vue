@@ -167,9 +167,12 @@
         </div>
       </section>
 
-      <!-- Документы (как в профиле ВШГР) -->
+      <!-- Документы для модерации -->
       <section id="tour-cabinet-documents" class="mt-10 scroll-mt-8">
         <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Документы</h2>
+        <p class="mt-2 max-w-2xl text-sm text-slate-600">
+          Загрузите сканы в формате PDF или изображения (JPG, PNG). После проверки модератором заменить файл самостоятельно будет нельзя — только через обращение в поддержку.
+        </p>
         <div class="mt-3 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-6">
           <p v-if="$page.props.errors?.file" class="mb-4 text-sm text-red-600">{{ $page.props.errors.file }}</p>
 
@@ -714,9 +717,9 @@ function logout() {
 }
 
 const docConfig = [
-  { type: 'snils', label: 'Скан СНИЛС *' },
-  { type: 'diploma', label: 'Скан диплома о высшем или среднем образовании *' },
-  { type: 'name_change_certificate', label: 'Свидетельство о перемене фамилии (при наличии)' },
+  { type: 'passport_spread', label: 'Паспорт: разворот с 1–2 страницей (фото и данные) *' },
+  { type: 'passport_registration', label: 'Паспорт: страница с пропиской *' },
+  { type: 'snils', label: 'СНИЛС *' },
 ]
 
 const docDeleteProcessing = ref(false)

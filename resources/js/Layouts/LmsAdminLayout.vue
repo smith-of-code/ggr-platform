@@ -63,7 +63,7 @@
           <template #icon>
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
           </template>
-          Вернуться в LMS
+          {{ returnToFooterLabel }}
         </RButton>
       </template>
     </RSidebar>
@@ -111,6 +111,7 @@ import { usePage, router } from '@inertiajs/vue3'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { CheckCircleIcon } from '@heroicons/vue/24/outline'
 import ToastNotifications from '@/Components/ToastNotifications.vue'
+import { sameOriginHref } from '@/utils/sameOriginHref.js'
 
 const props = defineProps({
   event: { type: Object, default: null },
@@ -125,6 +126,10 @@ const canAccessPortalAdmin = computed(() => Boolean(page.props.auth?.user?.is_ad
 
 /** Оболочка форм с портала: пути /admin/tour-cabinet/lms/... без редиректа с /lms-admin. */
 const usePortalLmsFormShell = computed(() => page.url.startsWith('/admin/tour-cabinet/lms/'))
+
+const returnToFooterLabel = computed(() =>
+  usePortalLmsFormShell.value ? 'В настройки ЛК туров' : 'Вернуться в LMS',
+)
 
 function closeMobileSidebar() {
   sidebarOpen.value = false
@@ -242,30 +247,34 @@ const eventRouteMap = {
 function onSelect(id) {
   closeMobileSidebar()
   if (id === 'events') {
-    router.visit(route('lms.admin.events.index'))
+    router.visit(sameOriginHref(route('lms.admin.events.index')))
     return
   }
   if (id.startsWith('event-')) {
     const slug = id.replace('event-', '')
-    router.visit(route('lms.admin.courses.index', slug))
+    router.visit(sameOriginHref(route('lms.admin.courses.index', slug)))
     return
   }
   const routeName = eventRouteMap[id]
   if (routeName && props.event) {
     if (usePortalLmsFormShell.value && id === 'forms') {
-      router.visit(route('admin.tour-cabinet.lms.forms.index', props.event.slug))
+      router.visit(sameOriginHref(route('admin.tour-cabinet.lms.forms.index', props.event.slug)))
       return
     }
-    router.visit(route(routeName, props.event.slug))
+    router.visit(sameOriginHref(route(routeName, props.event.slug)))
   }
 }
 
 function navigateTo(routeName, params = {}) {
-  router.visit(route(routeName, params))
+  router.visit(sameOriginHref(route(routeName, params)))
 }
 
 function onReturnToLms() {
   closeMobileSidebar()
+  if (usePortalLmsFormShell.value) {
+    router.visit(sameOriginHref(`${route('admin.tour-cabinet.index', {}, false)}#tour-cabinet-admin-forms`))
+    return
+  }
   if (props.event) {
     navigateTo('lms.dashboard', { event: props.event.slug })
   }

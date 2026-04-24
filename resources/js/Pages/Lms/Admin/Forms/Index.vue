@@ -1,5 +1,21 @@
 <template>
   <LmsAdminLayout :event="event">
+    <div
+      v-if="showPortalTourCabinetBanner"
+      class="mb-6 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950"
+    >
+      <p class="font-medium">Вы в конструкторе форм из настроек ЛК туров портала.</p>
+      <p class="mt-1 text-sky-900/90">
+        Чтобы вернуться к разделу «Формы и этап 1» на портале, используйте ссылку ниже или кнопку «В настройки ЛК туров» внизу бокового меню.
+      </p>
+      <Link
+        :href="`${route('admin.tour-cabinet.index', {}, false)}#tour-cabinet-admin-forms`"
+        class="mt-3 inline-flex font-semibold text-[#003274] underline decoration-2 underline-offset-2 hover:text-[#025ea1]"
+      >
+        В настройки ЛК туров (портал)
+      </Link>
+    </div>
+
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">Формы и опросы</h1>
@@ -67,7 +83,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, usePage } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import { defaultLmsAdminFormRouteNames } from '@/constants/lmsAdminFormRoutes.js'
 
@@ -76,6 +92,9 @@ const props = defineProps({
   forms: Object,
   lmsFormsRouteNames: { type: Object, default: null },
 })
+
+const page = usePage()
+const showPortalTourCabinetBanner = computed(() => (page.url || '').startsWith('/admin/tour-cabinet/lms/'))
 
 const routeNames = computed(() => ({ ...defaultLmsAdminFormRouteNames, ...props.lmsFormsRouteNames }))
 </script>

@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
-use App\Models\Lms\LmsProfileDocument;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TourCabinetDocument extends Model
 {
+    public const TYPE_PASSPORT_SPREAD = 'passport_spread';
+
+    public const TYPE_PASSPORT_REGISTRATION = 'passport_registration';
+
+    public const TYPE_SNILS = 'snils';
+
     public const STATUS_PENDING_REVIEW = 'pending_review';
 
     public const STATUS_APPROVED = 'approved';
@@ -35,10 +40,20 @@ class TourCabinetDocument extends Model
     public static function allowedTypes(): array
     {
         return [
-            LmsProfileDocument::TYPE_SNILS,
-            LmsProfileDocument::TYPE_DIPLOMA,
-            LmsProfileDocument::TYPE_NAME_CHANGE_CERTIFICATE,
+            self::TYPE_PASSPORT_SPREAD,
+            self::TYPE_PASSPORT_REGISTRATION,
+            self::TYPE_SNILS,
         ];
+    }
+
+    public static function typeLabel(string $type): string
+    {
+        return match ($type) {
+            self::TYPE_PASSPORT_SPREAD => 'Паспорт: разворот с 1–2 страницей',
+            self::TYPE_PASSPORT_REGISTRATION => 'Паспорт: страница с пропиской',
+            self::TYPE_SNILS => 'СНИЛС',
+            default => $type,
+        };
     }
 
     public function hasFile(): bool

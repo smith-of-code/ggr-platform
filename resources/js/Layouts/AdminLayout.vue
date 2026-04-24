@@ -96,6 +96,16 @@
         </Link>
 
         <Link
+          :href="route('admin.tour-cabinet.tour-users.index')"
+          :class="[isActive('admin.tour-cabinet.tour-users') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
+        >
+          <svg :class="[isActive('admin.tour-cabinet.tour-users') ? 'text-[#003274]' : 'text-gray-400 group-hover:text-gray-600']" class="h-5 w-5 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 18H18a2.25 2.25 0 0 0 2.25-2.25V8.25A2.25 2.25 0 0 0 18 6H6a2.25 2.25 0 0 0-2.25 2.25v12A2.25 2.25 0 0 0 6 22.5h2.25m9-9H9m3.75-9v9m3-3H9" />
+          </svg>
+          Документы клиентов ЛК
+        </Link>
+
+        <Link
           :href="route('admin.tour-cabinet.support.index')"
           :class="[isActive('admin.tour-cabinet.support') ? 'bg-[#003274]/5 text-[#003274] font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150']"
         >
@@ -352,8 +362,11 @@ function isActive(routePrefix) {
   if (routePrefix === 'admin.cities') return url.startsWith('/admin/cities')
   if (routePrefix === 'admin.tours') return url.startsWith('/admin/tours')
   if (routePrefix === 'admin.tour-cabinet.support') return url.startsWith('/admin/tour-cabinet/support')
+  if (routePrefix === 'admin.tour-cabinet.tour-users') return url.startsWith('/admin/tour-cabinet/tour-users')
   if (routePrefix === 'admin.tour-cabinet') {
-    return url.startsWith('/admin/tour-cabinet') && !url.startsWith('/admin/tour-cabinet/support')
+    return url.startsWith('/admin/tour-cabinet')
+      && ! url.startsWith('/admin/tour-cabinet/support')
+      && ! url.startsWith('/admin/tour-cabinet/tour-users')
   }
   if (routePrefix === 'admin.tour-reviews') return url.startsWith('/admin/tour-reviews')
   if (routePrefix === 'admin.blog') return url.startsWith('/admin/blog') && !url.startsWith('/admin/blog-subscribers')

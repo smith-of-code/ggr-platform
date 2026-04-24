@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\TourCabinetStage2QuestionsController as AdminTour
 use App\Http\Controllers\Admin\TourCabinetStage3AnswersController as AdminTourCabinetStage3AnswersController;
 use App\Http\Controllers\Admin\TourCabinetStage3ConfigsController as AdminTourCabinetStage3ConfigsController;
 use App\Http\Controllers\Admin\TourCabinetFormsController as AdminTourCabinetFormsController;
+use App\Http\Controllers\Admin\TourCabinetTourUsersController as AdminTourCabinetTourUsersController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\Admin\VshgrPageController as AdminVshgrPageController;
 use App\Http\Controllers\ApplicationController;
@@ -195,6 +196,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::put('/vshgr-page', [AdminVshgrPageController::class, 'update'])->name('vshgr-page.update');
 
     Route::get('/tour-cabinet', [AdminTourCabinetHubController::class, 'index'])->name('tour-cabinet.index');
+
+    Route::get('/tour-cabinet/tour-users', [AdminTourCabinetTourUsersController::class, 'index'])->name('tour-cabinet.tour-users.index');
+    Route::get('/tour-cabinet/tour-users/{user}', [AdminTourCabinetTourUsersController::class, 'show'])->name('tour-cabinet.tour-users.show');
+    Route::get('/tour-cabinet/tour-users/{user}/documents/{document}/download', [AdminTourCabinetTourUsersController::class, 'downloadDocument'])
+        ->name('tour-cabinet.tour-users.documents.download');
+    Route::post('/tour-cabinet/tour-users/{user}/documents/{document}/approve', [AdminTourCabinetTourUsersController::class, 'approveDocument'])
+        ->name('tour-cabinet.tour-users.documents.approve');
+    Route::post('/tour-cabinet/tour-users/{user}/documents/{document}/annul', [AdminTourCabinetTourUsersController::class, 'annulDocument'])
+        ->name('tour-cabinet.tour-users.documents.annul');
 
     Route::get('/tour-cabinet/support', [AdminTourCabinetSupportController::class, 'index'])->name('tour-cabinet.support.index');
     Route::get('/tour-cabinet/support/{ticket}', [AdminTourCabinetSupportController::class, 'show'])->name('tour-cabinet.support.show');
