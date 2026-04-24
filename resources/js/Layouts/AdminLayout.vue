@@ -102,7 +102,7 @@
           <svg :class="[isActive('admin.tour-cabinet.tour-users') ? 'text-[#003274]' : 'text-gray-400 group-hover:text-gray-600']" class="h-5 w-5 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 18H18a2.25 2.25 0 0 0 2.25-2.25V8.25A2.25 2.25 0 0 0 18 6H6a2.25 2.25 0 0 0-2.25 2.25v12A2.25 2.25 0 0 0 6 22.5h2.25m9-9H9m3.75-9v9m3-3H9" />
           </svg>
-          Документы клиентов ЛК
+          Клиенты
         </Link>
 
         <Link

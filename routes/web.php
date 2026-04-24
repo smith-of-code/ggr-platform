@@ -198,6 +198,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::get('/tour-cabinet', [AdminTourCabinetHubController::class, 'index'])->name('tour-cabinet.index');
 
     Route::get('/tour-cabinet/tour-users', [AdminTourCabinetTourUsersController::class, 'index'])->name('tour-cabinet.tour-users.index');
+    Route::get('/tour-cabinet/tour-users/export', [AdminTourCabinetTourUsersController::class, 'export'])->name('tour-cabinet.tour-users.export');
     Route::get('/tour-cabinet/tour-users/{user}', [AdminTourCabinetTourUsersController::class, 'show'])->name('tour-cabinet.tour-users.show');
     Route::get('/tour-cabinet/tour-users/{user}/documents/{document}/download', [AdminTourCabinetTourUsersController::class, 'downloadDocument'])
         ->name('tour-cabinet.tour-users.documents.download');

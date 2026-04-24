@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\City;
 use App\Models\TourCabinetDocument;
 use App\Models\User;
+use App\Services\Admin\TourCabinetClientContestDataService;
 use App\Services\TourCabinetDocumentReviewService;
 use App\Support\PostAuthRedirect;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -18,50 +21,83 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TourCabinetTourUsersController extends Controller
 {
+    public function __construct(
+        private readonly TourCabinetClientContestDataService $contestData,
+    ) {}
+
     public function index(Request $request): Response
     {
-        $q = trim((string) $request->query('q', ''));
-
-        $query = User::query()
-            ->where(function ($outer) {
-                $outer->where('is_tour_cabinet_user', true);
-                if (Schema::hasTable('lms_profiles')) {
-                    $outer->orWhereExists(function ($sub) {
-                        $sub->selectRaw('1')
-                            ->from('lms_profiles')
-                            ->whereColumn('lms_profiles.user_id', 'users.id');
-                    });
-                }
-                if (Schema::hasTable('applications')) {
-                    $outer->orWhereExists(function ($sub) {
-                        $sub->selectRaw('1')
-                            ->from('applications')
-                            ->where('applications.type', 'tour')
-                            ->whereRaw('LOWER(TRIM(applications.email)) = LOWER(TRIM(users.email))');
-                    });
-                }
-            })
+        $query = $this->withTourClientListColumns($this->filteredTourUsersQuery($request))
             ->orderByDesc('updated_at')
             ->orderByDesc('id');
-
-        if ($q !== '') {
-            $query->where(function ($sub) use ($q) {
-                $sub->where('email', 'like', '%'.$q.'%')
-                    ->orWhere('name', 'like', '%'.$q.'%')
-                    ->orWhere('last_name', 'like', '%'.$q.'%')
-                    ->orWhere('first_name', 'like', '%'.$q.'%');
-            });
-        }
 
         if (Schema::hasTable('tour_cabinet_documents')) {
             $query->with(['tourCabinetDocuments' => fn ($rel) => $rel->orderBy('type')]);
         }
+        if (Schema::hasTable('tour_cabinet_contest_progress')) {
+            $query->with(['tourCabinetContestProgress', 'tourCabinetContestCitySubmissions.city']);
+        }
 
-        $users = $query->paginate(25)->through(fn (User $user) => $this->userListRow($user));
+        $users = $query->paginate(25)->withQueryString()->through(fn (User $user) => $this->userListRow($user));
 
         return Inertia::render('Admin/TourCabinet/TourUsers/Index', [
             'users' => $users,
-            'filters' => ['q' => $q],
+            'filters' => [
+                'q' => trim((string) $request->query('q', '')),
+                'city_id' => $request->query('city_id') !== null && $request->query('city_id') !== ''
+                    ? (string) (int) $request->query('city_id')
+                    : '',
+                'segment' => $this->normalizedSegment($request),
+            ],
+            'exportCityOptions' => $this->contestData->cityOptionsForExport(),
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $cityIdInt = $this->validatedCityId($request);
+
+        $query = $this->withTourClientListColumns($this->filteredTourUsersQuery($request))
+            ->orderByDesc('users.id');
+
+        $users = $query->get();
+        $rows = $users->map(fn (User $u) => $this->contestData->buildExportRow($u, $cityIdInt));
+
+        $allKeys = collect();
+        foreach ($rows as $row) {
+            $allKeys = $allKeys->merge(array_keys($row));
+        }
+        $orderedKeys = $this->orderExportKeys($allKeys->unique()->values()->all());
+        if ($orderedKeys === []) {
+            $orderedKeys = ['user_id', 'email', 'fio', 'phone'];
+        }
+
+        $cityPart = $cityIdInt !== null ? '-city-'.$cityIdInt : '-all';
+        $filename = 'tour-cabinet-clients'.$cityPart.'-'.date('Y-m-d_His').'.csv';
+
+        return response()->streamDownload(function () use ($orderedKeys, $rows) {
+            $out = fopen('php://output', 'w');
+            if ($out === false) {
+                return;
+            }
+            fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+            $headerLabels = array_map(fn (string $k) => $this->csvColumnTitleRu($k), $orderedKeys);
+            fputcsv($out, $headerLabels, ';');
+            foreach ($rows as $row) {
+                $line = [];
+                foreach ($orderedKeys as $k) {
+                    $v = $row[$k] ?? '';
+                    if (is_scalar($v) || $v === null) {
+                        $line[] = $v === null ? '' : (string) $v;
+                    } else {
+                        $line[] = json_encode($v, JSON_UNESCAPED_UNICODE);
+                    }
+                }
+                fputcsv($out, $line, ';');
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
 
@@ -76,6 +112,7 @@ class TourCabinetTourUsersController extends Controller
         return Inertia::render('Admin/TourCabinet/TourUsers/Show', [
             'user' => $this->userPayload($user),
             'documentRows' => $this->documentRowsForUser($user),
+            'contest' => $this->contestData->contestPayloadForUser($user),
         ]);
     }
 
@@ -137,6 +174,245 @@ class TourCabinetTourUsersController extends Controller
         return back()->with('success', 'Документ отклонён, участнику отправлено уведомление на email.');
     }
 
+    /**
+     * @return Builder<User>
+     */
+    private function filteredTourUsersQuery(Request $request): Builder
+    {
+        $query = $this->tourUsersDirectoryQuery();
+
+        $q = trim((string) $request->query('q', ''));
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('email', 'like', '%'.$q.'%')
+                    ->orWhere('name', 'like', '%'.$q.'%')
+                    ->orWhere('last_name', 'like', '%'.$q.'%')
+                    ->orWhere('first_name', 'like', '%'.$q.'%');
+            });
+        }
+
+        $cityId = $this->validatedCityId($request);
+        if ($cityId !== null) {
+            $this->applyCityFilterToQuery($query, $cityId);
+        }
+
+        $segment = $this->normalizedSegment($request);
+        $this->applySegmentFilterToQuery($query, $segment);
+
+        return $query;
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     */
+    private function withTourClientListColumns(Builder $query): Builder
+    {
+        if (Schema::hasTable('lms_profiles')) {
+            $query->withExists('lmsProfiles');
+        }
+
+        return $query;
+    }
+
+    private function validatedCityId(Request $request): ?int
+    {
+        $cityRaw = $request->query('city_id');
+        if ($cityRaw === null || $cityRaw === '') {
+            return null;
+        }
+        $cityIdInt = (int) $cityRaw;
+        if ($cityIdInt <= 0 || ! City::query()->whereKey($cityIdInt)->exists()) {
+            abort(404);
+        }
+
+        return $cityIdInt;
+    }
+
+    private function normalizedSegment(Request $request): string
+    {
+        $s = (string) $request->query('segment', 'all');
+
+        return in_array($s, ['tour_only', 'lms'], true) ? $s : 'all';
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     */
+    private function applyCityFilterToQuery(Builder $query, int $cityIdInt): void
+    {
+        if (! Schema::hasTable('tour_cabinet_contest_city_submissions')
+            && ! Schema::hasTable('tour_cabinet_contest_progress')) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(function ($outer) use ($cityIdInt) {
+            $hasClause = false;
+            if (Schema::hasTable('tour_cabinet_contest_city_submissions')) {
+                $outer->whereHas(
+                    'tourCabinetContestCitySubmissions',
+                    fn ($s) => $s->where('city_id', $cityIdInt)
+                );
+                $hasClause = true;
+            }
+            if (Schema::hasTable('tour_cabinet_contest_progress')) {
+                if ($hasClause) {
+                    $outer->orWhereHas(
+                        'tourCabinetContestProgress',
+                        fn ($p) => $p->whereJsonContains('selected_city_ids', $cityIdInt)
+                    );
+                } else {
+                    $outer->whereHas(
+                        'tourCabinetContestProgress',
+                        fn ($p) => $p->whereJsonContains('selected_city_ids', $cityIdInt)
+                    );
+                }
+            }
+        });
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     */
+    private function applySegmentFilterToQuery(Builder $query, string $segment): void
+    {
+        if ($segment === 'all') {
+            return;
+        }
+
+        if ($segment === 'tour_only') {
+            $query->where('is_tour_cabinet_user', true);
+            if (Schema::hasTable('lms_profiles')) {
+                $query->whereDoesntHave('lmsProfiles');
+            }
+
+            return;
+        }
+
+        if ($segment === 'lms') {
+            if (! Schema::hasTable('lms_profiles')) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+            $query->whereHas('lmsProfiles');
+        }
+    }
+
+    /**
+     * @return Builder<User>
+     */
+    private function tourUsersDirectoryQuery(): Builder
+    {
+        return User::query()
+            ->where(function ($outer) {
+                $outer->where('is_tour_cabinet_user', true);
+                if (Schema::hasTable('lms_profiles')) {
+                    $outer->orWhereExists(function ($sub) {
+                        $sub->selectRaw('1')
+                            ->from('lms_profiles')
+                            ->whereColumn('lms_profiles.user_id', 'users.id');
+                    });
+                }
+                if (Schema::hasTable('applications')) {
+                    $outer->orWhereExists(function ($sub) {
+                        $sub->selectRaw('1')
+                            ->from('applications')
+                            ->where('applications.type', 'tour')
+                            ->whereRaw('LOWER(TRIM(applications.email)) = LOWER(TRIM(users.email))');
+                    });
+                }
+            });
+    }
+
+    /**
+     * Человекочитаемый заголовок колонки CSV (русский).
+     */
+    private function csvColumnTitleRu(string $key): string
+    {
+        $fixed = [
+            'user_id' => 'ID пользователя',
+            'email' => 'Email',
+            'fio' => 'ФИО',
+            'phone' => 'Телефон',
+            'registered_tour_lc' => 'Регистрация в ЛК туров (да/нет)',
+            'lms_vshgr' => 'Доступ ВШГР / LMS (да/нет)',
+            'direction_key' => 'Код направления конкурса',
+            'direction_label' => 'Направление конкурса',
+            'contest_current_stage' => 'Текущий этап конкурса',
+            'contest_stage2_submitted_at' => 'Дата отправки этапа 2',
+            'contest_selected_city_names' => 'Выбранные города (этап 1)',
+            'stage3_text' => 'Этап 3 — текст ответа',
+            'stage3_video_url' => 'Этап 3 — ссылка на видео',
+            'stage3_attachment_name' => 'Этап 3 — имя файла',
+            'tour_applications_count' => 'Число заявок на тур',
+            'tour_applications' => 'Заявки на туры (сводка)',
+        ];
+        if (isset($fixed[$key])) {
+            return $fixed[$key];
+        }
+
+        if (preg_match('/^s1_(\d+)_city_name$/', $key, $m)) {
+            return 'Этап 1 — город №'.$m[1].' — название';
+        }
+        if (preg_match('/^s1_(\d+)_submission_at$/', $key, $m)) {
+            return 'Этап 1 — город №'.$m[1].' — дата отправки анкеты';
+        }
+        if (preg_match('/^s1_(\d+)_f(\d+)$/', $key, $m)) {
+            return 'Этап 1 — город №'.$m[1].' — поле формы №'.$m[2];
+        }
+
+        if (preg_match('/^s2_q(\d+)$/', $key, $m)) {
+            return 'Этап 2 — ответ на вопрос №'.$m[1];
+        }
+
+        if (preg_match('/^app_(\d+)_(id|tour|status|name|phone|created)$/', $key, $m)) {
+            $n = (int) $m[1];
+            $field = $m[2];
+            $labels = [
+                'id' => 'ID заявки',
+                'tour' => 'Тур',
+                'status' => 'Статус заявки',
+                'name' => 'Имя в заявке',
+                'phone' => 'Телефон в заявке',
+                'created' => 'Дата создания заявки',
+            ];
+
+            return 'Заявка '.$n.' — '.$labels[$field];
+        }
+
+        if (preg_match('/^doc_([a-z0-9_]+)_(status|file)$/', $key, $m)) {
+            $type = $m[1];
+            $suffix = $m[2] === 'status' ? 'статус' : 'имя файла';
+            $typeLabel = TourCabinetDocument::typeLabel($type);
+
+            return 'Документ: '.$typeLabel.' — '.$suffix;
+        }
+
+        return $key;
+    }
+
+    /**
+     * @param  list<string>  $keys
+     * @return list<string>
+     */
+    private function orderExportKeys(array $keys): array
+    {
+        $priority = [
+            'user_id', 'email', 'fio', 'phone',
+            'registered_tour_lc', 'lms_vshgr',
+            'direction_key', 'direction_label',
+            'contest_current_stage', 'contest_stage2_submitted_at', 'contest_selected_city_names',
+            'stage3_text', 'stage3_video_url', 'stage3_attachment_name',
+            'tour_applications_count', 'tour_applications',
+        ];
+        $first = array_values(array_intersect($priority, $keys));
+        $rest = collect($keys)->diff($first)->sort()->values()->all();
+
+        return array_merge($first, $rest);
+    }
+
     private function ensureTourCabinetClient(User $user): void
     {
         if (! $this->userQualifiesForTourUsersDirectory($user)) {
@@ -192,6 +468,11 @@ class TourCabinetTourUsersController extends Controller
             'email' => $user->email,
             'display_name' => $display !== '' ? $display : (string) ($user->name ?: 'Участник'),
             'documents_overview' => $overview,
+            'contest_summary' => $this->contestData->listContestSummary($user),
+            'access' => [
+                'tour_cabinet_registered' => (bool) $user->is_tour_cabinet_user,
+                'lms_vshgr' => (bool) ($user->lms_profiles_exists ?? false),
+            ],
         ];
     }
 

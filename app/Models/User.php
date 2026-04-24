@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Lms\LmsProfile;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -90,6 +91,18 @@ class User extends Authenticatable
     public function tourCabinetContestProgress(): HasOne
     {
         return $this->hasOne(TourCabinetContestProgress::class);
+    }
+
+    /** @return HasMany<TourCabinetContestCitySubmission, $this> */
+    public function tourCabinetContestCitySubmissions(): HasMany
+    {
+        return $this->hasMany(TourCabinetContestCitySubmission::class);
+    }
+
+    /** @return HasMany<LmsProfile, $this> */
+    public function lmsProfiles(): HasMany
+    {
+        return $this->hasMany(LmsProfile::class, 'user_id');
     }
 
     /**
