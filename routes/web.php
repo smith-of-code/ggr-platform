@@ -27,9 +27,11 @@ use App\Http\Controllers\Admin\TourCabinetStage3AnswersController as AdminTourCa
 use App\Http\Controllers\Admin\TourCabinetStage3ConfigsController as AdminTourCabinetStage3ConfigsController;
 use App\Http\Controllers\Admin\TourCabinetFormsController as AdminTourCabinetFormsController;
 use App\Http\Controllers\Admin\TourCabinetTourUsersController as AdminTourCabinetTourUsersController;
+use App\Http\Controllers\Admin\PromocodeController as AdminPromocodeController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\Admin\VshgrPageController as AdminVshgrPageController;
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\PromocodeController;
 use App\Http\Controllers\Lms\Admin\FormController as LmsAdminFormController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogSubscriptionController;
@@ -58,6 +60,7 @@ Route::get('/cities/{slug}', [CityController::class, 'show'])->name('cities.show
 Route::get('/tours', [TourController::class, 'index'])->name('tours.index');
 Route::get('/tours/{slug}', [TourController::class, 'show'])->name('tours.show');
 Route::post('/applications', [ApplicationController::class, 'store'])->name('applications.store');
+Route::post('/promocodes/validate', [PromocodeController::class, 'validate'])->name('promocodes.validate');
 Route::post('/contact', [HomeController::class, 'contactSubmit'])->name('contact.submit');
 
 Route::get('/moving', [HomeController::class, 'moving'])->name('moving');
@@ -154,6 +157,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::patch('/cities/{city}/toggle-active', [AdminCityController::class, 'toggleActive'])->name('cities.toggleActive');
     Route::resource('tours', AdminTourController::class)->except(['show']);
     Route::patch('/tours/{tour}/toggle-active', [AdminTourController::class, 'toggleActive'])->name('tours.toggleActive');
+
+    Route::resource('promocodes', AdminPromocodeController::class)->except(['show']);
+    Route::patch('/promocodes/{promocode}/toggle-active', [AdminPromocodeController::class, 'toggleActive'])->name('promocodes.toggleActive');
+    Route::post('/promocodes/generate-code', [AdminPromocodeController::class, 'generateCode'])->name('promocodes.generateCode');
 
     Route::resource('blog', AdminBlogController::class)->except(['show'])->parameters(['blog' => 'post']);
     Route::patch('/blog/{post}/toggle-publish', [AdminBlogController::class, 'togglePublish'])->name('blog.togglePublish');

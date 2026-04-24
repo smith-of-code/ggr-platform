@@ -15,7 +15,7 @@ class ApplicationController extends Controller
 {
     public function index(Request $request): Response
     {
-        $query = Application::with(['tour', 'tourDeparture'])->latest();
+        $query = Application::with(['tour', 'tourDeparture', 'promocode'])->latest();
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -51,7 +51,7 @@ class ApplicationController extends Controller
 
     public function show(Application $application): Response
     {
-        $application->load(['tour', 'tourDeparture']);
+        $application->load(['tour', 'tourDeparture', 'promocode']);
 
         return Inertia::render('Admin/Applications/Show', [
             'application' => $application,
@@ -71,7 +71,7 @@ class ApplicationController extends Controller
 
     public function export(): StreamedResponse
     {
-        $applications = Application::with(['tour', 'tourDeparture'])->latest()->get();
+        $applications = Application::with(['tour', 'tourDeparture', 'promocode'])->latest()->get();
 
         $filename = 'applications_' . date('Y-m-d_His') . '.csv';
 

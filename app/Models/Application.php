@@ -15,6 +15,7 @@ class Application extends Model
         'data',
         'tour_id',
         'tour_departure_id',
+        'promocode_id',
         'status',
     ];
 
@@ -30,6 +31,11 @@ class Application extends Model
     public function tourDeparture(): BelongsTo
     {
         return $this->belongsTo(TourDeparture::class);
+    }
+
+    public function promocode(): BelongsTo
+    {
+        return $this->belongsTo(Promocode::class);
     }
 
     public const TYPES = [

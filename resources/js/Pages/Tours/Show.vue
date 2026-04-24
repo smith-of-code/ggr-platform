@@ -15,7 +15,12 @@
             </span>
             <span class="hidden text-gray-300 sm:inline">|</span>
             <span v-if="tour.price_from > 0" class="flex items-center gap-1.5 font-semibold text-gray-900">
-              от {{ formatPrice(tour.price_from) }} &#8381; за человека
+              <template v-if="appliedPromo.discount > 0">
+                <span class="text-gray-400 line-through">{{ formatPrice(tour.price_from) }}</span>
+                от {{ formatPrice(discountedPrice(tour.price_from)) }} &#8381; за человека
+                <RBadge variant="success" size="sm">-{{ appliedPromo.discount }}%</RBadge>
+              </template>
+              <template v-else>от {{ formatPrice(tour.price_from) }} &#8381; за человека</template>
             </span>
           </div>
         </div>
@@ -196,7 +201,10 @@
                   <span class="font-medium text-gray-900">{{ formatDate(dep.start_date) }} — {{ formatDate(dep.end_date) }}</span>
                 </div>
                 <div class="flex items-center gap-4">
-                  <span class="text-lg font-bold text-[#003274]">{{ formatPrice(dep.price_per_person) }} &#8381;</span>
+                  <div class="text-right">
+                    <span v-if="appliedPromo.discount > 0" class="block text-sm text-gray-400 line-through">{{ formatPrice(dep.price_per_person) }} &#8381;</span>
+                    <span class="text-lg font-bold text-[#003274]">{{ formatPrice(appliedPromo.discount > 0 ? discountedPrice(dep.price_per_person) : dep.price_per_person) }} &#8381;</span>
+                  </div>
                   <RButton variant="primary" @click="openApplicationModal(dep.id)">
                     Оставить заявку
                   </RButton>
@@ -395,7 +403,13 @@
                 <div>
                   <dt class="text-xs font-medium uppercase tracking-wider text-gray-400">Стоимость</dt>
                   <dd class="mt-0.5 font-medium text-gray-900">
-                    <template v-if="tour.price_from > 0">от {{ formatPrice(tour.price_from) }} &#8381; за человека</template>
+                    <template v-if="tour.price_from > 0">
+                      <template v-if="appliedPromo.discount > 0">
+                        <span class="text-gray-400 line-through">{{ formatPrice(tour.price_from) }}</span>
+                        от {{ formatPrice(discountedPrice(tour.price_from)) }} &#8381; за человека
+                      </template>
+                      <template v-else>от {{ formatPrice(tour.price_from) }} &#8381; за человека</template>
+                    </template>
                     <template v-else><span class="text-green-600">Бесплатно (конкурсный отбор)</span></template>
                   </dd>
                   <dd v-if="tour.cost_info" class="html-content mt-1.5 text-sm leading-relaxed text-gray-600" v-html="tour.cost_info" />
@@ -423,10 +437,60 @@
                   </div>
                   <div v-else class="cursor-pointer rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 transition hover:border-[#003274]/20 hover:bg-blue-50/50" @click="scrollToSection('dates')">
                     <p class="text-sm font-medium text-gray-900">{{ formatDateShort(item.start_date) }}–{{ formatDateShort(item.end_date) }}</p>
-                    <p v-if="item.price_per_person" class="text-xs text-gray-500">{{ formatPrice(item.price_per_person) }} &#8381; за человека</p>
+                    <p v-if="item.price_per_person" class="text-xs text-gray-500">
+                      <template v-if="appliedPromo.discount > 0">
+                        <span class="line-through">{{ formatPrice(item.price_per_person) }}</span>
+                        {{ formatPrice(discountedPrice(item.price_per_person)) }} &#8381; за человека
+                      </template>
+                      <template v-else>{{ formatPrice(item.price_per_person) }} &#8381; за человека</template>
+                    </p>
                   </div>
                 </template>
               </div>
+            </div>
+
+            <!-- Промокод -->
+            <div class="mt-6 border-t border-gray-100 pt-5">
+              <div v-if="appliedPromo.discount > 0" class="flex items-center justify-between rounded-xl bg-green-50 px-4 py-3">
+                <div>
+                  <p class="text-sm font-semibold text-green-800">Промокод {{ appliedPromo.code }}</p>
+                  <p class="text-xs text-green-600">Скидка {{ appliedPromo.discount }}% применена</p>
+                </div>
+                <button type="button" class="rounded-lg p-1.5 text-green-600 transition hover:bg-green-100 hover:text-green-800" @click="removePromocode">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <template v-else>
+                <button
+                  v-if="!showPromoInput"
+                  type="button"
+                  class="text-sm font-medium text-[#003274] transition hover:text-[#025ea1]"
+                  @click="showPromoInput = true"
+                >
+                  У меня есть промокод
+                </button>
+                <div v-else class="space-y-2">
+                  <div class="flex gap-2">
+                    <RInput
+                      v-model="promoCode"
+                      placeholder="Введите код"
+                      size="sm"
+                      class="flex-1"
+                      @keyup.enter="applyPromocode"
+                    />
+                    <RButton
+                      variant="primary"
+                      size="sm"
+                      :disabled="promoLoading || !promoCode.trim()"
+                      :loading="promoLoading"
+                      @click="applyPromocode"
+                    >
+                      Применить
+                    </RButton>
+                  </div>
+                  <p v-if="promoError" class="text-xs text-red-600">{{ promoError }}</p>
+                </div>
+              </template>
             </div>
 
             <RButton variant="primary" size="lg" block class="mt-6" @click="openApplicationModal()">
@@ -626,6 +690,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { router, useForm, usePage, Link } from '@inertiajs/vue3'
+import axios from 'axios'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
@@ -636,6 +701,49 @@ const lightboxImages = ref([])
 const activeTab = ref('description')
 const showReviewForm = ref(false)
 const expandedAccommodations = reactive({})
+
+const showPromoInput = ref(false)
+const promoCode = ref('')
+const promoLoading = ref(false)
+const promoError = ref('')
+const appliedPromo = reactive({ id: null, code: '', discount: 0 })
+
+async function applyPromocode() {
+  if (!promoCode.value.trim()) return
+  promoLoading.value = true
+  promoError.value = ''
+  try {
+    const { data } = await axios.post(route('promocodes.validate'), {
+      code: promoCode.value.trim(),
+      tour_id: props.tour.id,
+    })
+    if (data.valid) {
+      appliedPromo.id = data.promocode_id
+      appliedPromo.code = promoCode.value.trim().toUpperCase()
+      appliedPromo.discount = data.discount_percent
+      promoError.value = ''
+    } else {
+      promoError.value = data.message || 'Промокод недействителен.'
+    }
+  } catch {
+    promoError.value = 'Ошибка проверки промокода.'
+  } finally {
+    promoLoading.value = false
+  }
+}
+
+function removePromocode() {
+  appliedPromo.id = null
+  appliedPromo.code = ''
+  appliedPromo.discount = 0
+  promoCode.value = ''
+  promoError.value = ''
+}
+
+function discountedPrice(price) {
+  if (!price || !appliedPromo.discount) return price
+  return Math.round(price * (1 - appliedPromo.discount / 100))
+}
 
 const allTabs = [
   { id: 'description', label: 'Описание' },
@@ -821,6 +929,7 @@ const appForm = useForm({
   type: 'tour',
   tour_id: null,
   tour_departure_id: null,
+  promocode_id: null,
   name: '',
   email: '',
   phone: '',
@@ -861,6 +970,7 @@ function closeApplicationModal() {
 function submitApplication() {
   appForm.tour_id = props.tour.id
   appForm.type = 'tour'
+  appForm.promocode_id = appliedPromo.id || null
   appForm
     .transform((data) => {
       let message = data.message || ''

@@ -89,7 +89,10 @@
                 {{ typeLabel(app.type) }}
               </span>
             </td>
-            <td class="px-5 py-3.5 text-sm text-gray-500">{{ app.tour?.title ?? '—' }}</td>
+            <td class="px-5 py-3.5 text-sm text-gray-500">
+              <span>{{ app.tour?.title ?? '—' }}</span>
+              <RBadge v-if="app.promocode" variant="success" size="sm" class="ml-1.5">-{{ app.promocode.discount_percent }}%</RBadge>
+            </td>
             <td class="px-5 py-3.5" @click.stop>
               <select
                 :value="app.status"
@@ -201,6 +204,20 @@
                   <p v-if="selectedApp.tour_departure" class="mt-0.5 text-xs text-gray-500">
                     Заезд: {{ formatDate(selectedApp.tour_departure.start_date) }}
                   </p>
+                </div>
+              </div>
+
+              <!-- Promocode -->
+              <div v-if="selectedApp.promocode" class="flex items-center gap-3 rounded-xl bg-green-50 p-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100">
+                  <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-green-800">Промокод: {{ selectedApp.promocode.code }}</p>
+                  <p class="text-xs text-green-600">Скидка {{ selectedApp.promocode.discount_percent }}% — {{ selectedApp.promocode.name }}</p>
                 </div>
               </div>
 
@@ -369,6 +386,9 @@ function dataKeyLabel(key) {
     topic: 'Тема',
     question: 'Вопрос',
     message: 'Сообщение',
+    tour_title: 'Название тура',
+    promocode: 'Промокод',
+    discount_percent: 'Скидка (%)',
   }[key] || key
 }
 

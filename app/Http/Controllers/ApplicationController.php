@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Application;
 use App\Models\Consent;
+use App\Models\Promocode;
 use App\Models\Tour;
 use App\Models\TourDeparture;
 use App\Services\ConsentService;
@@ -35,6 +36,7 @@ class ApplicationController extends Controller
             'message' => 'nullable|string|max:2000',
             'tour_id' => 'nullable|exists:tours,id',
             'tour_departure_id' => 'nullable|exists:tour_departures,id',
+            'promocode_id' => 'nullable|integer',
             'consent' => ['accepted'],
         ], [
             'email.email' => 'Введите корректный email-адрес.',
@@ -65,6 +67,17 @@ class ApplicationController extends Controller
             }
         }
 
+        $promocodeId = null;
+        if (! empty($validated['promocode_id'])) {
+            $promo = Promocode::find($validated['promocode_id']);
+            $tourId = (int) ($validated['tour_id'] ?? 0);
+            if ($promo && $promo->isValidForTour($tourId)) {
+                $promocodeId = $promo->id;
+                $data['promocode'] = $promo->code;
+                $data['discount_percent'] = $promo->discount_percent;
+            }
+        }
+
         $application = Application::create([
             'type' => $validated['type'],
             'name' => $validated['name'],
@@ -73,6 +86,7 @@ class ApplicationController extends Controller
             'data' => $data,
             'tour_id' => $validated['tour_id'] ?? null,
             'tour_departure_id' => $validated['tour_departure_id'] ?? null,
+            'promocode_id' => $promocodeId,
             'status' => 'new',
         ]);
 

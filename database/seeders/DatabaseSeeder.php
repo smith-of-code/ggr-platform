@@ -24,6 +24,16 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        User::updateOrCreate(
+            ['email' => 'tour-cabinet@rosatom-travel.ru'],
+            [
+                'name' => 'Менеджер кабинета туров',
+                'password' => bcrypt('T7qK8oQEksH5yq'),
+                'email_verified_at' => now(),
+                'is_tour_cabinet_user' => true,
+            ]
+        );
+
         $cities = [
             [
                 'name' => 'Сосновый Бор',
