@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Concerns\GeneratesUniqueSlug;
 use App\Http\Controllers\Controller;
 use App\Models\City;
+use App\Models\Direction;
 use App\Models\Tour;
 use App\Models\TourDeparture;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +18,7 @@ class TourController extends Controller
     use GeneratesUniqueSlug;
     public function index(): Response
     {
-        $tours = Tour::with('cities')->orderBy('position')->orderBy('title')->paginate(15);
+        $tours = Tour::with(['cities', 'direction:id,title'])->orderBy('position')->orderBy('title')->paginate(15);
 
         return Inertia::render('Admin/Tours/Index', [
             'tours' => $tours,
@@ -28,6 +29,7 @@ class TourController extends Controller
     {
         return Inertia::render('Admin/Tours/Form', [
             'cities' => City::orderBy('name')->get(),
+            'directions' => Direction::allProjectMap(),
         ]);
     }
 
@@ -60,6 +62,7 @@ class TourController extends Controller
         return Inertia::render('Admin/Tours/Form', [
             'tour' => $tour,
             'cities' => City::orderBy('name')->get(),
+            'directions' => Direction::allProjectMap(),
         ]);
     }
 
@@ -105,7 +108,7 @@ class TourController extends Controller
             'description' => 'nullable|string',
             'start_city' => 'nullable|string|max:255',
             'duration' => 'nullable|string|max:100',
-            'project' => 'nullable|string|in:start_atomgrad,atoms_vkusa,llr',
+            'direction_id' => 'nullable|integer|exists:directions,id',
             'participation_type' => 'nullable|string|in:contest,paid,bchp',
             'season' => 'nullable|string|in:winter,spring,summer,autumn,all_season',
             'group_size' => 'nullable|string|max:100',

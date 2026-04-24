@@ -23,7 +23,7 @@
 
           <form @submit.prevent="applyFilters">
             <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <FilterDropdown v-model="filters.project" label="Проект" :options="projectOptions" />
+              <FilterDropdown v-model="filters.direction" label="Проект" :options="directionOptions" />
               <FilterDropdown v-model="filters.season" label="Сезон" :options="seasonOptions" />
               <FilterDropdown v-model="filters.participation_type" label="Участие" :options="participationOptions" />
               <FilterDropdown v-model="filters.city" label="Город" :options="cityOptions" />
@@ -60,11 +60,11 @@
             <!-- Active filter chips -->
             <div v-if="hasActiveFilters" class="mt-5 flex flex-wrap gap-2">
               <span
-                v-if="filters.project"
+                v-if="filters.direction"
                 class="inline-flex items-center gap-1.5 rounded-full bg-[#003274]/5 px-3 py-1.5 text-xs font-medium text-[#003274]"
               >
-                {{ projectLabel(filters.project) }}
-                <button @click="filters.project = ''; applyFilters()" class="ml-0.5 rounded-full p-0.5 transition hover:bg-[#003274]/10">
+                {{ directionLabel(filters.direction) }}
+                <button @click="filters.direction = ''; applyFilters()" class="ml-0.5 rounded-full p-0.5 transition hover:bg-[#003274]/10">
                   <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                 </button>
               </span>
@@ -135,7 +135,7 @@
           </template>
           <div>
             <div class="flex items-center gap-2">
-              <RBadge variant="primary" size="sm">{{ projectLabel(tour.project) }}</RBadge>
+              <RBadge v-if="tour.direction" variant="primary" size="sm">{{ tour.direction.title }}</RBadge>
               <span class="flex items-center gap-1 text-xs text-gray-400">
                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
@@ -224,15 +224,14 @@ useScrollReveal()
 const props = defineProps({
   tours: Object,
   cities: Array,
+  directions: { type: Array, default: () => [] },
   filters: Object,
 })
 
-const projectOptions = [
+const directionOptions = computed(() => [
   { value: '', label: 'Все проекты' },
-  { value: 'start_atomgrad', label: 'Старт в Атомград' },
-  { value: 'atoms_vkusa', label: 'Атомы вкуса' },
-  { value: 'llr', label: 'Лучшие люди Росатома' },
-]
+  ...props.directions.map(d => ({ value: d.key, label: d.label })),
+])
 
 const iconSnowflake = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-sky-500"><path d="M10 2a.75.75 0 0 1 .75.75v2.69l1.72-1.72a.75.75 0 1 1 1.06 1.06L11.81 6.5H14.5a.75.75 0 0 1 0 1.5h-3.75v1.75h3.75a.75.75 0 0 1 0 1.5H11.81l1.72 1.72a.75.75 0 1 1-1.06 1.06l-1.72-1.72v2.69a.75.75 0 0 1-1.5 0v-2.69l-1.72 1.72a.75.75 0 0 1-1.06-1.06L8.19 11.25H5.5a.75.75 0 0 1 0-1.5h3.75V8H5.5a.75.75 0 0 1 0-1.5h2.69L6.47 4.78a.75.75 0 0 1 1.06-1.06l1.72 1.72V2.75A.75.75 0 0 1 10 2Z"/></svg>'
 const iconLeaf = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 text-emerald-500"><path fill-rule="evenodd" d="M13.5 3A3.5 3.5 0 0 0 10 6.5V8h6.5A3.5 3.5 0 0 0 20 4.5V3h-6.5ZM10 9.5v2A3.5 3.5 0 0 1 6.5 15H0v1.5A3.5 3.5 0 0 0 3.5 20H10v-2a3.5 3.5 0 0 1 3.5-3.5H20V13h-6.5A3.5 3.5 0 0 1 10 9.5Z" clip-rule="evenodd"/></svg>'
@@ -272,7 +271,7 @@ const filters = reactive({
 })
 
 const hasActiveFilters = computed(() => {
-  return filters.project || filters.season || filters.participation_type || filters.city
+  return filters.direction || filters.season || filters.participation_type || filters.city
 })
 
 function applyFilters() {
@@ -281,7 +280,7 @@ function applyFilters() {
 
 function resetFilters() {
   Object.assign(filters, {
-    project: '',
+    direction: '',
     season: '',
     participation_type: '',
     city: '',
@@ -291,9 +290,9 @@ function resetFilters() {
   router.get(route('tours.index'))
 }
 
-function projectLabel(key) {
-  const labels = { start_atomgrad: 'Старт в Атомград', atoms_vkusa: 'Атомы вкуса', llr: 'Лучшие люди Росатома' }
-  return labels[key] || key
+function directionLabel(id) {
+  const d = props.directions?.find(d => String(d.key) === String(id))
+  return d ? d.label : id
 }
 
 function seasonLabel(key) {

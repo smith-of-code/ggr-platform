@@ -4,7 +4,7 @@
     <div class="mx-auto max-w-6xl">
       <div class="mb-4">
         <Link
-          :href="`${route('admin.tour-cabinet.index', { project_key: projectKey })}#tour-cabinet-admin-cities`"
+          :href="`${route('admin.tour-cabinet.index', { direction_id: directionId })}#tour-cabinet-admin-cities`"
           class="text-sm font-medium text-[#003274] hover:text-[#025ea1]"
         >
           ← ЛК туров
@@ -25,7 +25,7 @@
 
       <TourCabinetAdminDirectionCitiesPanel
         :directions="directions"
-        :project-key="projectKey"
+        :direction-id="directionId"
         :rows="rows"
         :city-options="cityOptions"
       />
@@ -42,7 +42,7 @@ const page = usePage()
 
 defineProps({
   directions: { type: Array, default: () => [] },
-  projectKey: { type: String, required: true },
+  directionId: { type: [Number, String], default: null },
   rows: { type: Array, default: () => [] },
   cityOptions: { type: Array, default: () => [] },
 })

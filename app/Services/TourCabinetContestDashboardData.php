@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\City;
-use App\Models\Tour;
+use App\Models\Direction;
 use App\Models\TourCabinetContestCitySubmission;
 use App\Models\TourCabinetContestDirectionSetting;
 use App\Models\TourCabinetContestProgress;
@@ -33,15 +33,12 @@ final class TourCabinetContestDashboardData
             ['current_stage' => 1]
         );
 
-        $directions = collect(Tour::PROJECTS)->map(fn (string $label, string $key) => [
-            'key' => $key,
-            'label' => $label,
-        ])->values()->all();
+        $directions = Direction::projectList();
 
         $cities = [];
-        if ($progress->project_key) {
+        if ($progress->direction_id) {
             $cities = TourCabinetDirectionCity::query()
-                ->where('project_key', $progress->project_key)
+                ->where('direction_id', $progress->direction_id)
                 ->with('city:id,name,slug')
                 ->orderBy('position')
                 ->orderBy('id')
@@ -57,7 +54,7 @@ final class TourCabinetContestDashboardData
 
         $selectedIds = array_values(array_map('intval', $progress->selected_city_ids ?? []));
         $selectedCitiesPayload = [];
-        if ($progress->project_key && $selectedIds !== []) {
+        if ($progress->direction_id && $selectedIds !== []) {
             $subs = TourCabinetContestCitySubmission::query()
                 ->where('user_id', $user->id)
                 ->whereIn('city_id', $selectedIds)
@@ -66,7 +63,7 @@ final class TourCabinetContestDashboardData
 
             foreach ($selectedIds as $cid) {
                 $row = TourCabinetDirectionCity::query()
-                    ->where('project_key', $progress->project_key)
+                    ->where('direction_id', $progress->direction_id)
                     ->where('city_id', $cid)
                     ->first();
                 $city = City::query()->find($cid);
@@ -92,7 +89,7 @@ final class TourCabinetContestDashboardData
         $stage1Complete = $this->stage1Complete($progress, $user->id);
 
         $step = 'direction';
-        if ($progress->project_key) {
+        if ($progress->direction_id) {
             $step = $selectedIds !== [] ? 'forms' : 'cities';
             if ($step === 'forms' && ! $stage1Complete && Session::get('tour_cabinet_contest_reopen_cities')) {
                 $step = 'cities';
@@ -101,9 +98,9 @@ final class TourCabinetContestDashboardData
 
         $contestLocationOffers = $this->contestLocationOffers($progress, $user);
         $stageDeadlines = $this->settings->getTourCabinetContestStageDeadlines();
-        $stage3Config = TourCabinetContestStage3Config::forProjectKey($progress->project_key);
+        $stage3Config = TourCabinetContestStage3Config::forDirection($progress->direction_id);
         $stage3Filled = $this->isStage3ResponseComplete($progress, $stage3Config);
-        $maxContestStages = TourCabinetContestDirectionSetting::maxContestStagesForProjectKey($progress->project_key);
+        $maxContestStages = TourCabinetContestDirectionSetting::maxContestStagesForDirection($progress->direction_id);
         $contestStageSummary = $this->contestStageSummary(
             $progress,
             $stage1Complete,
@@ -112,7 +109,7 @@ final class TourCabinetContestDashboardData
             $maxContestStages
         );
 
-        $questions = $this->activeStage2QuestionsQuery($progress->project_key)
+        $questions = $this->activeStage2QuestionsQuery($progress->direction_id)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -139,7 +136,7 @@ final class TourCabinetContestDashboardData
             'contestStage1' => [
                 'step' => $step,
                 'progress' => [
-                    'project_key' => $progress->project_key,
+                    'direction_id' => $progress->direction_id,
                     'selected_city_ids' => $selectedIds,
                     'current_stage' => (int) $progress->current_stage,
                 ],
@@ -162,7 +159,7 @@ final class TourCabinetContestDashboardData
     /**
      * @return list<array{
      *     id: int,
-     *     project_key: string,
+     *     direction_id: int,
      *     city_id: int,
      *     city_name: string,
      *     date_range: ?string,
@@ -176,9 +173,14 @@ final class TourCabinetContestDashboardData
         $selected = array_map('intval', $progress->selected_city_ids ?? []);
         $rows = [];
 
-        foreach (array_keys(Tour::PROJECTS) as $projectKey) {
+        $directionIds = Direction::query()
+            ->where('is_active', true)
+            ->orderBy('position')
+            ->pluck('id');
+
+        foreach ($directionIds as $dirId) {
             $dcRows = TourCabinetDirectionCity::query()
-                ->where('project_key', $projectKey)
+                ->where('direction_id', $dirId)
                 ->with('city:id,name')
                 ->orderBy('position')
                 ->orderBy('id')
@@ -189,7 +191,7 @@ final class TourCabinetContestDashboardData
                     continue;
                 }
                 $cityId = (int) $dc->city_id;
-                $inSelection = $progress->project_key === $projectKey && in_array($cityId, $selected, true);
+                $inSelection = $progress->direction_id === $dirId && in_array($cityId, $selected, true);
                 $submitted = $inSelection && TourCabinetContestCitySubmission::query()
                     ->where('user_id', $user->id)
                     ->where('city_id', $cityId)
@@ -207,10 +209,10 @@ final class TourCabinetContestDashboardData
 
                 $rows[] = [
                     'id' => $dc->id,
-                    'project_key' => $projectKey,
+                    'direction_id' => $dirId,
                     'city_id' => $cityId,
                     'city_name' => $dc->city->name,
-                    'date_range' => $this->dateRangeForContestCity($projectKey, $cityId),
+                    'date_range' => $this->dateRangeForContestCity($dirId, $cityId),
                     'footnote' => $footnote,
                     'button_kind' => $buttonKind,
                     'city_form_url' => $cityFormUrl,
@@ -221,11 +223,11 @@ final class TourCabinetContestDashboardData
         return $rows;
     }
 
-    private function dateRangeForContestCity(string $projectKey, int $cityId): ?string
+    private function dateRangeForContestCity(int $directionId, int $cityId): ?string
     {
         $dep = TourDeparture::query()
-            ->whereHas('tour', function (Builder $q) use ($projectKey, $cityId): void {
-                $q->where('project', $projectKey)
+            ->whereHas('tour', function (Builder $q) use ($directionId, $cityId): void {
+                $q->where('direction_id', $directionId)
                     ->where('is_active', true)
                     ->whereHas('cities', fn (Builder $cq) => $cq->where('cities.id', $cityId));
             })
@@ -339,7 +341,7 @@ final class TourCabinetContestDashboardData
             'Этап I',
             'Анкета персональных данных',
             $stage1Complete,
-            $progress->project_key !== null && ! $stage1Complete,
+            $progress->direction_id !== null && ! $stage1Complete,
             $stageDeadlines[1] ?? ['start' => null, 'end' => null],
         );
 
@@ -452,7 +454,7 @@ final class TourCabinetContestDashboardData
     private function stage1Complete(TourCabinetContestProgress $progress, int $userId): bool
     {
         $ids = array_values(array_map('intval', $progress->selected_city_ids ?? []));
-        if ($ids === [] || ! $progress->project_key) {
+        if ($ids === [] || ! $progress->direction_id) {
             return false;
         }
         foreach ($ids as $cityId) {
@@ -470,14 +472,14 @@ final class TourCabinetContestDashboardData
     /**
      * @return Builder<TourCabinetContestStage2Question>
      */
-    private function activeStage2QuestionsQuery(?string $projectKey): Builder
+    private function activeStage2QuestionsQuery(?int $directionId): Builder
     {
         return TourCabinetContestStage2Question::query()
             ->where('is_active', true)
-            ->where(function ($q) use ($projectKey): void {
-                $q->whereNull('project_key');
-                if ($projectKey) {
-                    $q->orWhere('project_key', $projectKey);
+            ->where(function ($q) use ($directionId): void {
+                $q->whereNull('direction_id');
+                if ($directionId) {
+                    $q->orWhere('direction_id', $directionId);
                 }
             });
     }

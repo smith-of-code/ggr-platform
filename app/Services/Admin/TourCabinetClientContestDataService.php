@@ -4,7 +4,7 @@ namespace App\Services\Admin;
 
 use App\Models\Application;
 use App\Models\City;
-use App\Models\Tour;
+use App\Models\Direction;
 use App\Models\TourCabinetContestCitySubmission;
 use App\Models\TourCabinetContestProgress;
 use App\Models\TourCabinetContestStage2Answer;
@@ -76,8 +76,8 @@ final class TourCabinetClientContestDataService
         $progress = $user->tourCabinetContestProgress;
         $parts = [];
 
-        if ($progress?->project_key) {
-            $parts[] = Tour::PROJECTS[$progress->project_key] ?? $progress->project_key;
+        if ($progress?->direction_id) {
+            $parts[] = Direction::allProjectMap()[$progress->direction_id] ?? '—';
         }
 
         if ($progress) {
@@ -126,10 +126,11 @@ final class TourCabinetClientContestDataService
                     ? City::query()->whereIn('id', $selected)->orderBy('name')->get(['id', 'name'])
                     : collect();
 
+                $directionMap = Direction::allProjectMap();
                 $payload['progress'] = [
-                    'project_key' => $progress->project_key,
-                    'direction_label' => $progress->project_key
-                        ? (Tour::PROJECTS[$progress->project_key] ?? $progress->project_key)
+                    'direction_id' => $progress->direction_id,
+                    'direction_label' => $progress->direction_id
+                        ? ($directionMap[$progress->direction_id] ?? null)
                         : null,
                     'current_stage' => (int) $progress->current_stage,
                     'selected_cities' => $cityRows->map(fn (City $c) => ['id' => $c->id, 'name' => $c->name])->values()->all(),
@@ -138,7 +139,7 @@ final class TourCabinetClientContestDataService
                 ];
 
                 $stage3Config = Schema::hasTable('tour_cabinet_contest_stage3_configs')
-                    ? TourCabinetContestStage3Config::forProjectKey($progress->project_key)
+                    ? TourCabinetContestStage3Config::forDirection($progress->direction_id)
                     : null;
 
                 $payload['stage3'] = [
@@ -188,8 +189,8 @@ final class TourCabinetClientContestDataService
         }
 
         if (Schema::hasTable('tour_cabinet_contest_stage2_answers') && Schema::hasTable('tour_cabinet_contest_stage2_questions')) {
-            $projectKey = $user->tourCabinetContestProgress?->project_key;
-            $questions = $this->activeStage2QuestionsQuery($projectKey)->orderBy('sort_order')->orderBy('id')->get();
+            $directionId = $user->tourCabinetContestProgress?->direction_id;
+            $questions = $this->activeStage2QuestionsQuery($directionId)->orderBy('sort_order')->orderBy('id')->get();
             if ($questions->isNotEmpty()) {
                 $answersByQ = TourCabinetContestStage2Answer::query()
                     ->where('user_id', $user->id)
@@ -239,9 +240,10 @@ final class TourCabinetClientContestDataService
         ];
 
         $progress = $user->tourCabinetContestProgress;
-        $row['direction_key'] = $progress?->project_key ?? '';
-        $row['direction_label'] = $progress && $progress->project_key
-            ? (Tour::PROJECTS[$progress->project_key] ?? $progress->project_key)
+        $dirMap = Direction::allProjectMap();
+        $row['direction_id'] = $progress?->direction_id ?? '';
+        $row['direction_label'] = $progress && $progress->direction_id
+            ? ($dirMap[$progress->direction_id] ?? '')
             : '';
         $row['contest_current_stage'] = $progress ? (int) $progress->current_stage : '';
         $row['contest_stage2_submitted_at'] = $progress?->stage2_submitted_at?->format('Y-m-d H:i:s') ?? '';
@@ -277,8 +279,8 @@ final class TourCabinetClientContestDataService
             }
         }
 
-        $projectKey = $progress?->project_key;
-        $questions = $this->activeStage2QuestionsQuery($projectKey)->orderBy('sort_order')->orderBy('id')->get();
+        $dirId = $progress?->direction_id;
+        $questions = $this->activeStage2QuestionsQuery($dirId)->orderBy('sort_order')->orderBy('id')->get();
         $answersByQ = TourCabinetContestStage2Answer::query()
             ->where('user_id', $user->id)
             ->whereIn('question_id', $questions->pluck('id'))
@@ -320,14 +322,14 @@ final class TourCabinetClientContestDataService
     /**
      * @return Builder<TourCabinetContestStage2Question>
      */
-    private function activeStage2QuestionsQuery(?string $projectKey): Builder
+    private function activeStage2QuestionsQuery(?int $directionId): Builder
     {
         return TourCabinetContestStage2Question::query()
             ->where('is_active', true)
-            ->where(function ($q) use ($projectKey): void {
-                $q->whereNull('project_key');
-                if ($projectKey) {
-                    $q->orWhere('project_key', $projectKey);
+            ->where(function ($q) use ($directionId): void {
+                $q->whereNull('direction_id');
+                if ($directionId) {
+                    $q->orWhere('direction_id', $directionId);
                 }
             });
     }

@@ -173,7 +173,7 @@ watch(
 )
 
 function submitDirection(key) {
-  router.post(route('tour-cabinet.contest.direction'), { project_key: key }, { preserveScroll: true })
+  router.post(route('tour-cabinet.contest.direction'), { direction_id: key }, { preserveScroll: true })
 }
 
 function submitCities() {

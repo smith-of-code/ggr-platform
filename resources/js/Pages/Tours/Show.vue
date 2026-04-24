@@ -415,13 +415,13 @@
                   <dd v-if="tour.cost_info" class="html-content mt-1.5 text-sm leading-relaxed text-gray-600" v-html="tour.cost_info" />
                 </div>
               </div>
-              <div v-if="tour.project" class="flex items-start gap-3">
+              <div v-if="tour.direction" class="flex items-start gap-3">
                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
                   <svg class="h-4 w-4 text-[#003274]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
                 </div>
                 <div>
                   <dt class="text-xs font-medium uppercase tracking-wider text-gray-400">Проект</dt>
-                  <dd class="mt-0.5 font-medium text-gray-900">{{ projectLabel(tour.project) }}</dd>
+                  <dd class="mt-0.5 font-medium text-gray-900">{{ tour.direction.title }}</dd>
                 </div>
               </div>
             </dl>
@@ -1023,9 +1023,7 @@ function budgetVariant(key) {
   return { economy: 'neutral', standard: 'info', comfort: 'primary', luxury: 'warning' }[key] || 'neutral'
 }
 
-function projectLabel(key) {
-  return { start_atomgrad: 'Старт в Атомград', atoms_vkusa: 'Атомы вкуса', llr: 'Лучшие люди Росатома' }[key] || key
-}
+
 
 function seasonLabel(key) {
   return { winter: 'Зима', spring: 'Весна', summer: 'Лето', autumn: 'Осень', all_season: 'Всесезонный' }[key] || key

@@ -16,7 +16,6 @@
         <thead>
           <tr class="border-b border-gray-100 bg-gray-50/50">
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Направление</th>
-            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Проект</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Позиция</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Статус</th>
             <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">Действия</th>
@@ -34,10 +33,6 @@
                   <p class="text-xs text-gray-400">/directions/{{ d.slug }}</p>
                 </div>
               </div>
-            </td>
-            <td class="px-5 py-3.5">
-              <RBadge v-if="d.project_key" variant="primary" size="sm">{{ projectLabel(d.project_key) }}</RBadge>
-              <span v-else class="text-sm text-gray-400">—</span>
             </td>
             <td class="px-5 py-3.5 text-sm text-gray-500">{{ d.position }}</td>
             <td class="px-5 py-3.5 text-center">
@@ -75,10 +70,6 @@ import { Link, router } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 
 defineProps({ directions: Object })
-
-function projectLabel(k) {
-  return { start_atomgrad: 'Старт в Атомград', atoms_vkusa: 'Атомы вкуса', llr: 'Лучшие люди Росатома' }[k] || k || '—'
-}
 
 function toggleActive(d) {
   router.patch(route('admin.directions.toggleActive', d.id), {}, { preserveState: true })

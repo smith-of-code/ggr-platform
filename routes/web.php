@@ -243,8 +243,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
 
     Route::get('/tour-cabinet/stage2-answers', [AdminTourCabinetStage2AnswersController::class, 'index'])->name('tour-cabinet.stage2-answers.index');
 
-    Route::put('/tour-cabinet/stage3-config/{project_key}', [AdminTourCabinetStage3ConfigsController::class, 'update'])
-        ->where('project_key', '[a-z_]+')
+    Route::put('/tour-cabinet/stage3-config/{direction}', [AdminTourCabinetStage3ConfigsController::class, 'update'])
         ->name('tour-cabinet.stage3-config.update');
     Route::get('/tour-cabinet/stage3-answers', [AdminTourCabinetStage3AnswersController::class, 'index'])->name('tour-cabinet.stage3-answers.index');
     Route::get('/tour-cabinet/stage3-answers/{id}/attachment', [AdminTourCabinetStage3AnswersController::class, 'downloadAttachment'])

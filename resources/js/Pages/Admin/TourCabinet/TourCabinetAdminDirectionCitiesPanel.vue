@@ -4,10 +4,10 @@
       <Link
         v-for="d in directions"
         :key="d.key"
-        :href="`${route('admin.tour-cabinet.index', { project_key: d.key })}#tour-cabinet-admin-cities`"
+        :href="`${route('admin.tour-cabinet.index', { direction_id: d.key })}#tour-cabinet-admin-cities`"
         class="inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium transition"
         :class="
-          d.key === projectKey
+          d.key === directionId
             ? 'bg-[#003274] text-white'
             : 'border border-gray-200 bg-white text-gray-700 hover:border-[#003274]/40 hover:bg-gray-50'
         "
@@ -19,7 +19,7 @@
     <RCard class="mb-8" elevation="raised">
       <h2 class="text-lg font-semibold text-gray-900">Добавить город</h2>
       <form class="mt-4 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end" @submit.prevent="submitAdd">
-        <input v-model="addForm.project_key" type="hidden" />
+        <input v-model="addForm.direction_id" type="hidden" />
         <div class="min-w-[12rem] flex-1">
           <label class="mb-1 block text-xs font-medium text-gray-600">Город</label>
           <select
@@ -102,21 +102,21 @@ import { Link, router, useForm } from '@inertiajs/vue3'
 
 const props = defineProps({
   directions: { type: Array, default: () => [] },
-  projectKey: { type: String, required: true },
+  directionId: { type: [Number, String], default: null },
   rows: { type: Array, default: () => [] },
   cityOptions: { type: Array, default: () => [] },
 })
 
 const addForm = useForm({
-  project_key: props.projectKey,
+  direction_id: props.directionId,
   city_id: '',
   needs_more_data: false,
 })
 
 watch(
-  () => props.projectKey,
-  (pk) => {
-    addForm.project_key = pk
+  () => props.directionId,
+  (id) => {
+    addForm.direction_id = id
     addForm.city_id = ''
     addForm.needs_more_data = false
   },

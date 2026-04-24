@@ -278,7 +278,7 @@
                 </template>
                 <div>
                   <div class="flex items-center gap-2">
-                    <RBadge variant="primary" size="sm">{{ projectLabel(tour.project) }}</RBadge>
+                    <RBadge v-if="tour.direction" variant="primary" size="sm">{{ tour.direction.title }}</RBadge>
                     <span class="flex items-center gap-1 text-xs text-gray-400">
                       <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
@@ -538,10 +538,7 @@ function socialIconSvg(key) {
   return socialIcon(key, 'h-6 w-6')
 }
 
-function projectLabel(key) {
-  const labels = { start_atomgrad: 'Старт в Атомград', atoms_vkusa: 'Атомы вкуса', llr: 'Лучшие люди Росатома' }
-  return labels[key] || key || ''
-}
+
 
 function formatPrice(value) {
   if (!value) return '—'

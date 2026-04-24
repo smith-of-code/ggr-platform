@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tour;
+use App\Models\Direction;
 use App\Models\TourCabinetContestDirectionSetting;
 use App\Models\TourCabinetContestStage3Config;
 use Illuminate\Http\RedirectResponse;
@@ -13,12 +13,8 @@ use Illuminate\Validation\Rule;
 
 class TourCabinetStage3ConfigsController extends Controller
 {
-    public function update(Request $request, string $projectKey): RedirectResponse
+    public function update(Request $request, Direction $direction): RedirectResponse
     {
-        if (! array_key_exists($projectKey, Tour::PROJECTS)) {
-            abort(404);
-        }
-
         $maxStages = (int) $request->input('max_contest_stages', 3);
         $maxStages = min(3, max(1, $maxStages));
 
@@ -46,9 +42,9 @@ class TourCabinetStage3ConfigsController extends Controller
             : (string) ($validated['title'] ?? '');
         $responseFormat = $validated['response_format'] ?? TourCabinetContestStage3Config::FORMAT_VIDEO_LINK;
 
-        DB::transaction(function () use ($projectKey, $validated, $title, $responseFormat): void {
+        DB::transaction(function () use ($direction, $validated, $title, $responseFormat): void {
             TourCabinetContestStage3Config::query()->updateOrCreate(
-                ['project_key' => $projectKey],
+                ['direction_id' => $direction->id],
                 [
                     'title' => $title,
                     'task_body' => $validated['task_body'],
@@ -56,7 +52,7 @@ class TourCabinetStage3ConfigsController extends Controller
                 ]
             );
             TourCabinetContestDirectionSetting::query()->updateOrCreate(
-                ['project_key' => $projectKey],
+                ['direction_id' => $direction->id],
                 ['max_contest_stages' => (int) $validated['max_contest_stages']]
             );
         });

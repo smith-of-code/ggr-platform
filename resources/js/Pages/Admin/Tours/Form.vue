@@ -32,12 +32,10 @@
                   <input v-model.number="form.price_from" type="number" min="0" class="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10" />
                 </div>
                 <div>
-                  <label class="mb-2 block text-sm font-semibold text-gray-700">Проект</label>
-                  <select v-model="form.project" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
+                  <label class="mb-2 block text-sm font-semibold text-gray-700">Направление</label>
+                  <select v-model="form.direction_id" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
                     <option value="">—</option>
-                    <option value="start_atomgrad">Старт в Атомград</option>
-                    <option value="atoms_vkusa">Атомы вкуса</option>
-                    <option value="llr">Лучшие люди Росатома</option>
+                    <option v-for="(label, id) in directions" :key="id" :value="id">{{ label }}</option>
                   </select>
                 </div>
                 <div>
@@ -461,7 +459,7 @@ import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 import ContentPreview from '@/Components/ContentPreview.vue'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
 
-const props = defineProps({ tour: Object, cities: Array })
+const props = defineProps({ tour: Object, cities: Array, directions: { type: Object, default: () => ({}) } })
 const showPreview = ref(false)
 const mediaEntityType = 'App\\Models\\Tour'
 const mediaEntityId = props.tour?.id || null
@@ -609,7 +607,7 @@ const form = useForm({
   duration: props.tour?.duration ?? '',
   group_size: props.tour?.group_size ?? '',
   min_age: props.tour?.min_age ?? null,
-  project: props.tour?.project ?? '',
+  direction_id: props.tour?.direction_id ?? '',
   participation_type: props.tour?.participation_type ?? '',
   season: props.tour?.season ?? '',
   price_from: props.tour?.price_from ?? null,

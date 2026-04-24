@@ -10,7 +10,7 @@ class TourCabinetDirectionCity extends Model
     protected $table = 'tour_cabinet_direction_cities';
 
     protected $fillable = [
-        'project_key',
+        'direction_id',
         'city_id',
         'needs_more_data',
         'position',
@@ -21,6 +21,11 @@ class TourCabinetDirectionCity extends Model
         return [
             'needs_more_data' => 'boolean',
         ];
+    }
+
+    public function direction(): BelongsTo
+    {
+        return $this->belongsTo(Direction::class);
     }
 
     public function city(): BelongsTo

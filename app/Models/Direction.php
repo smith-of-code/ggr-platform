@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Direction extends Model
 {
@@ -17,7 +18,6 @@ class Direction extends Model
         'hero_text_color',
         'hero_bg_image',
         'hero_bg_color_enabled',
-        'project_key',
         'sub_directions_title',
         'sub_directions_description',
         'sub_directions',
@@ -43,6 +43,11 @@ class Direction extends Model
         'hero_bg_color_enabled' => 'boolean',
     ];
 
+    public function tours(): HasMany
+    {
+        return $this->hasMany(Tour::class);
+    }
+
     public function featuredTours()
     {
         $ids = $this->featured_tour_ids ?? [];
@@ -52,5 +57,51 @@ class Direction extends Model
         }
 
         return Tour::whereIn('id', $ids)->where('is_active', true)->orderBy('position');
+    }
+
+    /**
+     * [id => title] только активных направлений (для фильтров каталога, ЛК).
+     *
+     * @return array<int, string>
+     */
+    public static function activeProjectMap(): array
+    {
+        return static::query()
+            ->where('is_active', true)
+            ->orderBy('position')
+            ->orderBy('title')
+            ->pluck('title', 'id')
+            ->all();
+    }
+
+    /**
+     * [id => title] всех направлений (для валидации, админки).
+     *
+     * @return array<int, string>
+     */
+    public static function allProjectMap(): array
+    {
+        return static::query()
+            ->orderBy('position')
+            ->orderBy('title')
+            ->pluck('title', 'id')
+            ->all();
+    }
+
+    /**
+     * [{key: id, label: title}] активных направлений — для Inertia props.
+     *
+     * @return list<array{key: int, label: string}>
+     */
+    public static function projectList(): array
+    {
+        return static::query()
+            ->where('is_active', true)
+            ->orderBy('position')
+            ->orderBy('title')
+            ->get(['id', 'title'])
+            ->map(fn (self $d) => ['key' => $d->id, 'label' => $d->title])
+            ->values()
+            ->all();
     }
 }

@@ -28,7 +28,7 @@
         <dl class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
           <div>
             <dt class="text-xs font-medium text-gray-500">Направление</dt>
-            <dd class="text-gray-900">{{ contest.progress.direction_label || contest.progress.project_key || '—' }}</dd>
+            <dd class="text-gray-900">{{ contest.progress.direction_label || '—' }}</dd>
           </div>
           <div>
             <dt class="text-xs font-medium text-gray-500">Текущий этап</dt>

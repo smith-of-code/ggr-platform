@@ -16,7 +16,7 @@
         <div class="flex flex-wrap gap-4">
           <div>
             <label class="mb-1 block text-xs font-medium text-gray-600">Направление</label>
-            <select v-model="createForm.project_key" class="min-w-[12rem] rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+            <select v-model="createForm.direction_id" class="min-w-[12rem] rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
               <option value="">Все направления</option>
               <option v-for="d in directions" :key="d.key" :value="d.key">{{ d.label }}</option>
             </select>
@@ -59,7 +59,7 @@
                 <span>id: {{ q.id }}</span>
                 <RBadge v-if="q.is_active" variant="success" size="sm">активен</RBadge>
                 <RBadge v-else variant="neutral" size="sm">выкл</RBadge>
-                <span v-if="q.project_key" class="font-mono">{{ q.project_key }}</span>
+                <span v-if="q.direction_id">направление #{{ q.direction_id }}</span>
                 <span v-else>все направления</span>
               </div>
             </div>
@@ -83,8 +83,8 @@
                 />
                 <select
                   class="max-w-[10rem] rounded border border-gray-200 px-2 py-1 text-xs"
-                  :value="q.project_key ?? ''"
-                  @change="(e) => patchQuestion(q.id, { project_key: e.target.value || null })"
+                  :value="q.direction_id ?? ''"
+                  @change="(e) => patchQuestion(q.id, { direction_id: e.target.value ? Number(e.target.value) : null })"
                 >
                   <option value="">все</option>
                   <option v-for="d in directions" :key="'pk-' + q.id + d.key" :value="d.key">{{ d.label }}</option>
@@ -120,7 +120,7 @@ function setDraft(id, field, value) {
 
 const createForm = useForm({
   body: '',
-  project_key: '',
+  direction_id: '',
   sort_order: null,
   is_active: true,
 })

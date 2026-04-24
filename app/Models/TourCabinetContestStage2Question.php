@@ -13,7 +13,7 @@ class TourCabinetContestStage2Question extends Model
         'body',
         'sort_order',
         'is_active',
-        'project_key',
+        'direction_id',
     ];
 
     protected function casts(): array

@@ -1,21 +1,20 @@
 <template>
   <div class="space-y-8">
-    <RCard v-for="c in configs" :key="c.project_key" elevation="raised">
+    <RCard v-for="c in configs" :key="c.direction_id" elevation="raised">
       <div class="flex flex-col gap-2 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 class="text-base font-semibold text-gray-900">{{ c.direction_label }}</h3>
           <p class="text-xs text-gray-500">
-            Направление: <span class="font-mono">{{ c.project_key }}</span>
-            <span v-if="c.is_saved" class="ml-2 text-emerald-700">настройки сохранены</span>
-            <span v-else class="ml-2 text-amber-700">ещё не сохраняли</span>
+            <span v-if="c.is_saved" class="text-emerald-700">настройки сохранены</span>
+            <span v-else class="text-amber-700">ещё не сохраняли</span>
           </p>
         </div>
       </div>
-      <form class="mt-4 space-y-4" @submit.prevent="save(c.project_key)">
+      <form class="mt-4 space-y-4" @submit.prevent="save(c.direction_id)">
         <div>
           <label class="mb-1 block text-xs font-medium text-gray-600">Сколько этапов конкурса доступно в ЛК</label>
           <select
-            v-model.number="drafts[c.project_key].max_contest_stages"
+            v-model.number="drafts[c.direction_id].max_contest_stages"
             class="mt-1 w-full max-w-md rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm sm:w-auto"
           >
             <option :value="1">Только этап 1</option>
@@ -23,10 +22,10 @@
             <option :value="3">Все три этапа</option>
           </select>
           <p class="mt-1 text-xs text-gray-500">Вкладки и переходы в личном кабинете ограничиваются этим числом.</p>
-          <p v-if="errorsFor(c.project_key).max_contest_stages" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).max_contest_stages }}</p>
+          <p v-if="errorsFor(c.direction_id).max_contest_stages" class="mt-1 text-xs text-red-600">{{ errorsFor(c.direction_id).max_contest_stages }}</p>
         </div>
 
-        <div v-if="drafts[c.project_key].max_contest_stages < 3" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+        <div v-if="drafts[c.direction_id].max_contest_stages < 3" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
           Этап 3 в ЛК не используется — название и описание задания не обязательны. При выборе «Все три этапа» поля задания станут обязательными.
         </div>
 
@@ -34,37 +33,37 @@
           <div>
             <label class="mb-1 block text-xs font-medium text-gray-600">Название задания (этап 3)</label>
             <input
-              v-model="drafts[c.project_key].title"
+              v-model="drafts[c.direction_id].title"
               type="text"
               maxlength="500"
               class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#003274] focus:ring-1 focus:ring-[#003274]/20"
               required
             />
-            <p v-if="errorsFor(c.project_key).title" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).title }}</p>
+            <p v-if="errorsFor(c.direction_id).title" class="mt-1 text-xs text-red-600">{{ errorsFor(c.direction_id).title }}</p>
           </div>
           <div>
             <label class="mb-1 block text-xs font-medium text-gray-600">Описание задания</label>
             <textarea
-              v-model="drafts[c.project_key].task_body"
+              v-model="drafts[c.direction_id].task_body"
               rows="6"
               class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#003274] focus:ring-1 focus:ring-[#003274]/20"
               placeholder="Что нужно сделать участнику…"
             />
-            <p v-if="errorsFor(c.project_key).task_body" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).task_body }}</p>
+            <p v-if="errorsFor(c.direction_id).task_body" class="mt-1 text-xs text-red-600">{{ errorsFor(c.direction_id).task_body }}</p>
           </div>
           <div>
             <label class="mb-1 block text-xs font-medium text-gray-600">Формат ответа в ЛК участника</label>
             <select
-              v-model="drafts[c.project_key].response_format"
+              v-model="drafts[c.direction_id].response_format"
               class="mt-1 w-full max-w-md rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm sm:w-auto"
             >
               <option value="video_link">Текст + ссылка на видео</option>
               <option value="file_upload">Текст + загрузка файла</option>
             </select>
-            <p v-if="errorsFor(c.project_key).response_format" class="mt-1 text-xs text-red-600">{{ errorsFor(c.project_key).response_format }}</p>
+            <p v-if="errorsFor(c.direction_id).response_format" class="mt-1 text-xs text-red-600">{{ errorsFor(c.direction_id).response_format }}</p>
           </div>
         </template>
-        <RButton type="submit" variant="primary" size="sm" :loading="savingKey === c.project_key" :disabled="savingKey !== null">
+        <RButton type="submit" variant="primary" size="sm" :loading="savingKey === c.direction_id" :disabled="savingKey !== null">
           Сохранить для этого направления
         </RButton>
       </form>
@@ -88,39 +87,39 @@ watch(
   () => props.configs,
   (list) => {
     for (const c of list) {
-      if (!drafts[c.project_key]) {
-        drafts[c.project_key] = {
+      if (!drafts[c.direction_id]) {
+        drafts[c.direction_id] = {
           title: c.title ?? '',
           task_body: c.task_body ?? '',
           response_format: c.response_format ?? 'video_link',
           max_contest_stages: Number.isFinite(Number(c.max_contest_stages)) ? Number(c.max_contest_stages) : 3,
         }
       } else {
-        drafts[c.project_key].title = c.title ?? ''
-        drafts[c.project_key].task_body = c.task_body ?? ''
-        drafts[c.project_key].response_format = c.response_format ?? 'video_link'
-        drafts[c.project_key].max_contest_stages = Number.isFinite(Number(c.max_contest_stages)) ? Number(c.max_contest_stages) : 3
+        drafts[c.direction_id].title = c.title ?? ''
+        drafts[c.direction_id].task_body = c.task_body ?? ''
+        drafts[c.direction_id].response_format = c.response_format ?? 'video_link'
+        drafts[c.direction_id].max_contest_stages = Number.isFinite(Number(c.max_contest_stages)) ? Number(c.max_contest_stages) : 3
       }
     }
   },
   { immediate: true, deep: true },
 )
 
-function errorsFor(projectKey) {
-  return fieldErrors.value[projectKey] || {}
+function errorsFor(directionId) {
+  return fieldErrors.value[directionId] || {}
 }
 
-function save(projectKey) {
-  savingKey.value = projectKey
-  fieldErrors.value = { ...fieldErrors.value, [projectKey]: {} }
-  const payload = { ...drafts[projectKey] }
-  router.put(route('admin.tour-cabinet.stage3-config.update', { project_key: projectKey }), payload, {
+function save(directionId) {
+  savingKey.value = directionId
+  fieldErrors.value = { ...fieldErrors.value, [directionId]: {} }
+  const payload = { ...drafts[directionId] }
+  router.put(route('admin.tour-cabinet.stage3-config.update', { direction: directionId }), payload, {
     preserveScroll: true,
     onSuccess: () => {
-      fieldErrors.value = { ...fieldErrors.value, [projectKey]: {} }
+      fieldErrors.value = { ...fieldErrors.value, [directionId]: {} }
     },
     onError: (errs) => {
-      fieldErrors.value = { ...fieldErrors.value, [projectKey]: errs }
+      fieldErrors.value = { ...fieldErrors.value, [directionId]: errs }
     },
     onFinish: () => {
       savingKey.value = null

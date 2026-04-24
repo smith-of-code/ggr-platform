@@ -6,7 +6,6 @@ use App\Http\Controllers\Concerns\GeneratesUniqueSlug;
 use App\Http\Controllers\Controller;
 use App\Models\Direction;
 use App\Models\Lms\LmsForm;
-use App\Models\Tour;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,8 +26,7 @@ class DirectionController extends Controller
     public function create(): Response
     {
         return Inertia::render('Admin/Directions/Form', [
-            'tours' => Tour::where('is_active', true)->orderBy('title')->get(['id', 'title', 'project']),
-            'projectKeys' => Tour::PROJECTS,
+            'tours' => \App\Models\Tour::where('is_active', true)->orderBy('title')->get(['id', 'title', 'direction_id']),
             'lmsForms' => $this->getActiveForms(),
         ]);
     }
@@ -49,8 +47,7 @@ class DirectionController extends Controller
     {
         return Inertia::render('Admin/Directions/Form', [
             'direction' => $direction,
-            'tours' => Tour::where('is_active', true)->orderBy('title')->get(['id', 'title', 'project']),
-            'projectKeys' => Tour::PROJECTS,
+            'tours' => \App\Models\Tour::where('is_active', true)->orderBy('title')->get(['id', 'title', 'direction_id']),
             'lmsForms' => $this->getActiveForms(),
         ]);
     }
@@ -101,7 +98,6 @@ class DirectionController extends Controller
             'hero_text_color' => 'nullable|string|max:20',
             'hero_bg_image' => 'nullable|string|max:500',
             'hero_bg_color_enabled' => 'boolean',
-            'project_key' => 'nullable|string|in:start_atomgrad,atoms_vkusa,llr',
             'sub_directions_title' => 'nullable|string|max:255',
             'sub_directions_description' => 'nullable|string',
             'sub_directions' => 'nullable|array',

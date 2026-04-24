@@ -416,9 +416,10 @@ class PortalSeeder extends Seeder
             return;
         }
 
-        $tourIdsByProject = [];
-        foreach (['start_atomgrad', 'atoms_vkusa', 'llr'] as $key) {
-            $tourIdsByProject[$key] = Tour::where('project', $key)
+        $directionMap = Direction::pluck('id', 'slug');
+        $tourIdsByDirection = [];
+        foreach ($directionMap as $slug => $dirId) {
+            $tourIdsByDirection[$slug] = Tour::where('direction_id', $dirId)
                 ->where('is_active', true)
                 ->orderBy('position')
                 ->pluck('id')
@@ -430,7 +431,6 @@ class PortalSeeder extends Seeder
                 'title' => 'Старт в Атомград',
                 'slug' => 'start-v-atomgrad',
                 'description' => 'Программа знакомства с атомными городами России. Уникальная возможность увидеть современные технологии и богатую историю городов атомной промышленности. Участники посещают ключевые объекты атомной инфраструктуры, знакомятся с жизнью наукоградов и открывают для себя перспективы развития в атомной отрасли.',
-                'project_key' => 'start_atomgrad',
                 'sub_directions_title' => 'Направления',
                 'sub_directions_description' => 'Три ключевых направления программы «Старт в Атомград», охватывающие разные аспекты знакомства с атомными городами.',
                 'sub_directions' => [
@@ -463,14 +463,13 @@ class PortalSeeder extends Seeder
                     ['title' => 'Добраться до точки', 'description' => 'Самостоятельно добраться до логистической точки отправления.'],
                     ['title' => 'Воспользоваться возможностями', 'description' => 'Воспользоваться всеми возможностями тура самостоятельно.'],
                 ],
-                'featured_tour_ids' => $tourIdsByProject['start_atomgrad'],
+                'featured_tour_ids' => $tourIdsByDirection['start-v-atomgrad'] ?? [],
                 'position' => 1,
             ],
             [
                 'title' => 'Атомы вкуса',
                 'slug' => 'atomy-vkusa',
                 'description' => 'Гастрономический проект, раскрывающий кулинарные традиции атомных городов. Авторские рецепты, мастер-классы и дегустации от лучших шеф-поваров. Участники знакомятся с уникальной кухней регионов присутствия Росатома и открывают новые гастрономические горизонты.',
-                'project_key' => 'atoms_vkusa',
                 'sub_directions_title' => 'Направления',
                 'sub_directions_description' => 'Основные направления гастрономического проекта «Атомы вкуса».',
                 'sub_directions' => [
@@ -503,14 +502,13 @@ class PortalSeeder extends Seeder
                     ['title' => 'Добраться до точки', 'description' => 'Самостоятельно добраться до логистической точки отправления.'],
                     ['title' => 'Воспользоваться возможностями', 'description' => 'Воспользоваться всеми возможностями тура самостоятельно.'],
                 ],
-                'featured_tour_ids' => $tourIdsByProject['atoms_vkusa'],
+                'featured_tour_ids' => $tourIdsByDirection['atomy-vkusa'] ?? [],
                 'position' => 2,
             ],
             [
                 'title' => 'Лучшие люди Росатома',
                 'slug' => 'luchshie-lyudi-rosatoma',
                 'description' => 'Истории людей, которые создают будущее. Встречи с учёными, инженерами и руководителями, посвятившими жизнь развитию атомной отрасли. Программа для высококвалифицированных специалистов и сотрудников Госкорпорации «Росатом».',
-                'project_key' => 'llr',
                 'sub_directions_title' => 'Направления',
                 'sub_directions_description' => 'Ключевые направления программы «Лучшие люди Росатома».',
                 'sub_directions' => [
@@ -543,7 +541,7 @@ class PortalSeeder extends Seeder
                     ['title' => 'Добраться до точки', 'description' => 'Самостоятельно добраться до логистической точки отправления.'],
                     ['title' => 'Воспользоваться возможностями', 'description' => 'Воспользоваться всеми возможностями тура самостоятельно.'],
                 ],
-                'featured_tour_ids' => $tourIdsByProject['llr'],
+                'featured_tour_ids' => $tourIdsByDirection['luchshie-lyudi-rosatoma'] ?? [],
                 'position' => 3,
             ],
         ];

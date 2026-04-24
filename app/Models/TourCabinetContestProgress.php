@@ -11,7 +11,7 @@ class TourCabinetContestProgress extends Model
 
     protected $fillable = [
         'user_id',
-        'project_key',
+        'direction_id',
         'selected_city_ids',
         'current_stage',
         'stage2_submitted_at',
@@ -32,5 +32,10 @@ class TourCabinetContestProgress extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function direction(): BelongsTo
+    {
+        return $this->belongsTo(Direction::class);
     }
 }

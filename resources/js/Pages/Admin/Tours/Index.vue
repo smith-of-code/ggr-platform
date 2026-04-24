@@ -38,7 +38,7 @@
             </td>
             <td class="px-5 py-3.5 text-sm text-gray-500">{{ tour.start_city }}</td>
             <td class="px-5 py-3.5">
-              <RBadge v-if="tour.project" variant="primary" size="sm">{{ projectLabel(tour.project) }}</RBadge>
+              <RBadge v-if="tour.direction" variant="primary" size="sm">{{ tour.direction.title }}</RBadge>
               <span v-else class="text-sm text-gray-400">—</span>
             </td>
             <td class="px-5 py-3.5 text-sm font-medium text-gray-700">
@@ -80,9 +80,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 
 defineProps({ tours: Object })
 
-function projectLabel(k) {
-  return { start_atomgrad: 'Старт в Атомград', atoms_vkusa: 'Атомы вкуса', llr: 'Лучшие люди Росатома' }[k] || k || '—'
-}
+
 
 function formatPrice(v) { return new Intl.NumberFormat('ru-RU').format(v) }
 

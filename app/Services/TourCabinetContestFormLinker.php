@@ -33,7 +33,7 @@ class TourCabinetContestFormLinker
         }
 
         $progress = TourCabinetContestProgress::query()->where('user_id', $user->id)->first();
-        if (! $progress || ! $progress->project_key) {
+        if (! $progress || ! $progress->direction_id) {
             return;
         }
 
@@ -43,7 +43,7 @@ class TourCabinetContestFormLinker
         }
 
         $row = TourCabinetDirectionCity::query()
-            ->where('project_key', $progress->project_key)
+            ->where('direction_id', $progress->direction_id)
             ->where('city_id', $cityId)
             ->first();
 

@@ -38,19 +38,19 @@ class OpportunityToursController extends Controller
         $featuredTours = $tourIds
             ? Tour::whereIn('id', $tourIds)
                 ->where('is_active', true)
-                ->with(['cities', 'departures'])
+                ->with(['cities', 'departures', 'direction:id,title'])
                 ->orderBy('position')
                 ->get()
             : Tour::where('is_featured', true)
                 ->where('is_active', true)
-                ->with(['cities', 'departures'])
+                ->with(['cities', 'departures', 'direction:id,title'])
                 ->orderBy('position')
                 ->limit(8)
                 ->get();
 
         $directions = Direction::where('is_active', true)
             ->orderBy('position')
-            ->get(['id', 'title', 'slug', 'description', 'image', 'project_key']);
+            ->get(['id', 'title', 'slug', 'description', 'image']);
 
         return Inertia::render('OpportunityTours/Index', [
             'featuredTours' => $featuredTours,

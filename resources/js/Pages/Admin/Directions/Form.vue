@@ -18,13 +18,6 @@
               <RInput v-model="form.title" label="Название *" :error="form.errors.title" required />
             </div>
             <RInput v-model="form.slug" label="Slug" placeholder="auto-generated" />
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-gray-700">Проект (project_key)</label>
-              <select v-model="form.project_key" class="w-full cursor-pointer appearance-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-[#003274]/10">
-                <option value="">—</option>
-                <option v-for="(label, key) in projectKeys" :key="key" :value="key">{{ label }}</option>
-              </select>
-            </div>
             <ImageUploadCrop v-model="form.image" label="Изображение" :upload-url="route('admin.upload.image')" :media-picker-url="route('admin.media.index')" collection="directions" :entity-type="mediaEntityType" :entity-id="mediaEntityId" :skip-crop="true" preview-class="h-32 w-full object-cover" />
             <div class="sm:col-span-2">
               <label class="mb-2 block text-sm font-semibold text-gray-700">Описание</label>
@@ -211,7 +204,7 @@
             <label v-for="t in tours" :key="t.id" class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-gray-50">
               <input type="checkbox" :value="t.id" v-model="form.featured_tour_ids" class="h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]/20" />
               <span class="text-sm text-gray-700">{{ t.title }}</span>
-              <RBadge v-if="t.project" variant="primary" size="sm" class="ml-auto">{{ projectLabel(t.project) }}</RBadge>
+              <RBadge v-if="t.direction_id" variant="info" size="sm" class="ml-auto">ID: {{ t.direction_id }}</RBadge>
             </label>
           </div>
         </div>
@@ -237,7 +230,6 @@ import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 const props = defineProps({
   direction: { type: Object, default: null },
   tours: { type: Array, default: () => [] },
-  projectKeys: { type: Object, default: () => ({}) },
   lmsForms: { type: Array, default: () => [] },
 })
 
@@ -255,7 +247,6 @@ const form = useForm({
   hero_text_color: props.direction?.hero_text_color ?? '',
   hero_bg_image: props.direction?.hero_bg_image ?? '',
   hero_bg_color_enabled: Boolean(props.direction?.hero_bg_color_enabled ?? false),
-  project_key: props.direction?.project_key ?? '',
   sub_directions_title: props.direction?.sub_directions_title ?? '',
   sub_directions_description: props.direction?.sub_directions_description ?? '',
   sub_directions: props.direction?.sub_directions ?? [],
@@ -276,10 +267,6 @@ const questionsText = computed({
     form.free_participation_details.questions = val.split('\n').filter(q => q.trim())
   },
 })
-
-function projectLabel(k) {
-  return { start_atomgrad: 'Старт в Атомград', atoms_vkusa: 'Атомы вкуса', llr: 'Лучшие люди Росатома' }[k] || k || '—'
-}
 
 function submit() {
   if (props.direction) {

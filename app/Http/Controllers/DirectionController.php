@@ -34,7 +34,7 @@ class DirectionController extends Controller
 
         $paidForm = $this->loadPaidForm($direction);
 
-        if ($direction->project_key === 'atoms_vkusa') {
+        if ($direction->slug === 'atomy-vkusa') {
             return $this->showAtomsVkusa($request, $direction, $featuredTours, $paidForm);
         }
 

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Application;
 use App\Models\City;
+use App\Models\Direction;
 use App\Models\Post;
 use App\Models\Tour;
 use App\Models\TourDeparture;
@@ -94,13 +95,17 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        $dirStartAtomgrad = Direction::firstOrCreate(['slug' => 'start-v-atomgrad'], ['title' => 'Старт в Атомград', 'is_active' => true, 'position' => 1]);
+        $dirAtomyVkusa = Direction::firstOrCreate(['slug' => 'atomy-vkusa'], ['title' => 'Атомы вкуса', 'is_active' => true, 'position' => 2]);
+        Direction::firstOrCreate(['slug' => 'luchshie-lyudi-rosatoma'], ['title' => 'Лучшие люди Росатома', 'is_active' => true, 'position' => 3]);
+
         $tours = [
             [
                 'title' => 'Зелёный Атом: экотур в сердце энергетики',
                 'slug' => 'zelenyy-atom',
                 'start_city' => 'Санкт-Петербург',
                 'duration' => '2 дня, 1 ночь',
-                'project' => 'start_atomgrad',
+                'direction_id' => $dirStartAtomgrad->id,
                 'participation_type' => 'paid',
                 'season' => 'spring',
                 'for_children' => true,
@@ -114,7 +119,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'atomnaya-energiya-znaniy',
                 'start_city' => 'Москва',
                 'duration' => '3 дня, 2 ночи',
-                'project' => 'start_atomgrad',
+                'direction_id' => $dirStartAtomgrad->id,
                 'participation_type' => 'contest',
                 'season' => 'summer',
                 'for_children' => false,
@@ -128,7 +133,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'tayny-zakrytyh-gorodov',
                 'start_city' => 'Нижний Новгород',
                 'duration' => '4 дня, 3 ночи',
-                'project' => 'start_atomgrad',
+                'direction_id' => $dirStartAtomgrad->id,
                 'participation_type' => 'paid',
                 'season' => 'autumn',
                 'for_children' => false,
@@ -143,7 +148,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'atomy-vkusa-gastrotur',
                 'start_city' => 'Воронеж',
                 'duration' => '2 дня, 1 ночь',
-                'project' => 'atoms_vkusa',
+                'direction_id' => $dirAtomyVkusa->id,
                 'participation_type' => 'paid',
                 'season' => 'summer',
                 'for_children' => true,
@@ -157,7 +162,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'uralskie-gorizonty',
                 'start_city' => 'Екатеринбург',
                 'duration' => '3 дня, 2 ночи',
-                'project' => 'start_atomgrad',
+                'direction_id' => $dirStartAtomgrad->id,
                 'participation_type' => 'paid',
                 'season' => 'winter',
                 'for_children' => true,

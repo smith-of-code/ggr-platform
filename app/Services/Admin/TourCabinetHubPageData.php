@@ -3,9 +3,9 @@
 namespace App\Services\Admin;
 
 use App\Models\City;
+use App\Models\Direction;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsForm;
-use App\Models\Tour;
 use App\Models\TourCabinetContestDirectionSetting;
 use App\Models\TourCabinetContestStage2Question;
 use App\Models\TourCabinetContestStage3Config;
@@ -60,23 +60,28 @@ class TourCabinetHubPageData
     /**
      * @return array<string, mixed>
      */
-    public function directionCitiesPayload(?string $projectKeyQuery): array
+    public function directionCitiesPayload(?int $directionIdQuery): array
     {
-        $keys = array_keys(Tour::PROJECTS);
-        $projectKey = $projectKeyQuery;
-        if (! is_string($projectKey) || ! in_array($projectKey, $keys, true)) {
-            $projectKey = $keys[0];
+        $allDirections = Direction::query()
+            ->where('is_active', true)
+            ->orderBy('position')
+            ->orderBy('title')
+            ->get(['id', 'title']);
+
+        $directionId = $directionIdQuery;
+        if ($directionId === null || ! $allDirections->contains('id', $directionId)) {
+            $directionId = $allDirections->first()?->id;
         }
 
         $rows = TourCabinetDirectionCity::query()
-            ->where('project_key', $projectKey)
+            ->where('direction_id', $directionId)
             ->with('city:id,name,slug,is_active')
             ->orderBy('position')
             ->orderBy('id')
             ->get();
 
         $usedCityIds = TourCabinetDirectionCity::query()
-            ->where('project_key', $projectKey)
+            ->where('direction_id', $directionId)
             ->pluck('city_id')
             ->all();
 
@@ -86,14 +91,14 @@ class TourCabinetHubPageData
             ->orderBy('name')
             ->get(['id', 'name', 'slug']);
 
-        $directions = collect(Tour::PROJECTS)->map(fn (string $label, string $key) => [
-            'key' => $key,
-            'label' => $label,
+        $directions = $allDirections->map(fn (Direction $d) => [
+            'key' => $d->id,
+            'label' => $d->title,
         ])->values()->all();
 
         return [
             'directions' => $directions,
-            'projectKey' => $projectKey,
+            'directionId' => $directionId,
             'rows' => $rows,
             'cityOptions' => $cityOptions,
         ];
@@ -104,9 +109,10 @@ class TourCabinetHubPageData
      */
     public function directionCitiesPayloadFromRequest(Request $request): array
     {
-        $q = $request->query('project_key');
+        $q = $request->query('direction_id');
+        $id = is_numeric($q) ? (int) $q : null;
 
-        return $this->directionCitiesPayload(is_string($q) ? $q : null);
+        return $this->directionCitiesPayload($id);
     }
 
     /**
@@ -119,14 +125,9 @@ class TourCabinetHubPageData
             ->orderBy('id')
             ->get();
 
-        $directions = collect(Tour::PROJECTS)->map(fn (string $label, string $key) => [
-            'key' => $key,
-            'label' => $label,
-        ])->values()->all();
-
         return [
             'questions' => $questions,
-            'directions' => $directions,
+            'directions' => Direction::projectList(),
         ];
     }
 
@@ -137,26 +138,32 @@ class TourCabinetHubPageData
      */
     public function stage3ConfigsPayload(): array
     {
-        $directions = collect(Tour::PROJECTS)->map(fn (string $label, string $key) => [
-            'key' => $key,
-            'label' => $label,
+        $activeDirections = Direction::query()
+            ->where('is_active', true)
+            ->orderBy('position')
+            ->orderBy('title')
+            ->get(['id', 'title']);
+
+        $directions = $activeDirections->map(fn (Direction $d) => [
+            'key' => $d->id,
+            'label' => $d->title,
         ])->values()->all();
 
         $saved = Schema::hasTable('tour_cabinet_contest_stage3_configs')
-            ? TourCabinetContestStage3Config::query()->get()->keyBy('project_key')
+            ? TourCabinetContestStage3Config::query()->get()->keyBy('direction_id')
             : collect();
 
         $directionMax = Schema::hasTable('tour_cabinet_contest_direction_settings')
-            ? TourCabinetContestDirectionSetting::query()->get()->keyBy('project_key')
+            ? TourCabinetContestDirectionSetting::query()->get()->keyBy('direction_id')
             : collect();
 
         $configs = [];
-        foreach (Tour::PROJECTS as $key => $label) {
-            $row = $saved->get($key);
-            $maxRow = $directionMax->get($key);
+        foreach ($activeDirections as $dir) {
+            $row = $saved->get($dir->id);
+            $maxRow = $directionMax->get($dir->id);
             $configs[] = [
-                'project_key' => $key,
-                'direction_label' => $label,
+                'direction_id' => $dir->id,
+                'direction_label' => $dir->title,
                 'title' => $row?->title ?? '',
                 'task_body' => $row?->task_body ?? '',
                 'response_format' => $row?->response_format ?? TourCabinetContestStage3Config::FORMAT_VIDEO_LINK,

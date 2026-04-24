@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -15,7 +16,7 @@ class Tour extends Model
         'description',
         'start_city',
         'duration',
-        'project',
+        'direction_id',
         'participation_type',
         'season',
         'for_children',
@@ -64,6 +65,11 @@ class Tour extends Model
         'departure_text_blocks' => 'array',
     ];
 
+    public function direction(): BelongsTo
+    {
+        return $this->belongsTo(Direction::class);
+    }
+
     public function cities(): BelongsToMany
     {
         return $this->belongsToMany(City::class, 'city_tour');
@@ -93,12 +99,6 @@ class Tour extends Model
     {
         return $this->morphMany(Favorite::class, 'favorable');
     }
-
-    public const PROJECTS = [
-        'start_atomgrad' => 'Старт в Атомград',
-        'atoms_vkusa' => 'Атомы вкуса',
-        'llr' => 'Лучшие люди Росатома',
-    ];
 
     public const SEASONS = [
         'winter' => 'Зима',

@@ -14,15 +14,15 @@ class TourCabinetContestStage3Config extends Model
     protected $table = 'tour_cabinet_contest_stage3_configs';
 
     protected $fillable = [
-        'project_key',
+        'direction_id',
         'title',
         'task_body',
         'response_format',
     ];
 
-    public static function forProjectKey(?string $projectKey): ?self
+    public static function forDirection(?int $directionId): ?self
     {
-        if ($projectKey === null || $projectKey === '') {
+        if ($directionId === null || $directionId === 0) {
             return null;
         }
 
@@ -30,7 +30,12 @@ class TourCabinetContestStage3Config extends Model
             return null;
         }
 
-        return self::query()->where('project_key', $projectKey)->first();
+        return self::query()->where('direction_id', $directionId)->first();
+    }
+
+    public function direction(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Direction::class);
     }
 
     public function usesFileUpload(): bool

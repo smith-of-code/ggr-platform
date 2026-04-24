@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tour;
 use App\Models\TourCabinetContestStage2Question;
 use App\Services\Admin\TourCabinetHubPageData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,21 +26,14 @@ class TourCabinetStage2QuestionsController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $keys = array_keys(Tour::PROJECTS);
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:5000'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:99999'],
             'is_active' => ['sometimes', 'boolean'],
-            'project_key' => ['nullable', 'string', 'max:32'],
+            'direction_id' => ['nullable', 'integer', 'exists:directions,id'],
         ]);
 
-        $pk = isset($validated['project_key']) ? trim((string) $validated['project_key']) : '';
-        $pk = $pk === '' ? null : $pk;
-        if ($pk !== null && ! in_array($pk, $keys, true)) {
-            throw ValidationException::withMessages([
-                'project_key' => 'Недопустимое направление.',
-            ]);
-        }
+        $dirId = isset($validated['direction_id']) && $validated['direction_id'] ? (int) $validated['direction_id'] : null;
 
         $sort = $validated['sort_order'] ?? null;
         if ($sort === null) {
@@ -53,7 +44,7 @@ class TourCabinetStage2QuestionsController extends Controller
             'body' => $validated['body'],
             'sort_order' => $sort,
             'is_active' => (bool) ($validated['is_active'] ?? true),
-            'project_key' => $pk,
+            'direction_id' => $dirId,
         ]);
 
         return redirect()
@@ -66,12 +57,11 @@ class TourCabinetStage2QuestionsController extends Controller
     {
         $model = TourCabinetContestStage2Question::query()->findOrFail((int) $question);
 
-        $keys = array_keys(Tour::PROJECTS);
         $validated = $request->validate([
             'body' => ['sometimes', 'required', 'string', 'max:5000'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:99999'],
             'is_active' => ['sometimes', 'boolean'],
-            'project_key' => ['sometimes', 'nullable', 'string', 'max:32'],
+            'direction_id' => ['sometimes', 'nullable', 'integer', 'exists:directions,id'],
         ]);
 
         $data = [];
@@ -84,15 +74,8 @@ class TourCabinetStage2QuestionsController extends Controller
         if (array_key_exists('is_active', $validated)) {
             $data['is_active'] = (bool) $validated['is_active'];
         }
-        if (array_key_exists('project_key', $validated)) {
-            $pk = trim((string) ($validated['project_key'] ?? ''));
-            $pk = $pk === '' ? null : $pk;
-            if ($pk !== null && ! in_array($pk, $keys, true)) {
-                throw ValidationException::withMessages([
-                    'project_key' => 'Недопустимое направление.',
-                ]);
-            }
-            $data['project_key'] = $pk;
+        if (array_key_exists('direction_id', $validated)) {
+            $data['direction_id'] = $validated['direction_id'] ? (int) $validated['direction_id'] : null;
         }
         if ($data !== []) {
             $model->update($data);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\City;
+use App\Models\Direction;
 use App\Models\Favorite;
 use App\Models\Tour;
 use App\Models\TourReaction;
@@ -18,10 +19,10 @@ class TourController extends Controller
     public function index(Request $request): Response
     {
         $query = Tour::where('is_active', true)
-            ->with(['cities', 'departures']);
+            ->with(['cities', 'departures', 'direction:id,title']);
 
-        if ($request->filled('project')) {
-            $query->where('project', $request->project);
+        if ($request->filled('direction')) {
+            $query->where('direction_id', $request->direction);
         }
         if ($request->filled('season')) {
             $query->where('season', $request->season);
@@ -45,7 +46,8 @@ class TourController extends Controller
         return Inertia::render('Tours/Index', [
             'tours' => $tours,
             'cities' => $cities,
-            'filters' => $request->only(['project', 'season', 'participation_type', 'city', 'for_children', 'for_foreigners']),
+            'directions' => Direction::projectList(),
+            'filters' => $request->only(['direction', 'season', 'participation_type', 'city', 'for_children', 'for_foreigners']),
         ]);
     }
 
@@ -54,7 +56,7 @@ class TourController extends Controller
         $tour = Tour::query()
             ->where('slug', $slug)
             ->where('is_active', true)
-            ->with(['cities', 'departures', 'media'])
+            ->with(['cities', 'departures', 'media', 'direction:id,title'])
             ->firstOrFail();
 
         $user = auth()->user();

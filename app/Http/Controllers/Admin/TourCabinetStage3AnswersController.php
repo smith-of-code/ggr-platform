@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tour;
+use App\Models\Direction;
 use App\Models\TourCabinetContestProgress;
 use App\Models\TourCabinetContestStage3Config;
 use Illuminate\Support\Facades\Storage;
@@ -26,14 +26,15 @@ class TourCabinetStage3AnswersController extends Controller
             ->orderByDesc('updated_at')
             ->paginate(30)
             ->through(function (TourCabinetContestProgress $p): array {
-                $config = TourCabinetContestStage3Config::forProjectKey($p->project_key);
+                $config = TourCabinetContestStage3Config::forDirection($p->direction_id);
                 $composed = trim(implode(' ', array_filter(
                     [$p->user->last_name, $p->user->first_name, $p->user->patronymic],
                     fn ($v) => $v !== null && $v !== ''
                 )));
                 $userDisplay = $composed !== '' ? $composed : (string) ($p->user->name ?: $p->user->email);
-                $directionLabel = $p->project_key
-                    ? (Tour::PROJECTS[$p->project_key] ?? $p->project_key)
+                $dirMap = Direction::allProjectMap();
+                $directionLabel = $p->direction_id
+                    ? ($dirMap[$p->direction_id] ?? '—')
                     : '—';
 
                 return [

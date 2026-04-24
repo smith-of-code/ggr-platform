@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\City;
-use App\Models\Tour;
 use App\Models\TourCabinetContestCitySubmission;
 use App\Models\TourCabinetContestDirectionSetting;
 use App\Models\TourCabinetContestProgress;
@@ -18,7 +17,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -44,7 +42,7 @@ class TourCabinetContestController extends Controller
                 'stage' => 'Сначала отправьте анкеты по всем выбранным городам.',
             ]);
         }
-        $maxStages = TourCabinetContestDirectionSetting::maxContestStagesForProjectKey($progress->project_key);
+        $maxStages = TourCabinetContestDirectionSetting::maxContestStagesForDirection($progress->direction_id);
         if ($maxStages >= 2) {
             $progress->update(['current_stage' => 2]);
         }
@@ -74,7 +72,7 @@ class TourCabinetContestController extends Controller
         $finalize = $validated['finalize'];
         $answersInput = $validated['answers'] ?? [];
 
-        $questions = $this->activeStage2QuestionsQuery($progress->project_key)
+        $questions = $this->activeStage2QuestionsQuery($progress->direction_id)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -105,7 +103,7 @@ class TourCabinetContestController extends Controller
                         ]
                     );
                 }
-                $maxStages = TourCabinetContestDirectionSetting::maxContestStagesForProjectKey($progress->project_key);
+                $maxStages = TourCabinetContestDirectionSetting::maxContestStagesForDirection($progress->direction_id);
                 $payload = [];
                 if ($maxStages >= 3) {
                     $payload['current_stage'] = 3;
@@ -162,7 +160,7 @@ class TourCabinetContestController extends Controller
             return $this->redirectToContestBlock();
         }
 
-        $maxStages = TourCabinetContestDirectionSetting::maxContestStagesForProjectKey($progress->project_key);
+        $maxStages = TourCabinetContestDirectionSetting::maxContestStagesForDirection($progress->direction_id);
         if ($maxStages < 3) {
             return $this->redirectToContestBlock()
                 ->with('error', 'Для выбранного направления этап 3 не проводится.');
@@ -173,7 +171,7 @@ class TourCabinetContestController extends Controller
                 ->with('error', 'Ответ этапа 3 уже сохранён, редактирование недоступно.');
         }
 
-        $config = TourCabinetContestStage3Config::forProjectKey($progress->project_key);
+        $config = TourCabinetContestStage3Config::forDirection($progress->direction_id);
         $disk = config('filesystems.upload_disk', 'public');
 
         if ($config === null) {
@@ -261,7 +259,7 @@ class TourCabinetContestController extends Controller
     public function downloadStage3Attachment(Request $request): BinaryFileResponse
     {
         $progress = TourCabinetContestProgress::query()->where('user_id', $request->user()->id)->firstOrFail();
-        if (TourCabinetContestDirectionSetting::maxContestStagesForProjectKey($progress->project_key) < 3) {
+        if (TourCabinetContestDirectionSetting::maxContestStagesForDirection($progress->direction_id) < 3) {
             abort(404);
         }
         if (! $progress->stage3_attachment_path) {
@@ -278,7 +276,7 @@ class TourCabinetContestController extends Controller
 
     private function isStage3ResponseCompleteForLock(TourCabinetContestProgress $progress): bool
     {
-        $config = TourCabinetContestStage3Config::forProjectKey($progress->project_key);
+        $config = TourCabinetContestStage3Config::forDirection($progress->direction_id);
         if (! filled($progress->stage3_text) || trim((string) $progress->stage3_text) === '') {
             return false;
         }
@@ -300,7 +298,7 @@ class TourCabinetContestController extends Controller
     private function stage1Complete(TourCabinetContestProgress $progress, int $userId): bool
     {
         $ids = array_values(array_map('intval', $progress->selected_city_ids ?? []));
-        if ($ids === [] || ! $progress->project_key) {
+        if ($ids === [] || ! $progress->direction_id) {
             return false;
         }
         foreach ($ids as $cityId) {
@@ -318,14 +316,14 @@ class TourCabinetContestController extends Controller
     /**
      * @return Builder<TourCabinetContestStage2Question>
      */
-    private function activeStage2QuestionsQuery(?string $projectKey): Builder
+    private function activeStage2QuestionsQuery(?int $directionId): Builder
     {
         return TourCabinetContestStage2Question::query()
             ->where('is_active', true)
-            ->where(function ($q) use ($projectKey): void {
-                $q->whereNull('project_key');
-                if ($projectKey) {
-                    $q->orWhere('project_key', $projectKey);
+            ->where(function ($q) use ($directionId): void {
+                $q->whereNull('direction_id');
+                if ($directionId) {
+                    $q->orWhere('direction_id', $directionId);
                 }
             });
     }
@@ -333,7 +331,7 @@ class TourCabinetContestController extends Controller
     public function storeDirection(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'project_key' => ['required', 'string', Rule::in(array_keys(Tour::PROJECTS))],
+            'direction_id' => ['required', 'integer', 'exists:directions,id'],
         ]);
 
         $progress = TourCabinetContestProgress::query()->firstOrCreate(
@@ -342,7 +340,7 @@ class TourCabinetContestController extends Controller
         );
 
         $progress->update([
-            'project_key' => $validated['project_key'],
+            'direction_id' => $validated['direction_id'],
             'selected_city_ids' => null,
             'current_stage' => 1,
         ]);
@@ -353,7 +351,7 @@ class TourCabinetContestController extends Controller
     public function storeCities(Request $request): RedirectResponse
     {
         $progress = TourCabinetContestProgress::query()->where('user_id', $request->user()->id)->firstOrFail();
-        if (! $progress->project_key) {
+        if (! $progress->direction_id) {
             throw ValidationException::withMessages([
                 'city_ids' => 'Сначала выберите направление.',
             ]);
@@ -372,7 +370,7 @@ class TourCabinetContestController extends Controller
         }
 
         $allowed = TourCabinetDirectionCity::query()
-            ->where('project_key', $progress->project_key)
+            ->where('direction_id', $progress->direction_id)
             ->whereIn('city_id', $ids)
             ->pluck('city_id')
             ->map(fn ($id) => (int) $id)
@@ -400,7 +398,7 @@ class TourCabinetContestController extends Controller
     {
         $progress = TourCabinetContestProgress::query()->where('user_id', $request->user()->id)->firstOrFail();
         $selected = array_map('intval', $progress->selected_city_ids ?? []);
-        if (! $progress->project_key || $selected === []) {
+        if (! $progress->direction_id || $selected === []) {
             return $this->redirectToContestBlock();
         }
         if ($this->stage1Complete($progress, $request->user()->id)) {
@@ -459,7 +457,7 @@ class TourCabinetContestController extends Controller
         }
 
         $row = TourCabinetDirectionCity::query()
-            ->where('project_key', $progress->project_key)
+            ->where('direction_id', $progress->direction_id)
             ->where('city_id', $city->id)
             ->firstOrFail();
 
