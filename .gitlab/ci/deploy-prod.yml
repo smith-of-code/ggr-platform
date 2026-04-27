@@ -1,0 +1,127 @@
+# Tag-based production deploy: preflight → build → deploy via registry images
+#
+# Required CI/CD variables (Settings → CI/CD → Variables):
+#   PROD_SSH_KEY_B64       – base64-encoded private key for production server
+#   PROD_SSH_USER          – SSH user on production server
+#   PROD_SSH_HOST          – production server hostname/IP
+#   PROD_SSH_PORT          – production server SSH port (default: 22)
+#   PROD_REGISTRY_IMAGE    – full registry path, e.g. registry.gitlab.com/group/project
+#   PROD_REGISTRY_USER     – deploy token username (scope: read_registry)
+#   PROD_REGISTRY_PASSWORD – deploy token value
+#   PROD_ENV_FILE          – (File type, REQUIRED!) full .env.prod contents — uploaded to server each deploy
+#   PROD_PROJECT_DIR       – (optional) override /home/$PROD_SSH_USER/projects/loadex
+
+ssh-check-prod:
+  stage: preflight
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+  environment:
+    name: production
+  script:
+    - apk add --no-cache openssh-client > /dev/null
+    - mkdir -p ~/.ssh
+    - echo "$PROD_SSH_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - echo "==> Testing SSH to ${PROD_SSH_USER}@${PROD_SSH_HOST}:${PROD_SSH_PORT:-22}..."
+    - ssh -p "${PROD_SSH_PORT:-22}" -o StrictHostKeyChecking=no -o ConnectTimeout=10 "${PROD_SSH_USER}@${PROD_SSH_HOST}" "echo 'SSH OK'"
+
+build-images:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+  needs:
+    - ssh-check-prod
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build --target fpm
+        -t $CI_REGISTRY_IMAGE/fpm:$CI_COMMIT_TAG
+        -t $CI_REGISTRY_IMAGE/fpm:latest
+        -f docker/Dockerfile.prod .
+    - docker build --target nginx
+        -t $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_TAG
+        -t $CI_REGISTRY_IMAGE/nginx:latest
+        -f docker/Dockerfile.prod .
+    - docker push $CI_REGISTRY_IMAGE/fpm:$CI_COMMIT_TAG
+    - docker push $CI_REGISTRY_IMAGE/fpm:latest
+    - docker push $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_TAG
+    - docker push $CI_REGISTRY_IMAGE/nginx:latest
+
+deploy-prod:
+  stage: deploy
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+  needs:
+    - build-images
+  environment:
+    name: production
+  before_script:
+    - apk add --no-cache openssh-client bash rsync > /dev/null
+  script:
+    - mkdir -p ~/.ssh
+    - echo "$PROD_SSH_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - echo -e "Host *\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null" > ~/.ssh/config
+
+    - |
+      set -eo pipefail
+
+      echo "==> Checking required variables..."
+      MISSING=""
+      [ -z "${PROD_SSH_USER:-}" ]       && MISSING="$MISSING PROD_SSH_USER"
+      [ -z "${PROD_SSH_HOST:-}" ]       && MISSING="$MISSING PROD_SSH_HOST"
+      [ -z "${CI_COMMIT_TAG:-}" ]       && MISSING="$MISSING CI_COMMIT_TAG"
+      [ -z "${PROD_ENV_FILE:-}" ]       && MISSING="$MISSING PROD_ENV_FILE"
+      if [ -n "$MISSING" ]; then
+        echo "ERROR: Missing required CI/CD variables:$MISSING" >&2
+        exit 1
+      fi
+      if [ ! -f "$PROD_ENV_FILE" ]; then
+        echo "ERROR: PROD_ENV_FILE is set but file does not exist: $PROD_ENV_FILE" >&2
+        exit 1
+      fi
+
+      PORT="${PROD_SSH_PORT:-22}"
+      TAG="${CI_COMMIT_TAG}"
+      REG_IMAGE="${PROD_REGISTRY_IMAGE:-${CI_REGISTRY_IMAGE:-}}"
+      REG_USER="${PROD_REGISTRY_USER:-${CI_REGISTRY_USER:-}}"
+      REG_PASS="${PROD_REGISTRY_PASSWORD:-${CI_REGISTRY_PASSWORD:-}}"
+      PROJECT_DIR="${PROD_PROJECT_DIR:-/home/${PROD_SSH_USER}/projects/loadex}"
+      SSH_DEST="${PROD_SSH_USER}@${PROD_SSH_HOST}"
+
+      echo "==> Deploy config:"
+      echo "    Host: ${PROD_SSH_HOST}:${PORT}"
+      echo "    User: ${PROD_SSH_USER}"
+      echo "    Dir:  ${PROJECT_DIR}"
+      echo "    Tag:  ${TAG}"
+      echo "    Registry: ${REG_IMAGE:-NOT SET}"
+
+      echo "==> Ensuring remote directory exists..."
+      ssh -p "$PORT" "$SSH_DEST" "mkdir -p ${PROJECT_DIR}/docker"
+
+      echo "==> Syncing deploy files to server..."
+      scp -P "$PORT" \
+        docker/docker-compose.registry.yml \
+        docker/deploy-registry.sh \
+        "$SSH_DEST:${PROJECT_DIR}/docker/"
+
+      echo "==> Uploading .env.prod from PROD_ENV_FILE..."
+      scp -P "$PORT" "$PROD_ENV_FILE" "$SSH_DEST:${PROJECT_DIR}/docker/.env.prod"
+
+      echo "==> Running deploy on server..."
+      ssh -p "$PORT" "$SSH_DEST" bash -se <<REMOTE
+        set -eo pipefail
+        cd "${PROJECT_DIR}/docker"
+        chmod +x deploy-registry.sh
+        export REGISTRY_IMAGE="${REG_IMAGE}"
+        export REGISTRY_USER="${REG_USER}"
+        export REGISTRY_PASSWORD="${REG_PASS}"
+        bash deploy-registry.sh "${TAG}"
+      REMOTE

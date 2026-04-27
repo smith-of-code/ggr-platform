@@ -1,0 +1,27 @@
+.php_base:
+  image: php:8.3-cli
+  before_script:
+    - apt-get update -qq && apt-get install -yqq git unzip libzip-dev > /dev/null 2>&1
+    - docker-php-ext-install zip > /dev/null 2>&1
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer > /dev/null 2>&1
+    - composer install --prefer-dist --optimize-autoloader --quiet
+  cache:
+    key: composer-${CI_COMMIT_REF_SLUG}
+    paths:
+      - vendor/
+    policy: pull-push
+
+.node_base:
+  image: node:22-alpine
+  before_script:
+    - npm ci --silent
+  cache:
+    key: node-${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+    policy: pull-push
+
+.quality_rules:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^(develop|main)$/

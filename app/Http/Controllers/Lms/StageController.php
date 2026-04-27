@@ -301,12 +301,19 @@ class StageController extends Controller
             ->with(['reviews.reviewer:id,name', 'comments.user:id,name', 'answers.task'])
             ->first();
 
+        $disk = config('filesystems.upload_disk');
+        $isS3 = (config("filesystems.disks.{$disk}.driver") === 's3');
+
         return [
             'assignment' => array_merge(
                 $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline', 'completion_mode']),
                 ['tasks' => $assignment->tasks]
             ),
             'submission' => $submission,
+            'presignedUpload' => $isS3 ? [
+                'presignedUrlEndpoint' => route('lms.upload.presigned-url', ['event' => $event->slug]),
+                'confirmEndpoint' => route('lms.upload.confirm', ['event' => $event->slug]),
+            ] : null,
         ];
     }
 }

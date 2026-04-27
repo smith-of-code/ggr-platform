@@ -451,13 +451,17 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Link, useForm } from '@inertiajs/vue3'
+import { Link, useForm, usePage } from '@inertiajs/vue3'
 import axios from 'axios'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 import ContentPreview from '@/Components/ContentPreview.vue'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
+import { usePresignedUpload } from '@/composables/usePresignedUpload'
+
+const _pConfig = usePage().props?.presignedUpload
+const _pUpload = _pConfig ? usePresignedUpload({ presignedUrlEndpoint: _pConfig.presignedUrlEndpoint, confirmEndpoint: _pConfig.confirmEndpoint, fieldName: 'file' }) : null
 
 const props = defineProps({ tour: Object, cities: Array, directions: { type: Object, default: () => ({}) } })
 const showPreview = ref(false)
@@ -541,10 +545,17 @@ async function uploadPdf(e, field) {
   if (!file) return
   pdfUploading.value = field === 'program_pdf' ? 'program' : 'memo'
   try {
-    const fd = new FormData()
-    fd.append('file', file)
-    const { data } = await axios.post(route('admin.upload.file'), fd)
-    if (data.url) form[field] = data.url
+    let url
+    if (_pUpload) {
+      const data = await _pUpload.uploadFile(file)
+      url = data?.url
+    } else {
+      const fd = new FormData()
+      fd.append('file', file)
+      const { data } = await axios.post(route('admin.upload.file'), fd)
+      url = data?.url
+    }
+    if (url) form[field] = url
   } catch { /* skip */ }
   pdfUploading.value = null
   e.target.value = ''

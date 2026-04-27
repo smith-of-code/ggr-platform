@@ -248,7 +248,12 @@
 
 <script setup>
 import { h, ref, computed, defineComponent } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
+import { usePresignedUpload } from '@/composables/usePresignedUpload'
+
+const _pConfig = usePage().props?.presignedUpload
+const _pUpload = _pConfig ? usePresignedUpload({ presignedUrlEndpoint: _pConfig.presignedUrlEndpoint, confirmEndpoint: _pConfig.confirmEndpoint, fieldName: 'file' }) : null
 
 const FULL_WIDTH_TYPES = ['image-upload', 'file-upload', 'textarea']
 
@@ -379,11 +384,18 @@ async function handleImageUpload(event, idx, key) {
 async function handleFileUpload(event, idx, key) {
   const file = event.target.files?.[0]
   if (!file) return
-  const formData = new FormData()
-  formData.append('file', file)
   try {
-    const { data } = await window.axios.post(route('admin.upload.file'), formData)
-    if (data.url) updateField(idx, key, toRelativeUrl(data.url))
+    let url
+    if (_pUpload) {
+      const data = await _pUpload.uploadFile(file)
+      url = data?.url
+    } else {
+      const formData = new FormData()
+      formData.append('file', file)
+      const { data } = await window.axios.post(route('admin.upload.file'), formData)
+      url = data?.url
+    }
+    if (url) updateField(idx, key, toRelativeUrl(url))
   } catch (e) {
     console.error('File upload error:', e)
   }

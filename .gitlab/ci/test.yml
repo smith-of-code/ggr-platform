@@ -1,0 +1,27 @@
+pest:
+  extends: .quality_rules
+  stage: test
+  image: php:8.3-cli
+  before_script:
+    - apt-get update -qq && apt-get install -yqq git unzip libzip-dev curl > /dev/null 2>&1
+    - docker-php-ext-install zip > /dev/null 2>&1
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer > /dev/null 2>&1
+    - curl -fsSL https://deb.nodesource.com/setup_22.x | bash - > /dev/null 2>&1
+    - apt-get install -yqq nodejs > /dev/null 2>&1
+    - composer install --prefer-dist --optimize-autoloader --quiet
+    - npm ci --silent
+    - cp .env.example .env
+    - php artisan key:generate
+    - npm run build
+  script:
+    - vendor/bin/pest
+  cache:
+    - key: composer-${CI_COMMIT_REF_SLUG}
+      paths:
+        - vendor/
+    - key: node-${CI_COMMIT_REF_SLUG}
+      paths:
+        - node_modules/
+  needs:
+    - pint
+    - frontend:lint

@@ -224,7 +224,13 @@ class TourCabinetController extends Controller
             'email' => $validated['email'],
         ]);
 
-        if ($request->hasFile('avatar')) {
+        if ($request->filled('avatar_url')) {
+            $disk = config('filesystems.upload_disk', 'public');
+            if ($user->avatar_path) {
+                Storage::disk($disk)->delete($user->avatar_path);
+            }
+            $user->avatar_path = $request->input('avatar_url');
+        } elseif ($request->hasFile('avatar')) {
             $disk = config('filesystems.upload_disk', 'public');
             if ($user->avatar_path) {
                 Storage::disk($disk)->delete($user->avatar_path);
@@ -257,7 +263,9 @@ class TourCabinetController extends Controller
     {
         $validated = $request->validate([
             'type' => ['required', Rule::in(TourCabinetDocument::allowedTypes())],
-            'file' => ['required', 'file', 'max:51200', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
+            'file' => ['required_without:file_url', 'nullable', 'file', 'max:51200', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
+            'file_url' => ['required_without:file', 'nullable', 'string', 'url'],
+            'file_name' => ['nullable', 'string', 'max:255'],
         ]);
 
         $user = $request->user();
@@ -282,7 +290,13 @@ class TourCabinetController extends Controller
             Storage::disk($disk)->delete($existing->file_path);
         }
 
-        $path = $request->file('file')->store('tour-cabinet/documents/'.$user->id, $disk);
+        if ($request->filled('file_url')) {
+            $filePath = $request->input('file_url');
+            $originalName = $request->input('file_name', basename(parse_url($filePath, PHP_URL_PATH) ?: 'document'));
+        } else {
+            $filePath = $request->file('file')->store('tour-cabinet/documents/'.$user->id, $disk);
+            $originalName = $request->file('file')->getClientOriginalName();
+        }
 
         TourCabinetDocument::query()->updateOrCreate(
             [
@@ -290,8 +304,8 @@ class TourCabinetController extends Controller
                 'type' => $type,
             ],
             [
-                'file_path' => $path,
-                'original_name' => $request->file('file')->getClientOriginalName(),
+                'file_path' => $filePath,
+                'original_name' => $originalName,
                 'status' => TourCabinetDocument::STATUS_PENDING_REVIEW,
                 'admin_comment' => null,
                 'reviewed_at' => null,

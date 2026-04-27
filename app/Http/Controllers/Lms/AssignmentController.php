@@ -116,6 +116,9 @@ class AssignmentController extends Controller
             ->with(['reviews.reviewer:id,name', 'comments.user:id,name', 'answers.task'])
             ->first();
 
+        $disk = config('filesystems.upload_disk');
+        $isS3 = (config("filesystems.disks.{$disk}.driver") === 's3');
+
         return Inertia::render('Lms/Assignments/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'assignment' => array_merge(
@@ -123,6 +126,10 @@ class AssignmentController extends Controller
                 ['tasks' => $assignment->tasks]
             ),
             'submission' => $submission,
+            'presignedUpload' => $isS3 ? [
+                'presignedUrlEndpoint' => route('lms.upload.presigned-url', ['event' => $event->slug]),
+                'confirmEndpoint' => route('lms.upload.confirm', ['event' => $event->slug]),
+            ] : null,
         ]);
     }
 
@@ -141,6 +148,8 @@ class AssignmentController extends Controller
             'link' => ['nullable', 'url', 'max:500'],
             'files' => ['nullable', 'array'],
             'files.*' => ['file'],
+            'file_urls' => ['nullable', 'array'],
+            'file_urls.*' => ['string', 'url'],
             'answers' => ['nullable', 'array'],
             'answers.*.task_id' => ['required_with:answers', 'integer'],
             'answers.*.text_content' => ['nullable', 'string'],
@@ -149,13 +158,7 @@ class AssignmentController extends Controller
 
         $disk = config('filesystems.upload_disk');
 
-        $legacyFiles = [];
-        if (!$hasTasks && $request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                $path = $file->store('assignments/' . $assignment->id, $disk);
-                $legacyFiles[] = Storage::disk($disk)->url($path);
-            }
-        }
+        $legacyFiles = $this->collectFileUrls($request, 'assignments/' . $assignment->id);
 
         $status = $assignment->completion_mode === 'on_submit' ? 'approved' : 'submitted';
 
@@ -195,6 +198,8 @@ class AssignmentController extends Controller
             'link' => ['nullable', 'url', 'max:500'],
             'files' => ['nullable', 'array'],
             'files.*' => ['file'],
+            'file_urls' => ['nullable', 'array'],
+            'file_urls.*' => ['string', 'url'],
             'answers' => ['nullable', 'array'],
             'answers.*.task_id' => ['required_with:answers', 'integer'],
             'answers.*.text_content' => ['nullable', 'string'],
@@ -209,12 +214,7 @@ class AssignmentController extends Controller
 
         $legacyFiles = [];
         if (!$hasTasks) {
-            if ($request->hasFile('files')) {
-                foreach ($request->file('files') as $file) {
-                    $path = $file->store('assignments/' . $assignment->id, $disk);
-                    $legacyFiles[] = Storage::disk($disk)->url($path);
-                }
-            }
+            $legacyFiles = $this->collectFileUrls($request, 'assignments/' . $assignment->id);
             $legacyFiles = $existing ? array_merge($existing->files ?? [], $legacyFiles) : $legacyFiles;
         }
 
@@ -250,6 +250,8 @@ class AssignmentController extends Controller
             'text' => ['required', 'string', 'max:5000'],
             'files' => ['nullable', 'array', 'max:5'],
             'files.*' => ['file', 'max:20480'],
+            'file_urls' => ['nullable', 'array', 'max:5'],
+            'file_urls.*' => ['string', 'url'],
         ]);
 
         $disk = config('filesystems.upload_disk');
@@ -259,6 +261,9 @@ class AssignmentController extends Controller
                 $path = $file->store('assignment-comments/' . $assignment->id, $disk);
                 $files[] = ['name' => $file->getClientOriginalName(), 'path' => Storage::disk($disk)->url($path)];
             }
+        }
+        foreach ($request->input('file_urls', []) as $url) {
+            $files[] = ['name' => basename(parse_url($url, PHP_URL_PATH) ?: 'file'), 'path' => $url];
         }
 
         LmsAssignmentComment::create([
@@ -322,16 +327,13 @@ class AssignmentController extends Controller
             'link' => ['nullable', 'url', 'max:500'],
             'files' => ['nullable', 'array'],
             'files.*' => ['file'],
+            'file_urls' => ['nullable', 'array'],
+            'file_urls.*' => ['string', 'url'],
         ]);
 
-        $disk = config('filesystems.upload_disk');
         $files = $submission->files ?? [];
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                $path = $file->store('assignments/' . $assignment->id, $disk);
-                $files[] = Storage::disk($disk)->url($path);
-            }
-        }
+        $newFiles = $this->collectFileUrls($request, 'assignments/' . $assignment->id);
+        $files = array_merge($files, $newFiles);
 
         $submission->update([
             'text_content' => $validated['text_content'] ?? $submission->text_content,
@@ -357,13 +359,21 @@ class AssignmentController extends Controller
             $task = $taskMap->get($taskId);
             $files = null;
 
-            if ($task->response_type === 'file' && $request->hasFile("answers.{$index}.files")) {
+            if ($task->response_type === 'file') {
                 $uploaded = [];
-                foreach ($request->file("answers.{$index}.files") as $file) {
-                    $path = $file->store('assignments/' . $assignment->id, $disk);
+                if ($request->hasFile("answers.{$index}.files")) {
+                    foreach ($request->file("answers.{$index}.files") as $file) {
+                        $path = $file->store('assignments/' . $assignment->id, $disk);
+                        $uploaded[] = [
+                            'name' => $file->getClientOriginalName(),
+                            'path' => Storage::disk($disk)->url($path),
+                        ];
+                    }
+                }
+                foreach ($answerData['file_urls'] ?? [] as $fileUrl) {
                     $uploaded[] = [
-                        'name' => $file->getClientOriginalName(),
-                        'path' => Storage::disk($disk)->url($path),
+                        'name' => $fileUrl['name'] ?? basename(parse_url($fileUrl['url'] ?? '', PHP_URL_PATH) ?: 'file'),
+                        'path' => $fileUrl['url'] ?? $fileUrl,
                     ];
                 }
                 $files = $uploaded ?: null;
@@ -381,6 +391,25 @@ class AssignmentController extends Controller
                 ]
             );
         }
+    }
+
+    private function collectFileUrls(Request $request, string $directory): array
+    {
+        $disk = config('filesystems.upload_disk');
+        $urls = [];
+
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store($directory, $disk);
+                $urls[] = Storage::disk($disk)->url($path);
+            }
+        }
+
+        foreach ($request->input('file_urls', []) as $url) {
+            $urls[] = $url;
+        }
+
+        return $urls;
     }
 
     /**

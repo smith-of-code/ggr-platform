@@ -16,6 +16,7 @@ use App\Http\Controllers\Lms\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Lms\Admin\TestController as AdminTestController;
 use App\Http\Controllers\Lms\Admin\TrajectoryController as AdminTrajectoryController;
 use App\Http\Controllers\Lms\Admin\UploadController as AdminUploadController;
+use App\Http\Controllers\PresignedUploadController;
 use App\Http\Controllers\Lms\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Lms\Admin\VideoController as AdminVideoController;
 use App\Http\Controllers\Lms\AssignmentController;
@@ -58,6 +59,8 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/documents', [ProfileController::class, 'uploadDocument'])->name('profile.documents.upload');
+    Route::post('/upload/presigned-url', [PresignedUploadController::class, 'presignedUrl'])->name('upload.presigned-url');
+    Route::post('/upload/confirm', [PresignedUploadController::class, 'confirm'])->name('upload.confirm');
     Route::post('/profile/document-replace-requests', [ProfileController::class, 'storeDocumentReplaceRequest'])->name('profile.document-replace-requests.store');
     Route::delete('/profile/documents/{document}', [ProfileController::class, 'deleteDocument'])->name('profile.documents.delete');
     Route::get('/profile/templates/{type}', [ProfileController::class, 'downloadTemplate'])->name('profile.templates.download');
@@ -190,6 +193,8 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::post('upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
         Route::post('upload/file', [AdminUploadController::class, 'file'])->name('upload.file');
         Route::get('media', [AdminUploadController::class, 'mediaIndex'])->name('media.index');
+        Route::post('upload/presigned-url', [PresignedUploadController::class, 'presignedUrl'])->name('upload.presigned-url');
+        Route::post('upload/confirm', [PresignedUploadController::class, 'confirm'])->name('upload.confirm');
         Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
         Route::get('reports/download', [AdminReportController::class, 'download'])->name('reports.download');
         Route::post('reports/send', [AdminReportController::class, 'sendEmail'])->name('reports.send');

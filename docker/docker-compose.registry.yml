@@ -1,0 +1,72 @@
+# Docker Compose for registry-based deploy (tag-based production pipeline).
+# Images are pre-built in CI and pulled from GitLab Container Registry.
+#
+# Required env vars (from .env.prod or --env-file):
+#   APP_NAME, DOCKER_NETWORK_NAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE
+# Required env vars (from CI / deploy-registry.sh):
+#   REGISTRY_IMAGE, TAG
+
+services:
+
+  nginx:
+    image: ${REGISTRY_IMAGE}/nginx:${TAG:-latest}
+    container_name: ${APP_NAME}_nginx
+    restart: unless-stopped
+    environment:
+      - APP_NAME=${APP_NAME}_fpm
+    volumes:
+      - nginx_log:/var/log/nginx
+    depends_on:
+      - fpm
+    networks:
+      - service_bridge
+      - proxy
+
+  fpm:
+    image: ${REGISTRY_IMAGE}/fpm:${TAG:-latest}
+    container_name: ${APP_NAME}_fpm
+    restart: unless-stopped
+    volumes:
+      - ./.env.prod:/var/www/.env:ro
+      - app_storage:/var/www/storage
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - service_bridge
+
+  redis:
+    image: redis:alpine
+    container_name: ${APP_NAME}_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - service_bridge
+
+  postgres:
+    image: postgres:16
+    container_name: ${APP_NAME}_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - service_bridge
+
+networks:
+  service_bridge:
+    name: ${DOCKER_NETWORK_NAME}_bridge
+    external: true
+  proxy:
+    external: true
+    name: proxy
+
+volumes:
+  app_storage:
+  pgdata:
+  redis_data:
+  nginx_log:

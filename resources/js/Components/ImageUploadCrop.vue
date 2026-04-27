@@ -63,12 +63,17 @@
     <p v-if="uploadError" class="mt-1 text-sm text-red-600">{{ uploadError }}</p>
 
     <!-- Uploading -->
-    <div v-if="uploading" class="mt-2 flex items-center gap-2 text-sm text-gray-500">
-      <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
-      Загрузка...
+    <div v-if="uploading" class="mt-2">
+      <div class="mb-1 flex items-center gap-2 text-sm text-gray-500">
+        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        <span>Загрузка{{ uploadProgress > 0 ? ` ${uploadProgress}%` : '...' }}</span>
+      </div>
+      <div v-if="uploadProgress > 0" class="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+        <div class="h-full rounded-full bg-[#003274] transition-all duration-200" :style="{ width: uploadProgress + '%' }" />
+      </div>
     </div>
 
     <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelected" />
@@ -116,6 +121,8 @@
       :show="showMediaPicker"
       :api-url="mediaPickerUrl"
       :upload-url="uploadUrl"
+      :presigned-url-endpoint="presignedUrlEp"
+      :confirm-endpoint="confirmEp"
       :collection="collection"
       :entity-type="entityType"
       :entity-id="entityId"
@@ -127,16 +134,20 @@
 
 <script setup>
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
 import axios from 'axios'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
+import { usePresignedUpload } from '@/composables/usePresignedUpload'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
   label: { type: String, default: null },
   error: { type: String, default: null },
   uploadUrl: { type: String, default: '/admin/upload/image' },
+  presignedUrlEndpoint: { type: String, default: '' },
+  confirmEndpoint: { type: String, default: '' },
   aspectRatio: { type: Number, default: 16 / 9 },
   previewClass: { type: String, default: 'h-48 w-full object-cover' },
   skipCrop: { type: Boolean, default: false },
@@ -148,9 +159,25 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+const sharedConfig = usePage().props?.presignedUpload
+const presignedUrlEp = props.presignedUrlEndpoint || sharedConfig?.presignedUrlEndpoint || ''
+const confirmEp = props.confirmEndpoint || sharedConfig?.confirmEndpoint || ''
+const presigned = (presignedUrlEp && confirmEp)
+  ? usePresignedUpload({
+      presignedUrlEndpoint: presignedUrlEp,
+      confirmEndpoint: confirmEp,
+      fallbackUploadUrl: props.uploadUrl,
+      fieldName: 'image',
+      collection: props.collection,
+      entityType: props.entityType,
+      entityId: props.entityId,
+    })
+  : null
+
 const fileInput = ref(null)
 const isDragging = ref(false)
 const uploading = ref(false)
+const uploadProgress = ref(0)
 const uploadError = ref('')
 const previewUrl = ref(props.modelValue || '')
 
@@ -164,6 +191,12 @@ let selectedFile = null
 watch(() => props.modelValue, (val) => {
   previewUrl.value = val || ''
 })
+
+if (presigned) {
+  watch(presigned.progress, (val) => {
+    uploadProgress.value = val
+  })
+}
 
 function openPicker() {
   fileInput.value?.click()
@@ -187,7 +220,7 @@ function handleFile(file) {
   selectedFile = file
   uploadError.value = ''
   if (props.skipCrop) {
-    uploadOriginal(file)
+    doUpload(file)
     return
   }
   const reader = new FileReader()
@@ -205,23 +238,35 @@ function appendMediaContext(formData) {
   if (props.entityId) formData.append('entity_id', props.entityId)
 }
 
-async function uploadOriginal(file) {
+async function doUpload(file) {
   uploading.value = true
+  uploadProgress.value = 0
   try {
-    const formData = new FormData()
-    formData.append('image', file)
-    appendMediaContext(formData)
-    const { data } = await axios.post(props.uploadUrl, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-    if (data.url) {
-      previewUrl.value = data.url
-      emit('update:modelValue', data.url)
+    let url
+    if (presigned) {
+      const result = await presigned.uploadFile(file)
+      url = result?.url
+      uploadProgress.value = presigned.progress.value
+    } else {
+      const formData = new FormData()
+      formData.append('image', file)
+      appendMediaContext(formData)
+      const { data } = await axios.post(props.uploadUrl, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (e) => {
+          if (e.lengthComputable) uploadProgress.value = Math.round((e.loaded / e.total) * 100)
+        },
+      })
+      url = data?.url
+    }
+    if (url) {
+      previewUrl.value = url
+      emit('update:modelValue', url)
     } else {
       uploadError.value = 'Сервер не вернул URL изображения'
     }
   } catch (err) {
-    const msg = err.response?.data?.message || err.response?.data?.errors?.image?.[0] || 'Ошибка загрузки'
+    const msg = err.response?.data?.message || err.response?.data?.errors?.image?.[0] || presigned?.error.value || 'Ошибка загрузки'
     uploadError.value = msg
   } finally {
     uploading.value = false
@@ -273,33 +318,10 @@ async function applyCrop() {
 
   canvas.toBlob(async (blob) => {
     if (!blob) return
-    uploading.value = true
-    try {
-      const origName = selectedFile?.name || cropSrc.value.split('/').pop()?.split('?')[0] || 'image.jpg'
-      const ext = origName.split('.').pop() || 'jpg'
-      const fileName = selectedFile ? origName : `cropped_${origName}`
-      const file = new File([blob], fileName, { type: blob.type })
-      const formData = new FormData()
-      formData.append('image', file)
-      appendMediaContext(formData)
-
-      const { data } = await axios.post(props.uploadUrl, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-
-      if (data.url) {
-        previewUrl.value = data.url
-        emit('update:modelValue', data.url)
-      } else {
-        uploadError.value = 'Сервер не вернул URL изображения'
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data?.errors?.image?.[0] || 'Ошибка загрузки'
-      uploadError.value = msg
-    } finally {
-      uploading.value = false
-      selectedFile = null
-    }
+    const origName = selectedFile?.name || cropSrc.value.split('/').pop()?.split('?')[0] || 'image.jpg'
+    const fileName = selectedFile ? origName : `cropped_${origName}`
+    const file = new File([blob], fileName, { type: blob.type })
+    await doUpload(file)
   }, selectedFile?.type || 'image/jpeg', 0.9)
 }
 

@@ -149,6 +149,7 @@
                       :assignments="assignments"
                       :videos="videos"
                       :event-slug="event.slug"
+                      :presigned-upload="presignedUpload"
                       @move="(delta) => moveModuleStage(mIdx, sIdx, delta)"
                       @remove="removeModuleStage(mIdx, sIdx)"
                       @search="openStageSearch(mIdx, sIdx)"
@@ -194,6 +195,7 @@
               :assignments="assignments"
               :videos="videos"
               :event-slug="event.slug"
+              :presigned-upload="presignedUpload"
               @move="(delta) => moveStage(idx, delta)"
               @remove="form.stages.splice(idx, 1)"
               @search="openStageSearch(null, idx)"
@@ -258,7 +260,7 @@ import { PlusIcon, XMarkIcon, ChevronUpIcon, ChevronDownIcon, MagnifyingGlassIco
 import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 import axios from 'axios'
 
-const props = defineProps({ event: Object, course: Object, tests: Array, assignments: Array, videos: Array })
+const props = defineProps({ event: Object, course: Object, tests: Array, assignments: Array, videos: Array, presignedUpload: { type: Object, default: null } })
 const mediaEntityType = 'App\\Models\\Lms\\LmsCourse'
 const mediaEntityId = props.course?.id || null
 

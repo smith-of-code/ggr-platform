@@ -127,6 +127,8 @@ class AssignmentController extends Controller
             'comment' => ['nullable', 'string'],
             'files' => ['nullable', 'array', 'max:5'],
             'files.*' => ['file', 'max:20480'],
+            'file_urls' => ['nullable', 'array', 'max:5'],
+            'file_urls.*' => ['string', 'url'],
         ]);
 
         $disk = config('filesystems.upload_disk');
@@ -136,6 +138,9 @@ class AssignmentController extends Controller
                 $path = $file->store('assignment-reviews/' . $assignment->id, $disk);
                 $files[] = ['name' => $file->getClientOriginalName(), 'path' => Storage::disk($disk)->url($path)];
             }
+        }
+        foreach ($request->input('file_urls', []) as $url) {
+            $files[] = ['name' => basename(parse_url($url, PHP_URL_PATH) ?: 'file'), 'path' => $url];
         }
 
         LmsAssignmentReview::create([
@@ -169,6 +174,8 @@ class AssignmentController extends Controller
             'text' => ['required', 'string', 'max:5000'],
             'files' => ['nullable', 'array', 'max:5'],
             'files.*' => ['file', 'max:20480'],
+            'file_urls' => ['nullable', 'array', 'max:5'],
+            'file_urls.*' => ['string', 'url'],
         ]);
 
         $disk = config('filesystems.upload_disk');
@@ -178,6 +185,9 @@ class AssignmentController extends Controller
                 $path = $file->store('assignment-comments/' . $assignment->id, $disk);
                 $files[] = ['name' => $file->getClientOriginalName(), 'path' => Storage::disk($disk)->url($path)];
             }
+        }
+        foreach ($request->input('file_urls', []) as $url) {
+            $files[] = ['name' => basename(parse_url($url, PHP_URL_PATH) ?: 'file'), 'path' => $url];
         }
 
         LmsAssignmentComment::create([

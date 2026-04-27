@@ -170,13 +170,15 @@ class ProfileController extends Controller
         }
 
         $avatarUrl = null;
-        if ($request->hasFile('avatar')) {
+        if ($request->filled('avatar_url')) {
+            $avatarUrl = $request->input('avatar_url');
+        } elseif ($request->hasFile('avatar')) {
             $disk = config('filesystems.upload_disk');
             $path = $request->file('avatar')->store('avatars', $disk);
             $avatarUrl = Storage::disk($disk)->url($path);
         }
 
-        unset($validated['avatar']);
+        unset($validated['avatar'], $validated['avatar_url']);
         $programFaculties = $validated['program_faculties'] ?? [];
         unset($validated['program_faculties']);
 
@@ -257,7 +259,9 @@ class ProfileController extends Controller
     {
         $request->validate([
             'type' => ['required', Rule::in(LmsProfileDocument::TYPES)],
-            'file' => ['required', 'file', 'max:51200', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
+            'file' => ['required_without:file_url', 'nullable', 'file', 'max:51200', 'mimes:pdf,jpg,jpeg,png,doc,docx'],
+            'file_url' => ['required_without:file', 'nullable', 'string', 'url'],
+            'file_name' => ['nullable', 'string', 'max:255'],
         ]);
 
         $user = auth()->user();
@@ -277,13 +281,19 @@ class ProfileController extends Controller
             Storage::disk($disk)->delete($existing->file_path);
         }
 
-        $path = $request->file('file')->store('profile-documents', $disk);
+        if ($request->filled('file_url')) {
+            $filePath = $request->input('file_url');
+            $originalName = $request->input('file_name', basename(parse_url($filePath, PHP_URL_PATH) ?: 'document'));
+        } else {
+            $filePath = $request->file('file')->store('profile-documents', $disk);
+            $originalName = $request->file('file')->getClientOriginalName();
+        }
 
         $profile->documents()->updateOrCreate(
             ['type' => $request->type],
             [
-                'file_path' => $path,
-                'original_name' => $request->file('file')->getClientOriginalName(),
+                'file_path' => $filePath,
+                'original_name' => $originalName,
                 'status' => LmsProfileDocument::STATUS_PENDING_REVIEW,
                 'admin_comment' => null,
                 'reviewed_at' => null,
