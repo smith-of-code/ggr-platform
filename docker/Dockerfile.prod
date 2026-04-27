@@ -3,7 +3,16 @@
 # =============================================================================
 
 # ---------------------------------------------------------------------------
-#  Stage 1: Build frontend assets
+#  Stage 1: Install PHP dependencies
+# ---------------------------------------------------------------------------
+FROM composer:2 AS composer-build
+
+WORKDIR /app
+COPY . .
+RUN composer install --no-dev --no-scripts --prefer-dist --optimize-autoloader --ignore-platform-reqs --quiet
+
+# ---------------------------------------------------------------------------
+#  Stage 2: Build frontend assets
 # ---------------------------------------------------------------------------
 FROM node:22-alpine AS node-build
 
@@ -11,16 +20,8 @@ WORKDIR /app
 COPY package.json .npmrc ./
 RUN npm install
 COPY . .
+COPY --from=composer-build /app/vendor/tightenco/ziggy /app/vendor/tightenco/ziggy
 RUN npm run build
-
-# ---------------------------------------------------------------------------
-#  Stage 2: Install PHP dependencies
-# ---------------------------------------------------------------------------
-FROM composer:2 AS composer-build
-
-WORKDIR /app
-COPY . .
-RUN composer install --no-dev --no-scripts --prefer-dist --optimize-autoloader --ignore-platform-reqs --quiet
 
 # ---------------------------------------------------------------------------
 #  Stage 3: Production FPM image (target: fpm)
