@@ -1,0 +1,59 @@
+# ─── Stage 1: Composer dependencies ────────────────────────────────
+FROM php:8.3-cli AS composer-deps
+
+RUN apt-get update -qq \
+    && apt-get install -yqq git unzip libzip-dev libpq-dev libpng-dev libonig-dev libxml2-dev > /dev/null \
+    && docker-php-ext-install zip pdo pdo_pgsql mbstring exif pcntl bcmath gd > /dev/null \
+    && pecl install redis > /dev/null && docker-php-ext-enable redis \
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer > /dev/null
+
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --prefer-dist --optimize-autoloader --quiet
+COPY . .
+RUN composer dump-autoload --optimize --quiet
+
+# ─── Stage 2: Frontend build ──────────────────────────────────────
+FROM node:22-alpine AS frontend-build
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --silent
+COPY . .
+RUN npm run build
+
+# ─── Stage 3: FPM (target: fpm) ──────────────────────────────────
+FROM php:8.3-fpm AS fpm
+
+RUN apt-get update -qq \
+    && apt-get install -yqq \
+       libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev supervisor > /dev/null \
+    && docker-php-ext-install zip pdo pdo_pgsql mbstring exif pcntl bcmath gd > /dev/null \
+    && pecl install redis > /dev/null && docker-php-ext-enable redis \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY docker/php.ini /usr/local/etc/php/php.ini
+COPY docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/supervisor/horizon.conf /etc/supervisor/conf.d/horizon.conf
+COPY docker/supervisor/php-fpm.conf /etc/supervisor/conf.d/php-fpm.conf
+
+RUN mkdir -p /var/log/supervisor
+
+WORKDIR /var/www
+
+COPY --from=composer-deps /app .
+COPY --from=frontend-build /app/public/build ./public/build
+
+RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
+    && ln -sf /var/www/storage/app/public /var/www/public/storage \
+    && chown -R www-data:www-data storage bootstrap/cache public/storage
+
+USER www-data
+
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+
+# ─── Stage 4: Nginx (target: nginx) ──────────────────────────────
+FROM nginx:alpine AS nginx
+
+COPY docker/nginx/prod/templates/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=fpm /var/www/public /var/www/public

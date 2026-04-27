@@ -1,0 +1,7 @@
+stages:
+  - preflight
+  - build
+  - deploy
+
+include:
+  - local: .gitlab/ci/deploy-prod.yml

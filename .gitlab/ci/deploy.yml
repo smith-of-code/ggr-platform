@@ -1,0 +1,61 @@
+# Deploy master branch to staging/production server via SSH + git pull + run.sh
+#
+# Required CI/CD variables (Settings → CI/CD → Variables):
+#   SSH_KEY_B64   – base64-encoded private key (ed25519)
+#   SSH_USER      – remote server user
+#   SSH_HOST      – remote server host
+#   SSH_PORT      – remote server SSH port (default: 22)
+#   GIT_TOKEN     – (optional) personal/deploy token if CI_JOB_TOKEN scope insufficient
+#   PROD_ENV_FILE – (File type!) full .env.prod contents — uploaded to server each deploy
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+      when: manual
+  environment:
+    name: production
+  before_script:
+    - apk add --no-cache openssh-client bash git > /dev/null
+  script:
+    - mkdir -p ~/.ssh
+    - echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - ssh-keyscan -H "$SSH_HOST" -p "${SSH_PORT:-22}" >> ~/.ssh/known_hosts 2>/dev/null
+
+    - |
+      REPO="${CI_PROJECT_PATH}"
+      BRANCH="${CI_COMMIT_BRANCH}"
+      PORT="${SSH_PORT:-22}"
+      PROJECT_DIR="/home/${SSH_USER}/projects/${REPO}"
+      DOCKER_COMPOSE_DIR="${PROJECT_DIR}/docker"
+      TOKEN="${GIT_TOKEN:-$CI_JOB_TOKEN}"
+      REPO_URL="https://gitlab-ci-token:${TOKEN}@${CI_SERVER_HOST}/${REPO}.git"
+
+      ssh -p "$PORT" "${SSH_USER}@${SSH_HOST}" bash -se <<REMOTE
+        set -euo pipefail
+
+        if [ ! -d "${PROJECT_DIR}/.git" ]; then
+          mkdir -p "${PROJECT_DIR}"
+          git clone --quiet --depth 1 -b "${BRANCH}" "${REPO_URL}" "${PROJECT_DIR}"
+        else
+          cd "${PROJECT_DIR}"
+          git remote set-url origin "${REPO_URL}"
+          git fetch --quiet origin "${BRANCH}" --depth 1
+          git checkout -B "${BRANCH}" "origin/${BRANCH}"
+        fi
+      REMOTE
+
+      if [ -n "${PROD_ENV_FILE:-}" ] && [ -f "$PROD_ENV_FILE" ]; then
+        echo "==> Uploading .env.prod from PROD_ENV_FILE..."
+        scp -P "$PORT" "$PROD_ENV_FILE" "${SSH_USER}@${SSH_HOST}:${DOCKER_COMPOSE_DIR}/.env.prod"
+      else
+        echo "==> PROD_ENV_FILE not set, using .env.prod from repo"
+      fi
+
+      ssh -p "$PORT" "${SSH_USER}@${SSH_HOST}" bash -se <<REMOTE
+        set -euo pipefail
+        cd "${DOCKER_COMPOSE_DIR}"
+        bash run.sh prod
+      REMOTE
