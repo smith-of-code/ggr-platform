@@ -1,20 +1,11 @@
-# ─── Stage 1: Composer dependencies ────────────────────────────────
-FROM php:8.3-cli AS composer-deps
+# =============================================================================
+#  Multi-stage production build for Loadex (fpm + nginx targets)
+# =============================================================================
 
-RUN apt-get update -qq \
-    && apt-get install -yqq git unzip libzip-dev libpq-dev libpng-dev libonig-dev libxml2-dev > /dev/null \
-    && docker-php-ext-install zip pdo pdo_pgsql mbstring exif pcntl bcmath gd > /dev/null \
-    && pecl install redis > /dev/null && docker-php-ext-enable redis \
-    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer > /dev/null
-
-WORKDIR /app
-COPY composer.json ./
-RUN composer install --no-dev --no-scripts --prefer-dist --optimize-autoloader --quiet
-COPY . .
-RUN composer dump-autoload --optimize --quiet
-
-# ─── Stage 2: Frontend build ──────────────────────────────────────
-FROM node:22-alpine AS frontend-build
+# ---------------------------------------------------------------------------
+#  Stage 1: Build frontend assets
+# ---------------------------------------------------------------------------
+FROM node:22-alpine AS node-build
 
 WORKDIR /app
 COPY package.json ./
@@ -22,37 +13,79 @@ RUN npm install --silent
 COPY . .
 RUN npm run build
 
-# ─── Stage 3: FPM (target: fpm) ──────────────────────────────────
+# ---------------------------------------------------------------------------
+#  Stage 2: Install PHP dependencies
+# ---------------------------------------------------------------------------
+FROM composer:2 AS composer-build
+
+WORKDIR /app
+COPY . .
+RUN composer update --no-dev --prefer-dist --optimize-autoloader --ignore-platform-reqs --quiet
+
+# ---------------------------------------------------------------------------
+#  Stage 3: Production FPM image (target: fpm)
+# ---------------------------------------------------------------------------
 FROM php:8.3-fpm AS fpm
 
-RUN apt-get update -qq \
-    && apt-get install -yqq \
-       libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev supervisor > /dev/null \
-    && docker-php-ext-install zip pdo pdo_pgsql mbstring exif pcntl bcmath gd > /dev/null \
-    && pecl install redis > /dev/null && docker-php-ext-enable redis \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    libpq-dev \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN docker-php-ext-install zip pdo pdo_pgsql mbstring exif pcntl bcmath gd
+
+RUN pecl install redis && docker-php-ext-enable redis
 
 COPY docker/php.ini /usr/local/etc/php/php.ini
 COPY docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY docker/supervisor/horizon.conf /etc/supervisor/conf.d/horizon.conf
-COPY docker/supervisor/php-fpm.conf /etc/supervisor/conf.d/php-fpm.conf
 
-RUN mkdir -p /var/log/supervisor
+RUN groupadd -g 1000 laravel && \
+    useradd -u 1000 -g 1000 -m -s /bin/bash laravel
 
+RUN mkdir -p /var/log/supervisor && chown laravel:laravel /var/log/supervisor
+
+COPY --from=composer-build /app/vendor /var/www/vendor
+
+COPY app        /var/www/app
+COPY bootstrap  /var/www/bootstrap
+COPY config     /var/www/config
+COPY database   /var/www/database
+COPY lang       /var/www/lang
+COPY public     /var/www/public
+COPY resources/views /var/www/resources/views
+COPY routes     /var/www/routes
+COPY artisan    /var/www/artisan
+COPY composer.json /var/www/composer.json
+
+COPY --from=node-build /app/public/build /var/www/public/build
+
+RUN mkdir -p \
+    /var/www/storage/app/public \
+    /var/www/storage/app/private \
+    /var/www/storage/framework/cache/data \
+    /var/www/storage/framework/sessions \
+    /var/www/storage/framework/views \
+    /var/www/storage/logs \
+    /var/www/bootstrap/cache
+
+RUN chown -R laravel:laravel /var/www/storage /var/www/bootstrap/cache /var/www/public && \
+    chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
+RUN ln -s /var/www/storage/app/public /var/www/public/storage
+
+USER laravel
 WORKDIR /var/www
 
-COPY --from=composer-deps /app .
-COPY --from=frontend-build /app/public/build ./public/build
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php-fpm -D && supervisord -c /etc/supervisor/supervisord.conf"]
 
-RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
-    && ln -sf /var/www/storage/app/public /var/www/public/storage \
-    && chown -R www-data:www-data storage bootstrap/cache public/storage
-
-USER www-data
-
-CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
-
-# ─── Stage 4: Nginx (target: nginx) ──────────────────────────────
+# ---------------------------------------------------------------------------
+#  Stage 4: Production Nginx image (target: nginx)
+# ---------------------------------------------------------------------------
 FROM nginx:alpine AS nginx
 
 COPY docker/nginx/prod/templates/default.conf.template /etc/nginx/templates/default.conf.template
