@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Lms;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsProfileDocument;
@@ -12,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,6 +40,37 @@ class ProfileController extends Controller
             ->get(['provider', 'created_at'])
             ->keyBy('provider');
 
+        $programFacultyOptions = LmsCourseEnrollment::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
+            ->whereHas('course', fn ($q) => $q->where('lms_event_id', $event->id))
+            ->with('course:id,title,faculties')
+            ->orderBy('created_at')
+            ->get()
+            ->map(function (LmsCourseEnrollment $enrollment) {
+                $course = $enrollment->course;
+                $faculties = collect($course ? $course->faculties : [])
+                    ->filter(fn ($item) => is_string($item))
+                    ->map(fn (string $item) => trim($item))
+                    ->filter(fn (string $item) => $item !== '')
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                if ($faculties === []) {
+                    return null;
+                }
+
+                return [
+                    'enrollment_id' => $enrollment->id,
+                    'course_title' => $course ? $course->title : 'Программа',
+                    'faculty' => $enrollment->faculty,
+                    'faculties' => $faculties,
+                ];
+            })
+            ->filter()
+            ->values();
+
         $enrollmentTemplates = [
             ['key' => 'management', 'label' => 'Управление муниципальными проектами'],
             ['key' => 'guide', 'label' => 'Гид-экскурсовод промышленного туризма'],
@@ -55,6 +88,7 @@ class ProfileController extends Controller
             'documentTypes' => LmsProfileDocument::TYPES,
             'documentTypesWithTemplate' => LmsProfileDocument::TYPES_WITH_TEMPLATE,
             'enrollmentTemplates' => $enrollmentTemplates,
+            'programFacultyOptions' => $programFacultyOptions,
             'pendingDocumentReplaceRequests' => $pendingDocumentReplaceRequests,
         ]);
     }
@@ -114,6 +148,8 @@ class ProfileController extends Controller
             'project_description' => ['nullable', 'string', 'max:5000'],
             'preferred_channel' => ['nullable', Rule::in(['telegram', 'max'])],
             'avatar' => ['nullable', 'image', 'max:2048'],
+            'program_faculties' => ['nullable', 'array'],
+            'program_faculties.*' => ['nullable', 'string', 'max:120'],
         ], [
             'email.unique' => 'Этот адрес электронной почты уже используется.',
         ]);
@@ -141,11 +177,70 @@ class ProfileController extends Controller
         }
 
         unset($validated['avatar']);
+        $programFaculties = $validated['program_faculties'] ?? [];
+        unset($validated['program_faculties']);
 
         $profile->update($validated);
 
         if ($avatarUrl) {
             $profile->update(['avatar' => $avatarUrl]);
+        }
+
+        if (is_array($programFaculties) && $programFaculties !== []) {
+            $enrollmentIds = collect(array_keys($programFaculties))
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn (int $id) => $id > 0)
+                ->values()
+                ->all();
+
+            $enrollments = LmsCourseEnrollment::query()
+                ->whereIn('id', $enrollmentIds)
+                ->where('user_id', $user->id)
+                ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
+                ->whereHas('course', fn ($q) => $q->where('lms_event_id', $event->id))
+                ->with('course:id,faculties')
+                ->get()
+                ->keyBy('id');
+
+            $errors = [];
+
+            foreach ($programFaculties as $enrollmentIdRaw => $facultyRaw) {
+                $enrollmentId = (int) $enrollmentIdRaw;
+                /** @var LmsCourseEnrollment|null $enrollment */
+                $enrollment = $enrollments->get($enrollmentId);
+                if (! $enrollment) {
+                    continue;
+                }
+
+                $course = $enrollment->course;
+                $allowedFaculties = collect($course ? $course->faculties : [])
+                    ->filter(fn ($item) => is_string($item))
+                    ->map(fn (string $item) => trim($item))
+                    ->filter(fn (string $item) => $item !== '')
+                    ->unique()
+                    ->values();
+
+                if ($allowedFaculties->isEmpty()) {
+                    continue;
+                }
+
+                $faculty = is_string($facultyRaw) ? trim($facultyRaw) : '';
+                if ($faculty === '') {
+                    $enrollment->update(['faculty' => null]);
+                    continue;
+                }
+
+                if (! $allowedFaculties->contains($faculty)) {
+                    $errors["program_faculties.{$enrollmentId}"] = 'Выбран недоступный факультет для программы.';
+                    continue;
+                }
+
+                $enrollment->update(['faculty' => $faculty]);
+            }
+
+            if ($errors !== []) {
+                throw ValidationException::withMessages($errors);
+            }
         }
 
         $profile->refresh();

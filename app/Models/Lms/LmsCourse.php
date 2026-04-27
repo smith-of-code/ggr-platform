@@ -29,6 +29,7 @@ class LmsCourse extends Model
         'requires_approval',
         'is_mandatory',
         'unlocks_gamification',
+        'faculties',
         'position',
         'starts_at',
         'ends_at',
@@ -40,6 +41,7 @@ class LmsCourse extends Model
         'requires_approval' => 'boolean',
         'is_mandatory' => 'boolean',
         'unlocks_gamification' => 'boolean',
+        'faculties' => 'array',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
     ];

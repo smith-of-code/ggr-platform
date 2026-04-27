@@ -53,6 +53,7 @@ class CourseController extends Controller
         $validated['requires_approval'] = $request->boolean('requires_approval', false);
         $validated['is_mandatory'] = $request->boolean('is_mandatory', false);
         $validated['unlocks_gamification'] = $request->boolean('unlocks_gamification', false);
+        $validated['faculties'] = $this->normalizeFaculties($validated['faculties'] ?? []);
 
         $course = LmsCourse::create($validated);
 
@@ -93,6 +94,7 @@ class CourseController extends Controller
         $validated['requires_approval'] = $request->boolean('requires_approval', false);
         $validated['is_mandatory'] = $request->boolean('is_mandatory', false);
         $validated['unlocks_gamification'] = $request->boolean('unlocks_gamification', false);
+        $validated['faculties'] = $this->normalizeFaculties($validated['faculties'] ?? []);
 
         $course->update($validated);
 
@@ -168,11 +170,11 @@ class CourseController extends Controller
                 'lms_test_id' => $b->lms_test_id,
                 'lms_assignment_id' => $b->lms_assignment_id,
                 'lms_video_id' => $b->lms_video_id,
-                'scheduled_at' => $b->scheduled_at?->format('Y-m-d\TH:i:s'),
-                'scheduled_ends_at' => $b->scheduled_ends_at?->format('Y-m-d\TH:i:s'),
-                'stage_title' => $b->stage?->title,
-                'course_title' => $b->stage?->course?->title,
-                'module_title' => $b->stage?->module?->title,
+                'scheduled_at' => $b->scheduled_at ? $b->scheduled_at->format('Y-m-d\TH:i:s') : null,
+                'scheduled_ends_at' => $b->scheduled_ends_at ? $b->scheduled_ends_at->format('Y-m-d\TH:i:s') : null,
+                'stage_title' => $b->stage ? $b->stage->title : null,
+                'course_title' => $b->stage && $b->stage->course ? $b->stage->course->title : null,
+                'module_title' => $b->stage && $b->stage->module ? $b->stage->module->title : null,
             ]);
 
         return response()->json($blocks);
@@ -363,6 +365,8 @@ class CourseController extends Controller
             'requires_approval' => ['boolean'],
             'is_mandatory' => ['boolean'],
             'unlocks_gamification' => ['boolean'],
+            'faculties' => ['nullable', 'array'],
+            'faculties.*' => ['nullable', 'string', 'max:120'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date'],
             'modules' => ['nullable', 'array'],
@@ -394,6 +398,23 @@ class CourseController extends Controller
         }
 
         return $rules;
+    }
+
+    /**
+     * @param  array<int, mixed>  $faculties
+     * @return array<int, string>|null
+     */
+    private function normalizeFaculties(array $faculties): ?array
+    {
+        $normalized = collect($faculties)
+            ->filter(fn ($item) => is_string($item))
+            ->map(fn (string $item) => trim($item))
+            ->filter(fn (string $item) => $item !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        return $normalized === [] ? null : $normalized;
     }
 
     private function syncModulesAndStages(LmsCourse $course, array $modules, array $orphanStages): void

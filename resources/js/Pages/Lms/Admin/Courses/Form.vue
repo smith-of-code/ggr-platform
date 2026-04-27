@@ -59,6 +59,24 @@
           <div class="flex items-end">
             <RCheckbox v-model="form.unlocks_gamification" label="Открывает геймификацию (баллы, рейтинг)" />
           </div>
+          <div class="sm:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-gray-700">Факультеты программы</label>
+            <p class="mb-3 text-xs text-gray-500">
+              Участник сможет выбрать один факультет из этого списка после записи на программу.
+            </p>
+            <div class="space-y-2">
+              <div v-for="(faculty, idx) in form.faculties" :key="`faculty-${idx}`" class="flex items-center gap-2">
+                <RInput v-model="form.faculties[idx]" :placeholder="`Факультет ${idx + 1}`" class="flex-1" />
+                <RButton variant="ghost" size="sm" icon-only type="button" title="Удалить факультет" @click="removeFaculty(idx)">
+                  <template #icon><XMarkIcon class="h-4 w-4" /></template>
+                </RButton>
+              </div>
+            </div>
+            <RButton variant="outline" size="sm" type="button" class="mt-3" @click="addFaculty">
+              <template #icon><PlusIcon class="h-4 w-4" /></template>
+              Добавить факультет
+            </RButton>
+          </div>
         </div>
       </RCard>
 
@@ -403,6 +421,7 @@ const form = useForm({
   requires_approval: props.course?.requires_approval ?? false,
   is_mandatory: props.course?.is_mandatory ?? false,
   unlocks_gamification: props.course?.unlocks_gamification ?? false,
+  faculties: props.course?.faculties ?? [],
   modules: buildModules(),
   stages: buildOrphanStages(),
 })
@@ -415,6 +434,14 @@ function addModule() {
     const idx = form.modules.length - 1
     moduleRefs.value[idx]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   })
+}
+
+function addFaculty() {
+  form.faculties.push('')
+}
+
+function removeFaculty(idx) {
+  form.faculties.splice(idx, 1)
 }
 function insertModuleAfter(mIdx) {
   form.modules.splice(mIdx + 1, 0, emptyModule())
@@ -475,11 +502,14 @@ function submit() {
       stages: filterStages(m.stages),
     }))
   const stages = filterStages(form.stages)
+  const faculties = (form.faculties || [])
+    .map(v => String(v || '').trim())
+    .filter(Boolean)
 
   if (props.course) {
-    form.transform(data => ({ ...data, modules, stages })).put(route('lms.admin.courses.update', [props.event.slug, props.course.id]))
+    form.transform(data => ({ ...data, modules, stages, faculties })).put(route('lms.admin.courses.update', [props.event.slug, props.course.id]))
   } else {
-    form.transform(data => ({ ...data, modules, stages })).post(route('lms.admin.courses.store', props.event.slug))
+    form.transform(data => ({ ...data, modules, stages, faculties })).post(route('lms.admin.courses.store', props.event.slug))
   }
 }
 </script>

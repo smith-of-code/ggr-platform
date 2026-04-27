@@ -137,6 +137,30 @@
               <p v-if="form.errors.project_description" class="mt-1 text-sm text-red-600">{{ form.errors.project_description }}</p>
             </div>
 
+            <div v-if="programFacultyOptions.length" class="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p class="text-sm font-medium text-gray-700">Факультет программы</p>
+              <p class="text-xs text-gray-500">Выберите факультет для каждой программы, на которую вы записаны.</p>
+              <div
+                v-for="item in programFacultyOptions"
+                :key="`program-faculty-${item.enrollment_id}`"
+                class="rounded-lg border border-gray-200 bg-white p-3"
+              >
+                <p class="mb-2 text-sm font-medium text-gray-900">{{ item.course_title }}</p>
+                <select
+                  v-model="form.program_faculties[item.enrollment_id]"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+                >
+                  <option value="">Не выбрано</option>
+                  <option v-for="faculty in item.faculties" :key="faculty" :value="faculty">
+                    {{ faculty }}
+                  </option>
+                </select>
+                <p v-if="programFacultyError(item.enrollment_id)" class="mt-1 text-sm text-red-600">
+                  {{ programFacultyError(item.enrollment_id) }}
+                </p>
+              </div>
+            </div>
+
             <div>
               <label class="mb-2 block text-sm font-medium text-gray-500">Аватар</label>
               <div class="flex items-center gap-4">
@@ -431,6 +455,7 @@ const props = defineProps({
   documentTypesWithTemplate: { type: Array, default: () => [] },
   enrollmentTemplates: { type: Array, default: () => [] },
   pendingDocumentReplaceRequests: { type: Array, default: () => [] },
+  programFacultyOptions: { type: Array, default: () => [] },
 })
 
 const page = usePage()
@@ -536,6 +561,9 @@ const form = useForm({
   position: props.profile?.position ?? '',
   project_description: props.profile?.project_description ?? '',
   preferred_channel: props.profile?.preferred_channel || 'max',
+  program_faculties: Object.fromEntries(
+    (props.programFacultyOptions || []).map((item) => [item.enrollment_id, item.faculty || ''])
+  ),
   avatar: null,
 })
 
@@ -562,6 +590,10 @@ function submit() {
     forceFormData: true,
     preserveScroll: true,
   })
+}
+
+function programFacultyError(enrollmentId) {
+  return form.errors[`program_faculties.${enrollmentId}`]
 }
 
 // Documents

@@ -127,10 +127,10 @@ class CourseController extends Controller
         if (! $enrollment) {
             $other = LmsCourseEnrollment::where('user_id', $user->id)
                 ->whereIn('status', ['pending', 'enrolled', 'in_progress'])
-                ->whereHas('course', fn ($q) => $q
-                    ->where('lms_event_id', $event->id)
-                    ->where('is_mandatory', false)
-                )
+                ->whereHas('course', function ($q) use ($event) {
+                    $q->where('lms_event_id', $event->id)
+                        ->where('is_mandatory', false);
+                })
                 ->with('course:id,title')
                 ->first();
             if ($other) {
@@ -146,8 +146,8 @@ class CourseController extends Controller
 
         return Inertia::render('Lms/Courses/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
-            'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'sequential', 'is_mandatory', 'starts_at', 'ends_at']),
-            'enrollment' => $enrollment?->only(['id', 'status', 'completed_at']),
+            'course' => $course->only(['id', 'slug', 'title', 'description', 'image', 'sequential', 'is_mandatory', 'starts_at', 'ends_at', 'faculties']),
+            'enrollment' => $enrollment?->only(['id', 'status', 'faculty', 'completed_at']),
             'existingOtherEnrollment' => $existingOtherEnrollment,
             'modules' => $modules,
             'orphanStages' => $orphanStages,
@@ -178,10 +178,10 @@ class CourseController extends Controller
         $existingInOtherCourse = LmsCourseEnrollment::where('user_id', $user->id)
             ->where('lms_course_id', '!=', $course->id)
             ->whereIn('status', ['pending', 'enrolled', 'in_progress'])
-            ->whereHas('course', fn ($q) => $q
-                ->where('lms_event_id', $event->id)
-                ->where('is_mandatory', false)
-            )
+            ->whereHas('course', function ($q) use ($event) {
+                $q->where('lms_event_id', $event->id)
+                    ->where('is_mandatory', false);
+            })
             ->with('course:id,title')
             ->first();
 
@@ -247,5 +247,48 @@ class CourseController extends Controller
         $enrollment->delete();
 
         return redirect()->back()->with('success', 'Заявка отменена.');
+    }
+
+    public function updateFaculty(Request $request, LmsEvent $event, LmsCourse $course): RedirectResponse
+    {
+        if ($course->lms_event_id !== $event->id) {
+            abort(404);
+        }
+
+        $user = auth()->user();
+        $enrollment = LmsCourseEnrollment::query()
+            ->where('lms_course_id', $course->id)
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
+            ->firstOrFail();
+
+        $availableFaculties = collect($course->faculties ?? [])
+            ->filter(fn ($item) => is_string($item))
+            ->map(fn (string $item) => trim($item))
+            ->filter(fn (string $item) => $item !== '')
+            ->unique()
+            ->values();
+
+        if ($availableFaculties->isEmpty()) {
+            return redirect()->back()->withErrors([
+                'faculty' => 'Для этой программы не настроены факультеты.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'faculty' => ['required', 'string', 'max:120'],
+        ]);
+
+        if (! $availableFaculties->contains($validated['faculty'])) {
+            return redirect()->back()->withErrors([
+                'faculty' => 'Выбранный факультет недоступен для этой программы.',
+            ]);
+        }
+
+        $enrollment->update([
+            'faculty' => $validated['faculty'],
+        ]);
+
+        return redirect()->back()->with('success', 'Факультет по программе сохранён.');
     }
 }

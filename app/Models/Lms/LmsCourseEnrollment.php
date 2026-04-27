@@ -14,6 +14,7 @@ class LmsCourseEnrollment extends Model
         'lms_course_id',
         'user_id',
         'status',
+        'faculty',
         'completed_at',
         'reviewed_at',
         'reviewed_by',
