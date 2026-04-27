@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lms\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGamificationPoint;
+use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsGamificationRule;
 use App\Services\GamificationService;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,11 @@ class GamificationController extends Controller
     public function index(LmsEvent $event): Response
     {
         $rules = $event->gamificationRules()->orderBy('created_at', 'desc')->paginate(15);
+        $profile = $event->profiles()
+            ->where('user_id', auth()->id())
+            ->with('lmsRole:id,name,slug')
+            ->first();
+        $canManageRules = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
 
         $profiles = $event->profiles()->with(['user:id,name,email', 'lmsRole:id,name', 'cityRelation:id,name'])->get();
         $users = $profiles->map(function ($profile) {
@@ -48,6 +54,7 @@ class GamificationController extends Controller
             'users' => $users,
             'leaderboard' => $leaderboard,
             'pointsByUser' => $pointsByUser,
+            'canManageRules' => $canManageRules,
         ]);
     }
 

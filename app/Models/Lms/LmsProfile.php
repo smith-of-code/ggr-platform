@@ -165,20 +165,29 @@ class LmsProfile extends Model
      */
     public static function userIsLmsAdminForEvent(User $user, LmsEvent $event): bool
     {
+        return self::backofficeAccessForEvent($user, $event) === 'admin';
+    }
+
+    public static function backofficeAccessForEvent(User $user, LmsEvent $event): string
+    {
         $profile = static::where('user_id', $user->id)
             ->where('lms_event_id', $event->id)
-            ->with('lmsRole:id,slug')
+            ->with('lmsRole:id,name,slug')
             ->first();
 
         if (! $profile) {
-            return false;
+            return 'none';
         }
 
-        if ($profile->lms_role_id !== null) {
-            return $profile->lmsRole?->slug === 'admin';
+        if (self::isBackofficeAdminProfile($profile)) {
+            return 'admin';
         }
 
-        return $profile->role === 'admin';
+        if (self::isGamificationPointsOnlyProfile($profile)) {
+            return 'gamification_points_only';
+        }
+
+        return 'none';
     }
 
     /** Профиль с правами администрирования LMS (для маршрутов без параметра event). */
@@ -193,6 +202,55 @@ class LmsProfile extends Model
                 });
             })
             ->exists();
+    }
+
+    public static function isBackofficeAdminProfile(self $profile): bool
+    {
+        if ($profile->lms_role_id !== null) {
+            return $profile->lmsRole && $profile->lmsRole->slug === 'admin';
+        }
+
+        return $profile->role === 'admin';
+    }
+
+    public static function isGamificationPointsOnlyProfile(self $profile): bool
+    {
+        $candidates = array_filter([
+            $profile->role,
+            $profile->lmsRole ? $profile->lmsRole->slug : null,
+            $profile->lmsRole ? $profile->lmsRole->name : null,
+        ], fn ($v) => is_string($v) && $v !== '');
+
+        $allowed = [
+            'куратор-эксперт',
+            'куратор эксперт',
+            'тренер команды',
+            'трекер',
+            'эксперт',
+            'curator-expert',
+            'curator expert',
+            'team-trainer',
+            'team trainer',
+            'tracker',
+            'expert',
+        ];
+
+        foreach ($candidates as $candidate) {
+            $value = mb_strtolower(trim($candidate));
+            $value = str_replace('—', '-', $value);
+            $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+            $spaceVariant = str_replace('-', ' ', $value);
+            $dashVariant = str_replace(' ', '-', $value);
+
+            if (in_array($value, $allowed, true)
+                || in_array($spaceVariant, $allowed, true)
+                || in_array($dashVariant, $allowed, true)
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function cityRelation(): BelongsTo
