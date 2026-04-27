@@ -4,6 +4,22 @@
     <div class="space-y-6">
       <h1 class="font-brand text-2xl font-bold text-gray-900">Личный кабинет</h1>
 
+      <RCard v-if="canGamificationAdminAccessFromProfile">
+        <template #default>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold text-gray-900">Геймификация</h2>
+              <p class="mt-1 text-sm text-gray-500">
+                Для вашей роли доступно начисление баллов участникам.
+              </p>
+            </div>
+            <Link :href="route('lms.admin.gamification.index', event?.slug)">
+              <RButton type="button">Перейти к начислению баллов</RButton>
+            </Link>
+          </div>
+        </template>
+      </RCard>
+
       <!-- NOTE: баннеры «Профиль заполнен» и «Заполните профиль» временно скрыты по запросу заказчика -->
       <!--
       <div
@@ -456,6 +472,7 @@ const props = defineProps({
   enrollmentTemplates: { type: Array, default: () => [] },
   pendingDocumentReplaceRequests: { type: Array, default: () => [] },
   programFacultyOptions: { type: Array, default: () => [] },
+  canGamificationAdminAccessFromProfile: { type: Boolean, default: false },
 })
 
 const page = usePage()
