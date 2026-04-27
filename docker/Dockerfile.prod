@@ -8,7 +8,7 @@ RUN apt-get update -qq \
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer > /dev/null
 
 WORKDIR /app
-COPY composer.json composer.lock ./
+COPY composer.json ./
 RUN composer install --no-dev --no-scripts --prefer-dist --optimize-autoloader --quiet
 COPY . .
 RUN composer dump-autoload --optimize --quiet
@@ -17,7 +17,7 @@ RUN composer dump-autoload --optimize --quiet
 FROM node:22-alpine AS frontend-build
 
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm ci --silent
 COPY . .
 RUN npm run build
