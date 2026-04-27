@@ -182,11 +182,12 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Link, useForm } from '@inertiajs/vue3'
+import { Link, useForm, usePage } from '@inertiajs/vue3'
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/24/outline'
 import axios from 'axios'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import MediaPickerModal from '@/Components/MediaPickerModal.vue'
+import { usePresignedUpload } from '@/composables/usePresignedUpload'
 
 const props = defineProps({ event: Object, section: Object, parentSections: Array, groups: Array })
 const kbFilePicker = ref({ show: false, idx: -1 })
@@ -263,6 +264,8 @@ async function onBulkFiles(e) {
   bulkTotal.value = files.length
   bulkProgress.value = 0
 
+  const pConfig = usePage().props?.presignedUpload
+  const pUpload = pConfig ? usePresignedUpload({ presignedUrlEndpoint: pConfig.presignedUrlEndpoint, confirmEndpoint: pConfig.confirmEndpoint, fieldName: 'file' }) : null
   const uploadUrl = route('lms.admin.upload.file', props.event.slug)
   const concurrency = 3
   let idx = 0
@@ -270,10 +273,15 @@ async function onBulkFiles(e) {
   async function uploadNext() {
     while (idx < files.length) {
       const file = files[idx++]
-      const fd = new FormData()
-      fd.append('file', file)
       try {
-        const { data } = await axios.post(uploadUrl, fd)
+        let data
+        if (pUpload) {
+          data = await pUpload.uploadFile(file)
+        } else {
+          const fd = new FormData()
+          fd.append('file', file)
+          data = (await axios.post(uploadUrl, fd)).data
+        }
         const name = file.name.replace(/\.[^.]+$/, '')
         form.items.push(makeItem({
           title: name,

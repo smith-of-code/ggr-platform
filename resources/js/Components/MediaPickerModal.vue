@@ -155,7 +155,9 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import axios from 'axios'
+import { usePresignedUpload } from '@/composables/usePresignedUpload'
 
 const collectionLabels = {
   cities: 'Все города',
@@ -177,6 +179,8 @@ const props = defineProps({
   show: { type: Boolean, default: false },
   apiUrl: { type: String, required: true },
   uploadUrl: { type: String, default: '/admin/upload/image' },
+  presignedUrlEndpoint: { type: String, default: '' },
+  confirmEndpoint: { type: String, default: '' },
   collection: { type: String, default: '' },
   entityType: { type: String, default: '' },
   entityId: { type: [Number, String], default: null },
@@ -185,6 +189,21 @@ const props = defineProps({
   fileType: { type: String, default: 'image' },
   uploadField: { type: String, default: 'image' },
 })
+
+const sharedConfig = usePage().props?.presignedUpload
+const presignedUrlEp = props.presignedUrlEndpoint || sharedConfig?.presignedUrlEndpoint || ''
+const confirmEp = props.confirmEndpoint || sharedConfig?.confirmEndpoint || ''
+const presigned = (presignedUrlEp && confirmEp)
+  ? usePresignedUpload({
+      presignedUrlEndpoint: presignedUrlEp,
+      confirmEndpoint: confirmEp,
+      fallbackUploadUrl: props.uploadUrl,
+      fieldName: props.uploadField,
+      collection: props.collection,
+      entityType: props.entityType,
+      entityId: props.entityId,
+    })
+  : null
 
 const emit = defineEmits(['close', 'select'])
 
@@ -301,17 +320,26 @@ async function uploadFile(e) {
   uploading.value = true
   try {
     for (const file of files) {
-      const fd = new FormData()
-      fd.append(props.uploadField, file)
-      if (props.collection) fd.append('collection', props.collection)
-      if (props.entityType) fd.append('entity_type', props.entityType)
-      if (props.entityId) fd.append('entity_id', props.entityId)
-      const { data } = await axios.post(props.uploadUrl, fd)
-      if (props.multiple) {
-        multiSelected.value.push(data.url)
+      let url
+      if (presigned) {
+        const result = await presigned.uploadFile(file)
+        url = result?.url
       } else {
-        selected.value = data.url
-        selectedName.value = file.name
+        const fd = new FormData()
+        fd.append(props.uploadField, file)
+        if (props.collection) fd.append('collection', props.collection)
+        if (props.entityType) fd.append('entity_type', props.entityType)
+        if (props.entityId) fd.append('entity_id', props.entityId)
+        const { data } = await axios.post(props.uploadUrl, fd)
+        url = data.url
+      }
+      if (url) {
+        if (props.multiple) {
+          multiSelected.value.push(url)
+        } else {
+          selected.value = url
+          selectedName.value = file.name
+        }
       }
     }
     page.value = 1

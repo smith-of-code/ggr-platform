@@ -232,8 +232,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import axios from 'axios'
 import { encodeLmsStageFileBlockContent, parseLmsStageFileBlockContent } from '@/utils/lmsStageFileBlock.js'
+import { usePresignedUpload } from '@/composables/usePresignedUpload'
 import SearchSelect from '@/Components/SearchSelect.vue'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 
@@ -257,6 +259,7 @@ const props = defineProps({
   assignments: Array,
   videos: Array,
   eventSlug: String,
+  presignedUpload: { type: Object, default: null },
 })
 
 defineEmits(['move', 'remove', 'search', 'searchBlock'])
@@ -332,16 +335,28 @@ async function handleBlockFileUpload(event, block) {
   block._fileUploading = true
   block._fileError = null
 
-  const fd = new FormData()
-  fd.append('file', file)
-
   try {
-    const { data } = await axios.post(
-      route('lms.admin.stage-block-file.upload', props.eventSlug),
-      fd,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
-    )
-    block.content = data.content ?? encodeLmsStageFileBlockContent(data.url, data.filename)
+    const pConfig = props.presignedUpload || usePage().props?.presignedUpload
+    if (pConfig) {
+      const presigned = usePresignedUpload({
+        presignedUrlEndpoint: pConfig.presignedUrlEndpoint,
+        confirmEndpoint: pConfig.confirmEndpoint,
+        directory: 'lms/stage-files/' + props.eventSlug,
+      })
+      const result = await presigned.uploadFile(file)
+      if (result?.url) {
+        block.content = encodeLmsStageFileBlockContent(result.url, file.name)
+      }
+    } else {
+      const fd = new FormData()
+      fd.append('file', file)
+      const { data } = await axios.post(
+        route('lms.admin.stage-block-file.upload', props.eventSlug),
+        fd,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      )
+      block.content = data.content ?? encodeLmsStageFileBlockContent(data.url, data.filename)
+    }
     block._fileFilename = null
   } catch (err) {
     block._fileError = err.response?.data?.message || err.response?.data?.error || 'Ошибка загрузки'

@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\TimelineEventController as AdminTimelineControlle
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TourReviewController as AdminTourReviewController;
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
+use App\Http\Controllers\PresignedUploadController;
 use App\Http\Controllers\Admin\TourCabinetDirectionCitiesController as AdminTourCabinetDirectionCitiesController;
 use App\Http\Controllers\Admin\TourCabinetHubController as AdminTourCabinetHubController;
 use App\Http\Controllers\Admin\TourCabinetSupportController as AdminTourCabinetSupportController;
@@ -107,6 +108,9 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
             ->middleware('throttle:tour-cabinet-support-download')
             ->name('contest.stage3.attachment');
 
+        Route::post('/upload/presigned-url', [PresignedUploadController::class, 'presignedUrl'])->name('upload.presigned-url');
+        Route::post('/upload/confirm', [PresignedUploadController::class, 'confirm'])->name('upload.confirm');
+
         Route::get('/support', [TourCabinetSupportController::class, 'index'])->name('support.index');
         Route::get('/support/create', [TourCabinetSupportController::class, 'create'])->name('support.create');
         Route::post('/support', [TourCabinetSupportController::class, 'store'])
@@ -187,6 +191,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::post('/upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
     Route::post('/upload/file', [AdminUploadController::class, 'file'])->name('upload.file');
     Route::get('/media', [AdminUploadController::class, 'mediaIndex'])->name('media.index');
+    Route::post('/upload/presigned-url', [PresignedUploadController::class, 'presignedUrl'])->name('upload.presigned-url');
+    Route::post('/upload/confirm', [PresignedUploadController::class, 'confirm'])->name('upload.confirm');
 
     Route::get('/tour-reviews', [AdminTourReviewController::class, 'index'])->name('tour-reviews.index');
     Route::patch('/tour-reviews/{tourReview}/approve', [AdminTourReviewController::class, 'approve'])->name('tour-reviews.approve');

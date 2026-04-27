@@ -73,6 +73,7 @@
                 :assignment="inlineAssignment.assignment"
                 :submission="inlineAssignment.submission"
                 :user="user"
+                :presigned-upload="inlineAssignment.presignedUpload || null"
               />
               <div v-else class="rounded-xl border border-gray-200 bg-gray-50 p-5">
                 <div class="flex items-center gap-3">

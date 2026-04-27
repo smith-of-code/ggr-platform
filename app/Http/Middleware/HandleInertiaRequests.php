@@ -77,6 +77,44 @@ class HandleInertiaRequests extends Middleware
             'hiddenPages' => fn () => $request->user()
                 ? []
                 : app(SettingsService::class)->getHiddenPages(),
+            'presignedUpload' => function () use ($request) {
+                $disk = config('filesystems.upload_disk', 'public');
+                if (config("filesystems.disks.{$disk}.driver") !== 's3') {
+                    return null;
+                }
+
+                $prefix = $request->routeIs('lms.admin.*') || $request->routeIs('lms.*')
+                    ? 'lms'
+                    : ($request->routeIs('tour-cabinet.*') ? 'tour-cabinet' : 'admin');
+
+                $eventSlug = $request->route('event');
+                $slug = is_object($eventSlug) ? $eventSlug->slug ?? $eventSlug : $eventSlug;
+
+                if ($prefix === 'lms' && $slug) {
+                    $isAdmin = $request->routeIs('lms.admin.*');
+                    $routePrefix = $isAdmin ? 'lms.admin' : 'lms';
+                    return [
+                        'presignedUrlEndpoint' => route("{$routePrefix}.upload.presigned-url", ['event' => $slug]),
+                        'confirmEndpoint' => route("{$routePrefix}.upload.confirm", ['event' => $slug]),
+                    ];
+                }
+
+                if ($prefix === 'tour-cabinet') {
+                    return [
+                        'presignedUrlEndpoint' => route('tour-cabinet.upload.presigned-url'),
+                        'confirmEndpoint' => route('tour-cabinet.upload.confirm'),
+                    ];
+                }
+
+                if ($request->user()?->is_admin) {
+                    return [
+                        'presignedUrlEndpoint' => route('admin.upload.presigned-url'),
+                        'confirmEndpoint' => route('admin.upload.confirm'),
+                    ];
+                }
+
+                return null;
+            },
             'consentDocumentUrl' => config('consent.document_url'),
             'lmsEntryUrl' => fn () => PostAuthRedirect::lmsProfileUrlForUser($request->user()),
             'tourCabinetUrl' => fn () => PostAuthRedirect::tourCabinetDashboardUrl($request->user()),

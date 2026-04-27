@@ -39,6 +39,7 @@ class CourseController extends Controller
             'assignments' => $event->assignments()->orderBy('title')->get(['id', 'title']),
             'videos' => $event->videos()->orderBy('title')->get(['id', 'title']),
             'roles' => LmsRole::where('lms_event_id', $event->id)->orderBy('name')->get(['id', 'name', 'slug']),
+            'presignedUpload' => $this->presignedUploadConfig($event),
         ]);
     }
 
@@ -78,6 +79,7 @@ class CourseController extends Controller
             'assignments' => $event->assignments()->orderBy('title')->get(['id', 'title']),
             'videos' => $event->videos()->orderBy('title')->get(['id', 'title']),
             'roles' => LmsRole::where('lms_event_id', $event->id)->orderBy('name')->get(['id', 'name', 'slug']),
+            'presignedUpload' => $this->presignedUploadConfig($event),
         ]);
     }
 
@@ -599,5 +601,18 @@ class CourseController extends Controller
         if ($course->lms_event_id !== $event->id) {
             abort(404);
         }
+    }
+
+    private function presignedUploadConfig(LmsEvent $event): ?array
+    {
+        $disk = config('filesystems.upload_disk');
+        if (config("filesystems.disks.{$disk}.driver") !== 's3') {
+            return null;
+        }
+
+        return [
+            'presignedUrlEndpoint' => route('lms.admin.upload.presigned-url', ['event' => $event->slug]),
+            'confirmEndpoint' => route('lms.admin.upload.confirm', ['event' => $event->slug]),
+        ];
     }
 }

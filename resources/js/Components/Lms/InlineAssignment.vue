@@ -217,6 +217,7 @@ import { computed, reactive, ref } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import { fileUrl } from '@/lib/fileUrl'
 import { formatLmsAssignmentDeadline } from '@/utils/lmsAssignmentDeadline'
+import { usePresignedUpload } from '@/composables/usePresignedUpload'
 import {
   PencilSquareIcon, ArrowDownTrayIcon, ArrowUpTrayIcon,
   ClockIcon, PaperClipIcon,
@@ -228,7 +229,17 @@ const props = defineProps({
   assignment: { type: Object, required: true },
   submission: { type: Object, default: null },
   user: { type: Object, default: () => ({}) },
+  presignedUpload: { type: Object, default: null },
 })
+
+const presigned = props.presignedUpload
+  ? usePresignedUpload({
+      presignedUrlEndpoint: props.presignedUpload.presignedUrlEndpoint,
+      confirmEndpoint: props.presignedUpload.confirmEndpoint,
+      fieldName: 'file',
+      directory: 'assignments',
+    })
+  : null
 
 const hasTasks = computed(() => (props.assignment?.tasks?.length ?? 0) > 0)
 const isOverdue = computed(() => {
@@ -307,40 +318,65 @@ const dialogMessages = computed(() => {
   return messages
 })
 
-function buildFormData() {
+async function uploadFilesPresigned(files) {
+  const urls = []
+  for (const file of files) {
+    const result = await presigned.uploadFile(file)
+    if (result?.url) urls.push(result.url)
+  }
+  return urls
+}
+
+async function buildFormData() {
   const fd = new FormData()
   if (hasTasks.value) {
     const tasks = props.assignment.tasks || []
-    tasks.forEach((task, idx) => {
+    for (let idx = 0; idx < tasks.length; idx++) {
+      const task = tasks[idx]
       fd.append(`answers[${idx}][task_id]`, task.id)
       fd.append(`answers[${idx}][text_content]`, taskAnswers[task.id]?.text_content || '')
       fd.append(`answers[${idx}][link]`, taskAnswers[task.id]?.link || '')
       if (task.response_type === 'file' && taskAnswers[task.id]?._files?.length) {
-        taskAnswers[task.id]._files.forEach(f => fd.append(`answers[${idx}][files][]`, f))
+        if (presigned) {
+          const urls = await uploadFilesPresigned(taskAnswers[task.id]._files)
+          urls.forEach((url, fi) => {
+            fd.append(`answers[${idx}][file_urls][${fi}][url]`, url)
+            fd.append(`answers[${idx}][file_urls][${fi}][name]`, taskAnswers[task.id]._files[fi]?.name || 'file')
+          })
+        } else {
+          taskAnswers[task.id]._files.forEach(f => fd.append(`answers[${idx}][files][]`, f))
+        }
       }
-    })
+    }
   } else {
     fd.append('text_content', form.text_content || '')
     fd.append('link', form.link || '')
-    selectedFiles.value.forEach(f => fd.append('files[]', f))
+    if (presigned && selectedFiles.value.length) {
+      const urls = await uploadFilesPresigned(selectedFiles.value)
+      urls.forEach(url => fd.append('file_urls[]', url))
+    } else {
+      selectedFiles.value.forEach(f => fd.append('files[]', f))
+    }
   }
   return fd
 }
 
-function submitWork() {
+async function submitWork() {
   formProcessing.value = true
+  const fd = await buildFormData()
   router.post(
     route('lms.assignments.submit', { event: props.event?.slug, assignment: props.assignment?.id }),
-    buildFormData(),
+    fd,
     { forceFormData: true, preserveScroll: true, onFinish: () => { formProcessing.value = false } },
   )
 }
 
-function saveDraft() {
+async function saveDraft() {
   draftSaving.value = true
+  const fd = await buildFormData()
   router.post(
     route('lms.assignments.draft', { event: props.event?.slug, assignment: props.assignment?.id }),
-    buildFormData(),
+    fd,
     { forceFormData: true, preserveScroll: true, onFinish: () => { draftSaving.value = false } },
   )
 }
