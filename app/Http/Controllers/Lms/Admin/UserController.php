@@ -63,11 +63,53 @@ class UserController extends Controller
             });
         }
 
+        if ($request->filled('course_id')) {
+            $courseId = (int) $request->course_id;
+            if ($courseId > 0) {
+                $query->whereIn('user_id', function ($q) use ($event, $courseId) {
+                    $q->select('user_id')
+                        ->from('lms_course_enrollments')
+                        ->where('lms_course_id', $courseId)
+                        ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
+                        ->whereExists(function ($sub) use ($event) {
+                            $sub->selectRaw('1')
+                                ->from('lms_courses')
+                                ->whereColumn('lms_courses.id', 'lms_course_enrollments.lms_course_id')
+                                ->where('lms_courses.lms_event_id', $event->id);
+                        });
+                });
+            }
+        }
+
+        if ($request->filled('program_faculty')) {
+            $faculty = trim((string) $request->program_faculty);
+            if ($faculty !== '') {
+                $query->whereIn('user_id', function ($q) use ($event, $faculty) {
+                    $q->select('user_id')
+                        ->from('lms_course_enrollments')
+                        ->where('faculty', $faculty)
+                        ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
+                        ->whereExists(function ($sub) use ($event) {
+                            $sub->selectRaw('1')
+                                ->from('lms_courses')
+                                ->whereColumn('lms_courses.id', 'lms_course_enrollments.lms_course_id')
+                                ->where('lms_courses.lms_event_id', $event->id);
+                        });
+                });
+            }
+        }
+
         if ($request->filled('docs_no_direction')) {
             $query->whereNull('direction')->whereHas('documents');
         }
 
         $profiles = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
+        $programsByUser = $this->nonMandatoryProgramsByUserId($event, $profiles->getCollection()->pluck('user_id')->all());
+        $profiles->getCollection()->transform(function (LmsProfile $profile) use ($programsByUser) {
+            $profile->setAttribute('non_mandatory_programs', $programsByUser[$profile->user_id] ?? []);
+
+            return $profile;
+        });
 
         $roles = LmsRole::where('lms_event_id', $event->id)->orderBy('name')->get(['id', 'name', 'slug']);
         $groups = $event->groups()->orderBy('title')->get(['id', 'title']);
@@ -97,6 +139,14 @@ class UserController extends Controller
         ]);
 
         $cities = $dbCities->merge($knownCities)->unique()->sort()->values();
+        $programFacultyOptions = LmsCourseEnrollment::query()
+            ->whereNotNull('faculty')
+            ->where('faculty', '!=', '')
+            ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
+            ->whereHas('course', fn ($q) => $q->where('lms_event_id', $event->id))
+            ->distinct()
+            ->orderBy('faculty')
+            ->pluck('faculty');
 
         return Inertia::render('Lms/Admin/Users/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -105,7 +155,8 @@ class UserController extends Controller
             'groups' => $groups,
             'courses' => $courses,
             'cities' => $cities,
-            'filters' => $request->only(['role_id', 'group', 'search', 'status', 'city', 'docs_no_direction']),
+            'programFacultyOptions' => $programFacultyOptions,
+            'filters' => $request->only(['role_id', 'group', 'search', 'status', 'city', 'docs_no_direction', 'course_id', 'program_faculty']),
             'invitations' => $invitations,
             'directionLabels' => LmsProfile::DIRECTION_LABELS,
             'facultyLabels' => LmsProfile::FACULTY_LABELS,
@@ -846,11 +897,48 @@ class UserController extends Controller
             });
         }
 
+        if ($request->filled('course_id')) {
+            $courseId = (int) $request->course_id;
+            if ($courseId > 0) {
+                $query->whereIn('user_id', function ($q) use ($event, $courseId) {
+                    $q->select('user_id')
+                        ->from('lms_course_enrollments')
+                        ->where('lms_course_id', $courseId)
+                        ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
+                        ->whereExists(function ($sub) use ($event) {
+                            $sub->selectRaw('1')
+                                ->from('lms_courses')
+                                ->whereColumn('lms_courses.id', 'lms_course_enrollments.lms_course_id')
+                                ->where('lms_courses.lms_event_id', $event->id);
+                        });
+                });
+            }
+        }
+
+        if ($request->filled('program_faculty')) {
+            $faculty = trim((string) $request->program_faculty);
+            if ($faculty !== '') {
+                $query->whereIn('user_id', function ($q) use ($event, $faculty) {
+                    $q->select('user_id')
+                        ->from('lms_course_enrollments')
+                        ->where('faculty', $faculty)
+                        ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
+                        ->whereExists(function ($sub) use ($event) {
+                            $sub->selectRaw('1')
+                                ->from('lms_courses')
+                                ->whereColumn('lms_courses.id', 'lms_course_enrollments.lms_course_id')
+                                ->where('lms_courses.lms_event_id', $event->id);
+                        });
+                });
+            }
+        }
+
         if ($request->filled('docs_no_direction')) {
             $query->whereNull('direction')->whereHas('documents');
         }
 
         $profiles = $query->orderBy('created_at', 'desc')->get();
+        $programsByUser = $this->nonMandatoryProgramsByUserId($event, $profiles->pluck('user_id')->all());
 
         $statusLabels = [
             'imported' => 'Импортирован',
@@ -864,7 +952,8 @@ class UserController extends Controller
         $headers = [
             'Фамилия', 'Имя', 'Отчество', 'Email', 'Телефон',
             'Город', 'Должность', 'Организация', 'Роль',
-            'Направление', 'Факультет', 'Статус',
+            'Направление', 'Статус',
+            'Программы', 'Факультет',
             'Зашёл на платформу', 'Дата активации',
             'Документы загружены', 'Кол-во документов',
         ];
@@ -878,6 +967,13 @@ class UserController extends Controller
                 : '—';
             $docsCount = $p->documents_count;
             $hasDocs = $docsCount > 0 ? 'Да' : 'Нет';
+            $programs = $programsByUser[$p->user_id] ?? [];
+            $programTitles = collect($programs)->pluck('course_title')->implode('; ');
+            $programFaculties = collect($programs)
+                ->filter(fn (array $program) => ($program['faculty'] ?? '') !== '')
+                ->pluck('faculty')
+                ->unique()
+                ->implode('; ');
 
             $rows[] = [
                 (string) ($u?->last_name ?? ''),
@@ -890,8 +986,9 @@ class UserController extends Controller
                 (string) ($p->organization ?? ''),
                 (string) ($p->lmsRole?->name ?? $statusLabels[$p->role] ?? $p->role ?? ''),
                 (string) ($directionLabels[$p->direction] ?? ''),
-                (string) ($facultyLabels[$p->faculty] ?? ''),
                 (string) ($statusLabels[$p->status] ?? $p->status ?? ''),
+                (string) $programTitles,
+                (string) $programFaculties,
                 $hasEntered,
                 $activatedAt,
                 $hasDocs,
@@ -986,5 +1083,42 @@ class UserController extends Controller
         $content = file_get_contents($tmpFile);
         unlink($tmpFile);
         return $content;
+    }
+
+    /**
+     * @param  array<int, int>  $userIds
+     * @return array<int, array<int, array{course_id: int, course_title: string, faculty: string}>>
+     */
+    private function nonMandatoryProgramsByUserId(LmsEvent $event, array $userIds): array
+    {
+        $userIds = array_values(array_filter(array_unique(array_map('intval', $userIds))));
+        if ($userIds === []) {
+            return [];
+        }
+
+        $rows = LmsCourseEnrollment::query()
+            ->whereIn('user_id', $userIds)
+            ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
+            ->whereHas('course', function ($q) use ($event) {
+                $q->where('lms_event_id', $event->id)
+                    ->where('is_mandatory', false);
+            })
+            ->with('course:id,title')
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('user_id')
+            ->map(function ($enrollments) {
+                return $enrollments
+                    ->map(fn (LmsCourseEnrollment $enrollment) => [
+                        'course_id' => (int) $enrollment->lms_course_id,
+                        'course_title' => (string) ($enrollment->course?->title ?? ''),
+                        'faculty' => (string) ($enrollment->faculty ?? ''),
+                    ])
+                    ->values()
+                    ->all();
+            })
+            ->all();
+
+        return $rows;
     }
 }

@@ -33,6 +33,31 @@
                 Вы записаны на программу
                 <span v-if="course?.is_mandatory" class="ml-1 rounded-full bg-rosatom-100 px-2.5 py-0.5 text-xs font-semibold text-rosatom-700">Обязательный</span>
               </div>
+              <div v-if="facultyOptions.length" class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p class="text-sm font-medium text-gray-800">Факультет программы</p>
+                <p class="mt-1 text-xs text-gray-500">Выберите один факультет, доступный для этой программы.</p>
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <select
+                    v-model="selectedFaculty"
+                    class="min-w-[16rem] rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
+                  >
+                    <option value="" disabled>Выберите факультет</option>
+                    <option v-for="faculty in facultyOptions" :key="faculty" :value="faculty">
+                      {{ faculty }}
+                    </option>
+                  </select>
+                  <RButton
+                    variant="outline"
+                    size="sm"
+                    :disabled="!selectedFaculty || selectedFaculty === enrollmentFaculty || facultySaving"
+                    :loading="facultySaving"
+                    @click="saveFaculty"
+                  >
+                    Сохранить факультет
+                  </RButton>
+                </div>
+                <p v-if="$page.props.errors?.faculty" class="mt-2 text-xs text-red-600">{{ $page.props.errors.faculty }}</p>
+              </div>
               <RProgress :percentage="overallProgress" label="Прогресс" show-label size="sm" class="mt-3" />
               <button
                 v-if="enrollmentStatus === 'enrolled' && canCancel && !course?.is_mandatory"
@@ -51,6 +76,31 @@
                     <p class="text-sm font-medium text-amber-800">Ваша заявка на рассмотрении</p>
                     <p class="mt-1 text-sm text-amber-700">Мы проверяем, насколько ваш проект соответствует выбранной программе.</p>
                   </div>
+                </div>
+                <div v-if="facultyOptions.length" class="mt-4 rounded-xl border border-amber-200 bg-white/70 p-4">
+                  <p class="text-sm font-medium text-gray-800">Факультет программы</p>
+                  <p class="mt-1 text-xs text-gray-500">Выберите один факультет, доступный для этой программы.</p>
+                  <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <select
+                      v-model="selectedFaculty"
+                      class="min-w-[16rem] rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
+                    >
+                      <option value="" disabled>Выберите факультет</option>
+                      <option v-for="faculty in facultyOptions" :key="faculty" :value="faculty">
+                        {{ faculty }}
+                      </option>
+                    </select>
+                    <RButton
+                      variant="outline"
+                      size="sm"
+                      :disabled="!selectedFaculty || selectedFaculty === enrollmentFaculty || facultySaving"
+                      :loading="facultySaving"
+                      @click="saveFaculty"
+                    >
+                      Сохранить факультет
+                    </RButton>
+                  </div>
+                  <p v-if="$page.props.errors?.faculty" class="mt-2 text-xs text-red-600">{{ $page.props.errors.faculty }}</p>
                 </div>
                 <button
                   v-if="!course?.is_mandatory"
@@ -242,7 +292,7 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import {
@@ -276,6 +326,10 @@ const props = defineProps({
 
 const enrollmentStatus = computed(() => props.enrollment?.status ?? null)
 const isEnrolled = computed(() => ['enrolled', 'in_progress', 'completed'].includes(enrollmentStatus.value))
+const facultyOptions = computed(() => Array.isArray(props.course?.faculties) ? props.course.faculties : [])
+const enrollmentFaculty = computed(() => props.enrollment?.faculty || '')
+const selectedFaculty = ref(enrollmentFaculty.value || '')
+const facultySaving = ref(false)
 
 const canCancel = computed(() => {
   if (!props.course?.starts_at) return true
@@ -316,6 +370,21 @@ function enroll() {
 function unenroll() {
   if (!confirm('Отменить заявку на программу?')) return
   router.delete(route('lms.courses.unenroll', { event: props.event?.slug, course: props.course?.id }))
+}
+
+function saveFaculty() {
+  if (!selectedFaculty.value) return
+  facultySaving.value = true
+  router.patch(
+    route('lms.courses.faculty', { event: props.event?.slug, course: props.course?.id }),
+    { faculty: selectedFaculty.value },
+    {
+      preserveScroll: true,
+      onFinish: () => {
+        facultySaving.value = false
+      },
+    },
+  )
 }
 
 function goToStage(stageId) {

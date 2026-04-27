@@ -159,6 +159,7 @@
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-medium text-gray-900">{{ e.course?.title }}</p>
                   <p class="text-xs text-gray-400">Статус: {{ enrollmentStatus(e.status) }}</p>
+                  <p v-if="e.faculty" class="text-xs text-gray-500">Факультет: {{ e.faculty }}</p>
                 </div>
                 <div class="ml-3 flex items-center gap-2">
                   <RBadge :variant="enrollmentBadgeVariant(e.status)" size="sm">

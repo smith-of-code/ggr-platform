@@ -4,7 +4,7 @@
 
 ## Описание
 
-Многоуровневая система курсов с модулями, мультиблочными этапами (stages), записью на курсы (enrollments), поддержкой SCORM, контролем последовательного прохождения, ролевым доступом и копированием модулей/этапов между курсами.
+Многоуровневая система курсов с модулями, мультиблочными этапами (stages), записью на курсы (enrollments), поддержкой SCORM, контролем последовательного прохождения, ролевым доступом и копированием модулей/этапов между курсами. Для каждой программы админ может задать список факультетов, а записанный участник выбирает один факультет по своей записи.
 
 ## Связанные сущности
 
@@ -47,6 +47,9 @@
 | sequential | boolean | Последовательное прохождение |
 | is_active | boolean | Активность |
 | requires_approval | boolean | Требуется одобрение для записи |
+| is_mandatory | boolean | Обязательная программа (автозапись) |
+| unlocks_gamification | boolean | Открывает геймификацию |
+| faculties | json | Список факультетов программы (nullable) |
 | position | integer | Порядок сортировки |
 
 ### lms_course_modules
@@ -101,6 +104,7 @@
 | lms_course_id | FK → lms_courses | cascade delete |
 | user_id | FK → users | cascade delete |
 | status | varchar(20) | enrolled, in_progress, completed, pending, rejected |
+| faculty | varchar(120) | Выбранный факультет участника по программе (nullable) |
 | completed_at | timestamp | nullable |
 | reviewed_at | timestamp | nullable |
 | reviewed_by | FK → users | nullable |
@@ -212,6 +216,7 @@
 | GET | `/courses` | CourseController@index |
 | GET | `/courses/{course}` | CourseController@show |
 | POST | `/courses/{course}/enroll` | CourseController@enroll |
+| PATCH | `/courses/{course}/faculty` | CourseController@updateFaculty |
 | GET | `/courses/{course}/stages/{stage}` | StageController@show |
 | POST | `/courses/{course}/stages/{stage}/complete` | StageController@complete |
 | POST | `/courses/{course}/stages/{stage}/scorm` | StageController@scormData |
@@ -230,12 +235,14 @@
 
 1. **Создание курса**: заполнение основной информации → добавление модулей → добавление этапов с блоками → сохранение
 2. **Запись на курс**: участник записывается → одобрение (если requires_approval) → статус enrolled
-3. **Прохождение**: enrolled → in_progress (при первом открытии этапа) → completed (все этапы пройдены)
-4. **Прохождение этапа**: last_completed_at → mark complete (контент/видео) или автозавершение (тест/задание). При включённой геймификации курса баллы за действие `module_complete` начисляются, когда **все этапы одного модуля** (или один этап без модуля) получили `LmsStageProgress` completed — см. `lms-gamification/spec.md`.
-5. **Видео-этап**: таймер просмотра, heartbeat каждые 15с, завершение при 90% просмотра
+3. **Выбор факультета**: если у курса задан список `faculties`, участник после записи выбирает один факультет; значение хранится в `lms_course_enrollments.faculty`
+4. **Прохождение**: enrolled → in_progress (при первом открытии этапа) → completed (все этапы пройдены)
+5. **Прохождение этапа**: last_completed_at → mark complete (контент/видео) или автозавершение (тест/задание). При включённой геймификации курса баллы за действие `module_complete` начисляются, когда **все этапы одного модуля** (или один этап без модуля) получили `LmsStageProgress` completed — см. `lms-gamification/spec.md`.
+6. **Видео-этап**: таймер просмотра, heartbeat каждые 15с, завершение при 90% просмотра
 
 ## UX: заявки на программы (админка)
 
 - В `Pages/Lms/Admin/Enrollments/Index.vue` для поля «Проект / Идея» доступен просмотр полного текста через кнопку с иконкой «глаз».
 - Кнопка открывает модальное окно с деталями участника и полным `project_description` без обрезки.
 - В фильтре «Программа» в заявках названия опций отображаются многострочно (без принудительного `truncate`), чтобы длинные названия курсов были читаемы.
+- В `Pages/Lms/Admin/Users/Index.vue` добавлены фильтры списка участников по программе (`course_id`) и факультету программы (`program_faculty`); те же фильтры учитываются в Excel-выгрузке участников (`users-export`).

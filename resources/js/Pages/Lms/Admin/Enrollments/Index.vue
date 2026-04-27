@@ -82,6 +82,7 @@
               <tr class="border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400">
                 <th class="px-6 py-3 font-medium">Участник</th>
                 <th v-if="!course" class="px-6 py-3 font-medium">Программа</th>
+                <th class="px-6 py-3 font-medium">Факультет</th>
                 <th class="px-6 py-3 font-medium">Организация / Должность</th>
                 <th class="px-6 py-3 font-medium">Проект / Идея</th>
                 <th class="px-6 py-3 font-medium">Дата заявки</th>
@@ -108,6 +109,7 @@
                   </div>
                 </td>
                 <td v-if="!course" class="px-6 py-4 text-gray-600">{{ e.course?.title }}</td>
+                <td class="px-6 py-4 text-gray-600">{{ e.faculty || '—' }}</td>
                 <td class="px-6 py-4">
                   <p v-if="e.profile_data?.organization" class="text-sm text-gray-700">{{ e.profile_data.organization }}</p>
                   <p v-if="e.profile_data?.position" class="text-xs text-gray-400">{{ e.profile_data.position }}</p>
@@ -161,7 +163,7 @@
                 </td>
               </tr>
               <tr v-if="!enrollmentsList.length">
-                <td :colspan="course ? 7 : 8" class="px-6 py-12 text-center text-sm text-gray-400">
+                <td :colspan="course ? 8 : 9" class="px-6 py-12 text-center text-sm text-gray-400">
                   Заявок не найдено
                 </td>
               </tr>
@@ -196,6 +198,10 @@
               <div v-if="!course && e.course?.title">
                 <p class="text-xs font-medium uppercase text-gray-400">Программа</p>
                 <p class="text-gray-700">{{ e.course.title }}</p>
+              </div>
+              <div v-if="e.faculty">
+                <p class="text-xs font-medium uppercase text-gray-400">Факультет</p>
+                <p class="text-gray-700">{{ e.faculty }}</p>
               </div>
               <div v-if="e.profile_data?.organization || e.profile_data?.position">
                 <p class="text-xs font-medium uppercase text-gray-400">Организация</p>

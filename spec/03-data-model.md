@@ -566,6 +566,7 @@
 | requires_approval | boolean | |
 | is_mandatory | boolean | |
 | unlocks_gamification | boolean | |
+| faculties | json | cast: array, nullable |
 | position | integer | |
 | starts_at | datetime | nullable |
 | ends_at | datetime | nullable |
@@ -649,6 +650,7 @@
 | lms_course_id | FK → lms_courses | cascade |
 | user_id | FK → users | cascade |
 | status | varchar(20) | enum: enrolled, in_progress, completed, pending, rejected |
+| faculty | varchar(120) | nullable, выбранный факультет по программе |
 | completed_at | datetime | nullable |
 | reviewed_at | datetime | nullable |
 | reviewed_by | FK → users | nullable, nullOnDelete |

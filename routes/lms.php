@@ -74,6 +74,7 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
     Route::delete('/courses/{course}/enroll', [CourseController::class, 'unenroll'])->name('courses.unenroll');
+    Route::patch('/courses/{course}/faculty', [CourseController::class, 'updateFaculty'])->name('courses.faculty');
 
     // Course stages
     Route::get('/courses/{course}/stages/{stage}', [StageController::class, 'show'])->name('stages.show');

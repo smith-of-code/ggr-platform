@@ -159,6 +159,29 @@
           :searchable="false"
         />
       </div>
+      <div class="w-64">
+        <SearchSelect
+          :model-value="filters?.course_id ? Number(filters.course_id) : null"
+          @update:model-value="v => applyFilter('course_id', v ?? '')"
+          :options="courses"
+          value-key="id"
+          label-key="title"
+          placeholder="Все программы"
+          :searchable="true"
+          :option-wrap="true"
+        />
+      </div>
+      <div class="w-56">
+        <SearchSelect
+          :model-value="filters?.program_faculty ?? null"
+          @update:model-value="v => applyFilter('program_faculty', v ?? '')"
+          :options="programFacultySelectOptions"
+          value-key="value"
+          label-key="label"
+          placeholder="Все факультеты"
+          :searchable="true"
+        />
+      </div>
       <div class="w-48">
         <SearchSelect
           :model-value="filters?.city ?? null"
@@ -204,7 +227,7 @@
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Телефон</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Должность</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Роль</th>
-            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Направление</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Направление / программы</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Статус</th>
             <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Действия</th>
           </tr>
@@ -248,6 +271,17 @@
                 <span class="text-xs font-medium text-amber-600">Не выбрано</span>
               </div>
               <span v-else class="text-xs text-gray-400">—</span>
+              <div v-if="profile.non_mandatory_programs?.length" class="mt-2 space-y-1">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Программы</p>
+                <p
+                  v-for="program in profile.non_mandatory_programs"
+                  :key="`${profile.id}-${program.course_id}`"
+                  class="text-xs text-gray-600"
+                >
+                  {{ program.course_title }}
+                  <span v-if="program.faculty" class="text-gray-400"> — {{ program.faculty }}</span>
+                </p>
+              </div>
             </td>
             <td class="px-5 py-3.5">
               <div class="relative">
@@ -517,6 +551,7 @@ const props = defineProps({
   groups: Array,
   courses: Array,
   cities: Array,
+  programFacultyOptions: { type: Array, default: () => [] },
   filters: Object,
   invitations: Array,
   directionLabels: { type: Object, default: () => ({}) },
@@ -544,6 +579,9 @@ const statusOptions = [
 const cityOptions = computed(() =>
   (props.cities || []).map(c => ({ value: c, label: c }))
 )
+const programFacultySelectOptions = computed(() =>
+  (props.programFacultyOptions || []).map(f => ({ value: f, label: f }))
+)
 
 const exportUrl = computed(() => {
   const params = new URLSearchParams()
@@ -553,6 +591,8 @@ const exportUrl = computed(() => {
   if (f.status) params.set('status', f.status)
   if (f.city) params.set('city', f.city)
   if (f.group) params.set('group', f.group)
+  if (f.course_id) params.set('course_id', f.course_id)
+  if (f.program_faculty) params.set('program_faculty', f.program_faculty)
   if (f.docs_no_direction) params.set('docs_no_direction', f.docs_no_direction)
   const qs = params.toString()
   return route('lms.admin.users.export', props.event.slug) + (qs ? '?' + qs : '')
