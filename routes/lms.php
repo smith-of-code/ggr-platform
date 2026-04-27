@@ -93,6 +93,8 @@ Route::prefix('lms/{event:slug}')->name('lms.')->middleware(['auth'])->group(fun
     Route::post('/assignments/{assignment}/draft', [AssignmentController::class, 'draft'])->name('assignments.draft');
     Route::post('/assignments/{assignment}/comment', [AssignmentController::class, 'comment'])->name('assignments.comment');
     Route::patch('/assignments/{assignment}/submissions/{submission}', [AssignmentController::class, 'update'])->name('assignments.update');
+    Route::get('/assignments/{assignment}/template-download', [AssignmentController::class, 'downloadTemplate'])->name('assignments.template-download');
+    Route::get('/assignments/{assignment}/tasks/{task}/template-download', [AssignmentController::class, 'downloadTaskTemplate'])->name('assignments.task-template-download');
 
     // Trajectories
     Route::get('/trajectories', [TrajectoryController::class, 'index'])->name('trajectories.index');

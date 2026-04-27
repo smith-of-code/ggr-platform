@@ -80,6 +80,8 @@
 | POST | `/assignments/{assignment}/submit` | AssignmentController@submit |
 | POST | `/assignments/{assignment}/comment` | AssignmentController@comment |
 | PATCH | `/assignments/{assignment}/submissions/{submission}` | AssignmentController@update |
+| GET | `/assignments/{assignment}/template-download` | AssignmentController@downloadTemplate |
+| GET | `/assignments/{assignment}/tasks/{task}/template-download` | AssignmentController@downloadTaskTemplate |
 
 ### Админ (prefix: `/lms-admin/{event}`)
 | Метод | URI | Действие |

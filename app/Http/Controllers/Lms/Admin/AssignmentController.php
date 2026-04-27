@@ -196,6 +196,7 @@ class AssignmentController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'template_file' => ['nullable', 'string', 'max:500'],
+            'template_file_name' => ['nullable', 'string', 'max:255'],
             'completion_mode' => ['sometimes', 'string', 'in:on_submit,on_review'],
             'deadline' => ['nullable', 'date'],
             'tasks' => ['nullable', 'array'],

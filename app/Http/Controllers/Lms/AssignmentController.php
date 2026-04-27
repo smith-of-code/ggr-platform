@@ -6,18 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsAssignment;
 use App\Models\Lms\LmsAssignmentComment;
 use App\Models\Lms\LmsAssignmentSubmission;
+use App\Models\Lms\LmsAssignmentTask;
 use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsCourseStage;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsStageBlock;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsSubmissionAnswer;
+use App\Models\UploadedMedia;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AssignmentController extends Controller
 {
@@ -268,6 +271,38 @@ class AssignmentController extends Controller
         return redirect()->back();
     }
 
+    public function downloadTemplate(LmsEvent $event, LmsAssignment $assignment): StreamedResponse
+    {
+        if ($assignment->lms_event_id !== $event->id || !$assignment->template_file) {
+            abort(404);
+        }
+
+        [$disk, $path] = $this->resolveFileLocation($assignment->template_file);
+        $name = $assignment->template_file_name ?: basename(parse_url($assignment->template_file, PHP_URL_PATH) ?: 'template');
+
+        return Storage::disk($disk)->download($path, $name);
+    }
+
+    public function downloadTaskTemplate(LmsEvent $event, LmsAssignment $assignment, int $task): StreamedResponse
+    {
+        if ($assignment->lms_event_id !== $event->id) {
+            abort(404);
+        }
+
+        $taskModel = LmsAssignmentTask::where('id', $task)
+            ->where('lms_assignment_id', $assignment->id)
+            ->firstOrFail();
+
+        if (!$taskModel->template_file) {
+            abort(404);
+        }
+
+        [$disk, $path] = $this->resolveFileLocation($taskModel->template_file);
+        $name = $taskModel->template_file_name ?: basename(parse_url($taskModel->template_file, PHP_URL_PATH) ?: 'template');
+
+        return Storage::disk($disk)->download($path, $name);
+    }
+
     public function update(
         Request $request,
         LmsEvent $event,
@@ -346,6 +381,27 @@ class AssignmentController extends Controller
                 ]
             );
         }
+    }
+
+    /**
+     * @return array{0: string, 1: string} [disk, path]
+     */
+    private function resolveFileLocation(string $url): array
+    {
+        $media = UploadedMedia::where('url', $url)->first();
+        if ($media) {
+            return [$media->disk, $media->path];
+        }
+
+        $disk = config('filesystems.upload_disk');
+        $baseUrl = rtrim(Storage::disk($disk)->url(''), '/');
+        $path = ltrim(str_replace($baseUrl, '', $url), '/');
+
+        if ($path !== $url && Storage::disk($disk)->exists($path)) {
+            return [$disk, $path];
+        }
+
+        abort(404);
     }
 
     private function markLinkedStagesCompleted(LmsAssignment $assignment, $user): void

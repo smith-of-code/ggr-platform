@@ -33,9 +33,7 @@
 
         <div v-if="assignment?.template_file" class="mt-6">
           <a
-            :href="assignment.template_file"
-            target="_blank"
-            rel="noopener"
+            :href="route('lms.assignments.template-download', { event: event?.slug, assignment: assignment.id })"
             class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
           >
             <ArrowDownTrayIcon class="h-4 w-4" />
@@ -163,8 +161,7 @@
                   <p v-if="task.description" class="mt-1 whitespace-pre-line text-sm text-gray-500">{{ task.description }}</p>
                   <a
                     v-if="task.template_file"
-                    :href="task.template_file"
-                    target="_blank"
+                    :href="route('lms.assignments.task-template-download', { event: event?.slug, assignment: assignment.id, task: task.id })"
                     class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-200"
                   >
                     <ArrowDownTrayIcon class="h-3.5 w-3.5" />

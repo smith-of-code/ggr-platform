@@ -28,9 +28,7 @@
 
       <div v-if="assignment.template_file" class="mt-4">
         <a
-          :href="assignment.template_file"
-          target="_blank"
-          rel="noopener"
+          :href="route('lms.assignments.template-download', { event: event?.slug, assignment: assignment.id })"
           class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
         >
           <ArrowDownTrayIcon class="h-4 w-4" />
@@ -117,7 +115,7 @@
               <div class="flex-1">
                 <p class="text-sm font-semibold text-gray-900">{{ task.title }}</p>
                 <p v-if="task.description" class="mt-0.5 whitespace-pre-line text-xs text-gray-500">{{ task.description }}</p>
-                <a v-if="task.template_file" :href="task.template_file" target="_blank" class="mt-1 inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200">
+                <a v-if="task.template_file" :href="route('lms.assignments.task-template-download', { event: event?.slug, assignment: assignment.id, task: task.id })" class="mt-1 inline-flex items-center gap-1 rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200">
                   <ArrowDownTrayIcon class="h-3 w-3" />
                   {{ task.template_file_name || 'Скачать шаблон' }}
                 </a>
