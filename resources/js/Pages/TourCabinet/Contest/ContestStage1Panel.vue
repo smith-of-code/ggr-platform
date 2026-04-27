@@ -46,7 +46,7 @@
                 v-if="c.needs_more_data"
                 class="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900"
               >
-                Нужно больше данных
+                Необходимо заполнение дополнительных персональных данных
               </span>
             </span>
           </label>
