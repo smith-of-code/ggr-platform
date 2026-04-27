@@ -21,13 +21,15 @@
           <label class="mb-2 block text-sm font-medium text-gray-700">Действие (триггер)</label>
           <select
             v-model="form.action"
+            required
             class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
           >
-            <option value="">— Без автоматического триггера —</option>
+            <option value="" disabled>— Выберите действие —</option>
             <option v-for="(label, key) in actions" :key="key" :value="key">
               {{ label }} ({{ key }})
             </option>
           </select>
+          <p v-if="form.errors.action" class="mt-1 text-sm text-red-600">{{ form.errors.action }}</p>
           <p class="mt-1.5 text-xs text-gray-400">Выберите действие для автоматического начисления баллов</p>
         </div>
 

@@ -9,6 +9,7 @@ use App\Models\Lms\LmsGamificationRule;
 use App\Services\GamificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -22,11 +23,12 @@ class GamificationController extends Controller
         $users = $profiles->map(function ($profile) {
             $user = $profile->user;
             if (!$user) return null;
+            $roleName = $profile->lmsRole ? $profile->lmsRole->name : null;
             return [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $profile->lmsRole?->name ?? $profile->role ?? '—',
+                'role' => $roleName ?? $profile->role ?? '—',
             ];
         })->filter()->unique('id')->values();
 
@@ -57,9 +59,12 @@ class GamificationController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'action' => ['nullable', 'string'],
+            'action' => ['required', 'string', Rule::in(array_keys(GamificationService::$defaultActions))],
             'points' => ['required', 'integer', 'min:0'],
             'max_times' => ['nullable', 'integer', 'min:0'],
+        ], [
+            'action.required' => 'Выберите действие для правила.',
+            'action.in' => 'Выбрано некорректное действие.',
         ]);
 
         $validated['lms_event_id'] = $event->id;
@@ -88,9 +93,12 @@ class GamificationController extends Controller
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'action' => ['nullable', 'string'],
+            'action' => ['required', 'string', Rule::in(array_keys(GamificationService::$defaultActions))],
             'points' => ['required', 'integer', 'min:0'],
             'max_times' => ['nullable', 'integer', 'min:0'],
+        ], [
+            'action.required' => 'Выберите действие для правила.',
+            'action.in' => 'Выбрано некорректное действие.',
         ]);
 
         $validated['is_auto'] = $request->boolean('is_auto', true);

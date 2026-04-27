@@ -153,6 +153,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::post('scorm-upload', [AdminCourseController::class, 'uploadScorm'])->name('scorm.upload');
         Route::post('stage-block-file-upload', [AdminCourseController::class, 'uploadStageBlockFile'])->name('stage-block-file.upload');
         Route::resource('tests', AdminTestController::class);
+        Route::get('tests/{test}/results', [AdminTestController::class, 'results'])->name('tests.results');
         Route::resource('assignments', AdminAssignmentController::class);
         Route::post('assignments/{assignment}/submissions/{submission}/review', [AdminAssignmentController::class, 'review'])->name('assignments.review');
         Route::post('assignments/{assignment}/submissions/{submission}/comment', [AdminAssignmentController::class, 'comment'])->name('assignments.comment');
