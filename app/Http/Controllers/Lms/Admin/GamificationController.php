@@ -19,16 +19,21 @@ class GamificationController extends Controller
     {
         $rules = $event->gamificationRules()->orderBy('created_at', 'desc')->paginate(15);
 
-        $profiles = $event->profiles()->with(['user:id,name,email', 'lmsRole:id,name'])->get();
+        $profiles = $event->profiles()->with(['user:id,name,email', 'lmsRole:id,name', 'cityRelation:id,name'])->get();
         $users = $profiles->map(function ($profile) {
             $user = $profile->user;
             if (!$user) return null;
             $roleName = $profile->lmsRole ? $profile->lmsRole->name : null;
+            $cityName = $profile->city;
+            if (!$cityName && $profile->cityRelation) {
+                $cityName = $profile->cityRelation->name;
+            }
             return [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $roleName ?? $profile->role ?? '—',
+                'city' => $cityName,
             ];
         })->filter()->unique('id')->values();
 
@@ -57,15 +62,7 @@ class GamificationController extends Controller
 
     public function store(Request $request, LmsEvent $event): RedirectResponse
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'action' => ['required', 'string', Rule::in(array_keys(GamificationService::$defaultActions))],
-            'points' => ['required', 'integer', 'min:0'],
-            'max_times' => ['nullable', 'integer', 'min:0'],
-        ], [
-            'action.required' => 'Выберите действие для правила.',
-            'action.in' => 'Выбрано некорректное действие.',
-        ]);
+        $validated = $request->validate($this->ruleValidationRules(), $this->ruleValidationMessages());
 
         $validated['lms_event_id'] = $event->id;
         $validated['is_auto'] = $request->boolean('is_auto', true);
@@ -91,15 +88,7 @@ class GamificationController extends Controller
     {
         $this->ensureRuleBelongsToEvent($gamification, $event);
 
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'action' => ['required', 'string', Rule::in(array_keys(GamificationService::$defaultActions))],
-            'points' => ['required', 'integer', 'min:0'],
-            'max_times' => ['nullable', 'integer', 'min:0'],
-        ], [
-            'action.required' => 'Выберите действие для правила.',
-            'action.in' => 'Выбрано некорректное действие.',
-        ]);
+        $validated = $request->validate($this->ruleValidationRules(), $this->ruleValidationMessages());
 
         $validated['is_auto'] = $request->boolean('is_auto', true);
         $validated['is_active'] = $request->boolean('is_active', true);
@@ -145,5 +134,30 @@ class GamificationController extends Controller
         if ($rule->lms_event_id !== $event->id) {
             abort(404);
         }
+    }
+
+    private function ruleValidationRules(): array
+    {
+        return [
+            'title' => ['required', 'string', 'max:255'],
+            'action' => ['required', 'string', Rule::in(array_keys(GamificationService::$defaultActions))],
+            'points' => ['required', 'integer', 'min:0'],
+            'max_times' => ['nullable', 'integer', 'min:0'],
+        ];
+    }
+
+    private function ruleValidationMessages(): array
+    {
+        return [
+            'title.required' => 'Укажите название правила.',
+            'title.max' => 'Название правила не должно превышать 255 символов.',
+            'action.required' => 'Выберите действие для правила.',
+            'action.in' => 'Выбрано некорректное действие.',
+            'points.required' => 'Укажите количество баллов.',
+            'points.integer' => 'Баллы должны быть целым числом.',
+            'points.min' => 'Баллы не могут быть отрицательными.',
+            'max_times.integer' => 'Лимит начислений должен быть целым числом.',
+            'max_times.min' => 'Лимит начислений не может быть отрицательным.',
+        ];
     }
 }

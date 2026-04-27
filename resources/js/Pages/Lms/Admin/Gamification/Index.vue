@@ -148,7 +148,7 @@
                 v-model="searchQuery"
                 type="text"
                 class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
-                placeholder="Поиск по ФИО или email..."
+                placeholder="Поиск по ФИО, email или городу..."
               />
             </div>
             <select
@@ -157,6 +157,13 @@
             >
               <option value="">Все роли</option>
               <option v-for="r in availableRoles" :key="r" :value="r">{{ r }}</option>
+            </select>
+            <select
+              v-model="cityFilter"
+              class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+            >
+              <option value="">Все города</option>
+              <option v-for="c in availableCities" :key="c" :value="c">{{ c }}</option>
             </select>
           </div>
 
@@ -200,7 +207,7 @@
               <RBadge variant="neutral" size="sm">{{ u.role }}</RBadge>
             </div>
             <div v-if="filteredUsers.length === 0" class="px-3 py-6 text-center text-sm text-gray-400">
-              {{ searchQuery || roleFilter ? 'Никого не найдено' : 'Нет участников в событии' }}
+              {{ searchQuery || roleFilter || cityFilter ? 'Никого не найдено' : 'Нет участников в событии' }}
             </div>
           </div>
         </div>
@@ -244,6 +251,7 @@ const showManualDialog = ref(false)
 const expandedUserId = ref(null)
 const searchQuery = ref('')
 const roleFilter = ref('')
+const cityFilter = ref('')
 const manualForm = reactive({ user_ids: [], points: 0, reason: '' })
 
 function pointsForUser(userId) {
@@ -277,6 +285,11 @@ const availableRoles = computed(() => {
   return [...roles].sort()
 })
 
+const availableCities = computed(() => {
+  const cities = new Set((props.users || []).map(u => u.city).filter(Boolean))
+  return [...cities].sort((a, b) => a.localeCompare(b, 'ru'))
+})
+
 const filteredUsers = computed(() => {
   let list = props.users || []
   const q = searchQuery.value.toLowerCase().trim()
@@ -284,12 +297,17 @@ const filteredUsers = computed(() => {
   if (q) {
     list = list.filter(u =>
       u.name?.toLowerCase().includes(q) ||
-      u.email?.toLowerCase().includes(q)
+      u.email?.toLowerCase().includes(q) ||
+      u.city?.toLowerCase().includes(q)
     )
   }
 
   if (roleFilter.value) {
     list = list.filter(u => u.role === roleFilter.value)
+  }
+
+  if (cityFilter.value) {
+    list = list.filter(u => u.city === cityFilter.value)
   }
 
   return list
@@ -329,6 +347,7 @@ function resetForm() {
   manualForm.reason = ''
   searchQuery.value = ''
   roleFilter.value = ''
+  cityFilter.value = ''
 }
 
 function submitManual() {

@@ -44,6 +44,7 @@
           v-model.number="form.max_times"
           label="Макс. раз (пусто = без ограничений)"
           type="number"
+          :error="form.errors.max_times"
         />
         <div class="flex flex-wrap gap-3">
           <RCheckbox v-model="form.is_auto" label="Автоматическое" />
@@ -77,6 +78,36 @@ const form = useForm({
 })
 
 function submit() {
+  form.clearErrors()
+
+  if (!form.title || !String(form.title).trim()) {
+    form.setError('title', 'Укажите название правила.')
+  }
+
+  if (!form.action) {
+    form.setError('action', 'Выберите действие для правила.')
+  }
+
+  if (form.points === null || form.points === undefined || form.points === '') {
+    form.setError('points', 'Укажите количество баллов.')
+  } else if (!Number.isInteger(Number(form.points))) {
+    form.setError('points', 'Баллы должны быть целым числом.')
+  } else if (Number(form.points) < 0) {
+    form.setError('points', 'Баллы не могут быть отрицательными.')
+  }
+
+  if (form.max_times !== null && form.max_times !== undefined && form.max_times !== '') {
+    if (!Number.isInteger(Number(form.max_times))) {
+      form.setError('max_times', 'Лимит начислений должен быть целым числом.')
+    } else if (Number(form.max_times) < 0) {
+      form.setError('max_times', 'Лимит начислений не может быть отрицательным.')
+    }
+  }
+
+  if (Object.keys(form.errors).length > 0) {
+    return
+  }
+
   if (props.rule) {
     form.put(route('lms.admin.gamification.update', [props.event.slug, props.rule.id]))
   } else {
