@@ -15,6 +15,7 @@
 7. `resources/js/Pages/Education/Index.vue` — тексты/URL/соцсети из `pageData`, фильтр соцсетей с `url`+`name`.
 8. Кэш: публичная страница использует `getGroup` (после `setGroup` кэш сбрасывается в `SettingsService`).
 9. Сид только ВШГР: `database/seeders/VshgrPageSeeder.php` → `VshgrPageContent::seedDefaultsIntoDatabase()`; из `PortalSeeder` убрано. Полный `DatabaseSeeder` по-прежнему вызывает `VshgrPageSeeder` для чистой установки.
+10. Hero image для `/vshgr`: добавлены `hero_bg_image` в дефолты и валидацию админ-контроллера; в `Admin/VshgrPage/Index.vue` подключён `ImageUploadCrop` (upload + media library), на публичной `Education/Index.vue` `HeroSection` получает `bgImage`.
 
 **Verify (Docker, `source docker/.env.local`, `docker exec ${APP_NAME}_fpm`):**
 

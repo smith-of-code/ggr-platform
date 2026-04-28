@@ -6,6 +6,13 @@
       :eyebrow="pageData.hero_eyebrow"
       :title="pageData.hero_title"
       :description="pageData.hero_description"
+      :bg-image="pageData.hero_bg_image"
+      :bg-image-inline="!!pageData.hero_bg_image"
+      :bg-color-from="pageData.hero_bg_color_from"
+      :bg-color-via="pageData.hero_bg_color_via"
+      :bg-color-to="pageData.hero_bg_color_to"
+      :text-color="pageData.hero_text_color"
+      :bg-color-enabled="Boolean(Number(pageData.hero_bg_color_enabled))"
       size="sm"
     >
       <template #decorations>

@@ -9,12 +9,20 @@
       <!-- Hero -->
       <RCard elevation="raised">
         <SectionHeader title="Заголовок и описание" />
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div class="mt-4 space-y-4">
           <RInput v-model="form.hero_title" label="Заголовок *" :error="form.errors.hero_title" />
           <RInput v-model="form.hero_description" label="Описание *" :error="form.errors.hero_description" />
         </div>
         <div class="mt-4">
-          <RInput v-model="form.hero_bg_image" label="Фоновое изображение (URL)" :error="form.errors.hero_bg_image" />
+          <ImageUploadCrop
+            v-model="form.hero_bg_image"
+            label="Фоновое изображение (выбор/загрузка)"
+            :error="form.errors.hero_bg_image"
+            :upload-url="route('admin.upload.image')"
+            :media-picker-url="route('admin.media.index')"
+            collection="opportunity-tours-page"
+            preview-class="h-44 w-full object-cover"
+          />
         </div>
         <p class="mt-4 text-xs text-gray-500">Градиент фона: начало, середина (необязательно), конец.</p>
         <div class="mt-2 grid gap-4 sm:grid-cols-3">
@@ -299,6 +307,7 @@ import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import MultiSelect from '@/Components/MultiSelect.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 import SectionHeader from './SectionHeader.vue'
 import DynamicList from './DynamicList.vue'
 import { emotionIcon, socialIcon, emotionIconKeys, socialIconKeys } from '@/utils/opportunityToursIcons'

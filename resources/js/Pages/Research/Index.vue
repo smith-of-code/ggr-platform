@@ -2,7 +2,18 @@
   <MainLayout>
     <Head :title="d.hero_title || 'Исследования'" />
 
-    <HeroSection :eyebrow="d.hero_title" :title="d.hero_subtitle" :description="d.hero_description" />
+    <HeroSection
+      :eyebrow="d.hero_title"
+      :title="d.hero_subtitle"
+      :description="d.hero_description"
+      :bg-image="d.hero_bg_image"
+      :bg-image-inline="!!d.hero_bg_image"
+      :bg-color-from="d.hero_bg_color_from"
+      :bg-color-via="d.hero_bg_color_via"
+      :bg-color-to="d.hero_bg_color_to"
+      :text-color="d.hero_text_color"
+      :bg-color-enabled="Boolean(Number(d.hero_bg_color_enabled))"
+    />
 
     <!-- Tasks -->
     <section v-if="d.tasks?.length" class="bg-white px-4 py-16 sm:px-6 lg:px-8">

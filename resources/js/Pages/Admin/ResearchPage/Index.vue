@@ -13,13 +13,61 @@
           <RInput v-model="form.hero_title" label="Заголовок *" :error="form.errors.hero_title" />
           <RInput v-model="form.hero_subtitle" label="Подзаголовок *" :error="form.errors.hero_subtitle" />
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500">Описание *</label>
+            <label class="mb-1.5 block text-sm font-medium text-gray-700">Описание *</label>
             <textarea
               v-model="form.hero_description"
               rows="4"
-              class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm transition focus:border-[#003274] focus:ring-[#003274]/10"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#003274] focus:outline-none focus:ring-2 focus:ring-[#003274]/20"
+              :class="{ 'border-red-500': form.errors.hero_description }"
             />
-            <p v-if="form.errors.hero_description" class="mt-1 text-xs text-red-500">{{ form.errors.hero_description }}</p>
+            <p v-if="form.errors.hero_description" class="mt-1 text-xs text-red-600">{{ form.errors.hero_description }}</p>
+          </div>
+          <ImageUploadCrop
+            v-model="form.hero_bg_image"
+            label="Фоновое изображение (выбор/загрузка)"
+            :error="form.errors.hero_bg_image"
+            :upload-url="route('admin.upload.image')"
+            :media-picker-url="route('admin.media.index')"
+            collection="research-page"
+            preview-class="h-44 w-full object-cover"
+            :skip-crop="true"
+          />
+          <p class="text-xs text-gray-500">Градиент фона: начало, середина (необязательно), конец.</p>
+          <div class="mt-2 grid gap-4 sm:grid-cols-3">
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (from)</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_bg_color_from" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_bg_color_from" placeholder="#003274" class="flex-1" />
+              </div>
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (via)</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_bg_color_via" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_bg_color_via" placeholder="#025ea1" class="flex-1" />
+              </div>
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (to)</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_bg_color_to" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_bg_color_to" placeholder="#0277bd" class="flex-1" />
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет текста</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_text_color" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_text_color" placeholder="#ffffff" class="flex-1" />
+              </div>
+            </div>
+            <div class="flex items-center gap-3 pt-6">
+              <RCheckbox v-model="form.hero_bg_color_enabled" />
+              <span class="text-sm font-medium text-gray-700">Использовать свой градиент (вместо стандартного)</span>
+            </div>
           </div>
         </div>
       </RCard>
@@ -27,43 +75,46 @@
       <!-- Tasks -->
       <RCard elevation="raised">
         <SectionHeader title="Общие задачи" />
-        <p class="mb-3 text-xs text-gray-500">Ключевые выводы / задачи исследования</p>
-        <DynamicList
-          v-model="form.tasks"
-          :fields="[
-            { key: 'title', label: 'Заголовок', placeholder: 'Краткое название задачи' },
-            { key: 'text', label: 'Описание', type: 'textarea', placeholder: 'Подробное описание задачи...' },
-          ]"
-          add-label="Добавить задачу"
-          :new-item="{ title: '', text: '' }"
-        />
+        <div class="mt-4 space-y-4">
+          <p class="text-xs text-gray-500">Ключевые выводы / задачи исследования</p>
+          <RInput v-model="form.tasks_title" label="Заголовок секции *" :error="form.errors.tasks_title" />
+          <DynamicList
+            v-model="form.tasks"
+            :fields="[
+              { key: 'title', label: 'Заголовок', placeholder: 'Краткое название задачи' },
+              { key: 'text', label: 'Описание', type: 'textarea', placeholder: 'Подробное описание задачи...' },
+            ]"
+            add-label="Добавить задачу"
+            :new-item="{ title: '', text: '' }"
+          />
+        </div>
       </RCard>
 
       <!-- Pilot Cities -->
       <RCard elevation="raised">
         <SectionHeader title="Пилотные города" />
-        <p class="mb-3 text-xs text-gray-500">Выберите города из справочника. Изображение и герб подтянутся автоматически.</p>
-        <div class="mb-4">
+        <div class="mt-4 space-y-4">
+          <p class="text-xs text-gray-500">Выберите города из справочника. Изображение и герб подтянутся автоматически.</p>
           <RInput v-model="form.pilot_cities_title" label="Заголовок секции *" :error="form.errors.pilot_cities_title" />
+          <CityPicker v-model="form.pilot_cities" :cities="cities" placeholder="Найти пилотный город..." with-description />
         </div>
-        <CityPicker v-model="form.pilot_cities" :cities="cities" placeholder="Найти пилотный город..." with-description />
       </RCard>
 
       <!-- Stats -->
       <RCard elevation="raised">
         <SectionHeader title="Основа исследования (статистика)" />
-        <div class="mb-4">
+        <div class="mt-4 space-y-4">
           <RInput v-model="form.stats_title" label="Заголовок секции *" :error="form.errors.stats_title" />
+          <DynamicList
+            v-model="form.stats"
+            :fields="[
+              { key: 'value', label: 'Число', placeholder: '642' },
+              { key: 'label', label: 'Подпись', placeholder: 'анкеты собрано и проанализировано' },
+            ]"
+            add-label="Добавить счётчик"
+            :new-item="{ value: '', label: '' }"
+          />
         </div>
-        <DynamicList
-          v-model="form.stats"
-          :fields="[
-            { key: 'value', label: 'Число', placeholder: '642' },
-            { key: 'label', label: 'Подпись', placeholder: 'анкеты собрано и проанализировано' },
-          ]"
-          add-label="Добавить счётчик"
-          :new-item="{ value: '', label: '' }"
-        />
       </RCard>
 
       <!-- Results -->
@@ -72,13 +123,14 @@
         <div class="mt-4 space-y-4">
           <RInput v-model="form.results_title" label="Заголовок *" :error="form.errors.results_title" />
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500">Описание *</label>
+            <label class="mb-1.5 block text-sm font-medium text-gray-700">Описание *</label>
             <textarea
               v-model="form.results_description"
               rows="3"
-              class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm transition focus:border-[#003274] focus:ring-[#003274]/10"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#003274] focus:outline-none focus:ring-2 focus:ring-[#003274]/20"
+              :class="{ 'border-red-500': form.errors.results_description }"
             />
-            <p v-if="form.errors.results_description" class="mt-1 text-xs text-red-500">{{ form.errors.results_description }}</p>
+            <p v-if="form.errors.results_description" class="mt-1 text-xs text-red-600">{{ form.errors.results_description }}</p>
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <RInput v-model="form.results_button_text" label="Текст кнопки" placeholder="Скачать альбом" />
@@ -88,7 +140,8 @@
             v-model="form.results_image"
             label="Изображение"
             :upload-url="route('admin.upload.image')"
-            :media-picker-url="route('admin.media.index')" collection="research_page"
+            :media-picker-url="route('admin.media.index')"
+            collection="research_page"
             :skip-crop="true"
             preview-class="h-32 w-full object-contain"
             :error="form.errors.results_image"
@@ -99,22 +152,18 @@
       <!-- Program Cities -->
       <RCard elevation="raised">
         <SectionHeader title="Города программы" />
-        <p class="mb-3 text-xs text-gray-500">Выберите города из справочника. Герб города отобразится автоматически.</p>
-        <div class="mb-4">
+        <div class="mt-4 space-y-4">
+          <p class="text-xs text-gray-500">Выберите города из справочника. Герб города отобразится автоматически.</p>
           <RInput v-model="form.program_cities_title" label="Заголовок секции *" :error="form.errors.program_cities_title" />
+          <CityPicker v-model="form.program_cities" :cities="cities" placeholder="Найти город программы..." />
         </div>
-        <CityPicker v-model="form.program_cities" :cities="cities" placeholder="Найти город программы..." />
       </RCard>
 
       <!-- Submit -->
       <div class="flex justify-start">
-        <button
-          type="submit"
-          :disabled="form.processing"
-          class="rounded-xl bg-[#003274] px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-[#003274]/20 transition hover:bg-[#025ea1] disabled:opacity-50"
-        >
+        <RButton variant="primary" :loading="form.processing" :disabled="form.processing">
           {{ form.processing ? 'Сохранение...' : 'Сохранить' }}
-        </button>
+        </RButton>
       </div>
     </form>
 
@@ -175,6 +224,12 @@ const form = useForm({
   hero_title: d.hero_title ?? 'ИССЛЕДОВАНИЯ',
   hero_subtitle: d.hero_subtitle ?? 'ОЦЕНКА ТУРИСТИЧЕСКОГО ПОТЕНЦИАЛА',
   hero_description: d.hero_description ?? '',
+  hero_bg_image: d.hero_bg_image ?? '',
+  hero_bg_color_from: d.hero_bg_color_from ?? '',
+  hero_bg_color_via: d.hero_bg_color_via ?? '',
+  hero_bg_color_to: d.hero_bg_color_to ?? '',
+  hero_text_color: d.hero_text_color ?? '',
+  hero_bg_color_enabled: Boolean(Number(d.hero_bg_color_enabled ?? 0)),
 
   tasks_title: d.tasks_title ?? 'ОБЩИЕ ЗАДАЧИ',
   tasks: d.tasks?.length ? d.tasks.map(t => ({ title: t.title ?? '', text: t.text ?? '' })) : [{ title: '', text: '' }],

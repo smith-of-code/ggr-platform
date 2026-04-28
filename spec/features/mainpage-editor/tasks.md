@@ -69,3 +69,10 @@
 - **Scope:** Все затронутые файлы (только чтение + линтер); `spec/features/mainpage-editor/*`.
 - **DoD:** Линтер чист; после сохранения в админке публичная страница видит актуальные данные; progress.md финализирован.
 - **Verify:** Ручной сценарий: сохранить в админке → обновить `/mainpage`.
+
+## REV-001. Фото: URL + выбор/загрузка в редакторе
+
+- **Goal:** Для всех image-полей в `main_page` добавить в админке альтернативу URL: выбор файла из медиатеки и загрузка нового файла.
+- **Scope:** `app/Http/Controllers/Admin/MainPageController.php`, `resources/js/Pages/Admin/MainPage/Index.vue`, при необходимости реюз существующих shared/composables для загрузки.
+- **DoD:** В каждом месте, где ранее был только image URL, доступны оба сценария (URL и media file), данные корректно сохраняются и отображаются без регрессии.
+- **Verify:** `source docker/.env.local && docker exec ${APP_NAME}_fpm npm run build`

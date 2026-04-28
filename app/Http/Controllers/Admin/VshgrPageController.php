@@ -32,6 +32,12 @@ class VshgrPageController extends Controller
             'hero_eyebrow' => 'required|string|max:120',
             'hero_title' => 'required|string|max:500',
             'hero_description' => 'required|string|max:3000',
+            'hero_bg_image' => 'nullable|string|max:2048',
+            'hero_bg_color_from' => 'nullable|string|max:20',
+            'hero_bg_color_via' => 'nullable|string|max:20',
+            'hero_bg_color_to' => 'nullable|string|max:20',
+            'hero_text_color' => 'nullable|string|max:20',
+            'hero_bg_color_enabled' => 'boolean',
 
             'catalog_title' => 'required|string|max:255',
             'catalog_subtitle' => 'required|string|max:500',
@@ -59,6 +65,8 @@ class VshgrPageController extends Controller
             'socials.*.url' => 'required|url|max:500',
             'socials.*.icon' => 'required|string|max:50',
         ]);
+
+        $validated['hero_bg_color_enabled'] = $request->boolean('hero_bg_color_enabled') ? '1' : '0';
 
         $values = [];
         foreach ($validated as $key => $value) {

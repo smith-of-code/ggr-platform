@@ -69,12 +69,18 @@
 
           <!-- Block-specific content -->
           <template v-if="block.id === 'hero'">
-            <div class="grid gap-4 sm:grid-cols-2">
-              <RInput v-model="form.hero_title" label="Заголовок *" :error="form.errors.hero_title" />
-              <RInput v-model="form.hero_bg_image" label="Фоновое изображение (URL)" :error="form.errors.hero_bg_image" />
-            </div>
+            <RInput v-model="form.hero_title" label="Заголовок *" :error="form.errors.hero_title" />
             <RInput v-model="form.hero_description" label="Описание *" :error="form.errors.hero_description" />
-            <p class="text-xs text-gray-500">Градиент фона: начало, середина (необязательно), конец.</p>
+            <ImageUploadCrop
+              v-model="form.hero_bg_image"
+              label="Фоновое изображение"
+              :error="form.errors.hero_bg_image"
+              :upload-url="route('admin.upload.image')"
+              :media-picker-url="route('admin.media.index')"
+              collection="main-page"
+              preview-class="h-44 w-full object-cover"
+            />
+            <p class="mt-2 text-xs text-gray-500">Градиент фона: начало, середина (необязательно), конец.</p>
             <div class="grid gap-4 sm:grid-cols-3">
               <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (from)</label>
@@ -120,7 +126,7 @@
                 { key: 'step', label: 'Номер этапа', placeholder: 'Этап 1' },
                 { key: 'title', label: 'Заголовок', placeholder: 'Название этапа' },
                 { key: 'description', label: 'Описание', placeholder: 'Описание этапа...', type: 'textarea' },
-                { key: 'image', label: 'Изображение (URL)', placeholder: 'https://...' },
+                { key: 'image', label: 'Изображение', placeholder: 'URL или загрузить', type: 'image-upload' },
                 { key: 'buttonLabel', label: 'Текст кнопки', placeholder: 'Перейти' },
                 { key: 'href', label: 'Ссылка кнопки', placeholder: '/research' },
               ]"
@@ -147,7 +153,7 @@
                 :fields="[
                   { key: 'name', label: 'Город', placeholder: 'Саров' },
                   { key: 'region', label: 'Регион', placeholder: 'Нижегородская область' },
-                  { key: 'image', label: 'Изображение (URL)', placeholder: 'https://...' },
+                  { key: 'image', label: 'Изображение', placeholder: 'URL или загрузить', type: 'image-upload' },
                 ]"
                 add-label="Добавить город"
                 :new-item="{ name: '', region: '', image: '' }"
@@ -159,7 +165,15 @@
           </template>
 
           <template v-else-if="block.id === 'program_results'">
-            <RInput v-model="form.program_results_image" label="Изображение результатов (URL)" :error="form.errors.program_results_image" />
+            <ImageUploadCrop
+              v-model="form.program_results_image"
+              label="Изображение результатов"
+              :error="form.errors.program_results_image"
+              :upload-url="route('admin.upload.image')"
+              :media-picker-url="route('admin.media.index')"
+              collection="main-page"
+              preview-class="h-44 w-full object-cover"
+            />
             <div v-for="(yearGroup, yIdx) in form.program_results" :key="yIdx" class="mb-4 rounded-xl border border-gray-200 p-4">
               <div class="mb-3 flex items-center gap-3">
                 <RInput v-model.number="yearGroup.year" label="Год" type="number" class="w-32" />
@@ -192,7 +206,7 @@
               v-model="form.city_benefits"
               :fields="[
                 { key: 'title', label: 'Описание', placeholder: 'Комплексное исследование...' },
-                { key: 'image', label: 'Изображение (URL)', placeholder: 'https://...' },
+                { key: 'image', label: 'Изображение', placeholder: 'URL или загрузить', type: 'image-upload' },
               ]"
               add-label="Добавить преимущество"
               :new-item="{ title: '', image: '' }"
@@ -204,7 +218,7 @@
               v-model="form.additional_initiatives"
               :fields="[
                 { key: 'title', label: 'Название', placeholder: 'Гастротуризм' },
-                { key: 'image', label: 'Изображение (URL)', placeholder: 'https://...' },
+                { key: 'image', label: 'Изображение', placeholder: 'URL или загрузить', type: 'image-upload' },
               ]"
               add-label="Добавить инициативу"
               :new-item="{ title: '', image: '' }"
@@ -216,7 +230,7 @@
               v-model="form.videos"
               :fields="[
                 { key: 'title', label: 'Название', placeholder: 'Гостеприимные города — о программе' },
-                { key: 'thumbnail', label: 'Обложка (URL)', placeholder: 'https://...' },
+                { key: 'thumbnail', label: 'Обложка', placeholder: 'URL или загрузить', type: 'image-upload' },
                 { key: 'embedUrl', label: 'Embed URL', placeholder: 'https://vk.com/video_ext.php?...' },
                 { key: 'videoFile', label: 'Видеофайл (URL)', placeholder: 'https://...' },
               ]"
@@ -229,10 +243,17 @@
             <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Видео</p>
             <div class="grid gap-4 sm:grid-cols-2">
               <RInput v-model="form.video_presentation.video_title" label="Заголовок видео" placeholder="О программе «Гостеприимные города Росатома»" />
-              <RInput v-model="form.video_presentation.video_thumbnail" label="Обложка (URL)" placeholder="https://..." />
               <RInput v-model="form.video_presentation.video_embed_url" label="Embed URL" placeholder="https://vk.com/video_ext.php?..." />
               <RInput v-model="form.video_presentation.video_file" label="Видеофайл (URL)" placeholder="https://..." />
             </div>
+            <ImageUploadCrop
+              v-model="form.video_presentation.video_thumbnail"
+              label="Обложка видео"
+              :upload-url="route('admin.upload.image')"
+              :media-picker-url="route('admin.media.index')"
+              collection="main-page"
+              preview-class="h-44 w-full object-cover"
+            />
 
             <p class="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-gray-400">Миссия</p>
             <RInput v-model="form.video_presentation.mission" label="Текст миссии" placeholder="Развитие туристического и образовательного потенциала..." />
@@ -259,7 +280,7 @@
               :fields="[
                 { key: 'name', label: 'Имя', placeholder: 'Иван Иванов' },
                 { key: 'role', label: 'Должность / роль', placeholder: 'Директор программы' },
-                { key: 'image', label: 'Фото (URL)', placeholder: 'https://...' },
+                { key: 'image', label: 'Фото', placeholder: 'URL или загрузить', type: 'image-upload' },
               ]"
               add-label="Добавить организатора"
               :new-item="{ name: '', role: '', image: '' }"
@@ -415,6 +436,7 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import SectionHeader from '@/Pages/Admin/OpportunityToursPage/SectionHeader.vue'
 import DynamicList from '@/Pages/Admin/OpportunityToursPage/DynamicList.vue'
 import IconPicker from '@/Components/IconPicker.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 import { socialIcon, socialIconKeys } from '@/utils/opportunityToursIcons'
 
 const props = defineProps({

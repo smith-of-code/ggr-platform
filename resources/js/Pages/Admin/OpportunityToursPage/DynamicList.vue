@@ -60,14 +60,7 @@
                 </div>
               </button>
               <!-- Upload controls -->
-              <div class="mt-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  :value="item[field.key]"
-                  @input="updateField(idx, field.key, $event.target.value)"
-                  :placeholder="field.placeholder"
-                  class="w-full rounded-lg border-gray-200 bg-white px-2.5 py-1.5 text-xs transition focus:border-[#003274] focus:ring-[#003274]/10"
-                />
+              <div class="mt-2 flex flex-wrap items-center gap-2">
                 <label class="shrink-0 cursor-pointer rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#003274] hover:text-[#003274]">
                   <input type="file" accept="image/*" class="hidden" @change="handleImageUpload($event, idx, field.key)" />
                   Загрузить
@@ -114,14 +107,7 @@
                   </div>
                 </div>
               </button>
-              <div class="mt-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  :value="item[field.key]"
-                  @input="updateField(idx, field.key, $event.target.value)"
-                  :placeholder="field.placeholder"
-                  class="w-full rounded-lg border-gray-200 bg-white px-2.5 py-1.5 text-xs transition focus:border-[#003274] focus:ring-[#003274]/10"
-                />
+              <div class="mt-2 flex flex-wrap items-center gap-2">
                 <label class="shrink-0 cursor-pointer rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#003274] hover:text-[#003274]">
                   <input type="file" accept="image/*" class="hidden" @change="handleImageUpload($event, idx, field.key)" />
                   Загрузить
@@ -410,7 +396,7 @@ const FieldRenderer = defineComponent({
   },
   emits: ['update', 'image-upload', 'file-upload', 'media-pick', 'file-pick'],
   setup(props, { emit }) {
-    const inputClass = 'w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm transition focus:border-[#003274] focus:ring-[#003274]/10'
+    const inputClass = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-[#003274] focus:outline-none focus:ring-2 focus:ring-[#003274]/20'
 
     return () => {
       const { field, item, idx } = props
@@ -436,11 +422,7 @@ const FieldRenderer = defineComponent({
 
       if (field.type === 'image-upload') {
         return h('div', { class: 'space-y-2' }, [
-          h('div', { class: 'flex items-center gap-2' }, [
-            h('input', {
-              type: 'text', value: val, placeholder: field.placeholder, class: inputClass,
-              onInput: e => emit('update', idx, field.key, e.target.value),
-            }),
+          h('div', { class: 'flex flex-wrap items-center gap-2' }, [
             h('label', {
               class: 'shrink-0 cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition hover:border-[#003274] hover:text-[#003274]',
             }, [
@@ -456,7 +438,6 @@ const FieldRenderer = defineComponent({
           val
             ? h('div', { class: 'flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-2' }, [
                 h('img', { src: val, alt: field.label, class: 'h-16 max-w-[160px] rounded-lg object-contain', onError: e => { e.target.style.display = 'none' } }),
-                h('div', { class: 'min-w-0 flex-1' }, [h('p', { class: 'truncate text-xs text-gray-400' }, val)]),
                 h('button', {
                   type: 'button', class: 'shrink-0 rounded-lg p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-500',
                   onClick: () => emit('update', idx, field.key, ''),

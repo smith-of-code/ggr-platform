@@ -52,6 +52,12 @@ class ResearchPageController extends Controller
             'hero_title' => 'required|string|max:255',
             'hero_subtitle' => 'required|string|max:255',
             'hero_description' => 'required|string|max:2000',
+            'hero_bg_image' => 'nullable|string|max:2048',
+            'hero_bg_color_from' => 'nullable|string|max:20',
+            'hero_bg_color_via' => 'nullable|string|max:20',
+            'hero_bg_color_to' => 'nullable|string|max:20',
+            'hero_text_color' => 'nullable|string|max:20',
+            'hero_bg_color_enabled' => 'boolean',
 
             'tasks_title' => 'required|string|max:255',
             'tasks' => 'required|array|min:1',
@@ -78,6 +84,8 @@ class ResearchPageController extends Controller
             'program_cities' => 'nullable|array',
             'program_cities.*' => 'integer|exists:cities,id',
         ]);
+
+        $validated['hero_bg_color_enabled'] = $request->boolean('hero_bg_color_enabled') ? '1' : '0';
 
         $values = [];
         foreach ($validated as $key => $value) {

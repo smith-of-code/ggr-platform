@@ -48,10 +48,10 @@ build-images:
         -t $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_TAG
         -t $CI_REGISTRY_IMAGE/nginx:latest
         -f docker/Dockerfile.prod .
-    - docker push $CI_REGISTRY_IMAGE/fpm:$CI_COMMIT_TAG
-    - docker push $CI_REGISTRY_IMAGE/fpm:latest
-    - docker push $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_TAG
-    - docker push $CI_REGISTRY_IMAGE/nginx:latest
+    - docker push --quiet $CI_REGISTRY_IMAGE/fpm:$CI_COMMIT_TAG
+    - docker push --quiet $CI_REGISTRY_IMAGE/fpm:latest
+    - docker push --quiet $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_TAG
+    - docker push --quiet $CI_REGISTRY_IMAGE/nginx:latest
 
 deploy-prod:
   stage: deploy

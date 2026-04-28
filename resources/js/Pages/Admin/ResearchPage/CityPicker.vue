@@ -33,13 +33,13 @@
           </button>
         </div>
         <div v-if="withDescription" class="border-t border-gray-100 px-3 pb-3 pt-2">
-          <label class="mb-1 block text-xs font-medium text-gray-500">Описание</label>
+          <label class="mb-1.5 block text-sm font-medium text-gray-700">Описание</label>
           <textarea
             :value="entry.description"
             @input="updateDescription(idx, $event.target.value)"
             rows="2"
             placeholder="Описание города для этого блока..."
-            class="w-full rounded-lg border-gray-200 bg-white px-3 py-2 text-sm transition focus:border-[#003274] focus:ring-[#003274]/10"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm transition focus:border-[#003274] focus:outline-none focus:ring-2 focus:ring-[#003274]/20"
           />
         </div>
       </div>
@@ -51,7 +51,7 @@
         v-model="search"
         type="text"
         :placeholder="placeholder"
-        class="w-full rounded-xl border border-dashed border-gray-300 bg-white px-4 py-2.5 pl-10 text-sm transition focus:border-[#003274] focus:ring-[#003274]/10"
+        class="w-full rounded-xl border border-dashed border-gray-300 bg-white px-4 py-2.5 pl-10 text-sm transition focus:border-[#003274] focus:outline-none focus:ring-2 focus:ring-[#003274]/20"
         @focus="open = true"
       />
       <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
