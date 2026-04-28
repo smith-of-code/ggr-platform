@@ -21,11 +21,20 @@ class EnsureLmsBackofficeAccess
         $event = $request->route('event');
 
         if ($event instanceof LmsEvent) {
-            if (! LmsProfile::userIsLmsAdminForEvent($user, $event)) {
+            $accessLevel = LmsProfile::backofficeAccessForEvent($user, $event);
+            if ($accessLevel === 'admin') {
+                return $next($request);
+            }
+
+            if ($accessLevel === 'gamification_points_only' && $this->isGamificationPointsOnlyRoute($request)) {
+                return $next($request);
+            }
+
+            if ($accessLevel === 'none') {
                 abort(403, 'Недостаточно прав для доступа к администрированию LMS.');
             }
 
-            return $next($request);
+            abort(403, 'Доступ ограничен: доступно только начисление баллов в геймификации.');
         }
 
         if (! LmsProfile::userHasAnyLmsAdminProfile($user)) {
@@ -33,5 +42,15 @@ class EnsureLmsBackofficeAccess
         }
 
         return $next($request);
+    }
+
+    private function isGamificationPointsOnlyRoute(Request $request): bool
+    {
+        $routeName = $request->route() ? $request->route()->getName() : null;
+
+        return in_array($routeName, [
+            'lms.admin.gamification.index',
+            'lms.admin.gamification.manual-points',
+        ], true);
     }
 }

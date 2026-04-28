@@ -29,7 +29,8 @@ class ProfileController extends Controller
                 []
             );
 
-        $profile->load('documents');
+        $profile->load(['documents', 'lmsRole:id,name,slug']);
+        $canGamificationAdminAccessFromProfile = LmsProfile::isGamificationPointsOnlyProfile($profile);
 
         $pendingDocumentReplaceRequests = LmsProfileDocumentReplaceRequest::where('lms_profile_id', $profile->id)
             ->where('status', LmsProfileDocumentReplaceRequest::STATUS_PENDING)
@@ -90,6 +91,7 @@ class ProfileController extends Controller
             'enrollmentTemplates' => $enrollmentTemplates,
             'programFacultyOptions' => $programFacultyOptions,
             'pendingDocumentReplaceRequests' => $pendingDocumentReplaceRequests,
+            'canGamificationAdminAccessFromProfile' => $canGamificationAdminAccessFromProfile,
         ]);
     }
 

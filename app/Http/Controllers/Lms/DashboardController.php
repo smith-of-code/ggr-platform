@@ -22,6 +22,7 @@ class DashboardController extends Controller
         $user = auth()->user();
         $profile = LmsProfile::where('lms_event_id', $event->id)
             ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
             ->first();
 
         if ($profile && in_array($profile->status, ['imported', 'invited'])) {
@@ -84,7 +85,7 @@ class DashboardController extends Controller
         $userRank = app(GamificationService::class)->getUserRank($event, $user);
 
         $cityRank = null;
-        $cityName = $profile?->city;
+        $cityName = $profile ? $profile->city : null;
         if ($cityName) {
             $cityAvgs = DB::table('lms_profiles')
                 ->leftJoin('lms_gamification_points', function ($join) use ($event) {
@@ -117,7 +118,7 @@ class DashboardController extends Controller
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'last_name', 'first_name', 'patronymic', 'email']),
             'profile' => $profile,
-            'isProfileComplete' => $profile?->isProfileComplete() ?? false,
+            'isProfileComplete' => $profile ? $profile->isProfileComplete() : false,
             'courses' => $courses,
             'trajectories' => $activeTrajectories,
             'upcomingAssignments' => $upcomingAssignments,

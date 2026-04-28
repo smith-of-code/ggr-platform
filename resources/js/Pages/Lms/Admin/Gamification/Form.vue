@@ -21,13 +21,15 @@
           <label class="mb-2 block text-sm font-medium text-gray-700">Действие (триггер)</label>
           <select
             v-model="form.action"
+            required
             class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
           >
-            <option value="">— Без автоматического триггера —</option>
+            <option value="" disabled>— Выберите действие —</option>
             <option v-for="(label, key) in actions" :key="key" :value="key">
               {{ label }} ({{ key }})
             </option>
           </select>
+          <p v-if="form.errors.action" class="mt-1 text-sm text-red-600">{{ form.errors.action }}</p>
           <p class="mt-1.5 text-xs text-gray-400">Выберите действие для автоматического начисления баллов</p>
         </div>
 
@@ -42,6 +44,7 @@
           v-model.number="form.max_times"
           label="Макс. раз (пусто = без ограничений)"
           type="number"
+          :error="form.errors.max_times"
         />
         <div class="flex flex-wrap gap-3">
           <RCheckbox v-model="form.is_auto" label="Автоматическое" />
@@ -75,6 +78,36 @@ const form = useForm({
 })
 
 function submit() {
+  form.clearErrors()
+
+  if (!form.title || !String(form.title).trim()) {
+    form.setError('title', 'Укажите название правила.')
+  }
+
+  if (!form.action) {
+    form.setError('action', 'Выберите действие для правила.')
+  }
+
+  if (form.points === null || form.points === undefined || form.points === '') {
+    form.setError('points', 'Укажите количество баллов.')
+  } else if (!Number.isInteger(Number(form.points))) {
+    form.setError('points', 'Баллы должны быть целым числом.')
+  } else if (Number(form.points) < 0) {
+    form.setError('points', 'Баллы не могут быть отрицательными.')
+  }
+
+  if (form.max_times !== null && form.max_times !== undefined && form.max_times !== '') {
+    if (!Number.isInteger(Number(form.max_times))) {
+      form.setError('max_times', 'Лимит начислений должен быть целым числом.')
+    } else if (Number(form.max_times) < 0) {
+      form.setError('max_times', 'Лимит начислений не может быть отрицательным.')
+    }
+  }
+
+  if (Object.keys(form.errors).length > 0) {
+    return
+  }
+
   if (props.rule) {
     form.put(route('lms.admin.gamification.update', [props.event.slug, props.rule.id]))
   } else {

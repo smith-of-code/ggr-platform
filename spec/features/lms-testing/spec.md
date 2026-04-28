@@ -18,10 +18,12 @@
 ### Контроллеры
 - `App\Http\Controllers\Lms\TestController` — участник: список, старт, прохождение, отправка, результат
 - `App\Http\Controllers\Lms\Admin\TestController` — админ: CRUD тестов с вопросами/ответами
+  - `results()` — админ: детальные результаты конкретного теста (попытки, фильтры, ответы)
 
 ### Страницы
 - `Pages/Lms/Tests/Index.vue`, `Show.vue`, `Take.vue`, `Result.vue`
 - `Pages/Lms/Admin/Tests/Index.vue`, `Form.vue`
+- `Pages/Lms/Admin/Tests/Results.vue` — детальная таблица попыток по тесту
 
 ## Ключевые workflow
 
@@ -30,3 +32,7 @@
 - Ограничение max_attempts, time_limit_minutes
 - Перемешивание: shuffle_questions, shuffle_answers
 - Показ правильных ответов: show_correct_answers
+- Админ может открыть детальную страницу результатов теста (`GET /lms-admin/{event}/tests/{test}/results`) с фильтрами:
+  - поиск по участнику (ФИО/email)
+  - статус сдачи (all/passed/failed)
+  - опциональный показ ответов по каждой попытке

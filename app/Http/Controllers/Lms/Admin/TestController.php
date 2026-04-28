@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsTest;
 use App\Models\Lms\LmsTestAnswer;
+use App\Models\Lms\LmsTestAttempt;
 use App\Models\Lms\LmsTestQuestion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,6 +94,135 @@ class TestController extends Controller
         $test->delete();
 
         return redirect()->route('lms.admin.tests.index', $event)->with('success', 'Тест удалён');
+    }
+
+    public function results(Request $request, LmsEvent $event, LmsTest $test): Response
+    {
+        $this->ensureTestBelongsToEvent($test, $event);
+
+        $status = (string) $request->query('status', 'all');
+        if (! in_array($status, ['all', 'passed', 'failed'], true)) {
+            $status = 'all';
+        }
+        $search = trim((string) $request->query('search', ''));
+        $showAnswers = $request->boolean('show_answers', false);
+
+        $query = LmsTestAttempt::query()
+            ->where('lms_test_id', $test->id)
+            ->with(['user:id,name,last_name,first_name,patronymic,email']);
+
+        if ($status === 'passed') {
+            $query->where('passed', true);
+        } elseif ($status === 'failed') {
+            $query->where('passed', false)->whereNotNull('finished_at');
+        }
+
+        if ($search !== '') {
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'ilike', '%'.$search.'%')
+                    ->orWhere('email', 'ilike', '%'.$search.'%')
+                    ->orWhere('last_name', 'ilike', '%'.$search.'%')
+                    ->orWhere('first_name', 'ilike', '%'.$search.'%');
+            });
+        }
+
+        if ($showAnswers) {
+            $query->with([
+                'responses.question' => fn ($q) => $q->with('answers'),
+            ]);
+        }
+
+        $attempts = $query
+            ->orderByDesc('started_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        $attempts->getCollection()->transform(function (LmsTestAttempt $attempt) use ($showAnswers) {
+            $user = $attempt->user;
+            $fullName = trim(implode(' ', array_filter([
+                $user ? $user->last_name : null,
+                $user ? $user->first_name : null,
+            ])));
+
+            $row = [
+                'id' => $attempt->id,
+                'status' => $attempt->status,
+                'score' => $attempt->score,
+                'max_score' => $attempt->max_score,
+                'percentage' => $attempt->percentage,
+                'passed' => (bool) $attempt->passed,
+                'started_at' => $attempt->started_at,
+                'finished_at' => $attempt->finished_at,
+                'user' => [
+                    'id' => $user ? $user->id : null,
+                    'name' => $fullName !== '' ? $fullName : ($user ? $user->name : 'Участник'),
+                    'email' => $user ? $user->email : null,
+                ],
+            ];
+
+            if (! $showAnswers) {
+                $row['responses'] = [];
+
+                return $row;
+            }
+
+            $responses = [];
+            foreach ($attempt->responses as $response) {
+                $question = $response->question;
+                $answers = $question ? $question->answers : collect();
+
+                $selectedIds = is_array($response->selected_answer_ids)
+                    ? array_map('intval', $response->selected_answer_ids)
+                    : [];
+                $selectedTexts = $answers
+                    ->whereIn('id', $selectedIds)
+                    ->pluck('answer')
+                    ->filter()
+                    ->values()
+                    ->all();
+                $correctTexts = $answers
+                    ->where('is_correct', true)
+                    ->pluck('answer')
+                    ->filter()
+                    ->values()
+                    ->all();
+
+                $responses[] = [
+                    'question' => $question ? $question->question : 'Вопрос удалён',
+                    'type' => $question ? $question->type : null,
+                    'is_correct' => (bool) $response->is_correct,
+                    'points_earned' => (int) ($response->points_earned ?? 0),
+                    'selected_answers' => $selectedTexts,
+                    'correct_answers' => $correctTexts,
+                    'text_answer' => $response->text_answer,
+                ];
+            }
+
+            $row['responses'] = $responses;
+
+            return $row;
+        });
+
+        $statsBase = LmsTestAttempt::query()->where('lms_test_id', $test->id);
+        $stats = [
+            'total_attempts' => (clone $statsBase)->count(),
+            'completed_attempts' => (clone $statsBase)->where('status', 'completed')->count(),
+            'passed_attempts' => (clone $statsBase)->where('passed', true)->count(),
+            'unique_users' => (clone $statsBase)->distinct('user_id')->count('user_id'),
+            'avg_percentage' => round((float) ((clone $statsBase)->whereNotNull('percentage')->avg('percentage') ?? 0), 1),
+        ];
+
+        return Inertia::render('Lms/Admin/Tests/Results', [
+            'event' => $event->only(['id', 'slug', 'title']),
+            'test' => $test->only(['id', 'title', 'passing_score', 'max_attempts']),
+            'attempts' => $attempts,
+            'stats' => $stats,
+            'filters' => [
+                'status' => $status,
+                'search' => $search,
+                'show_answers' => $showAnswers,
+            ],
+        ]);
     }
 
     private function validateTest(Request $request): array

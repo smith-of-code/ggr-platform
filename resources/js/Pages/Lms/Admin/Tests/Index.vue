@@ -36,6 +36,13 @@
             </td>
             <td class="px-5 py-3.5 text-right">
               <div class="flex items-center justify-end gap-2">
+                <Link
+                  :href="route('lms.admin.tests.results', [event.slug, test.id])"
+                  class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                  title="Результаты"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l3-3 3 2 4-5" /></svg>
+                </Link>
                 <Link :href="route('lms.admin.tests.edit', [event.slug, test.id])" class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
                 </Link>

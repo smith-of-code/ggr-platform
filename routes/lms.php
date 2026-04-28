@@ -146,6 +146,10 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
     Route::resource('events', AdminEventController::class);
 
     Route::prefix('{event}')->group(function () {
+        Route::get('/', function ($event) {
+            return redirect()->route('lms.admin.courses.index', ['event' => $event]);
+        })->name('home');
+
         Route::resource('courses', AdminCourseController::class);
         Route::get('search-modules', [AdminCourseController::class, 'searchModules'])->name('search.modules');
         Route::get('search-stages', [AdminCourseController::class, 'searchStages'])->name('search.stages');
@@ -153,6 +157,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::post('scorm-upload', [AdminCourseController::class, 'uploadScorm'])->name('scorm.upload');
         Route::post('stage-block-file-upload', [AdminCourseController::class, 'uploadStageBlockFile'])->name('stage-block-file.upload');
         Route::resource('tests', AdminTestController::class);
+        Route::get('tests/{test}/results', [AdminTestController::class, 'results'])->name('tests.results');
         Route::resource('assignments', AdminAssignmentController::class);
         Route::post('assignments/{assignment}/submissions/{submission}/review', [AdminAssignmentController::class, 'review'])->name('assignments.review');
         Route::post('assignments/{assignment}/submissions/{submission}/comment', [AdminAssignmentController::class, 'comment'])->name('assignments.comment');
