@@ -952,6 +952,7 @@ class UserController extends Controller
         $headers = [
             'Фамилия', 'Имя', 'Отчество', 'Email', 'Телефон',
             'Город', 'Должность', 'Организация', 'Роль',
+            'Описание идеи / проекта',
             'Направление', 'Статус',
             'Программы', 'Факультет',
             'Зашёл на платформу', 'Дата активации',
@@ -976,15 +977,16 @@ class UserController extends Controller
                 ->implode('; ');
 
             $rows[] = [
-                (string) ($u?->last_name ?? ''),
-                (string) ($u?->first_name ?? ''),
-                (string) ($u?->patronymic ?? ''),
-                (string) ($u?->email ?? ''),
-                (string) ($u?->phone ?? $p->phone ?? ''),
+                (string) ($u ? $u->last_name : ''),
+                (string) ($u ? $u->first_name : ''),
+                (string) ($u ? $u->patronymic : ''),
+                (string) ($u ? $u->email : ''),
+                (string) ($u ? $u->phone : ($p->phone ?? '')),
                 (string) ($p->city ?? ''),
                 (string) ($p->position ?? ''),
                 (string) ($p->organization ?? ''),
-                (string) ($p->lmsRole?->name ?? $statusLabels[$p->role] ?? $p->role ?? ''),
+                (string) (($p->lmsRole ? $p->lmsRole->name : null) ?? $statusLabels[$p->role] ?? $p->role ?? ''),
+                (string) ($p->project_description ?? ''),
                 (string) ($directionLabels[$p->direction] ?? ''),
                 (string) ($statusLabels[$p->status] ?? $p->status ?? ''),
                 (string) $programTitles,
