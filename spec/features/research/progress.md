@@ -41,6 +41,25 @@
 - Маршруты: корректны
 - Битые ссылки: нет
 
+### T12. Hero-фон и градиент в Research ✓
+- Добавлены поля hero: `hero_bg_image`, `hero_bg_color_from`, `hero_bg_color_via`, `hero_bg_color_to`, `hero_text_color`, `hero_bg_color_enabled`
+- Админка `/admin/research-page`: загрузка/выбор фона + цветовые настройки градиента
+- Публичная `/research`: прокинуты пропсы в `HeroSection` для фона/градиента/цвета текста
+- Seeder обновлён новыми ключами hero
+- Files: `app/Http/Controllers/Admin/ResearchPageController.php`, `resources/js/Pages/Admin/ResearchPage/Index.vue`, `resources/js/Pages/Research/Index.vue`, `database/seeders/ResearchPageSeeder.php`, `spec/features/research/spec.md`
+
+### T13. UI KIT выравнивание формы ResearchPage ✓
+- Текстовые поля описаний (`hero_description`, `results_description`) приведены к единому админ-стилю (`border`, focus-ring, error state)
+- Кнопка сохранения в `/admin/research-page` переведена на `RButton variant="primary"` вместо кастомной кнопки
+- Files: `resources/js/Pages/Admin/ResearchPage/Index.vue`
+
+### T14. Остальные блоки редактора Research + shared DynamicList/CityPicker ✓
+- Секции задач, городов, статистики и результатов — единый отступ `mt-4 space-y-4` после `SectionHeader`
+- Добавлен пропущенный `RInput` для `tasks_title` (заголовок секции «Общие задачи»)
+- `DynamicList`: единый класс полей (`border border-gray-300`, focus-ring) — затрагивает и `opportunity-tours-page`, и research
+- `CityPicker`: те же стили для textarea описания города и для поля поиска
+- Files: `resources/js/Pages/Admin/ResearchPage/Index.vue`, `resources/js/Pages/Admin/ResearchPage/CityPicker.vue`, `resources/js/Pages/Admin/OpportunityToursPage/DynamicList.vue`, `spec/features/research/progress.md`
+
 ## Partially completed
 
 (пусто)

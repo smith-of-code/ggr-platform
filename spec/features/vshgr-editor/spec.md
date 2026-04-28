@@ -10,6 +10,8 @@
 - Админ-маршруты `GET` + `PUT` под префиксом `admin` (имена маршрутов в стиле `admin.vshgr-page.*`).
 - Контроллер в `App\Http\Controllers\Admin\` с валидацией и `redirect()->back()->with('success', ...)`.
 - Страница Inertia `resources/js/Pages/Admin/VshgrPage/Index.vue`: блоки hero, заголовки секций (каталог, анонсы, CTA, положение, форма заявки, соцсети), редактируемый список соцсетей (как у туров возможностей: `name`, `url`, `icon`).
+- В hero-блоке `/vshgr` поддержать изменение фонового изображения через выбор из медиабиблиотеки и загрузку файла (по паттерну `ImageUploadCrop`, как на главной и `opportunity-tours`).
+- Те же настройки кастомного градиента и цвета текста hero, что у `opportunity-tours-page`: `hero_bg_color_*`, `hero_text_color`, `hero_bg_color_enabled`; на публике — через props `HeroSection`.
 - Пункт в `AdminLayout.vue` для перехода к редактору.
 - `EducationController::index`: загрузка группы настроек, слияние с дефолтами (текущие захардкоженные тексты/URL как fallback), передача в `Education/Index` как `pageData` (или согласованное имя props).
 - `resources/js/Pages/Education/Index.vue`: отображение полей из props с fallback на нынешние значения; логика каталога, анонсов и формы заявки без изменения бизнес-поведения.

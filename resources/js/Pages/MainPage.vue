@@ -793,7 +793,7 @@
               <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div class="absolute bottom-0 left-0 right-0 p-5">
                 <h3 class="text-xl font-bold text-white">{{ city.name }}</h3>
-                <p class="mt-1 line-clamp-2 text-sm leading-relaxed text-white/75">{{ city.description }}</p>
+                <p class="mt-1 line-clamp-2 text-sm leading-relaxed text-white/75">{{ stripHtml(city.description) }}</p>
               </div>
             </Link>
           </div>
@@ -1414,7 +1414,13 @@ function submitContact() {
 
 function stripHtml(html) {
   if (!html) return ''
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+  const plain = html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ')
+  if (typeof window === 'undefined') {
+    return plain.replace(/\s+/g, ' ').trim()
+  }
+  const parser = document.createElement('textarea')
+  parser.innerHTML = plain
+  return parser.value.replace(/\s+/g, ' ').trim()
 }
 
 function formatPrice(value) {

@@ -12,6 +12,7 @@ use Inertia\Response;
 class MainPageController extends Controller
 {
     private const GROUP = 'main_page';
+    private const IMAGE_PATH_RULE = 'nullable|string|max:2048';
 
     private const JSON_KEYS = [
         'block_order',
@@ -65,7 +66,7 @@ class MainPageController extends Controller
         $validated = $request->validate([
             'hero_title' => 'required|string|max:255',
             'hero_description' => 'required|string|max:1000',
-            'hero_bg_image' => 'nullable|string|max:500',
+            'hero_bg_image' => self::IMAGE_PATH_RULE,
             'hero_bg_color_from' => 'nullable|string|max:20',
             'hero_bg_color_via' => 'nullable|string|max:20',
             'hero_bg_color_to' => 'nullable|string|max:20',
@@ -76,7 +77,7 @@ class MainPageController extends Controller
             'program_stages.*.step' => 'required|string|max:50',
             'program_stages.*.title' => 'required|string|max:255',
             'program_stages.*.description' => 'required|string|max:2000',
-            'program_stages.*.image' => 'nullable|string|max:500',
+            'program_stages.*.image' => self::IMAGE_PATH_RULE,
             'program_stages.*.buttonLabel' => 'required|string|max:100',
             'program_stages.*.href' => 'nullable|string|max:500',
 
@@ -85,33 +86,33 @@ class MainPageController extends Controller
             'program_cities.*.cities' => 'required|array|min:1',
             'program_cities.*.cities.*.name' => 'required|string|max:255',
             'program_cities.*.cities.*.region' => 'required|string|max:255',
-            'program_cities.*.cities.*.image' => 'nullable|string|max:500',
+            'program_cities.*.cities.*.image' => self::IMAGE_PATH_RULE,
 
             'program_results' => 'nullable|array',
             'program_results.*.year' => 'required|integer|min:2020|max:2100',
             'program_results.*.results' => 'required|array|min:1',
             'program_results.*.results.*.value' => 'required|string|max:100',
             'program_results.*.results.*.description' => 'required|string|max:2000',
-            'program_results_image' => 'nullable|string|max:500',
+            'program_results_image' => self::IMAGE_PATH_RULE,
 
             'city_benefits' => 'nullable|array',
             'city_benefits.*.title' => 'required|string|max:500',
-            'city_benefits.*.image' => 'nullable|string|max:500',
+            'city_benefits.*.image' => self::IMAGE_PATH_RULE,
 
             'additional_initiatives' => 'nullable|array',
             'additional_initiatives.*.title' => 'required|string|max:500',
-            'additional_initiatives.*.image' => 'nullable|string|max:500',
+            'additional_initiatives.*.image' => self::IMAGE_PATH_RULE,
 
             'videos' => 'nullable|array',
             'videos.*.title' => 'required|string|max:255',
-            'videos.*.thumbnail' => 'nullable|string|max:500',
+            'videos.*.thumbnail' => self::IMAGE_PATH_RULE,
             'videos.*.embedUrl' => 'nullable|string|max:500',
             'videos.*.videoFile' => 'nullable|string|max:500',
 
             'video_presentation' => 'nullable|array',
             'video_presentation.video_embed_url' => 'nullable|string|max:500',
             'video_presentation.video_file' => 'nullable|string|max:500',
-            'video_presentation.video_thumbnail' => 'nullable|string|max:500',
+            'video_presentation.video_thumbnail' => self::IMAGE_PATH_RULE,
             'video_presentation.video_title' => 'nullable|string|max:255',
             'video_presentation.mission' => 'nullable|string|max:2000',
             'video_presentation.goals' => 'nullable|array',
@@ -121,7 +122,7 @@ class MainPageController extends Controller
             'video_presentation.organizers' => 'nullable|array',
             'video_presentation.organizers.*.name' => 'required|string|max:255',
             'video_presentation.organizers.*.role' => 'nullable|string|max:255',
-            'video_presentation.organizers.*.image' => 'nullable|string|max:500',
+            'video_presentation.organizers.*.image' => self::IMAGE_PATH_RULE,
             'video_presentation.history' => 'nullable|string|max:5000',
             'video_presentation.facts' => 'nullable|array',
             'video_presentation.facts.*.value' => 'required|string|max:100',

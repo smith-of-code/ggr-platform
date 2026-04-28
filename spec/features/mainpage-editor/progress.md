@@ -26,6 +26,15 @@
   - Линтер: чист (0 ошибок)
   - Кэш: getGroup (кэш) для публичной, getGroupFresh для админки; setGroup сбрасывает кэш
   - Сборка: npm run build — OK
+- REV-001. Фото: URL + выбор/загрузка в редакторе
+  - Добавлена поддержка URL + выбор/загрузка для всех photo image-полей в редакторе главной страницы.
+  - `app/Http/Controllers/Admin/MainPageController.php` — image-валидация унифицирована через `IMAGE_PATH_RULE` (`nullable|string|max:2048`).
+  - `resources/js/Pages/Admin/MainPage/Index.vue` — во всех image-местах URL-only заменён на URL + upload/library UI (`DynamicList type: image-upload`, `ImageUploadCrop` для скалярных полей).
+  - Verify: `source docker/.env.local && docker exec ${APP_NAME}_fpm php -l app/Http/Controllers/Admin/MainPageController.php` + `source docker/.env.local && docker exec ${APP_NAME}_fpm npm run build` — OK.
+- REV-002. Текст в блоке «Атомные города»: устранение артефактов символов
+  - `resources/js/Pages/MainPage.vue` — в карточках городов описание теперь рендерится через `stripHtml(...)` вместо сырого HTML.
+  - `stripHtml(...)` расширен: удаление HTML-тегов + декодирование HTML-сущностей (`&nbsp;`, `&laquo;` и т.д.) через временный `textarea`.
+  - Verify: `source docker/.env.local && docker exec ${APP_NAME}_fpm npm run build` — OK.
 
 ## Partially completed
 

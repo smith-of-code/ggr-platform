@@ -35,6 +35,12 @@ class ResearchPageSeeder extends Seeder
             'hero_title' => 'ИССЛЕДОВАНИЯ',
             'hero_subtitle' => 'ОЦЕНКА ТУРИСТИЧЕСКОГО ПОТЕНЦИАЛА',
             'hero_description' => 'Исследование сферы досуга, отдыха и туристического потенциала атомных городов включает социологические опросы и глубинные интервью, индивидуальные встречи с предпринимателями, региональными и муниципальными администрациями для формирования бизнес-лотов.',
+            'hero_bg_image' => '',
+            'hero_bg_color_from' => '',
+            'hero_bg_color_via' => '',
+            'hero_bg_color_to' => '',
+            'hero_text_color' => '',
+            'hero_bg_color_enabled' => '0',
 
             'tasks_title' => 'ОБЩИЕ ЗАДАЧИ',
             'tasks' => json_encode([

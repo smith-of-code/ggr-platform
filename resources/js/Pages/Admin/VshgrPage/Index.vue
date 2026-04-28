@@ -21,6 +21,53 @@
             />
             <p v-if="form.errors.hero_description" class="mt-1 text-xs text-red-600">{{ form.errors.hero_description }}</p>
           </div>
+          <ImageUploadCrop
+            v-model="form.hero_bg_image"
+            label="Фоновое изображение"
+            :error="form.errors.hero_bg_image"
+            :upload-url="route('admin.upload.image')"
+            :media-picker-url="route('admin.media.index')"
+            collection="vshgr-page"
+            preview-class="h-40 w-full object-cover"
+            :skip-crop="true"
+          />
+          <p class="text-xs text-gray-500">Градиент фона: начало, середина (необязательно), конец.</p>
+          <div class="mt-2 grid gap-4 sm:grid-cols-3">
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (from)</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_bg_color_from" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_bg_color_from" placeholder="#003274" class="flex-1" />
+              </div>
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (via)</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_bg_color_via" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_bg_color_via" placeholder="#025ea1" class="flex-1" />
+              </div>
+            </div>
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет (to)</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_bg_color_to" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_bg_color_to" placeholder="#0277bd" class="flex-1" />
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-gray-700">Цвет текста</label>
+              <div class="flex items-center gap-3">
+                <input type="color" v-model="form.hero_text_color" class="h-10 w-14 cursor-pointer rounded-lg border border-gray-200" />
+                <RInput v-model="form.hero_text_color" placeholder="#ffffff" class="flex-1" />
+              </div>
+            </div>
+            <div class="flex items-center gap-3 pt-6">
+              <RCheckbox v-model="form.hero_bg_color_enabled" />
+              <span class="text-sm font-medium text-gray-700">Использовать свой градиент (вместо стандартного)</span>
+            </div>
+          </div>
         </div>
       </RCard>
 
@@ -131,6 +178,7 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import ImageUploadCrop from '@/Components/ImageUploadCrop.vue'
 import SectionHeader from '@/Pages/Admin/OpportunityToursPage/SectionHeader.vue'
 import DynamicList from '@/Pages/Admin/OpportunityToursPage/DynamicList.vue'
 import { socialIcon, socialIconKeys } from '@/utils/opportunityToursIcons'
@@ -159,6 +207,12 @@ const form = useForm({
   hero_eyebrow: d.hero_eyebrow ?? '',
   hero_title: d.hero_title ?? '',
   hero_description: d.hero_description ?? '',
+  hero_bg_image: d.hero_bg_image ?? '',
+  hero_bg_color_from: d.hero_bg_color_from ?? '',
+  hero_bg_color_via: d.hero_bg_color_via ?? '',
+  hero_bg_color_to: d.hero_bg_color_to ?? '',
+  hero_text_color: d.hero_text_color ?? '',
+  hero_bg_color_enabled: Boolean(Number(d.hero_bg_color_enabled ?? 0)),
   catalog_title: d.catalog_title ?? '',
   catalog_subtitle: d.catalog_subtitle ?? '',
   catalog_empty_text: d.catalog_empty_text ?? '',
