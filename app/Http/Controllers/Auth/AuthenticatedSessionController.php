@@ -58,6 +58,20 @@ class AuthenticatedSessionController extends Controller
             return $this->redirectForInertia($request, $redirect);
         }
 
+        $lmsAdminProfile = LmsProfile::query()
+            ->where('user_id', $user->id)
+            ->with(['event:id,slug,title', 'lmsRole:id,slug'])
+            ->orderByDesc('activated_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($lmsAdminProfile && $lmsAdminProfile->event && LmsProfile::isBackofficeAdminProfile($lmsAdminProfile)) {
+            $request->session()->forget(PostAuthRedirect::LOGIN_PORTAL_SESSION_KEY);
+            $redirect = redirect()->to(route('lms.admin.home', ['event' => $lmsAdminProfile->event->slug], false));
+
+            return $this->redirectForInertia($request, $redirect);
+        }
+
         $portal = $request->input('portal', 'client');
         if (! in_array($portal, ['client', 'student'], true)) {
             $portal = 'client';

@@ -170,11 +170,13 @@ onUnmounted(() => {
 
 const roleName = computed(() => {
   const map = { participant: 'Участник', curator: 'Куратор', leader: 'Лидер', admin: 'Администратор' }
-  return map[props.profile?.role] || 'Участник'
+  return props.profile?.lms_role?.name || map[props.profile?.role] || 'Участник'
 })
 
+const effectiveRoleSlug = computed(() => props.profile?.lms_role?.slug || props.profile?.role || '')
+
 const showLeaderCabinet = computed(() => {
-  const role = props.profile?.role || ''
+  const role = effectiveRoleSlug.value
   return ['leader', 'curator', 'admin'].includes(role)
 })
 
@@ -245,13 +247,13 @@ const sidebarItems = computed(() => {
   if (mc.kb) items.push({ id: 'lms.kb', label: 'База знаний', icon: icons.kb })
   if (mc.materials) items.push({ id: 'lms.materials', label: 'Материалы', icon: icons.materials })
 
-  if (['curator', 'admin'].includes(props.profile?.role)) {
+  if (['curator', 'admin'].includes(effectiveRoleSlug.value)) {
     items.push({ id: 'lms.reports', label: 'Отчёты', icon: icons.reports })
   }
   if (showLeaderCabinet.value) {
     items.push({ id: 'lms.leader.dashboard', label: 'Кабинет лидера', icon: icons.leader })
   }
-  if (props.profile?.role === 'admin') {
+  if (effectiveRoleSlug.value === 'admin') {
     items.push({ id: 'lms.admin', label: 'Админ-панель LMS', icon: icons.admin })
   }
 

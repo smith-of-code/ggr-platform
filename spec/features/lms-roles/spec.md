@@ -32,3 +32,4 @@
     - разрешены только маршруты: `lms.admin.gamification.index`, `lms.admin.gamification.manual-points`
     - остальные `lms-admin` маршруты закрыты (403)
   - для списка/создания мероприятий (`/lms-admin/events`) доступ остаётся только у полного админа
+- После авторизации пользователь с полным LMS-админ доступом (через `role=admin` или `lms_roles.slug=admin`) перенаправляется в LMS-админку события (`/lms-admin/{event}` → `courses.index`)
