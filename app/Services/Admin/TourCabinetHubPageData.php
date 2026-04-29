@@ -6,6 +6,7 @@ use App\Models\City;
 use App\Models\Direction;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsForm;
+use App\Models\TourCabinetCommerceCityForm;
 use App\Models\TourCabinetContestDirectionSetting;
 use App\Models\TourCabinetContestStage2Question;
 use App\Models\TourCabinetContestStage3Config;
@@ -188,6 +189,55 @@ class TourCabinetHubPageData
         return [
             'configs' => $configs,
             'directions' => $directions,
+        ];
+    }
+
+    /**
+     * Payload для блока «Коммерческие туры» в админке.
+     *
+     * @return array<string, mixed>
+     */
+    public function commerceToursPayload(): array
+    {
+        $stage3 = $this->settings->getTourCabinetCommerceToursStage3Notification();
+
+        $cityForms = TourCabinetCommerceCityForm::query()
+            ->with('city:id,name,slug,is_active')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (TourCabinetCommerceCityForm $row) => [
+                'id' => $row->id,
+                'city_id' => $row->city_id,
+                'city_name' => $row->city?->name,
+                'lms_form_slug' => $row->lms_form_slug,
+            ])
+            ->values()
+            ->all();
+
+        $availableCities = City::query()
+            ->where('is_active', true)
+            ->whereHas('tours', fn ($q) => $q->where('is_active', true))
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (City $c) => ['id' => $c->id, 'name' => $c->name])
+            ->all();
+
+        $availableForms = LmsForm::query()
+            ->where('is_active', true)
+            ->orderBy('title')
+            ->get(['slug', 'title'])
+            ->map(fn (LmsForm $f) => ['slug' => $f->slug, 'title' => $f->title])
+            ->all();
+
+        return [
+            'enabled' => (bool) $stage3['enabled'],
+            'stage3' => [
+                'subject' => (string) $stage3['subject'],
+                'body' => (string) $stage3['body'],
+            ],
+            'cityForms' => $cityForms,
+            'availableCities' => $availableCities,
+            'availableForms' => $availableForms,
         ];
     }
 

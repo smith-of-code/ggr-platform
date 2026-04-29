@@ -11,6 +11,7 @@ use App\Models\TourCabinetDocument;
 use App\Models\User;
 use App\Services\ConsentService;
 use App\Services\SettingsService;
+use App\Services\TourCabinetCommerceToursDashboardData;
 use App\Services\TourCabinetContestDashboardData;
 use App\Support\PostAuthRedirect;
 use Illuminate\Auth\Events\Registered;
@@ -130,6 +131,7 @@ class TourCabinetController extends Controller
     public function dashboard(
         Request $request,
         TourCabinetContestDashboardData $contestDashboardData,
+        TourCabinetCommerceToursDashboardData $commerceToursDashboardData,
         SettingsService $settings,
     ): Response {
         $user = $request->user();
@@ -163,6 +165,7 @@ class TourCabinetController extends Controller
 
         return Inertia::render('TourCabinet/Dashboard', [
             ...$contestDashboardData->forUser($user),
+            'commerceTours' => $commerceToursDashboardData->buildPayload($user),
             'tourApplications' => $this->tourApplicationsForUser($user),
             'favorites' => $favorites,
             'profileDocuments' => $profileDocuments,

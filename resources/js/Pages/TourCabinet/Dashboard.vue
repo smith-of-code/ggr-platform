@@ -474,6 +474,76 @@
           </div>
         </div>
       </section>
+
+      <section
+        v-if="commerceTours.enabled"
+        id="tour-cabinet-commerce-tours"
+        class="mt-10 scroll-mt-8"
+      >
+        <div class="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-7">
+          <div class="border-b border-slate-100 pb-4">
+            <h2 class="text-base font-bold text-slate-900">Коммерческие туры</h2>
+            <p class="mt-1 text-sm text-slate-600">
+              Сейчас в прогрессе: этап {{ commerceTours.currentStage }} из 3.
+            </p>
+          </div>
+
+          <div class="mt-5 space-y-6" role="tablist" aria-label="Этапы коммерческих туров">
+            <div v-for="(st, stageIdx) in commerceToursStageSummary" :key="st.roman">
+              <h3 class="text-base font-bold text-slate-900">{{ st.title }}</h3>
+              <button
+                type="button"
+                role="tab"
+                class="mt-2 flex w-full cursor-pointer items-start gap-4 rounded-2xl border border-slate-100 bg-slate-100/90 px-4 py-4 text-left shadow-sm outline-none transition ring-offset-2 ring-offset-white hover:bg-slate-100 sm:items-center sm:gap-5 sm:px-6 sm:py-5"
+                :class="
+                  activeCommerceTab === stageIdx + 1
+                    ? 'ring-2 ring-rosatom-500'
+                    : 'ring-2 ring-transparent focus-visible:ring-rosatom-400'
+                "
+                :aria-selected="activeCommerceTab === stageIdx + 1"
+                @click="activeCommerceTab = stageIdx + 1"
+              >
+                <div
+                  class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-rosatom-50 ring-1 ring-rosatom-100/80"
+                  aria-hidden="true"
+                >
+                  <IdentificationIcon v-if="stageIdx === 0" class="h-8 w-8 text-rosatom-700" />
+                  <ChatBubbleLeftRightIcon v-else-if="stageIdx === 1" class="h-8 w-8 text-rosatom-700" />
+                  <CheckCircleIcon v-else class="h-8 w-8 text-rosatom-700" />
+                </div>
+                <p class="min-w-0 flex-1 text-base font-semibold text-slate-900">{{ st.label }}</p>
+                <p class="text-right text-sm font-medium lowercase text-slate-600">{{ st.statusLabel }}</p>
+              </button>
+
+              <div
+                v-show="activeCommerceTab === stageIdx + 1"
+                class="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-4 sm:px-5"
+              >
+                <CommerceToursStage1Panel
+                  v-if="stageIdx === 0"
+                  :available-cities="commerceTours.availableCities"
+                  :available-tours="commerceTours.availableTours"
+                  :current-city-id="commerceTours.cityId"
+                  :current-tour-id="commerceTours.tourId"
+                  :locked="commerceToursLocked"
+                />
+                <CommerceToursStage2Panel
+                  v-else-if="stageIdx === 1"
+                  :city-name="commerceToursCityName"
+                  :tour-name="commerceToursTourName"
+                  :has-city-form="commerceTours.hasCityForm"
+                  :locked="commerceToursLocked"
+                />
+                <CommerceToursStage3Panel
+                  v-else
+                  :subject="commerceTours.stage3?.subject || ''"
+                  :body="commerceTours.stage3?.body || ''"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -495,6 +565,9 @@ import TourCabinetHeader from '@/Components/TourCabinet/TourCabinetHeader.vue'
 import ContestStage1Panel from './Contest/ContestStage1Panel.vue'
 import ContestStage2Panel from './Contest/ContestStage2Panel.vue'
 import ContestStage3Panel from './Contest/ContestStage3Panel.vue'
+import CommerceToursStage1Panel from './CommerceTours/CommerceToursStage1Panel.vue'
+import CommerceToursStage2Panel from './CommerceTours/CommerceToursStage2Panel.vue'
+import CommerceToursStage3Panel from './CommerceTours/CommerceToursStage3Panel.vue'
 
 const props = defineProps({
   contestProgress: {
@@ -540,6 +613,20 @@ const props = defineProps({
   dashboardStandardForm: {
     type: Object,
     default: null,
+  },
+  commerceTours: {
+    type: Object,
+    default: () => ({
+      enabled: false,
+      currentStage: 1,
+      cityId: null,
+      tourId: null,
+      completedAt: null,
+      availableCities: [],
+      availableTours: [],
+      hasCityForm: false,
+      stage3: { subject: '', body: '' },
+    }),
   },
 })
 
@@ -708,6 +795,56 @@ const contestStage3LockNotice = computed(() => {
 })
 
 const contestStage3Locked = computed(() => contestStage3LockNotice.value !== null)
+
+const commerceToursLocked = computed(() => Number(props.commerceTours?.currentStage ?? 1) >= 3)
+
+const activeCommerceTab = ref(Math.min(Math.max(Number(props.commerceTours?.currentStage ?? 1), 1), 3))
+
+const commerceToursCityName = computed(() => {
+  const id = props.commerceTours?.cityId
+  if (!id) return ''
+  const found = (props.commerceTours?.availableCities || []).find((c) => c.id === id)
+  return found?.name ?? ''
+})
+
+const commerceToursTourName = computed(() => {
+  const id = props.commerceTours?.tourId
+  if (!id) return ''
+  const found = (props.commerceTours?.availableTours || []).find((t) => t.id === id)
+  return found?.title ?? ''
+})
+
+const commerceToursStageSummary = computed(() => {
+  const stage = Number(props.commerceTours?.currentStage ?? 1)
+  return [
+    {
+      roman: 'I',
+      title: 'Этап I',
+      label: 'Выбор города и тура',
+      statusLabel: stage > 1 ? 'выполнен' : 'в процессе',
+    },
+    {
+      roman: 'II',
+      title: 'Этап II',
+      label: 'Анкета доп. данных',
+      statusLabel: stage > 2 ? 'выполнен' : stage === 2 ? 'в процессе' : 'не начат',
+    },
+    {
+      roman: 'III',
+      title: 'Этап III',
+      label: 'Ожидание обратной связи',
+      statusLabel: stage >= 3 ? 'выполнен' : 'не начат',
+    },
+  ]
+})
+
+watch(
+  () => props.commerceTours?.currentStage,
+  (v) => {
+    const n = Number(v ?? 1)
+    activeCommerceTab.value = Math.min(Math.max(Number.isFinite(n) ? n : 1, 1), 3)
+  },
+)
 
 watch(
   () => [props.contestProgress?.current_stage, props.contestProgress?.max_contest_stages],

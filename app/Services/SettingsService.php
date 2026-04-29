@@ -161,6 +161,43 @@ class SettingsService
     }
 
     /**
+     * Настройки блока «Коммерческие туры» в ЛК туров: приоритет — БД (группа tour_cabinet),
+     * иначе config/tour_cabinet.php / env. Поля: enabled (bool), subject (string), body (string).
+     *
+     * @return array{enabled: bool, subject: string, body: string}
+     */
+    public function getTourCabinetCommerceToursStage3Notification(): array
+    {
+        $db = $this->getGroup(self::GROUP_TOUR_CABINET);
+
+        $cfg = (array) config('tour_cabinet.commerce_tours', []);
+        $defaultSubject = is_string($cfg['stage3_subject'] ?? null) ? (string) $cfg['stage3_subject'] : '';
+        $defaultBody = is_string($cfg['stage3_body'] ?? null) ? (string) $cfg['stage3_body'] : '';
+        $defaultEnabled = (bool) ($cfg['enabled'] ?? false);
+
+        $rawEnabled = $db['commerce_tours_enabled'] ?? null;
+        $enabled = $rawEnabled === null
+            ? $defaultEnabled
+            : filter_var($rawEnabled, FILTER_VALIDATE_BOOLEAN);
+
+        $subject = $this->resolveTourCabinetCompletionString(
+            $db['commerce_tours_stage3_subject'] ?? null,
+            $defaultSubject
+        );
+
+        $body = $this->resolveTourCabinetCompletionString(
+            $db['commerce_tours_stage3_body'] ?? null,
+            $defaultBody
+        );
+
+        return [
+            'enabled' => $enabled,
+            'subject' => $subject,
+            'body' => $body,
+        ];
+    }
+
+    /**
      * Общие сроки этапов конкурса в ЛК туров (даты Y-m-d или null).
      *
      * @return array<int, array{start: ?string, end: ?string}>

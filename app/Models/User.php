@@ -93,6 +93,12 @@ class User extends Authenticatable
         return $this->hasOne(TourCabinetContestProgress::class);
     }
 
+    /** @return HasOne<TourCabinetCommerceProgress, $this> */
+    public function tourCabinetCommerceProgress(): HasOne
+    {
+        return $this->hasOne(TourCabinetCommerceProgress::class);
+    }
+
     /** @return HasMany<TourCabinetContestCitySubmission, $this> */
     public function tourCabinetContestCitySubmissions(): HasMany
     {
