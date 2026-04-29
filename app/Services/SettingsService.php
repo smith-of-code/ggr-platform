@@ -198,6 +198,125 @@ class SettingsService
     }
 
     /**
+     * Контент блока «Твой билет в атомный город» (Разделение) на дашборде ЛК туров.
+     *
+     * Приоритет: БД (группа tour_cabinet, ключ atomic_ticket_block — JSON-строка)
+     * → дефолты config/tour_cabinet.php. Все строковые поля — обычный текст без HTML.
+     *
+     * @return array{
+     *   enabled: bool,
+     *   title: string,
+     *   free: array{title:string, cta_label:string, steps: array<int, array{title:string, description:string}>},
+     *   paid: array{title:string, cta_label:string, steps: array<int, array{title:string, description:string}>}
+     * }
+     */
+    public function getTourCabinetAtomicTicketBlock(): array
+    {
+        $defaults = (array) config('tour_cabinet.atomic_ticket_block', []);
+        $defaults = $this->normalizeAtomicTicketBlock($defaults, [
+            'enabled' => true,
+            'title' => 'Твой билет в атомный город',
+            'free' => ['title' => '', 'cta_label' => '', 'steps' => []],
+            'paid' => ['title' => '', 'cta_label' => '', 'steps' => []],
+        ]);
+
+        $db = $this->getGroup(self::GROUP_TOUR_CABINET);
+        $raw = $db['atomic_ticket_block'] ?? null;
+
+        if (! is_string($raw) || trim($raw) === '') {
+            return $defaults;
+        }
+
+        $decoded = json_decode($raw, true);
+        if (! is_array($decoded)) {
+            return $defaults;
+        }
+
+        return $this->normalizeAtomicTicketBlock($decoded, $defaults);
+    }
+
+    /**
+     * Сводит произвольные данные блока «Разделение» к нормальной форме,
+     * подставляя значения из $defaults для отсутствующих/некорректных полей.
+     *
+     * @param  array<string, mixed>  $raw
+     * @param  array{
+     *   enabled: bool,
+     *   title: string,
+     *   free: array{title:string, cta_label:string, steps: array<int, array{title:string, description:string}>},
+     *   paid: array{title:string, cta_label:string, steps: array<int, array{title:string, description:string}>}
+     * }  $defaults
+     * @return array{
+     *   enabled: bool,
+     *   title: string,
+     *   free: array{title:string, cta_label:string, steps: array<int, array{title:string, description:string}>},
+     *   paid: array{title:string, cta_label:string, steps: array<int, array{title:string, description:string}>}
+     * }
+     */
+    private function normalizeAtomicTicketBlock(array $raw, array $defaults): array
+    {
+        $enabled = array_key_exists('enabled', $raw)
+            ? filter_var($raw['enabled'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? (bool) $defaults['enabled']
+            : (bool) $defaults['enabled'];
+
+        $title = is_string($raw['title'] ?? null) && trim($raw['title']) !== ''
+            ? trim($raw['title'])
+            : (string) ($defaults['title'] ?? '');
+
+        return [
+            'enabled' => $enabled,
+            'title' => $title,
+            'free' => $this->normalizeAtomicTicketCard($raw['free'] ?? [], $defaults['free']),
+            'paid' => $this->normalizeAtomicTicketCard($raw['paid'] ?? [], $defaults['paid']),
+        ];
+    }
+
+    /**
+     * @param  mixed  $raw
+     * @param  array{title:string, cta_label:string, steps: array<int, array{title:string, description:string}>}  $defaults
+     * @return array{title:string, cta_label:string, steps: array<int, array{title:string, description:string}>}
+     */
+    private function normalizeAtomicTicketCard(mixed $raw, array $defaults): array
+    {
+        $raw = is_array($raw) ? $raw : [];
+
+        $title = is_string($raw['title'] ?? null) && trim($raw['title']) !== ''
+            ? trim($raw['title'])
+            : (string) ($defaults['title'] ?? '');
+
+        $ctaLabel = is_string($raw['cta_label'] ?? null) && trim($raw['cta_label']) !== ''
+            ? trim($raw['cta_label'])
+            : (string) ($defaults['cta_label'] ?? '');
+
+        $steps = [];
+        $rawSteps = is_array($raw['steps'] ?? null) ? $raw['steps'] : null;
+        if ($rawSteps === null) {
+            $steps = $defaults['steps'] ?? [];
+        } else {
+            foreach ($rawSteps as $step) {
+                if (! is_array($step)) {
+                    continue;
+                }
+                $stepTitle = is_string($step['title'] ?? null) ? trim($step['title']) : '';
+                $stepDescription = is_string($step['description'] ?? null) ? trim($step['description']) : '';
+                if ($stepTitle === '' && $stepDescription === '') {
+                    continue;
+                }
+                $steps[] = [
+                    'title' => $stepTitle,
+                    'description' => $stepDescription,
+                ];
+            }
+        }
+
+        return [
+            'title' => $title,
+            'cta_label' => $ctaLabel,
+            'steps' => array_values($steps),
+        ];
+    }
+
+    /**
      * Общие сроки этапов конкурса в ЛК туров (даты Y-m-d или null).
      *
      * @return array<int, array{start: ?string, end: ?string}>

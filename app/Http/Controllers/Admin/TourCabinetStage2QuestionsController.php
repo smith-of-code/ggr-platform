@@ -31,7 +31,13 @@ class TourCabinetStage2QuestionsController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:99999'],
             'is_active' => ['sometimes', 'boolean'],
             'direction_id' => ['nullable', 'integer', 'exists:directions,id'],
+            'min_length' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'max_length' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ]);
+
+        $minLength = $this->normalizeLength($validated['min_length'] ?? null);
+        $maxLength = $this->normalizeLength($validated['max_length'] ?? null);
+        $this->ensureLengthRangeIsValid($minLength, $maxLength);
 
         $dirId = isset($validated['direction_id']) && $validated['direction_id'] ? (int) $validated['direction_id'] : null;
 
@@ -45,6 +51,8 @@ class TourCabinetStage2QuestionsController extends Controller
             'sort_order' => $sort,
             'is_active' => (bool) ($validated['is_active'] ?? true),
             'direction_id' => $dirId,
+            'min_length' => $minLength,
+            'max_length' => $maxLength,
         ]);
 
         return redirect()
@@ -62,6 +70,8 @@ class TourCabinetStage2QuestionsController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:99999'],
             'is_active' => ['sometimes', 'boolean'],
             'direction_id' => ['sometimes', 'nullable', 'integer', 'exists:directions,id'],
+            'min_length' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100000'],
+            'max_length' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100000'],
         ]);
 
         $data = [];
@@ -77,6 +87,17 @@ class TourCabinetStage2QuestionsController extends Controller
         if (array_key_exists('direction_id', $validated)) {
             $data['direction_id'] = $validated['direction_id'] ? (int) $validated['direction_id'] : null;
         }
+        if (array_key_exists('min_length', $validated)) {
+            $data['min_length'] = $this->normalizeLength($validated['min_length']);
+        }
+        if (array_key_exists('max_length', $validated)) {
+            $data['max_length'] = $this->normalizeLength($validated['max_length']);
+        }
+
+        $effectiveMin = array_key_exists('min_length', $data) ? $data['min_length'] : $model->min_length;
+        $effectiveMax = array_key_exists('max_length', $data) ? $data['max_length'] : $model->max_length;
+        $this->ensureLengthRangeIsValid($effectiveMin, $effectiveMax);
+
         if ($data !== []) {
             $model->update($data);
         }
@@ -85,6 +106,30 @@ class TourCabinetStage2QuestionsController extends Controller
             ->route('admin.tour-cabinet.index')
             ->withFragment('tour-cabinet-admin-stage2')
             ->with('success', 'Вопрос обновлён.');
+    }
+
+    /**
+     * Привести значение к unsigned int или null (пустая строка/0 трактуется как «без лимита»).
+     */
+    private function normalizeLength(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || (int) $value <= 0) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    /**
+     * Если оба лимита заданы, min <= max. Иначе бросает ValidationException.
+     */
+    private function ensureLengthRangeIsValid(?int $min, ?int $max): void
+    {
+        if ($min !== null && $max !== null && $min > $max) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'min_length' => 'Минимум символов не может превышать максимум.',
+            ]);
+        }
     }
 
     public function destroy(string $question): RedirectResponse

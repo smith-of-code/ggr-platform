@@ -62,6 +62,36 @@
             </select>
             <p v-if="errorsFor(c.direction_id).response_format" class="mt-1 text-xs text-red-600">{{ errorsFor(c.direction_id).response_format }}</p>
           </div>
+          <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
+            <p class="text-xs font-medium text-gray-700">Лимиты длины текста ответа</p>
+            <p class="mt-1 text-[11px] text-gray-500">Пустое значение или 0 — ограничения нет.</p>
+            <div class="mt-2 flex flex-wrap gap-3">
+              <div>
+                <label class="mb-1 block text-[11px] font-medium text-gray-600">Мин. символов</label>
+                <input
+                  v-model.number="drafts[c.direction_id].text_min_length"
+                  type="number"
+                  min="0"
+                  max="100000"
+                  class="w-32 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  placeholder="нет"
+                />
+                <p v-if="errorsFor(c.direction_id).text_min_length" class="mt-1 text-xs text-red-600">{{ errorsFor(c.direction_id).text_min_length }}</p>
+              </div>
+              <div>
+                <label class="mb-1 block text-[11px] font-medium text-gray-600">Макс. символов</label>
+                <input
+                  v-model.number="drafts[c.direction_id].text_max_length"
+                  type="number"
+                  min="0"
+                  max="100000"
+                  class="w-32 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  placeholder="нет"
+                />
+                <p v-if="errorsFor(c.direction_id).text_max_length" class="mt-1 text-xs text-red-600">{{ errorsFor(c.direction_id).text_max_length }}</p>
+              </div>
+            </div>
+          </div>
         </template>
         <RButton type="submit" variant="primary" size="sm" :loading="savingKey === c.direction_id" :disabled="savingKey !== null">
           Сохранить для этого направления
@@ -93,12 +123,16 @@ watch(
           task_body: c.task_body ?? '',
           response_format: c.response_format ?? 'video_link',
           max_contest_stages: Number.isFinite(Number(c.max_contest_stages)) ? Number(c.max_contest_stages) : 3,
+          text_min_length: c.text_min_length ?? null,
+          text_max_length: c.text_max_length ?? null,
         }
       } else {
         drafts[c.direction_id].title = c.title ?? ''
         drafts[c.direction_id].task_body = c.task_body ?? ''
         drafts[c.direction_id].response_format = c.response_format ?? 'video_link'
         drafts[c.direction_id].max_contest_stages = Number.isFinite(Number(c.max_contest_stages)) ? Number(c.max_contest_stages) : 3
+        drafts[c.direction_id].text_min_length = c.text_min_length ?? null
+        drafts[c.direction_id].text_max_length = c.text_max_length ?? null
       }
     }
   },

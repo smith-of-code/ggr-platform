@@ -13,6 +13,7 @@ class TourCabinetDirectionCity extends Model
         'direction_id',
         'city_id',
         'needs_more_data',
+        'lms_form_slug',
         'position',
     ];
 

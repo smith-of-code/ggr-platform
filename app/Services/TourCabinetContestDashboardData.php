@@ -21,6 +21,7 @@ final class TourCabinetContestDashboardData
 {
     public function __construct(
         private readonly SettingsService $settings,
+        private readonly TourCabinetContestStage1FormResolver $stage1FormResolver,
     ) {}
 
     /**
@@ -37,19 +38,26 @@ final class TourCabinetContestDashboardData
 
         $cities = [];
         if ($progress->direction_id) {
-            $cities = TourCabinetDirectionCity::query()
+            $cityRows = TourCabinetDirectionCity::query()
                 ->where('direction_id', $progress->direction_id)
                 ->with('city:id,name,slug')
                 ->orderBy('position')
                 ->orderBy('id')
-                ->get()
-                ->map(fn (TourCabinetDirectionCity $row) => [
+                ->get();
+
+            foreach ($cityRows as $row) {
+                if (! $row->city) {
+                    continue;
+                }
+                $resolved = $this->stage1FormResolver->resolveForRow($row);
+                $cities[] = [
                     'id' => $row->city->id,
                     'name' => $row->city->name,
                     'slug' => $row->city->slug,
-                    'needs_more_data' => $row->needs_more_data,
-                ])
-                ->all();
+                    'needs_more_data' => (bool) $row->needs_more_data,
+                    'has_form' => $resolved !== null,
+                ];
+            }
         }
 
         $selectedIds = array_values(array_map('intval', $progress->selected_city_ids ?? []));
@@ -61,26 +69,29 @@ final class TourCabinetContestDashboardData
                 ->get()
                 ->keyBy('city_id');
 
+            $rows = TourCabinetDirectionCity::query()
+                ->where('direction_id', $progress->direction_id)
+                ->whereIn('city_id', $selectedIds)
+                ->get()
+                ->keyBy('city_id');
+
             foreach ($selectedIds as $cid) {
-                $row = TourCabinetDirectionCity::query()
-                    ->where('direction_id', $progress->direction_id)
-                    ->where('city_id', $cid)
-                    ->first();
+                $row = $rows->get($cid);
                 $city = City::query()->find($cid);
                 if (! $city || ! $row) {
                     continue;
                 }
-                $standard = $this->settings->getTourCabinetContestStage1FormSlugStandard();
-                $moreData = $this->settings->getTourCabinetContestStage1FormSlugMoreData();
-                $slug = $row->needs_more_data ? $moreData : $standard;
+                $slug = $this->stage1FormResolver->resolveForRow($row);
+                $submitted = $subs->has($cid);
                 $subRow = $subs->get($cid);
                 $selectedCitiesPayload[] = [
                     'id' => $city->id,
                     'name' => $city->name,
                     'slug' => $city->slug,
-                    'needs_more_data' => $row->needs_more_data,
+                    'needs_more_data' => (bool) $row->needs_more_data,
                     'form_slug' => $slug,
-                    'submitted' => $subs->has($cid),
+                    'submitted' => $submitted,
+                    'auto_completed' => $slug === null && ! $submitted,
                     'submission_id' => $subRow ? $subRow->lms_form_submission_id : null,
                 ];
             }
@@ -124,6 +135,8 @@ final class TourCabinetContestDashboardData
             'id' => $q->id,
             'body' => $q->body,
             'answer_text' => optional($answers->get($q->id))->answer_text ?? '',
+            'min_length' => $q->min_length,
+            'max_length' => $q->max_length,
         ])->values()->all();
 
         return [
@@ -303,6 +316,8 @@ final class TourCabinetContestDashboardData
                 'task_body' => $config?->task_body ?? '',
                 'response_format' => $format,
                 'from_config' => $config !== null,
+                'text_min_length' => $config?->text_min_length,
+                'text_max_length' => $config?->text_max_length,
             ],
         ];
     }
@@ -313,6 +328,12 @@ final class TourCabinetContestDashboardData
             return true;
         }
         $st = (int) $progress->current_stage;
+        // Этап 2 заблокирован, пока участник не завершил Этап 1
+        // (нажатие «Перейти к этапу 2» переводит current_stage в 2; до этого момента
+        // даже клик по вкладке «Этап II» не должен открывать форму ответов).
+        if ($st < 2) {
+            return true;
+        }
         if ($st > 2) {
             return true;
         }
@@ -457,7 +478,14 @@ final class TourCabinetContestDashboardData
         if ($ids === [] || ! $progress->direction_id) {
             return false;
         }
+
+        $resolved = $this->stage1FormResolver->resolveBatchForDirection((int) $progress->direction_id, $ids);
+
         foreach ($ids as $cityId) {
+            $expectedSlug = $resolved[$cityId] ?? null;
+            if ($expectedSlug === null) {
+                continue;
+            }
             if (! TourCabinetContestCitySubmission::query()
                 ->where('user_id', $userId)
                 ->where('city_id', $cityId)

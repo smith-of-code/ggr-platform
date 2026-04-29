@@ -94,6 +94,16 @@
             <TourCabinetAdminCommerceToursPanel v-bind="commerceToursSection" />
           </div>
         </section>
+
+        <section class="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
+          <h2 class="text-xl font-bold tracking-tight text-slate-900">Разделение — «Твой билет в атомный город»</h2>
+          <p class="mt-2 max-w-3xl text-sm text-slate-600">
+            Текстовый блок-разделитель между «Стандартной анкетой» и «Конкурсом» в ЛК туров. Кнопки прокручивают участника к блокам конкурса и коммерческих туров на этой же странице.
+          </p>
+          <div class="mt-6">
+            <TourCabinetAdminAtomicTicketPanel v-bind="atomicTicketSection" />
+          </div>
+        </section>
       </div>
     </div>
   </AdminLayout>
@@ -102,6 +112,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import TourCabinetAdminAtomicTicketPanel from './TourCabinetAdminAtomicTicketPanel.vue'
 import TourCabinetAdminCommerceToursPanel from './TourCabinetAdminCommerceToursPanel.vue'
 import TourCabinetAdminContestDeadlinesPanel from './TourCabinetAdminContestDeadlinesPanel.vue'
 import TourCabinetAdminDirectionCitiesPanel from './TourCabinetAdminDirectionCitiesPanel.vue'
@@ -116,5 +127,6 @@ defineProps({
   stage2Section: { type: Object, required: true },
   stage3ConfigSection: { type: Object, required: true },
   commerceToursSection: { type: Object, required: true },
+  atomicTicketSection: { type: Object, required: true },
 })
 </script>

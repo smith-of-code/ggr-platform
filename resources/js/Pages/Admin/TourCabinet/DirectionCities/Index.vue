@@ -28,6 +28,7 @@
         :direction-id="directionId"
         :rows="rows"
         :city-options="cityOptions"
+        :all-forms-options="allFormsOptions"
       />
     </div>
   </AdminLayout>
@@ -45,5 +46,6 @@ defineProps({
   directionId: { type: [Number, String], default: null },
   rows: { type: Array, default: () => [] },
   cityOptions: { type: Array, default: () => [] },
+  allFormsOptions: { type: Array, default: () => [] },
 })
 </script>

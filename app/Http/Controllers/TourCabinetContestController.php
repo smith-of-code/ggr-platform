@@ -13,6 +13,7 @@ use App\Models\TourCabinetContestStage3Config;
 use App\Models\TourCabinetDirectionCity;
 use App\Models\User;
 use App\Services\SettingsService;
+use App\Services\TourCabinetContestStage1FormResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class TourCabinetContestController extends Controller
 {
     public function __construct(
         private readonly SettingsService $settings,
+        private readonly TourCabinetContestStage1FormResolver $stage1FormResolver,
     ) {}
 
     public function show(): RedirectResponse
@@ -80,6 +82,8 @@ class TourCabinetContestController extends Controller
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
+
+        $this->validateStage2AnswerLengths($questions, $answersInput, $finalize);
 
         if ($finalize) {
             if ($questions->isNotEmpty()) {
@@ -184,6 +188,8 @@ class TourCabinetContestController extends Controller
                 'stage3_video_url' => ['nullable', 'string', 'max:2048'],
             ]);
 
+            $this->validateStage3TextLength($config, (string) $validated['stage3_text']);
+
             $video = isset($validated['stage3_video_url']) ? trim((string) $validated['stage3_video_url']) : '';
             if ($video !== '' && ! preg_match('#^https?://#i', $video)) {
                 throw ValidationException::withMessages([
@@ -214,6 +220,8 @@ class TourCabinetContestController extends Controller
                 'stage3_attachment' => ['required', 'file', 'max:51200', 'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,odt,odp,zip'],
             ]);
 
+            $this->validateStage3TextLength($config, (string) $validated['stage3_text']);
+
             $path = $request->file('stage3_attachment')->store('tour-cabinet/contest-stage3/'.$progress->user_id, $disk);
             $original = $request->file('stage3_attachment')->getClientOriginalName();
 
@@ -238,6 +246,8 @@ class TourCabinetContestController extends Controller
             'stage3_text' => ['required', 'string', 'max:20000'],
             'stage3_video_url' => ['required', 'string', 'max:2048'],
         ]);
+
+        $this->validateStage3TextLength($config, (string) $validated['stage3_text']);
 
         $video = trim((string) $validated['stage3_video_url']);
         if ($video === '' || ! preg_match('#^https?://#i', $video)) {
@@ -332,6 +342,76 @@ class TourCabinetContestController extends Controller
         );
     }
 
+    /**
+     * Применяет лимиты `min_length`/`max_length` к каждому ответу этапа 2.
+     * Для черновика (`finalize === false`) проверяется только верхняя граница; пустые ответы пропускаются.
+     * Для финального сабмита проверяются обе границы у непустых ответов.
+     *
+     * @param  \Illuminate\Support\Collection<int, TourCabinetContestStage2Question>  $questions
+     * @param  array<int|string, mixed>  $answersInput
+     */
+    private function validateStage2AnswerLengths(
+        \Illuminate\Support\Collection $questions,
+        array $answersInput,
+        bool $finalize,
+    ): void {
+        foreach ($questions as $q) {
+            $min = (int) ($q->min_length ?? 0);
+            $max = (int) ($q->max_length ?? 0);
+            if ($min <= 0 && $max <= 0) {
+                continue;
+            }
+
+            $raw = $answersInput[$q->id] ?? $answersInput[(string) $q->id] ?? '';
+            $trimmed = is_string($raw) ? trim($raw) : '';
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $length = mb_strlen($trimmed);
+
+            if ($max > 0 && $length > $max) {
+                throw ValidationException::withMessages([
+                    'answers.'.$q->id => 'Ответ должен быть не длиннее '.$max.' символов (сейчас '.$length.').',
+                ]);
+            }
+
+            if ($finalize && $min > 0 && $length < $min) {
+                throw ValidationException::withMessages([
+                    'answers.'.$q->id => 'Ответ должен содержать не менее '.$min.' символов (сейчас '.$length.').',
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Применяет лимиты `text_min_length`/`text_max_length` к тексту ответа этапа 3.
+     */
+    private function validateStage3TextLength(?TourCabinetContestStage3Config $config, string $text): void
+    {
+        if ($config === null) {
+            return;
+        }
+        $trimmed = trim($text);
+        if ($trimmed === '') {
+            return;
+        }
+        $length = mb_strlen($trimmed);
+        $min = (int) ($config->text_min_length ?? 0);
+        $max = (int) ($config->text_max_length ?? 0);
+
+        if ($max > 0 && $length > $max) {
+            throw ValidationException::withMessages([
+                'stage3_text' => 'Текст ответа должен быть не длиннее '.$max.' символов (сейчас '.$length.').',
+            ]);
+        }
+        if ($min > 0 && $length < $min) {
+            throw ValidationException::withMessages([
+                'stage3_text' => 'Текст ответа должен содержать не менее '.$min.' символов (сейчас '.$length.').',
+            ]);
+        }
+    }
+
     private function isStage3ResponseCompleteForLock(TourCabinetContestProgress $progress): bool
     {
         $config = TourCabinetContestStage3Config::forDirection($progress->direction_id);
@@ -359,7 +439,14 @@ class TourCabinetContestController extends Controller
         if ($ids === [] || ! $progress->direction_id) {
             return false;
         }
+
+        $resolved = $this->stage1FormResolver->resolveBatchForDirection((int) $progress->direction_id, $ids);
+
         foreach ($ids as $cityId) {
+            $expectedSlug = $resolved[$cityId] ?? null;
+            if ($expectedSlug === null) {
+                continue;
+            }
             if (! TourCabinetContestCitySubmission::query()
                 ->where('user_id', $userId)
                 ->where('city_id', $cityId)
@@ -519,12 +606,10 @@ class TourCabinetContestController extends Controller
             ->where('city_id', $city->id)
             ->firstOrFail();
 
-        $standard = $this->settings->getTourCabinetContestStage1FormSlugStandard();
-        $moreData = $this->settings->getTourCabinetContestStage1FormSlugMoreData();
-        $slug = $row->needs_more_data ? $moreData : $standard;
+        $slug = $this->stage1FormResolver->resolveForRow($row);
         if (! $slug) {
             return $this->redirectToContestBlock()
-                ->with('error', 'Форма для этого типа городов не настроена: задайте slug в админке (ЛК туров → формы) или в config/tour_cabinet.php / .env.');
+                ->with('info', 'Для этого города анкета не требуется — статус «Заполнено».');
         }
 
         session(['tour_cabinet_contest_form_city_id' => $city->id]);

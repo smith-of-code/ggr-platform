@@ -21,6 +21,8 @@ class TourCabinetStage3ConfigsController extends Controller
         $rules = [
             'task_body' => ['nullable', 'string', 'max:50000'],
             'max_contest_stages' => ['required', 'integer', 'min:1', 'max:3'],
+            'text_min_length' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'text_max_length' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ];
         $rules['title'] = $maxStages >= 3
             ? ['required', 'string', 'max:500']
@@ -42,13 +44,23 @@ class TourCabinetStage3ConfigsController extends Controller
             : (string) ($validated['title'] ?? '');
         $responseFormat = $validated['response_format'] ?? TourCabinetContestStage3Config::FORMAT_VIDEO_LINK;
 
-        DB::transaction(function () use ($direction, $validated, $title, $responseFormat): void {
+        $textMin = $this->normalizeLength($validated['text_min_length'] ?? null);
+        $textMax = $this->normalizeLength($validated['text_max_length'] ?? null);
+        if ($textMin !== null && $textMax !== null && $textMin > $textMax) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'text_min_length' => 'Минимум символов не может превышать максимум.',
+            ]);
+        }
+
+        DB::transaction(function () use ($direction, $validated, $title, $responseFormat, $textMin, $textMax): void {
             TourCabinetContestStage3Config::query()->updateOrCreate(
                 ['direction_id' => $direction->id],
                 [
                     'title' => $title,
                     'task_body' => $validated['task_body'],
                     'response_format' => $responseFormat,
+                    'text_min_length' => $textMin,
+                    'text_max_length' => $textMax,
                 ]
             );
             TourCabinetContestDirectionSetting::query()->updateOrCreate(
@@ -61,5 +73,17 @@ class TourCabinetStage3ConfigsController extends Controller
             ->route('admin.tour-cabinet.index')
             ->withFragment('tour-cabinet-admin-stage3')
             ->with('success', 'Настройки этапа 3 для выбранного направления сохранены.');
+    }
+
+    /**
+     * Привести значение к unsigned int или null (пустая строка/0 трактуется как «без лимита»).
+     */
+    private function normalizeLength(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || (int) $value <= 0) {
+            return null;
+        }
+
+        return (int) $value;
     }
 }

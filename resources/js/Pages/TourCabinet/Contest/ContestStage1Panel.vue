@@ -22,8 +22,7 @@
     <div v-else-if="step === 'cities'" class="mt-8">
       <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Выберите от 1 до 3 городов</h3>
       <p v-if="!cities.length" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        Для этого направления пока не настроен список городов. Заполните состав в админке:
-        <code class="rounded bg-white/80 px-1">/admin/tour-cabinet/direction-cities</code>.
+        Для этого направления<span v-if="selectedDirectionLabel"> ({{ selectedDirectionLabel }})</span> пока не настроен список городов. Обратитесь к администратору.
       </p>
       <form v-else class="mt-4 space-y-4" @submit.prevent="submitCities">
         <div class="space-y-2 rounded-xl border border-gray-200 bg-white p-4">
@@ -72,19 +71,11 @@
         <span class="text-gray-500"> — добавить или заменить города (до трёх), пока не отправлены все анкеты.</span>
       </p>
       <p
-        v-if="!formSlugsConfigured.standard || !formSlugsConfigured.more_data"
+        v-if="hasUnconfiguredCity"
         class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
       >
-        В админке портала:
-        <code class="rounded bg-white/80 px-1">/admin/tour-cabinet/forms</code>
-        (блок «Конкурс, этап 1») или в
-        <code class="rounded bg-white/80 px-1">config/tour_cabinet.php</code>
-        /
-        <code class="rounded bg-white/80 px-1">TOUR_CABINET_CONTEST_STAGE1_FORM_SLUG_*</code>
-        задайте оба slug:
-        <code class="rounded bg-white/80 px-1">contest_stage1_form_slug_standard</code>
-        и
-        <code class="rounded bg-white/80 px-1">contest_stage1_form_slug_more_data</code>.
+        Для одного из выбранных городов админ ещё не настроил форму Этапа 1. Сообщите организаторам или попробуйте позже —
+        пока такая форма не появится, отправить анкету по этому городу не получится.
       </p>
       <div class="mt-4 space-y-3">
         <div
@@ -99,7 +90,7 @@
           </div>
           <div class="flex shrink-0 flex-wrap items-center gap-2">
             <button
-              v-if="!c.submitted"
+              v-if="!c.submitted && !c.auto_completed"
               type="button"
               class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-800"
               @click="removeCity(c.id)"
@@ -107,10 +98,10 @@
               Убрать город
             </button>
             <span
-              v-if="c.submitted"
+              v-if="c.auto_completed || c.submitted"
               class="inline-flex items-center rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800"
             >
-              Отправлено
+              {{ c.submitted ? 'Отправлено' : 'Заполнено' }}
             </span>
             <a
               v-else-if="c.form_slug"
@@ -124,16 +115,16 @@
       </div>
 
       <div
-        v-if="stage1Complete && formSlugsConfigured.standard && formSlugsConfigured.more_data && maxContestStages >= 2"
+        v-if="stage1Complete && maxContestStages >= 2"
         class="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
       >
-        <p class="text-sm font-medium text-emerald-900">Этап 1 выполнен: все анкеты по выбранным городам отправлены.</p>
+        <p class="text-sm font-medium text-emerald-900">Этап 1 выполнен: все анкеты по выбранным городам отправлены или не требуются.</p>
         <form class="mt-3" @submit.prevent="advanceToStage2">
           <RButton type="submit" variant="primary" size="sm">Перейти к этапу 2</RButton>
         </form>
       </div>
       <div
-        v-else-if="stage1Complete && formSlugsConfigured.standard && formSlugsConfigured.more_data && maxContestStages < 2"
+        v-else-if="stage1Complete && maxContestStages < 2"
         class="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
       >
         <p class="text-sm font-medium text-emerald-900">
@@ -145,7 +136,7 @@
 </template>
 
 <script setup>
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 
 const props = defineProps({
@@ -158,6 +149,19 @@ const props = defineProps({
   stage1Complete: { type: Boolean, default: false },
   /** Сколько этапов конкурса доступно для направления (1–3). */
   maxContestStages: { type: Number, default: 3 },
+})
+
+const hasUnconfiguredCity = computed(() =>
+  props.selectedCitiesForForms.some(
+    (c) => !c.form_slug && !c.auto_completed && !c.submitted,
+  ),
+)
+
+const selectedDirectionLabel = computed(() => {
+  const id = props.progress?.direction_id
+  if (id == null) return ''
+  const d = props.directions.find((x) => String(x.key) === String(id))
+  return d?.label ?? ''
 })
 
 const cityForm = useForm({ city_ids: [] })

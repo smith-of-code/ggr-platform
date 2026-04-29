@@ -14,12 +14,16 @@ class TourCabinetContestStage2Question extends Model
         'sort_order',
         'is_active',
         'direction_id',
+        'min_length',
+        'max_length',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'min_length' => 'integer',
+            'max_length' => 'integer',
         ];
     }
 

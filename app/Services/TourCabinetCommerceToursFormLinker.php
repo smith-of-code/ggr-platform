@@ -43,6 +43,14 @@ class TourCabinetCommerceToursFormLinker
             return;
         }
 
+        if ((int) $progress->current_stage < 2) {
+            // Defense-in-depth: переход к Этапу 2 разблокирован только после явного
+            // нажатия «Перейти к этапу 2 →» (метод `TourCabinetCommerceToursController::completeStage1`).
+            // На штатном UI-флоу сюда нельзя попасть — `startCityForm` сам не пускает при `current_stage < 2`,
+            // — но дублирующий гард предотвращает скачок 1 → 3 при возможной ручной подмене сессии.
+            return;
+        }
+
         if ((int) $progress->current_stage >= 3) {
             session()->forget('tour_cabinet_commerce_form_city_id');
 

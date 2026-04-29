@@ -19,14 +19,6 @@ class TourCabinetContestFormLinker
             return;
         }
 
-        $settings = app(SettingsService::class);
-        $standard = $settings->getTourCabinetContestStage1FormSlugStandard();
-        $moreData = $settings->getTourCabinetContestStage1FormSlugMoreData();
-        $allowed = array_values(array_filter([$standard, $moreData]));
-        if ($allowed === [] || ! in_array($form->slug, $allowed, true)) {
-            return;
-        }
-
         $cityId = (int) session()->get('tour_cabinet_contest_form_city_id', 0);
         if ($cityId < 1) {
             return;
@@ -51,7 +43,8 @@ class TourCabinetContestFormLinker
             return;
         }
 
-        $expectedSlug = $row->needs_more_data ? $moreData : $standard;
+        $resolver = app(TourCabinetContestStage1FormResolver::class);
+        $expectedSlug = $resolver->resolveForRow($row);
         if (! $expectedSlug || $form->slug !== $expectedSlug) {
             return;
         }

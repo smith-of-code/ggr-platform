@@ -7,6 +7,7 @@ use App\Models\Direction;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsForm;
 use App\Models\TourCabinetCommerceCityForm;
+use App\Models\TourCabinetContestCitySubmission;
 use App\Models\TourCabinetContestDirectionSetting;
 use App\Models\TourCabinetContestStage2Question;
 use App\Models\TourCabinetContestStage3Config;
@@ -85,17 +86,43 @@ class TourCabinetHubPageData
             $directionId = $allDirections->first()?->id;
         }
 
-        $rows = TourCabinetDirectionCity::query()
+        $rowModels = TourCabinetDirectionCity::query()
             ->where('direction_id', $directionId)
             ->with('city:id,name,slug,is_active')
             ->orderBy('position')
             ->orderBy('id')
             ->get();
 
-        $usedCityIds = TourCabinetDirectionCity::query()
-            ->where('direction_id', $directionId)
-            ->pluck('city_id')
+        $cityIds = $rowModels->pluck('city_id')->map(fn ($id) => (int) $id)->all();
+        $submissionsCounts = TourCabinetContestCitySubmission::query()
+            ->whereIn('city_id', $cityIds)
+            ->selectRaw('city_id, COUNT(*) as cnt')
+            ->groupBy('city_id')
+            ->pluck('cnt', 'city_id')
+            ->map(fn ($n) => (int) $n)
             ->all();
+
+        $rows = $rowModels->map(function (TourCabinetDirectionCity $row) use ($submissionsCounts): array {
+            $cityId = (int) $row->city_id;
+
+            return [
+                'id' => $row->id,
+                'direction_id' => $row->direction_id,
+                'city_id' => $cityId,
+                'city' => $row->city ? [
+                    'id' => $row->city->id,
+                    'name' => $row->city->name,
+                    'slug' => $row->city->slug,
+                    'is_active' => (bool) $row->city->is_active,
+                ] : null,
+                'needs_more_data' => (bool) $row->needs_more_data,
+                'lms_form_slug' => $row->lms_form_slug,
+                'position' => (int) $row->position,
+                'submissions_count' => $submissionsCounts[$cityId] ?? 0,
+            ];
+        })->values()->all();
+
+        $usedCityIds = $cityIds;
 
         $cityOptions = City::query()
             ->where('is_active', true)
@@ -108,11 +135,23 @@ class TourCabinetHubPageData
             'label' => $d->title,
         ])->values()->all();
 
+        $allFormsOptions = LmsForm::query()
+            ->orderByDesc('updated_at')
+            ->get(['slug', 'title', 'is_active'])
+            ->map(fn (LmsForm $f) => [
+                'slug' => $f->slug,
+                'title' => $f->title,
+                'is_active' => (bool) $f->is_active,
+            ])
+            ->values()
+            ->all();
+
         return [
             'directions' => $directions,
             'directionId' => $directionId,
             'rows' => $rows,
             'cityOptions' => $cityOptions,
+            'allFormsOptions' => $allFormsOptions,
         ];
     }
 
@@ -135,7 +174,18 @@ class TourCabinetHubPageData
         $questions = TourCabinetContestStage2Question::query()
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(fn (TourCabinetContestStage2Question $q) => [
+                'id' => $q->id,
+                'body' => $q->body,
+                'sort_order' => (int) $q->sort_order,
+                'is_active' => (bool) $q->is_active,
+                'direction_id' => $q->direction_id,
+                'min_length' => $q->min_length,
+                'max_length' => $q->max_length,
+            ])
+            ->values()
+            ->all();
 
         return [
             'questions' => $questions,
@@ -179,6 +229,8 @@ class TourCabinetHubPageData
                 'title' => $row?->title ?? '',
                 'task_body' => $row?->task_body ?? '',
                 'response_format' => $row?->response_format ?? TourCabinetContestStage3Config::FORMAT_VIDEO_LINK,
+                'text_min_length' => $row?->text_min_length,
+                'text_max_length' => $row?->text_max_length,
                 'is_saved' => $row !== null,
                 'max_contest_stages' => $maxRow !== null
                     ? min(3, max(1, (int) $maxRow->max_contest_stages))
@@ -238,6 +290,20 @@ class TourCabinetHubPageData
             'cityForms' => $cityForms,
             'availableCities' => $availableCities,
             'availableForms' => $availableForms,
+        ];
+    }
+
+    /**
+     * Payload для блока «Твой билет в атомный город» (Разделение) в админке.
+     *
+     * @return array<string, mixed>
+     */
+    public function atomicTicketBlockPayload(): array
+    {
+        $block = $this->settings->getTourCabinetAtomicTicketBlock();
+
+        return [
+            'block' => $block,
         ];
     }
 
