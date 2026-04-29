@@ -43,7 +43,7 @@
         <!-- Expanded content -->
         <div v-show="expanded[sub.id]" class="border-t border-gray-200 bg-gray-50 p-5">
           <!-- Submitted work -->
-          <div class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+          <div v-if="canReviewAssignments" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
             <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ответ участника</p>
 
             <!-- Answers by tasks -->
@@ -190,7 +190,10 @@
           </div>
 
           <!-- Review decision form -->
-          <div v-if="sub.status !== 'approved' && sub.status !== 'rejected'" class="space-y-3 border-t border-gray-200 pt-4">
+          <div
+            v-if="canReviewAssignments && sub.status !== 'approved' && sub.status !== 'rejected'"
+            class="space-y-3 border-t border-gray-200 pt-4"
+          >
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Решение по работе</p>
             <textarea
               v-model="reviewForms[sub.id].comment"
@@ -244,7 +247,12 @@ import { ref, reactive } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import { fileUrl } from '@/lib/fileUrl'
 
-const props = defineProps({ event: Object, assignment: Object, submissions: Object })
+const props = defineProps({
+  event: Object,
+  assignment: Object,
+  submissions: Object,
+  canReviewAssignments: { type: Boolean, default: false },
+})
 
 const expanded = ref({})
 

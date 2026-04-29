@@ -174,6 +174,44 @@ const roleName = computed(() => {
 })
 
 const effectiveRoleSlug = computed(() => props.profile?.lms_role?.slug || props.profile?.role || '')
+const normalizedRoleCandidates = computed(() => {
+  const candidates = [
+    props.profile?.role,
+    props.profile?.lms_role?.slug,
+    props.profile?.lms_role?.name,
+  ]
+  return candidates
+    .filter(v => typeof v === 'string' && v.trim() !== '')
+    .map((v) => v.trim().toLowerCase().replace(/—/g, '-').replace(/\s+/g, ' '))
+})
+
+const limitedBackofficeRoles = [
+  'куратор-эксперт',
+  'куратор эксперт',
+  'тренер команды',
+  'трекер',
+  'эксперт',
+  'curator-expert',
+  'curator expert',
+  'team-trainer',
+  'team trainer',
+  'tracker',
+  'expert',
+  'kurator-ekspert',
+  'trener-komandy',
+  'treker',
+  'ekspert',
+]
+
+const canLimitedBackofficeAccess = computed(() => {
+  if (effectiveRoleSlug.value === 'admin') return false
+  return normalizedRoleCandidates.value.some(value =>
+    limitedBackofficeRoles.includes(value)
+      || limitedBackofficeRoles.includes(value.replace(/-/g, ' '))
+      || limitedBackofficeRoles.includes(value.replace(/ /g, '-')))
+})
+
+const canAnyBackofficeAccess = computed(() => effectiveRoleSlug.value === 'admin' || canLimitedBackofficeAccess.value)
 
 const showLeaderCabinet = computed(() => {
   const role = effectiveRoleSlug.value
@@ -253,8 +291,12 @@ const sidebarItems = computed(() => {
   if (showLeaderCabinet.value) {
     items.push({ id: 'lms.leader.dashboard', label: 'Кабинет лидера', icon: icons.leader })
   }
-  if (effectiveRoleSlug.value === 'admin') {
-    items.push({ id: 'lms.admin', label: 'Админ-панель LMS', icon: icons.admin })
+  if (canAnyBackofficeAccess.value) {
+    items.push({
+      id: 'lms.admin',
+      label: canLimitedBackofficeAccess.value ? 'Админ-панель LMS (проверка)' : 'Админ-панель LMS',
+      icon: icons.admin,
+    })
   }
 
   return items
@@ -294,7 +336,6 @@ const routeMap = {
   'lms.gamification.leaderboard': 'lms.gamification.leaderboard',
   'lms.reports': 'lms.reports.index',
   'lms.leader.dashboard': 'lms.leader.dashboard',
-  'lms.admin': 'lms.admin.courses.index',
   'lms.profile.edit': 'lms.profile.edit',
 }
 
@@ -304,6 +345,17 @@ function onSelect(itemId) {
 }
 
 function onNavigate(itemId) {
+  if (itemId === 'lms.admin') {
+    if (effectiveRoleSlug.value === 'admin') {
+      router.visit(route('lms.admin.home', { event: props.event?.slug }))
+      return
+    }
+    if (canLimitedBackofficeAccess.value) {
+      router.visit(route('lms.admin.tests.index', { event: props.event?.slug }))
+      return
+    }
+  }
+
   const routeName = routeMap[itemId]
   if (routeName) {
     router.visit(route(routeName, { event: props.event?.slug }))

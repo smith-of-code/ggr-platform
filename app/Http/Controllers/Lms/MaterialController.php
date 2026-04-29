@@ -32,7 +32,10 @@ class MaterialController extends Controller
             })
             ->get(['id', 'title', 'content', 'in_menu', 'position']);
 
-        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
+            ->first();
 
         return Inertia::render('Lms/Materials/Index', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
@@ -59,7 +62,10 @@ class MaterialController extends Controller
             abort(403);
         }
 
-        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
+            ->first();
 
         app(GamificationService::class)->awardPoints($event, $user, 'material_view', "Материал: {$section->title}");
 

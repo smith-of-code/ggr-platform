@@ -30,6 +30,7 @@ class TrajectoryController extends Controller
 
         $profile = LmsProfile::where('lms_event_id', $event->id)
             ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
             ->first();
 
         $enrolledCourseIds = LmsCourseEnrollment::where('user_id', $user->id)
@@ -55,8 +56,8 @@ class TrajectoryController extends Controller
                     'title' => $block->title,
                     'description' => $block->description,
                     'date_label' => $block->date_label,
-                    'date_start' => $block->date_start?->toDateString(),
-                    'date_end' => $block->date_end?->toDateString(),
+                    'date_start' => $block->date_start ? $block->date_start->toDateString() : null,
+                    'date_end' => $block->date_end ? $block->date_end->toDateString() : null,
                     'material_url' => $block->material_url,
                 ];
 
@@ -69,7 +70,7 @@ class TrajectoryController extends Controller
                         ->where('user_id', $user->id)
                         ->first();
 
-                    $item['submission_status'] = $submission?->status;
+                    $item['submission_status'] = $submission ? $submission->status : null;
                 }
 
                 $timeline[] = $item;
@@ -99,7 +100,7 @@ class TrajectoryController extends Controller
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'user' => $user->only(['id', 'name', 'email']),
             'profile' => $profile,
-            'trajectory' => $trajectory?->only(['id', 'title', 'description']),
+            'trajectory' => $trajectory ? $trajectory->only(['id', 'title', 'description']) : null,
             'timeline' => $timeline,
             'needsCourseEnrollmentForTrajectory' => $needsCourseEnrollmentForTrajectory,
             'hasMaterials' => $hasMaterials,
@@ -188,8 +189,8 @@ class TrajectoryController extends Controller
                 'title' => $course->title,
                 'description' => $course->description ? strip_tags($course->description) : null,
                 'date_label' => $dateLabel,
-                'date_start' => $course->starts_at?->toDateString(),
-                'date_end' => $course->ends_at?->toDateString(),
+                'date_start' => $course->starts_at ? $course->starts_at->toDateString() : null,
+                'date_end' => $course->ends_at ? $course->ends_at->toDateString() : null,
                 'route' => route('lms.courses.show', ['event' => $event->slug, 'course' => $course->slug]),
                 'progress' => $progress,
                 'enrolled' => true,
@@ -219,8 +220,8 @@ class TrajectoryController extends Controller
                 'title' => $grant->title,
                 'description' => $grant->description ? strip_tags($grant->description) : null,
                 'date_label' => $dateLabel,
-                'date_start' => $grant->application_start?->toDateString(),
-                'date_end' => $grant->application_end?->toDateString(),
+                'date_start' => $grant->application_start ? $grant->application_start->toDateString() : null,
+                'date_end' => $grant->application_end ? $grant->application_end->toDateString() : null,
                 'route' => route('lms.grants.show', ['event' => $event->slug, 'grant' => $grant->id]),
                 'enrolled' => true,
             ];

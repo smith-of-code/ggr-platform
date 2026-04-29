@@ -26,7 +26,7 @@ class EnsureLmsBackofficeAccess
                 return $next($request);
             }
 
-            if ($accessLevel === 'gamification_points_only' && $this->isGamificationPointsOnlyRoute($request)) {
+            if ($accessLevel === 'gamification_points_only' && $this->isGamificationAndLearningReviewRoute($request)) {
                 return $next($request);
             }
 
@@ -34,7 +34,7 @@ class EnsureLmsBackofficeAccess
                 abort(403, 'Недостаточно прав для доступа к администрированию LMS.');
             }
 
-            abort(403, 'Доступ ограничен: доступно только начисление баллов в геймификации.');
+            abort(403, 'Доступ ограничен: доступны только геймификация и просмотр ответов на тесты/ДЗ.');
         }
 
         if (! LmsProfile::userHasAnyLmsAdminProfile($user)) {
@@ -44,13 +44,19 @@ class EnsureLmsBackofficeAccess
         return $next($request);
     }
 
-    private function isGamificationPointsOnlyRoute(Request $request): bool
+    private function isGamificationAndLearningReviewRoute(Request $request): bool
     {
         $routeName = $request->route() ? $request->route()->getName() : null;
 
         return in_array($routeName, [
             'lms.admin.gamification.index',
             'lms.admin.gamification.manual-points',
+            'lms.admin.tests.index',
+            'lms.admin.tests.results',
+            'lms.admin.assignments.index',
+            'lms.admin.assignments.show',
+            'lms.admin.assignments.review',
+            'lms.admin.assignments.comment',
         ], true);
     }
 }

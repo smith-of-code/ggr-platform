@@ -123,6 +123,44 @@ const page = usePage()
 const sidebarOpen = ref(false)
 
 const canAccessPortalAdmin = computed(() => Boolean(page.props.auth?.user?.is_admin))
+const normalizedRoleCandidates = computed(() => {
+  const profile = page.props.profile || {}
+  const candidates = [
+    profile?.role,
+    profile?.lms_role?.slug,
+    profile?.lms_role?.name,
+  ]
+
+  return candidates
+    .filter(v => typeof v === 'string' && v.trim() !== '')
+    .map((v) => v.trim().toLowerCase().replace(/—/g, '-').replace(/\s+/g, ' '))
+})
+
+const limitedBackofficeRoles = [
+  'куратор-эксперт',
+  'куратор эксперт',
+  'тренер команды',
+  'трекер',
+  'эксперт',
+  'curator-expert',
+  'curator expert',
+  'team-trainer',
+  'team trainer',
+  'tracker',
+  'expert',
+  'kurator-ekspert',
+  'trener-komandy',
+  'treker',
+  'ekspert',
+]
+
+const canLimitedBackofficeAccess = computed(() =>
+  normalizedRoleCandidates.value.some(value =>
+    limitedBackofficeRoles.includes(value)
+      || limitedBackofficeRoles.includes(value.replace(/-/g, ' '))
+      || limitedBackofficeRoles.includes(value.replace(/ /g, '-')),
+  ),
+)
 
 /** Оболочка форм с портала: пути /admin/tour-cabinet/lms/... без редиректа с /lms-admin. */
 const usePortalLmsFormShell = computed(() => page.url.startsWith('/admin/tour-cabinet/lms/'))
@@ -171,11 +209,23 @@ const icons = {
 }
 
 const sidebarItems = computed(() => {
-  const items = [
-    { id: 'events', label: 'События', icon: icons.events },
-  ]
+  const items = []
+
+  if (!canLimitedBackofficeAccess.value) {
+    items.push({ id: 'events', label: 'События', icon: icons.events })
+  }
 
   if (props.event) {
+    if (canLimitedBackofficeAccess.value) {
+      items.push(
+        { id: 'tests', label: 'Тесты', icon: icons.tests },
+        { id: 'assignments', label: 'Задания', icon: icons.assignments },
+        { id: 'gamification', label: 'Геймификация', icon: icons.gamification },
+      )
+
+      return items
+    }
+
     items.push(
       { id: 'courses', label: 'Программы', icon: icons.courses },
       { id: 'enrollments', label: 'Заявки на программы', icon: icons.enrollments },
@@ -193,7 +243,7 @@ const sidebarItems = computed(() => {
       { id: 'reports', label: 'Отчёты', icon: icons.reports },
       { id: 'forms', label: 'Формы', icon: icons.forms },
     )
-  } else if (props.events?.length) {
+  } else if (props.events?.length && !canLimitedBackofficeAccess.value) {
     props.events.forEach(evt => {
       items.push({ id: `event-${evt.slug}`, label: evt.title, icon: icons.events })
     })

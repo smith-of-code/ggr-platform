@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Lms\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
+use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsTest;
 use App\Models\Lms\LmsTestAnswer;
 use App\Models\Lms\LmsTestAttempt;
@@ -17,6 +18,9 @@ class TestController extends Controller
 {
     public function index(LmsEvent $event): Response
     {
+        $accessLevel = LmsProfile::backofficeAccessForEvent(auth()->user(), $event);
+        $canManageTests = $accessLevel === 'admin';
+
         $tests = $event->tests()
             ->withCount(['attempts', 'questions'])
             ->orderBy('created_at', 'desc')
@@ -25,6 +29,7 @@ class TestController extends Controller
         return Inertia::render('Lms/Admin/Tests/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
             'tests' => $tests,
+            'canManageTests' => $canManageTests,
         ]);
     }
 
@@ -99,6 +104,8 @@ class TestController extends Controller
     public function results(Request $request, LmsEvent $event, LmsTest $test): Response
     {
         $this->ensureTestBelongsToEvent($test, $event);
+        $accessLevel = LmsProfile::backofficeAccessForEvent(auth()->user(), $event);
+        $canManageTests = $accessLevel === 'admin';
 
         $status = (string) $request->query('status', 'all');
         if (! in_array($status, ['all', 'passed', 'failed'], true)) {
@@ -217,6 +224,7 @@ class TestController extends Controller
             'test' => $test->only(['id', 'title', 'passing_score', 'max_attempts']),
             'attempts' => $attempts,
             'stats' => $stats,
+            'canManageTests' => $canManageTests,
             'filters' => [
                 'status' => $status,
                 'search' => $search,
