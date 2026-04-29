@@ -33,6 +33,7 @@
         :form-options="formOptions"
         :dashboard-standard-form-slug="dashboardStandardFormSlug"
         :all-forms-options="allFormsOptions"
+        :contest-completion-notification="contestCompletionNotification"
       />
     </div>
   </AdminLayout>
@@ -56,5 +57,9 @@ defineProps({
   formOptions: { type: Array, default: () => [] },
   dashboardStandardFormSlug: { type: String, default: '' },
   allFormsOptions: { type: Array, default: () => [] },
+  contestCompletionNotification: {
+    type: Object,
+    default: () => ({ enabled: false, subject: '', body: '' }),
+  },
 })
 </script>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\TourCabinetContestCompletionMail;
 use App\Models\City;
 use App\Models\TourCabinetContestCitySubmission;
 use App\Models\TourCabinetContestDirectionSetting;
@@ -10,11 +11,14 @@ use App\Models\TourCabinetContestStage2Answer;
 use App\Models\TourCabinetContestStage2Question;
 use App\Models\TourCabinetContestStage3Config;
 use App\Models\TourCabinetDirectionCity;
+use App\Models\User;
 use App\Services\SettingsService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -198,6 +202,8 @@ class TourCabinetContestController extends Controller
                 'stage3_attachment_original_name' => null,
             ]);
 
+            $this->dispatchContestCompletionNotificationIfReady($progress, $request->user());
+
             return $this->redirectToContestBlock()
                 ->with('success', 'Данные этапа 3 сохранены.');
         }
@@ -221,6 +227,8 @@ class TourCabinetContestController extends Controller
                 'stage3_attachment_path' => $path,
                 'stage3_attachment_original_name' => $original,
             ]);
+
+            $this->dispatchContestCompletionNotificationIfReady($progress, $request->user());
 
             return $this->redirectToContestBlock()
                 ->with('success', 'Данные этапа 3 сохранены.');
@@ -249,8 +257,58 @@ class TourCabinetContestController extends Controller
             'stage3_attachment_original_name' => null,
         ]);
 
+        $this->dispatchContestCompletionNotificationIfReady($progress, $request->user());
+
         return $this->redirectToContestBlock()
             ->with('success', 'Данные этапа 3 сохранены.');
+    }
+
+    /**
+     * Отправить участнику уведомление о полном прохождении конкурса (3 этапа), если все условия выполнены.
+     * Идемпотентно: фиксирует факт отправки в `completion_notified_at`. Ошибки доставки не валят
+     * сохранение этапа 3 — пишем в лог и продолжаем.
+     */
+    private function dispatchContestCompletionNotificationIfReady(TourCabinetContestProgress $progress, User $user): void
+    {
+        if ($progress->completion_notified_at !== null) {
+            return;
+        }
+        if ((int) $progress->current_stage < 3) {
+            return;
+        }
+        if (TourCabinetContestDirectionSetting::maxContestStagesForDirection($progress->direction_id) !== 3) {
+            return;
+        }
+        if (! $this->isStage3ResponseCompleteForLock($progress)) {
+            return;
+        }
+
+        $email = is_string($user->email) ? trim($user->email) : '';
+        if ($email === '') {
+            return;
+        }
+
+        $notification = $this->settings->getTourCabinetContestCompletionNotification();
+        if (empty($notification['enabled'])) {
+            return;
+        }
+
+        try {
+            Mail::to($email)->send(new TourCabinetContestCompletionMail(
+                $user,
+                (string) ($notification['subject'] ?? ''),
+                (string) ($notification['body'] ?? ''),
+            ));
+        } catch (\Throwable $e) {
+            Log::warning('TourCabinet contest completion mail failed: '.$e->getMessage(), [
+                'user_id' => $user->id,
+                'progress_id' => $progress->id,
+            ]);
+
+            return;
+        }
+
+        $progress->forceFill(['completion_notified_at' => now()])->save();
     }
 
     /**

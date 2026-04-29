@@ -54,6 +54,7 @@ class TourCabinetHubPageData
                 'more_data' => (string) ($raw['contest_stage1_form_slug_more_data'] ?? ''),
             ],
             'dashboardStandardFormSlug' => (string) ($raw['dashboard_standard_form_slug'] ?? ''),
+            'contestCompletionNotification' => $this->settings->getTourCabinetContestCompletionNotification(),
             'formOptions' => $forms->map(fn (LmsForm $f) => [
                 'slug' => $f->slug,
                 'title' => $f->title,
