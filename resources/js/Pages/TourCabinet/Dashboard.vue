@@ -358,6 +358,103 @@
         </div>
       </section>
 
+      <section
+        v-if="atomicTicketBlock"
+        id="tour-cabinet-atomic-ticket"
+        class="mt-10 scroll-mt-8"
+      >
+        <h2 v-if="atomicTicketBlock.title" class="text-center text-2xl font-bold text-slate-900 sm:text-3xl">
+          {{ atomicTicketBlock.title }}
+        </h2>
+        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+          <div
+            v-if="atomicTicketBlock.free?.steps?.length || atomicTicketBlock.free?.cta_label"
+            class="rounded-2xl border-2 border-rosatom-200 bg-gradient-to-b from-rosatom-50 to-transparent p-6 sm:p-8"
+          >
+            <div class="mb-6 flex items-center gap-3">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <CheckCircleIcon class="h-5 w-5" aria-hidden="true" />
+              </div>
+              <h3 class="text-xl font-bold text-slate-900">{{ atomicTicketBlock.free.title || 'Победить в конкурсе' }}</h3>
+            </div>
+            <div class="space-y-4">
+              <div
+                v-for="(step, i) in atomicTicketBlock.free.steps"
+                :key="`free-${i}`"
+                class="flex gap-4"
+              >
+                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rosatom-700 text-xs font-bold text-white">
+                  {{ i + 1 }}
+                </div>
+                <div class="min-w-0">
+                  <p v-if="step.title" class="font-semibold text-slate-900">{{ step.title }}</p>
+                  <p v-if="step.description" class="mt-1 text-sm text-slate-600">{{ step.description }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-8 text-center">
+              <button
+                type="button"
+                class="inline-flex cursor-pointer items-center rounded-xl bg-rosatom-700 px-7 py-3.5 font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-rosatom-800 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-rosatom-400"
+                @click="scrollAndHighlight('tour-cabinet-contest-detail')"
+              >
+                {{ atomicTicketBlock.free.cta_label || 'Участвовать в конкурсе' }}
+                <svg class="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div
+            v-if="atomicTicketBlock.paid?.steps?.length || atomicTicketBlock.paid?.cta_label"
+            class="rounded-2xl border-2 border-amber-200 bg-gradient-to-b from-amber-50 to-transparent p-6 sm:p-8"
+          >
+            <div class="mb-6 flex items-center gap-3">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+                <BanknotesIcon class="h-5 w-5" aria-hidden="true" />
+              </div>
+              <h3 class="text-xl font-bold text-slate-900">{{ atomicTicketBlock.paid.title || 'За свой счёт' }}</h3>
+            </div>
+            <div class="space-y-4">
+              <div
+                v-for="(step, i) in atomicTicketBlock.paid.steps"
+                :key="`paid-${i}`"
+                class="flex gap-4"
+              >
+                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
+                  {{ i + 1 }}
+                </div>
+                <div class="min-w-0">
+                  <p v-if="step.title" class="font-semibold text-slate-900">{{ step.title }}</p>
+                  <p v-if="step.description" class="mt-1 text-sm text-slate-600">{{ step.description }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-8 text-center">
+              <button
+                v-if="commerceTours?.enabled"
+                type="button"
+                class="inline-flex cursor-pointer items-center rounded-xl bg-amber-500 px-7 py-3.5 font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-amber-600 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                @click="scrollAndHighlight('tour-cabinet-commerce-tours')"
+              >
+                {{ atomicTicketBlock.paid.cta_label || 'Оставить заявку' }}
+                <svg class="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </button>
+              <span
+                v-else
+                class="inline-flex cursor-not-allowed items-center rounded-xl bg-amber-100 px-7 py-3.5 font-semibold text-amber-900/70 ring-1 ring-amber-200"
+                aria-disabled="true"
+              >
+                {{ atomicTicketBlock.paid.cta_label || 'Оставить заявку' }} — скоро
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="tour-cabinet-contest" class="mt-10 scroll-mt-8 space-y-10">
         <div v-if="showContestLocationOffers">
           <h2 class="text-base font-bold lowercase leading-snug text-gray-900">
@@ -408,7 +505,8 @@
 
         <div
           id="tour-cabinet-contest-detail"
-          class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-7"
+          class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 transition duration-500 sm:p-7"
+          :class="highlightedAnchor === 'tour-cabinet-contest-detail' ? 'ring-4 ring-rosatom-400 ring-offset-2' : ''"
         >
           <div class="border-b border-slate-100 pb-4">
             <h2 class="text-base font-bold text-slate-900">Конкурс</h2>
@@ -478,7 +576,8 @@
       <section
         v-if="commerceTours.enabled"
         id="tour-cabinet-commerce-tours"
-        class="mt-10 scroll-mt-8"
+        class="mt-10 scroll-mt-8 transition duration-500"
+        :class="highlightedAnchor === 'tour-cabinet-commerce-tours' ? 'rounded-3xl ring-4 ring-amber-400 ring-offset-2' : ''"
       >
         <div class="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-7">
           <div class="border-b border-slate-100 pb-4">
@@ -552,6 +651,7 @@
 import {
   AcademicCapIcon,
   ArrowUpTrayIcon,
+  BanknotesIcon,
   CalendarDaysIcon,
   ChatBubbleLeftRightIcon,
   CheckCircleIcon,
@@ -614,6 +714,10 @@ const props = defineProps({
     type: Object,
     default: null,
   },
+  atomicTicketBlock: {
+    type: Object,
+    default: null,
+  },
   commerceTours: {
     type: Object,
     default: () => ({
@@ -664,9 +768,26 @@ function removeFavorite(type, id) {
 const showContestLocationOffers = false
 
 const fullProfileVisible = ref(false)
+const highlightedAnchor = ref(null)
+let highlightTimer = null
 
 function toggleFullProfile() {
   fullProfileVisible.value = !fullProfileVisible.value
+}
+
+function scrollAndHighlight(anchorId) {
+  if (typeof document === 'undefined') return
+  const el = document.getElementById(anchorId)
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  highlightedAnchor.value = anchorId
+  if (highlightTimer) {
+    clearTimeout(highlightTimer)
+  }
+  highlightTimer = setTimeout(() => {
+    highlightedAnchor.value = null
+    highlightTimer = null
+  }, 2200)
 }
 
 function openFullProfileFromHash() {
@@ -747,6 +868,10 @@ onUnmounted(() => {
     window.removeEventListener('hashchange', onProfileHashChange)
   }
   revokeAvatarPreview()
+  if (highlightTimer) {
+    clearTimeout(highlightTimer)
+    highlightTimer = null
+  }
 })
 
 const contestMaxStages = computed(() => {

@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TourReviewController as AdminTourReviewController;
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\PresignedUploadController;
+use App\Http\Controllers\Admin\TourCabinetAtomicTicketController as AdminTourCabinetAtomicTicketController;
 use App\Http\Controllers\Admin\TourCabinetCommerceToursController as AdminTourCabinetCommerceToursController;
 use App\Http\Controllers\Admin\TourCabinetDirectionCitiesController as AdminTourCabinetDirectionCitiesController;
 use App\Http\Controllers\Admin\TourCabinetHubController as AdminTourCabinetHubController;
@@ -246,6 +247,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::patch('/tour-cabinet/commerce-tours/city-forms/{cityForm}', [AdminTourCabinetCommerceToursController::class, 'updateCityForm'])->name('tour-cabinet.commerce-tours.city-forms.update');
     Route::delete('/tour-cabinet/commerce-tours/city-forms/{cityForm}', [AdminTourCabinetCommerceToursController::class, 'destroyCityForm'])->name('tour-cabinet.commerce-tours.city-forms.destroy');
     Route::put('/tour-cabinet/commerce-tours/stage3-notification', [AdminTourCabinetCommerceToursController::class, 'updateStage3Notification'])->name('tour-cabinet.commerce-tours.stage3-notification.update');
+
+    Route::get('/tour-cabinet/atomic-ticket', [AdminTourCabinetAtomicTicketController::class, 'index'])->name('tour-cabinet.atomic-ticket.index');
+    Route::put('/tour-cabinet/atomic-ticket', [AdminTourCabinetAtomicTicketController::class, 'update'])->name('tour-cabinet.atomic-ticket.update');
 
     // Те же экраны, что /lms-admin/.../forms, но под /admin/... — обход редиректа main→lms для префикса lms-admin.
     Route::prefix('tour-cabinet/lms/{event:slug}')

@@ -294,6 +294,20 @@ class TourCabinetHubPageData
     }
 
     /**
+     * Payload для блока «Твой билет в атомный город» (Разделение) в админке.
+     *
+     * @return array<string, mixed>
+     */
+    public function atomicTicketBlockPayload(): array
+    {
+        $block = $this->settings->getTourCabinetAtomicTicketBlock();
+
+        return [
+            'block' => $block,
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function contestStageDeadlinesPayload(): array

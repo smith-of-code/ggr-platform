@@ -163,6 +163,9 @@ class TourCabinetController extends Controller
 
         $dashboardStandardForm = $this->dashboardStandardFormForUser($settings, $user);
 
+        $atomicTicket = $settings->getTourCabinetAtomicTicketBlock();
+        $atomicTicketBlock = $atomicTicket['enabled'] ? $atomicTicket : null;
+
         return Inertia::render('TourCabinet/Dashboard', [
             ...$contestDashboardData->forUser($user),
             'commerceTours' => $commerceToursDashboardData->buildPayload($user),
@@ -170,6 +173,7 @@ class TourCabinetController extends Controller
             'favorites' => $favorites,
             'profileDocuments' => $profileDocuments,
             'dashboardStandardForm' => $dashboardStandardForm,
+            'atomicTicketBlock' => $atomicTicketBlock,
             'profile' => [
                 'user_id' => $user->id,
                 'display_name' => $composed !== '' ? $composed : (string) ($user->name ?: 'Участник'),
