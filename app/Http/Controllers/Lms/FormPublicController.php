@@ -9,6 +9,7 @@ use App\Models\Lms\LmsFormField;
 use App\Models\Lms\LmsFormResponse;
 use App\Models\Lms\LmsFormSubmission;
 use App\Services\ConsentService;
+use App\Services\Lms\Forms\FieldValidationPresets;
 use App\Services\TourCabinetContestFormLinker;
 use Closure;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class FormPublicController extends Controller
                 'consent_document_url' => $form->consent_document_url ?: config('consent.document_url'),
             ],
             'fields' => $form->fields->map(fn ($f) => $f->only([
-                'id', 'key', 'label', 'type', 'required', 'placeholder', 'options', 'position',
+                'id', 'key', 'label', 'type', 'validation', 'required', 'placeholder', 'options', 'position',
             ])),
         ]);
     }
@@ -49,7 +50,7 @@ class FormPublicController extends Controller
                 'consent_document_url' => $form->consent_document_url ?: config('consent.document_url'),
             ],
             'fields' => $form->fields->map(fn ($f) => $f->only([
-                'id', 'key', 'label', 'type', 'required', 'placeholder', 'options', 'position',
+                'id', 'key', 'label', 'type', 'validation', 'required', 'placeholder', 'options', 'position',
             ])),
         ])->withHeaders($this->corsHeaders());
     }
@@ -200,6 +201,10 @@ class FormPublicController extends Controller
                 $fieldRules[] = $this->phoneDigitsRule();
             } elseif ($field->type === 'number' || $field->type === 'rating') {
                 $fieldRules[] = 'numeric';
+            }
+
+            if (! empty($field->validation) && $presetRule = FieldValidationPresets::rule((string) $field->validation)) {
+                $fieldRules[] = $presetRule;
             }
 
             $fieldRules[] = 'max:5000';

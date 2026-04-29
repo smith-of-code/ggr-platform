@@ -113,10 +113,19 @@
               <RInput v-model="field.label" placeholder="Название поля *" required />
               <RInput v-model="field.key" placeholder="Ключ (латиница)" required />
               <div>
-                <select v-model="field.type" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                <select v-model="field.type" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm" @change="onFieldTypeChange(field)">
                   <option v-for="t in fieldTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
                 </select>
               </div>
+            </div>
+
+            <div v-if="['text', 'textarea'].includes(field.type)" class="mt-3">
+              <label class="mb-1 block text-xs font-medium text-gray-500">Тип валидации</label>
+              <select v-model="field.validation" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                <option value="">— Без проверки формата —</option>
+                <option v-for="v in validationPresets" :key="v.value" :value="v.value">{{ v.label }}</option>
+              </select>
+              <p class="mt-1 text-xs text-gray-400">Применяется к ответам участников при отправке формы.</p>
             </div>
 
             <div class="mt-3 flex items-center gap-4">
@@ -154,6 +163,7 @@ import { Link, useForm } from '@inertiajs/vue3'
 import axios from 'axios'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import { defaultLmsAdminFormRouteNames } from '@/constants/lmsAdminFormRoutes.js'
+import { FORM_FIELD_VALIDATIONS } from '@/constants/formFieldValidations.js'
 
 const props = defineProps({
   event: Object,
@@ -182,6 +192,8 @@ const fieldTypes = [
   { value: 'rating', label: 'Рейтинг (1-5)' },
 ]
 
+const validationPresets = FORM_FIELD_VALIDATIONS
+
 const formData = props.form
 
 const form = useForm({
@@ -201,6 +213,7 @@ const form = useForm({
   thank_you_message: formData?.thank_you_message ?? '',
   fields: (formData?.fields || []).map(f => ({
     key: f.key, label: f.label, type: f.type,
+    validation: f.validation ?? '',
     required: f.required, placeholder: f.placeholder ?? '',
     options: f.options || [],
   })),
@@ -256,7 +269,13 @@ async function checkSlug() {
 
 function addField() {
   const idx = form.fields.length + 1
-  form.fields.push({ key: `field_${idx}`, label: '', type: 'text', required: false, placeholder: '', options: [] })
+  form.fields.push({ key: `field_${idx}`, label: '', type: 'text', validation: '', required: false, placeholder: '', options: [] })
+}
+
+function onFieldTypeChange(field) {
+  if (!['text', 'textarea'].includes(field.type)) {
+    field.validation = ''
+  }
 }
 
 function moveField(idx, delta) {
@@ -268,7 +287,11 @@ function moveField(idx, delta) {
 }
 
 function submit() {
-  const fields = form.fields.filter(f => f.label?.trim() && f.key?.trim()).map((f, i) => ({ ...f, position: i }))
+  const fields = form.fields.filter(f => f.label?.trim() && f.key?.trim()).map((f, i) => ({
+    ...f,
+    position: i,
+    validation: ['text', 'textarea'].includes(f.type) && f.validation ? f.validation : null,
+  }))
   if (formData) {
     form.transform(d => ({ ...d, fields })).put(route(routeNames.value.update, [props.event.slug, formData.id], false))
   } else {

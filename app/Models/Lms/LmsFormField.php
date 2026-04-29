@@ -11,7 +11,7 @@ class LmsFormField extends Model
     protected $table = 'lms_form_fields';
 
     protected $fillable = [
-        'lms_form_id', 'key', 'label', 'type',
+        'lms_form_id', 'key', 'label', 'type', 'validation',
         'required', 'placeholder', 'options', 'position',
     ];
 

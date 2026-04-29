@@ -122,10 +122,6 @@
     var prev = container.querySelector('.ggr-fw-gerr');
     if (prev) prev.remove();
 
-    var btn = formEl.querySelector('.ggr-fw-submit');
-    btn.disabled = true;
-    btn.textContent = 'Отправка\u2026';
-
     var answers = {};
     fields.forEach(function (f) {
       if (f.type === 'checkbox') {
@@ -137,6 +133,21 @@
         answers[f.key] = el ? el.value : '';
       }
     });
+
+    var clientErrors = {};
+    fields.forEach(function (f) {
+      if (!f.validation) return;
+      var msg = checkPreset(f.validation, answers[f.key]);
+      if (msg) clientErrors['answers.' + f.key] = msg;
+    });
+    if (Object.keys(clientErrors).length) {
+      showFieldErrors(clientErrors);
+      return;
+    }
+
+    var btn = formEl.querySelector('.ggr-fw-submit');
+    btn.disabled = true;
+    btn.textContent = 'Отправка\u2026';
 
     fetch(baseUrl + '/api/forms/' + encodeURIComponent(slug) + '/submit', {
       method: 'POST',
@@ -196,6 +207,101 @@
       s.classList.toggle('ggr-fw-star--on', parseInt(s.getAttribute('data-v'), 10) <= v);
     });
   });
+
+  /* Validation presets — зеркало App\\Services\\Lms\\Forms\\FieldValidationPresets */
+  function digitsOnly(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
+  function isEmpty(v) { return v == null || (typeof v === 'string' && v.trim() === ''); }
+
+  function checkSnils(v) {
+    if (isEmpty(v)) return true;
+    var d = digitsOnly(v);
+    if (d.length !== 11) return false;
+    var num = parseInt(d.slice(0, 9), 10);
+    var cs = parseInt(d.slice(9, 11), 10);
+    if (num <= 1001998) return true;
+    var sum = 0;
+    for (var i = 0; i < 9; i++) sum += parseInt(d.charAt(i), 10) * (9 - i);
+    var ctrl;
+    if (sum < 100) ctrl = sum;
+    else if (sum === 100 || sum === 101) ctrl = 0;
+    else ctrl = (sum % 101) === 100 ? 0 : (sum % 101);
+    return ctrl === cs;
+  }
+
+  function weighted(s, w) {
+    var sum = 0;
+    for (var i = 0; i < w.length; i++) sum += w[i] * parseInt(s.charAt(i), 10);
+    return (sum % 11) % 10;
+  }
+
+  function checkInn10(v) {
+    if (isEmpty(v)) return true;
+    var s = String(v).trim();
+    if (!/^\d{10}$/.test(s)) return false;
+    return weighted(s, [2, 4, 10, 3, 5, 9, 4, 6, 8]) === parseInt(s.charAt(9), 10);
+  }
+
+  function checkInn12(v) {
+    if (isEmpty(v)) return true;
+    var s = String(v).trim();
+    if (!/^\d{12}$/.test(s)) return false;
+    var c1 = weighted(s, [7, 2, 4, 10, 3, 5, 9, 4, 6, 8]);
+    var c2 = weighted(s, [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8]);
+    return c1 === parseInt(s.charAt(10), 10) && c2 === parseInt(s.charAt(11), 10);
+  }
+
+  function modString(value, divisor) {
+    var r = 0;
+    for (var i = 0; i < value.length; i++) r = (r * 10 + parseInt(value.charAt(i), 10)) % divisor;
+    return r;
+  }
+
+  function checkOgrn(v) {
+    if (isEmpty(v)) return true;
+    var s = String(v).trim();
+    if (!/^\d{13}$/.test(s)) return false;
+    return (modString(s.slice(0, 12), 11) % 10) === parseInt(s.charAt(12), 10);
+  }
+
+  function checkOgrnip(v) {
+    if (isEmpty(v)) return true;
+    var s = String(v).trim();
+    if (!/^\d{15}$/.test(s)) return false;
+    return (modString(s.slice(0, 14), 13) % 10) === parseInt(s.charAt(14), 10);
+  }
+
+  function checkBirthDate(v) {
+    if (isEmpty(v)) return true;
+    var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(String(v).trim());
+    if (!m) return false;
+    var day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = parseInt(m[3], 10);
+    var date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return false;
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date > today) return false;
+    var age = (today - date) / (1000 * 60 * 60 * 24 * 365.25);
+    return age <= 120;
+  }
+
+  var PRESETS = {
+    snils: { check: checkSnils, msg: 'Укажите корректный СНИЛС (11 цифр, формат «XXX-XXX-XXX YY»).' },
+    passport_series_rf: { check: function (v) { return isEmpty(v) || /^\d{4}$/.test(digitsOnly(v)); }, msg: 'Серия паспорта должна содержать ровно 4 цифры.' },
+    passport_number_rf: { check: function (v) { return isEmpty(v) || /^\d{6}$/.test(digitsOnly(v)); }, msg: 'Номер паспорта должен содержать ровно 6 цифр.' },
+    inn_personal: { check: checkInn12, msg: 'Укажите корректный ИНН физического лица (12 цифр).' },
+    inn_company: { check: checkInn10, msg: 'Укажите корректный ИНН юридического лица (10 цифр).' },
+    ogrn: { check: checkOgrn, msg: 'Укажите корректный ОГРН (13 цифр).' },
+    ogrnip: { check: checkOgrnip, msg: 'Укажите корректный ОГРНИП (15 цифр).' },
+    kpp: { check: function (v) { return isEmpty(v) || /^\d{4}[A-Z\d]{2}\d{3}$/.test(String(v).trim().toUpperCase()); }, msg: 'Укажите корректный КПП (9 символов в формате «NNNN##NNN»).' },
+    birth_date: { check: checkBirthDate, msg: 'Укажите корректную дату рождения в формате ДД.ММ.ГГГГ.' },
+    postal_code_rf: { check: function (v) { return isEmpty(v) || /^\d{6}$/.test(digitsOnly(v)); }, msg: 'Почтовый индекс должен содержать ровно 6 цифр.' },
+  };
+
+  function checkPreset(key, value) {
+    var p = PRESETS[key];
+    if (!p) return null;
+    return p.check(value) ? null : p.msg;
+  }
 
   /* Helpers */
   function esc(s) {

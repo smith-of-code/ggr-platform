@@ -89,7 +89,7 @@
             </button>
           </div>
 
-          <p v-if="errors[`answers.${field.key}`]" class="text-xs text-red-600">{{ errors[`answers.${field.key}`] }}</p>
+          <p v-if="fieldErrorFor(field)" class="text-xs text-red-600">{{ fieldErrorFor(field) }}</p>
         </div>
       </div>
 
@@ -110,7 +110,7 @@
         </div>
         <button
           type="submit"
-          :disabled="processing || (form.require_consent && !consentChecked)"
+          :disabled="processing || (form.require_consent && !consentChecked) || hasClientErrors"
           class="rounded-xl bg-blue-600 px-8 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-700 disabled:opacity-50"
         >
           {{ processing ? 'Отправка...' : 'Отправить' }}
@@ -121,9 +121,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 import axios from 'axios'
+import { validateFormFieldByPreset } from '@/constants/formFieldValidations.js'
 
 const props = defineProps({
   form: { type: Object, required: true },
@@ -137,6 +138,7 @@ const consentUrl = computed(() => props.form.consent_document_url || page.props.
 
 const answers = reactive({})
 const errors = ref({})
+const clientErrors = reactive({})
 const processing = ref(false)
 const submitted = ref(false)
 const consentChecked = ref(false)
@@ -144,6 +146,26 @@ const consentChecked = ref(false)
 props.fields.forEach(f => {
   answers[f.key] = f.type === 'checkbox' ? [] : ''
 })
+
+function runClientValidationFor(field) {
+  if (!field.validation) {
+    delete clientErrors[field.key]
+    return
+  }
+  const error = validateFormFieldByPreset(field.validation, answers[field.key])
+  if (error) clientErrors[field.key] = error
+  else delete clientErrors[field.key]
+}
+
+watch(answers, () => {
+  props.fields.forEach(f => runClientValidationFor(f))
+}, { deep: true })
+
+function fieldErrorFor(field) {
+  return clientErrors[field.key] || errors.value[`answers.${field.key}`] || ''
+}
+
+const hasClientErrors = computed(() => Object.keys(clientErrors).length > 0)
 
 function toggleCheckbox(key, opt) {
   if (!Array.isArray(answers[key])) answers[key] = []
@@ -174,6 +196,11 @@ function navigateBackAfterFormSubmit() {
 }
 
 async function submitForm() {
+  props.fields.forEach(f => runClientValidationFor(f))
+  if (Object.keys(clientErrors).length > 0) {
+    return
+  }
+
   processing.value = true
   errors.value = {}
 
