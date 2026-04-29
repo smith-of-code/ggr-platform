@@ -58,7 +58,10 @@ class GamificationController extends Controller
             ->get();
 
         $user = auth()->user();
-        $profile = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $profile = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
+            ->first();
         $userLeaderboardData = $userLeaderboard->values()->all();
         $userRank = null;
         $userPoints = null;
@@ -117,7 +120,10 @@ class GamificationController extends Controller
 
         $totalPoints = $points->sum('points');
 
-        $profile = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $profile = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
+            ->first();
 
         return Inertia::render('Lms/Gamification/MyPoints', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),

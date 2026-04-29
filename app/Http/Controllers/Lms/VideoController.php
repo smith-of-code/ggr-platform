@@ -55,7 +55,10 @@ class VideoController extends Controller
 
         $videos = $videosQuery->orderByDesc('created_at')->paginate(12)->withQueryString();
 
-        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
+            ->first();
 
         $programFilterCourses = $event->courses()->orderBy('title')->get(['id', 'title']);
 
@@ -84,7 +87,10 @@ class VideoController extends Controller
 
         $user = auth()->user();
 
-        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
+            ->first();
 
         app(GamificationService::class)->awardPoints($event, $user, 'video_watch', "Видео: {$video->title}");
 

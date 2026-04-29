@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lms\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsAssignment;
 use App\Models\Lms\LmsAssignmentComment;
+use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsAssignmentReview;
 use App\Models\Lms\LmsAssignmentSubmission;
 use App\Models\Lms\LmsAssignmentTask;
@@ -24,11 +25,15 @@ class AssignmentController extends Controller
 {
     public function index(LmsEvent $event): Response
     {
+        $accessLevel = LmsProfile::backofficeAccessForEvent(auth()->user(), $event);
+        $canManageAssignments = $accessLevel === 'admin';
+
         $assignments = $event->assignments()->withCount('submissions')->orderBy('created_at', 'desc')->paginate(15);
 
         return Inertia::render('Lms/Admin/Assignments/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
             'assignments' => $assignments,
+            'canManageAssignments' => $canManageAssignments,
         ]);
     }
 
@@ -60,6 +65,8 @@ class AssignmentController extends Controller
     public function show(LmsEvent $event, LmsAssignment $assignment): Response
     {
         $this->ensureAssignmentBelongsToEvent($assignment, $event);
+        $accessLevel = LmsProfile::backofficeAccessForEvent(auth()->user(), $event);
+        $canReviewAssignments = in_array($accessLevel, ['admin', 'gamification_points_only'], true);
 
         $assignment->load('tasks');
 
@@ -72,6 +79,7 @@ class AssignmentController extends Controller
             'event' => $event->only(['id', 'slug', 'title']),
             'assignment' => $assignment,
             'submissions' => $submissions,
+            'canReviewAssignments' => $canReviewAssignments,
         ]);
     }
 

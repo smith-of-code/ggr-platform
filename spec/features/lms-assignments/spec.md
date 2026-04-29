@@ -90,6 +90,14 @@
 | POST | `/assignments/{assignment}/submissions/{submission}/review` | Admin\AssignmentController@review |
 | POST | `/assignments/{assignment}/submissions/{submission}/comment` | Admin\AssignmentController@comment |
 
+Для ролей с ограниченным backoffice-доступом (`куратор-эксперт`, `тренер команды`, `трекер`, `эксперт`) доступно:
+- `GET /lms-admin/{event}/assignments` (список заданий)
+- `GET /lms-admin/{event}/assignments/{assignment}` (просмотр ответов и диалога по submissions)
+- `POST /lms-admin/{event}/assignments/{assignment}/submissions/{submission}/review` (принять / на доработку / отклонить)
+- `POST /lms-admin/{event}/assignments/{assignment}/submissions/{submission}/comment` (комментарий преподавателя)
+
+CRUD заданий для этих ролей недоступен (403).
+
 ## Дедлайн (API и отображение)
 
 - В JSON для Inertia поле `deadline` у `LmsAssignment` сериализуется как **ISO 8601 в UTC с суффиксом `Z`** (`serializeDate`), чтобы в браузере однозначно определялся один и тот же момент времени.

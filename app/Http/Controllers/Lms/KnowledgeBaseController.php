@@ -16,7 +16,10 @@ class KnowledgeBaseController extends Controller
     public function index(LmsEvent $event): Response
     {
         $user = auth()->user();
-        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
+            ->first();
         $isPrivileged = $profile && in_array($profile->role, ['admin', 'curator']);
 
         $groupIds = $isPrivileged
@@ -64,7 +67,10 @@ class KnowledgeBaseController extends Controller
             abort(404);
         }
         $user = auth()->user();
-        $profile = LmsProfile::where('lms_event_id', $event->id)->where('user_id', $user->id)->first();
+        $profile = LmsProfile::where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->with('lmsRole:id,name,slug')
+            ->first();
         $isPrivileged = $profile && in_array($profile->role, ['admin', 'curator']);
 
         if (!$isPrivileged) {
