@@ -269,10 +269,10 @@
           </template>
 
           <div class="flex gap-3">
-            <RButton variant="primary" :loading="form.processing" :disabled="form.processing || draftSaving">
-              {{ form.processing ? 'Отправка...' : (submission?.status === 'revision' ? 'Отправить доработку' : 'Отправить работу') }}
+            <RButton variant="primary" :loading="submitSaving" :disabled="submitSaving || draftSaving">
+              {{ submitSaving ? 'Отправка...' : (submission?.status === 'revision' ? 'Отправить доработку' : 'Отправить работу') }}
             </RButton>
-            <RButton type="button" variant="outline" :loading="draftSaving" :disabled="form.processing || draftSaving" @click="saveDraft">
+            <RButton type="button" variant="outline" :loading="draftSaving" :disabled="submitSaving || draftSaving" @click="saveDraft">
               {{ draftSaving ? 'Сохранение...' : 'Сохранить как черновик' }}
             </RButton>
           </div>
@@ -374,7 +374,7 @@
 </template>
 
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import { ref, computed, reactive } from 'vue'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 import { fileUrl } from '@/lib/fileUrl'
@@ -415,6 +415,7 @@ const selectedFiles = ref([])
 const commentFileInput = ref(null)
 const commentFiles = ref([])
 const draftSaving = ref(false)
+const submitSaving = ref(false)
 
 const form = useForm({
   text_content: props.submission?.text_content || '',
@@ -604,19 +605,23 @@ async function buildFormData() {
 }
 
 async function submitWork() {
+  submitSaving.value = true
+  form.clearErrors()
   const fd = await buildFormData()
-  form.post(route('lms.assignments.submit', { event: props.event?.slug, assignment: props.assignment?.id }), {
-    data: fd,
+  router.post(route('lms.assignments.submit', { event: props.event?.slug, assignment: props.assignment?.id }), fd, {
     forceFormData: true,
+    onError: (errors) => form.setError(errors),
+    onFinish: () => { submitSaving.value = false },
   })
 }
 
 async function saveDraft() {
   draftSaving.value = true
+  form.clearErrors()
   const fd = await buildFormData()
-  form.post(route('lms.assignments.draft', { event: props.event?.slug, assignment: props.assignment?.id }), {
-    data: fd,
+  router.post(route('lms.assignments.draft', { event: props.event?.slug, assignment: props.assignment?.id }), fd, {
     forceFormData: true,
+    onError: (errors) => form.setError(errors),
     onFinish: () => { draftSaving.value = false },
   })
 }

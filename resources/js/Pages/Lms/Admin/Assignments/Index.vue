@@ -5,14 +5,19 @@
         <h1 class="text-2xl font-bold text-gray-900">Задания</h1>
         <p class="mt-1 text-sm text-gray-500">Задания события «{{ event.title }}»</p>
       </div>
-      <Link
-        v-if="canManageAssignments"
-        :href="route('lms.admin.assignments.create', event.slug)"
-        class="inline-flex items-center gap-2 rounded-xl bg-rosatom-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rosatom-700"
-      >
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-        Создать задание
-      </Link>
+      <div class="flex items-center gap-2">
+        <RButton variant="outline" size="sm" @click="toggleWithUpdates">
+          {{ filters?.with_updates ? 'Показать все' : 'Только с новыми' }}
+        </RButton>
+        <Link
+          v-if="canManageAssignments"
+          :href="route('lms.admin.assignments.create', event.slug)"
+          class="inline-flex items-center gap-2 rounded-xl bg-rosatom-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rosatom-700"
+        >
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          Создать задание
+        </Link>
+      </div>
     </div>
 
     <RCard flush>
@@ -28,7 +33,14 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="a in assignments.data" :key="a.id" class="transition hover:bg-gray-50">
-            <td class="px-5 py-3.5 text-sm font-medium text-gray-900">{{ a.title }}</td>
+            <td class="px-5 py-3.5 text-sm font-medium text-gray-900">
+              <div class="flex items-center gap-2">
+                <span>{{ a.title }}</span>
+                <RBadge v-if="(a.unread_submissions_count || 0) > 0" variant="warning" size="sm">
+                  Новые: {{ a.unread_submissions_count }}
+                </RBadge>
+              </div>
+            </td>
             <td class="px-5 py-3.5 text-center text-sm text-gray-500">{{ a.submissions_count ?? 0 }}</td>
             <td class="px-5 py-3.5 text-sm text-gray-500">{{ a.deadline ? formatLmsAssignmentDeadline(a.deadline, 'short') : '—' }}</td>
             <td class="px-5 py-3.5 text-center">
@@ -72,11 +84,22 @@ const props = defineProps({
   event: Object,
   assignments: Object,
   canManageAssignments: { type: Boolean, default: true },
+  filters: { type: Object, default: () => ({}) },
 })
 
 function confirmDestroy(assignment) {
   if (confirm(`Удалить задание "${assignment.title}"?`)) {
     router.delete(route('lms.admin.assignments.destroy', [props.event.slug, assignment.id]))
   }
+}
+
+function toggleWithUpdates() {
+  const next = !(props.filters?.with_updates)
+  router.get(route('lms.admin.assignments.index', props.event.slug), {
+    with_updates: next ? 1 : undefined,
+  }, {
+    preserveState: true,
+    replace: true,
+  })
 }
 </script>

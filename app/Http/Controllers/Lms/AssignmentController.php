@@ -169,6 +169,7 @@ class AssignmentController extends Controller
                 'link' => $hasTasks ? null : ($validated['link'] ?? null),
                 'files' => $hasTasks ? null : $legacyFiles,
                 'status' => $status,
+                'participant_last_activity_at' => now(),
             ]
         );
 
@@ -273,6 +274,10 @@ class AssignmentController extends Controller
             'files' => $files ?: null,
         ]);
 
+        $submission->update([
+            'participant_last_activity_at' => now(),
+        ]);
+
         return redirect()->back();
     }
 
@@ -340,6 +345,7 @@ class AssignmentController extends Controller
             'link' => $validated['link'] ?? $submission->link,
             'files' => $files,
             'status' => 'resubmitted',
+            'participant_last_activity_at' => now(),
         ]);
 
         return redirect()->back();

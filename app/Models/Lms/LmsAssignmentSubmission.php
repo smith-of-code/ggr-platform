@@ -18,10 +18,12 @@ class LmsAssignmentSubmission extends Model
         'link',
         'files',
         'status',
+        'participant_last_activity_at',
     ];
 
     protected $casts = [
         'files' => 'array',
+        'participant_last_activity_at' => 'datetime',
     ];
 
     /** @return BelongsTo<LmsAssignment, $this> */
@@ -52,5 +54,11 @@ class LmsAssignmentSubmission extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(LmsSubmissionAnswer::class, 'lms_assignment_submission_id');
+    }
+
+    /** @return HasMany<LmsAssignmentSubmissionRead> */
+    public function reads(): HasMany
+    {
+        return $this->hasMany(LmsAssignmentSubmissionRead::class, 'lms_assignment_submission_id');
     }
 }

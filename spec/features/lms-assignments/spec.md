@@ -47,7 +47,19 @@
 | link | string | nullable |
 | files | json | nullable |
 | status | enum(draft, submitted, revision, approved, rejected) | default `draft` |
+| participant_last_activity_at | timestamp | nullable, время последней активности участника (ответ/комментарий) |
 | timestamps | | |
+
+### lms_assignment_submission_reads
+| Колонка | Тип | Ограничения |
+|---|---|---|
+| id | bigint | PK |
+| lms_assignment_submission_id | FK → lms_assignment_submissions | cascade delete |
+| user_id | FK → users | cascade delete |
+| last_read_at | timestamp | nullable |
+| timestamps | | |
+
+Уникальность: `(lms_assignment_submission_id, user_id)`.
 
 ### lms_assignment_reviews
 | Колонка | Тип | Ограничения |
@@ -89,14 +101,26 @@
 | GET/POST/PUT/DELETE | `/assignments` (resource) | Admin\AssignmentController CRUD |
 | POST | `/assignments/{assignment}/submissions/{submission}/review` | Admin\AssignmentController@review |
 | POST | `/assignments/{assignment}/submissions/{submission}/comment` | Admin\AssignmentController@comment |
+| POST | `/assignments/{assignment}/submissions/{submission}/mark-read` | Admin\AssignmentController@markRead |
 
 Для ролей с ограниченным backoffice-доступом (`куратор-эксперт`, `тренер команды`, `трекер`, `эксперт`) доступно:
 - `GET /lms-admin/{event}/assignments` (список заданий)
 - `GET /lms-admin/{event}/assignments/{assignment}` (просмотр ответов и диалога по submissions)
 - `POST /lms-admin/{event}/assignments/{assignment}/submissions/{submission}/review` (принять / на доработку / отклонить)
 - `POST /lms-admin/{event}/assignments/{assignment}/submissions/{submission}/comment` (комментарий преподавателя)
+- `POST /lms-admin/{event}/assignments/{assignment}/submissions/{submission}/mark-read` (отметка ветки прочитанной)
 
 CRUD заданий для этих ролей недоступен (403).
+
+## Непрочитанное в админке заданий
+
+- На списке заданий (`Index.vue`) показывается бейдж с количеством submissions, где есть непрочитанная активность участника.
+- Доступен фильтр «Только с новыми».
+- На странице submissions (`Submissions.vue`) у каждой ветки участника показывается бейдж «Новое», а в обсуждении — метки «Новое» у сообщений участника после `last_read_at`.
+- При открытии ветки вызывается `mark-read`, фиксируя `last_read_at` для текущего админа/эксперта.
+- На странице submissions добавлены:
+  - поиск по участнику (ФИО/email);
+  - пагинация списка submissions (с сохранением активных фильтров).
 
 ## Дедлайн (API и отображение)
 
@@ -167,3 +191,7 @@ draft → submitted → [revision ↔ resubmitted → submitted] → approved / 
 - **Проблема**: `AssignmentController@update` (участник) устанавливает статус `resubmitted`, но DB enum для `status` допускает только: `draft`, `submitted`, `revision`, `approved`, `rejected`.
 - **Влияние**: при обновлении submission участником PostgreSQL может выдать ошибку enum constraint.
 - **Решение**: либо добавить `resubmitted` в enum миграцией, либо использовать `submitted` вместо `resubmitted`.
+
+### [ИСПРАВЛЕНО] Периодические «пустые ответы» при отправке заданий с задачами
+- **Проблема**: на фронте `Pages/Lms/Assignments/Show.vue` при submit/draft использовался `useForm.post` с передачей `FormData` через `options.data`, из-за чего собранный payload с `answers[...]` мог не уходить в запрос.
+- **Исправление**: отправка submit/draft переведена на `router.post(..., formData, { forceFormData: true })` с явной передачей собранного `FormData`; ошибки валидации прокидываются обратно в `form.setError`.
