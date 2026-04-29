@@ -13,9 +13,9 @@ use Illuminate\Support\Str;
 
 class TourCabinetSupportMessageService
 {
-    public const MAX_ATTACHMENTS = 5;
+    public const MAX_ATTACHMENTS = 10;
 
-    public const MAX_FILE_KB = 5120;
+    public const MAX_FILE_KB = 25600;
 
     /** @return list<string> */
     public static function allowedMimeTypes(): array

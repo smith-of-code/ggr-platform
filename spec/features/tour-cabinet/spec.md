@@ -8,6 +8,7 @@
 
 - `config/tour_cabinet.php`: ключ `lms_event_slug` (по умолчанию `vshgr-2026`).
 - Переменная окружения: `TOUR_CABINET_LMS_EVENT_SLUG` (опционально).
+- `config/tour_cabinet.php`: ключ `dashboard_standard_form_slug` (`TOUR_CABINET_DASHBOARD_STANDARD_FORM_SLUG`) — slug любой LmsForm платформы для отдельного блока «Стандартная анкета» на дашборде (см. фичу `standart-anketa`); переопределяется из админки `/admin/tour-cabinet`.
 
 Формы события создаются в LMS Admin: `lms-admin/{slug}/forms`. В дашборде ЛК туров списка всех форм нет — доступ через конкурс после выбора города.
 
@@ -75,6 +76,7 @@ Slug двух форм этапа 1: `contest_stage1_form_slug_standard`, `conte
 Точка входа для редакторов: **GET** `/admin/tour-cabinet` (`admin.tour-cabinet.index`) — одна страница «ЛК туров» с тремя блоками на месте: города по направлениям (переключение направления через query `project_key` + якорь `#tour-cabinet-admin-cities`), формы этапа 1, вопросы этапа 2. Отдельного раздела «этап 3» в админке нет (данные — в ЛК участника). После POST-операций редирект обратно на эту страницу с якорем соответствующего блока.
 
 - **GET** `/admin/tour-cabinet/forms` (`admin.tour-cabinet.forms.index`) — отдельная страница с тем же UI (ссылка «← ЛК туров» ведёт на хаб с `#tour-cabinet-admin-forms`); данные и **PUT** `admin.tour-cabinet.forms.contest-form-slugs.update` — как у блока форм на хабе.
+- **PUT** `admin.tour-cabinet.dashboard-form.update` (`/admin/tour-cabinet/dashboard-form`) — привязка формы к блоку «Стандартная анкета» на дашборде ЛК (см. фичу `standart-anketa`). Селект использует `allFormsOptions` (любая активная форма платформы, без ограничения `lms_event_id`). Запись в settings группу `tour_cabinet`, ключ `dashboard_standard_form_slug`. Пустое значение скрывает блок на дашборде.
 - **GET** `/admin/tour-cabinet/direction-cities` (`admin.tour-cabinet.direction-cities.index`, query `project_key`) — отдельная страница с тем же UI; CRUD через **POST/PATCH/DELETE** `admin.tour-cabinet.direction-cities.*`, редиректы на хаб с якорем `#tour-cabinet-admin-cities`.
 - **GET** `/admin/tour-cabinet/stage2-questions` — отдельная страница с тем же UI; CRUD через **POST/PATCH/DELETE** `admin.tour-cabinet.stage2-questions.*`, редиректы на хаб с якорем `#tour-cabinet-admin-stage2`.
 - **GET** `/admin/tour-cabinet/support` (`admin.tour-cabinet.support.index`) — очередь обращений участников ЛК туров; фильтры query `status`, `category`.

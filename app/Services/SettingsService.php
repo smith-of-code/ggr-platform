@@ -102,6 +102,102 @@ class SettingsService
     }
 
     /**
+     * Slug отдельной «стандартной анкеты» дашборда ЛК туров: сначала БД (группа tour_cabinet),
+     * иначе config/tour_cabinet.php (`dashboard_standard_form_slug`).
+     * Любая LmsForm платформы; не обязан совпадать с slug этапа 1.
+     */
+    public function getTourCabinetDashboardStandardFormSlug(): ?string
+    {
+        return $this->resolveTourCabinetContestFormSlug('dashboard_standard_form_slug');
+    }
+
+    /**
+     * Настройка письма «Конкурс пройден» (этап 3 завершён): приоритет — БД (группа tour_cabinet),
+     * иначе config/tour_cabinet.php / env. Поля: enabled (bool), subject (string), body (string).
+     *
+     * @return array{enabled: bool, subject: string, body: string}
+     */
+    public function getTourCabinetContestCompletionNotification(): array
+    {
+        $db = $this->getGroup(self::GROUP_TOUR_CABINET);
+
+        $cfg = (array) config('tour_cabinet.contest_completion_notification', []);
+        $defaultSubject = is_string($cfg['subject'] ?? null) ? (string) $cfg['subject'] : '';
+        $defaultBody = is_string($cfg['body'] ?? null) ? (string) $cfg['body'] : '';
+        $defaultEnabled = (bool) ($cfg['enabled'] ?? false);
+
+        $rawEnabled = $db['contest_completion_notification_enabled'] ?? null;
+        $enabled = $rawEnabled === null
+            ? $defaultEnabled
+            : filter_var($rawEnabled, FILTER_VALIDATE_BOOLEAN);
+
+        $subject = $this->resolveTourCabinetCompletionString(
+            $db['contest_completion_notification_subject'] ?? null,
+            $defaultSubject
+        );
+
+        $body = $this->resolveTourCabinetCompletionString(
+            $db['contest_completion_notification_body'] ?? null,
+            $defaultBody
+        );
+
+        return [
+            'enabled' => $enabled,
+            'subject' => $subject,
+            'body' => $body,
+        ];
+    }
+
+    private function resolveTourCabinetCompletionString(mixed $raw, string $default): string
+    {
+        if (is_string($raw)) {
+            $trimmed = trim($raw);
+            if ($trimmed !== '') {
+                return $raw;
+            }
+        }
+
+        return $default;
+    }
+
+    /**
+     * Настройки блока «Коммерческие туры» в ЛК туров: приоритет — БД (группа tour_cabinet),
+     * иначе config/tour_cabinet.php / env. Поля: enabled (bool), subject (string), body (string).
+     *
+     * @return array{enabled: bool, subject: string, body: string}
+     */
+    public function getTourCabinetCommerceToursStage3Notification(): array
+    {
+        $db = $this->getGroup(self::GROUP_TOUR_CABINET);
+
+        $cfg = (array) config('tour_cabinet.commerce_tours', []);
+        $defaultSubject = is_string($cfg['stage3_subject'] ?? null) ? (string) $cfg['stage3_subject'] : '';
+        $defaultBody = is_string($cfg['stage3_body'] ?? null) ? (string) $cfg['stage3_body'] : '';
+        $defaultEnabled = (bool) ($cfg['enabled'] ?? false);
+
+        $rawEnabled = $db['commerce_tours_enabled'] ?? null;
+        $enabled = $rawEnabled === null
+            ? $defaultEnabled
+            : filter_var($rawEnabled, FILTER_VALIDATE_BOOLEAN);
+
+        $subject = $this->resolveTourCabinetCompletionString(
+            $db['commerce_tours_stage3_subject'] ?? null,
+            $defaultSubject
+        );
+
+        $body = $this->resolveTourCabinetCompletionString(
+            $db['commerce_tours_stage3_body'] ?? null,
+            $defaultBody
+        );
+
+        return [
+            'enabled' => $enabled,
+            'subject' => $subject,
+            'body' => $body,
+        ];
+    }
+
+    /**
      * Общие сроки этапов конкурса в ЛК туров (даты Y-m-d или null).
      *
      * @return array<int, array{start: ?string, end: ?string}>

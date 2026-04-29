@@ -17,6 +17,95 @@
       </Link>
     </div>
 
+    <RCard class="mb-8" elevation="raised">
+      <h2 class="text-lg font-semibold text-gray-900">Дашборд: Стандартная анкета</h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Отдельный блок выше блока «Конкурс» в ЛК туров. Кнопка «Заполнить» открывает выбранную форму.
+        Можно привязать <strong>любую активную</strong> форму платформы — без ограничения по событию.
+      </p>
+      <form class="mt-6 space-y-5" @submit.prevent="submitDashboardStandardForm">
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <SearchSelect
+              :model-value="dashboardForm.dashboard_standard_form_slug || null"
+              label="Форма для блока «Стандартная анкета»"
+              :options="allFormsSelectOptions"
+              value-key="slug"
+              label-key="label"
+              placeholder="Выберите форму"
+              clear-label="— (блок скрыт)"
+              :searchable="allFormsSelectOptions.length > 5"
+              :error="dashboardForm.errors.dashboard_standard_form_slug || ''"
+              @update:model-value="(v) => { dashboardForm.dashboard_standard_form_slug = v ?? '' }"
+            />
+            <p class="mt-2 text-xs text-gray-500">
+              Если значение не выбрано — блок «Стандартная анкета» в ЛК клиента не отображается.
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <RButton type="submit" variant="primary" :loading="dashboardForm.processing" :disabled="dashboardForm.processing">
+            Сохранить
+          </RButton>
+        </div>
+      </form>
+    </RCard>
+
+    <RCard id="tour-cabinet-admin-completion-notification" class="mb-8 scroll-mt-8" elevation="raised">
+      <h2 class="text-lg font-semibold text-gray-900">Уведомление о завершении конкурса</h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Письмо отправляется участнику автоматически после успешного прохождения <strong>всех трёх этапов</strong> конкурса
+        (один раз на участника). Если отправка выключена — письмо не уходит, даже когда участник завершил этап 3.
+      </p>
+      <form class="mt-6 space-y-5" @submit.prevent="submitCompletionNotification">
+        <label class="flex items-start gap-3">
+          <input
+            type="checkbox"
+            class="mt-1 h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
+            :checked="completionForm.enabled"
+            @change="(e) => { completionForm.enabled = e.target.checked }"
+          />
+          <span class="text-sm text-gray-800">
+            Отправка активна
+            <span class="block text-xs text-gray-500">Снимите галочку, чтобы временно отключить рассылку.</span>
+          </span>
+        </label>
+        <p v-if="completionForm.errors.enabled" class="-mt-3 text-xs text-red-600">{{ completionForm.errors.enabled }}</p>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Тема письма</label>
+          <input
+            v-model="completionForm.subject"
+            type="text"
+            maxlength="255"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#003274] focus:ring-[#003274] sm:text-sm"
+            :class="completionForm.errors.subject ? 'border-red-400' : ''"
+          />
+          <p v-if="completionForm.errors.subject" class="mt-1 text-xs text-red-600">{{ completionForm.errors.subject }}</p>
+          <p v-else class="mt-1 text-xs text-gray-500">Если оставить пустым — будет использован вариант по умолчанию.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Тело письма</label>
+          <textarea
+            v-model="completionForm.body"
+            rows="6"
+            maxlength="20000"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#003274] focus:ring-[#003274] sm:text-sm"
+            :class="completionForm.errors.body ? 'border-red-400' : ''"
+          />
+          <p v-if="completionForm.errors.body" class="mt-1 text-xs text-red-600">{{ completionForm.errors.body }}</p>
+          <p v-else class="mt-1 text-xs text-gray-500">Поддерживаются переносы строк. HTML не интерпретируется — только текст.</p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <RButton type="submit" variant="primary" :loading="completionForm.processing" :disabled="completionForm.processing">
+            Сохранить
+          </RButton>
+        </div>
+      </form>
+    </RCard>
+
     <RCard v-if="lmsEvent" class="mb-8" elevation="raised">
       <h2 class="text-lg font-semibold text-gray-900">Конкурс, этап 1 — какие формы открывать</h2>
       <form class="mt-6 space-y-5" @submit.prevent="submitSlugs">
@@ -139,6 +228,12 @@ const props = defineProps({
     default: () => ({ standard: '', more_data: '' }),
   },
   formOptions: { type: Array, default: () => [] },
+  dashboardStandardFormSlug: { type: String, default: '' },
+  allFormsOptions: { type: Array, default: () => [] },
+  contestCompletionNotification: {
+    type: Object,
+    default: () => ({ enabled: false, subject: '', body: '' }),
+  },
 })
 
 const formSelectOptions = computed(() =>
@@ -148,9 +243,28 @@ const formSelectOptions = computed(() =>
   })),
 )
 
+const allFormsSelectOptions = computed(() =>
+  props.allFormsOptions
+    .filter((opt) => opt.is_active)
+    .map((opt) => ({
+      slug: opt.slug,
+      label: `${opt.title} (${opt.slug})`,
+    })),
+)
+
 const slugForm = useForm({
   contest_stage1_form_slug_standard: props.contestFormSlugOverrides.standard ?? '',
   contest_stage1_form_slug_more_data: props.contestFormSlugOverrides.more_data ?? '',
+})
+
+const dashboardForm = useForm({
+  dashboard_standard_form_slug: props.dashboardStandardFormSlug ?? '',
+})
+
+const completionForm = useForm({
+  enabled: !!props.contestCompletionNotification?.enabled,
+  subject: props.contestCompletionNotification?.subject ?? '',
+  body: props.contestCompletionNotification?.body ?? '',
 })
 
 watch(
@@ -162,7 +276,32 @@ watch(
   { deep: true },
 )
 
+watch(
+  () => props.dashboardStandardFormSlug,
+  (v) => {
+    dashboardForm.dashboard_standard_form_slug = v ?? ''
+  },
+)
+
+watch(
+  () => props.contestCompletionNotification,
+  (v) => {
+    completionForm.enabled = !!v?.enabled
+    completionForm.subject = v?.subject ?? ''
+    completionForm.body = v?.body ?? ''
+  },
+  { deep: true },
+)
+
 function submitSlugs() {
   slugForm.put(sameOriginHref(route('admin.tour-cabinet.forms.contest-form-slugs.update', {}, false)), { preserveScroll: true })
+}
+
+function submitDashboardStandardForm() {
+  dashboardForm.put(sameOriginHref(route('admin.tour-cabinet.dashboard-form.update', {}, false)), { preserveScroll: true })
+}
+
+function submitCompletionNotification() {
+  completionForm.put(sameOriginHref(route('admin.tour-cabinet.contest-completion-notification.update', {}, false)), { preserveScroll: true })
 }
 </script>

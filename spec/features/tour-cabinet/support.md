@@ -23,6 +23,16 @@
 2. **`tour_cabinet_support_messages`**: `ticket_id`, автор (`user` / `admin`), `user_id` или `admin_user_id`, `body` (text), `created_at`.
 3. **Вложения:** отдельная таблица **`tour_cabinet_support_attachments`** (или полиморф к сообщению): `message_id`, `disk`, `path`, `original_filename`, `mime_type`, `size_bytes`, `created_at`. Хранение — тот же подход, что и для других upload-ов портала (`filesystems.upload_disk`), с лимитами по размеру и MIME (whitelist: изображения, PDF, типичные офисные — зафиксировать в коде/валидации).
 
+**Лимиты загрузки (актуальные значения, source of truth — `App\Services\TourCabinetSupportMessageService`):**
+
+- `MAX_FILE_KB = 25600` — до **25 МБ** на каждый файл (рассчитано на современные фото со смартфонов).
+- `MAX_ATTACHMENTS = 10` — до **10 файлов** в одном сообщении / при создании тикета.
+- Whitelist расширений: `jpg, jpeg, png, webp, gif, pdf, doc, docx, xls, xlsx`.
+- Суммарный потолок одного multipart-запроса = `MAX_ATTACHMENTS × MAX_FILE_KB` = **250 МБ**, поэтому инфраструктурные лимиты должны быть **не меньше 256M**:
+    - `docker/php.ini`: `upload_max_filesize` и `post_max_size` ≥ `256M`;
+    - `docker/nginx/{local,prod}/templates/default.conf.template`: `client_max_body_size` ≥ `256M`.
+- При синхронном изменении констант сервиса нужно проверить, что `php.ini` и `client_max_body_size` всё ещё перекрывают итоговый суммарный потолок, иначе клиент будет получать 413 от nginx или INI-обрезку до серверной валидации.
+
 **Рекомендация по содержимому:** в UI и в короткой подсказке у формы указать, что **документы уровня паспорта** лучше не загружать в общий тикет; для паспортных данных — отдельный защищённый процесс (когда появится). На MVP технически вложения включены, политика — предупреждение + разумный whitelist MIME.
 
 ## ЛК участника (`/tour-cabinet`)

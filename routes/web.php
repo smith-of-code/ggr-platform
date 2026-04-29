@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TourReviewController as AdminTourReviewController;
 use App\Http\Controllers\Admin\UploadController as AdminUploadController;
 use App\Http\Controllers\PresignedUploadController;
+use App\Http\Controllers\Admin\TourCabinetCommerceToursController as AdminTourCabinetCommerceToursController;
 use App\Http\Controllers\Admin\TourCabinetDirectionCitiesController as AdminTourCabinetDirectionCitiesController;
 use App\Http\Controllers\Admin\TourCabinetHubController as AdminTourCabinetHubController;
 use App\Http\Controllers\Admin\TourCabinetSupportController as AdminTourCabinetSupportController;
@@ -46,6 +47,7 @@ use App\Http\Controllers\OpportunityToursController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\ResearchPageController;
+use App\Http\Controllers\TourCabinetCommerceToursController;
 use App\Http\Controllers\TourCabinetContestController;
 use App\Http\Controllers\TourCabinetController;
 use App\Http\Controllers\TourCabinetSupportController;
@@ -107,6 +109,12 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
         Route::get('/contest/stage-3/attachment', [TourCabinetContestController::class, 'downloadStage3Attachment'])
             ->middleware('throttle:tour-cabinet-support-download')
             ->name('contest.stage3.attachment');
+
+        Route::post('/commerce-tours/city', [TourCabinetCommerceToursController::class, 'storeCity'])->name('commerce-tours.city.store');
+        Route::post('/commerce-tours/tour', [TourCabinetCommerceToursController::class, 'storeTour'])->name('commerce-tours.tour.store');
+        Route::post('/commerce-tours/complete-stage-1', [TourCabinetCommerceToursController::class, 'completeStage1'])->name('commerce-tours.complete-stage-1');
+        Route::get('/commerce-tours/stage-2/form', [TourCabinetCommerceToursController::class, 'startCityForm'])->name('commerce-tours.stage-2.form');
+        Route::post('/commerce-tours/reopen-selection', [TourCabinetCommerceToursController::class, 'reopenSelection'])->name('commerce-tours.reopen-selection');
 
         Route::post('/upload/presigned-url', [PresignedUploadController::class, 'presignedUrl'])->name('upload.presigned-url');
         Route::post('/upload/confirm', [PresignedUploadController::class, 'confirm'])->name('upload.confirm');
@@ -229,7 +237,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
 
     Route::get('/tour-cabinet/forms', [AdminTourCabinetFormsController::class, 'index'])->name('tour-cabinet.forms.index');
     Route::put('/tour-cabinet/forms/contest-form-slugs', [AdminTourCabinetFormsController::class, 'updateContestFormSlugs'])->name('tour-cabinet.forms.contest-form-slugs.update');
+    Route::put('/tour-cabinet/dashboard-form', [AdminTourCabinetFormsController::class, 'updateDashboardStandardFormSlug'])->name('tour-cabinet.dashboard-form.update');
     Route::put('/tour-cabinet/contest-stage-deadlines', [AdminTourCabinetFormsController::class, 'updateContestStageDeadlines'])->name('tour-cabinet.contest-stage-deadlines.update');
+    Route::put('/tour-cabinet/contest-completion-notification', [AdminTourCabinetFormsController::class, 'updateContestCompletionNotification'])->name('tour-cabinet.contest-completion-notification.update');
+
+    Route::get('/tour-cabinet/commerce-tours', [AdminTourCabinetCommerceToursController::class, 'index'])->name('tour-cabinet.commerce-tours.index');
+    Route::post('/tour-cabinet/commerce-tours/city-forms', [AdminTourCabinetCommerceToursController::class, 'storeCityForm'])->name('tour-cabinet.commerce-tours.city-forms.store');
+    Route::patch('/tour-cabinet/commerce-tours/city-forms/{cityForm}', [AdminTourCabinetCommerceToursController::class, 'updateCityForm'])->name('tour-cabinet.commerce-tours.city-forms.update');
+    Route::delete('/tour-cabinet/commerce-tours/city-forms/{cityForm}', [AdminTourCabinetCommerceToursController::class, 'destroyCityForm'])->name('tour-cabinet.commerce-tours.city-forms.destroy');
+    Route::put('/tour-cabinet/commerce-tours/stage3-notification', [AdminTourCabinetCommerceToursController::class, 'updateStage3Notification'])->name('tour-cabinet.commerce-tours.stage3-notification.update');
 
     // Те же экраны, что /lms-admin/.../forms, но под /admin/... — обход редиректа main→lms для префикса lms-admin.
     Route::prefix('tour-cabinet/lms/{event:slug}')

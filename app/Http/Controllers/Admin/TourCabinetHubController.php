@@ -21,6 +21,7 @@ class TourCabinetHubController extends Controller
             'stage2Section' => $hubPageData->stage2QuestionsPayload(),
             'stage3ConfigSection' => $hubPageData->stage3ConfigsPayload(),
             'contestDeadlinesSection' => $hubPageData->contestStageDeadlinesPayload(),
+            'commerceToursSection' => $hubPageData->commerceToursPayload(),
         ]);
     }
 }

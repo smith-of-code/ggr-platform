@@ -84,6 +84,16 @@
             <TourCabinetAdminStage3ConfigsPanel :configs="stage3ConfigSection.configs" />
           </div>
         </section>
+
+        <section class="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 sm:p-8">
+          <h2 class="text-xl font-bold tracking-tight text-slate-900">Коммерческие туры</h2>
+          <p class="mt-2 max-w-3xl text-sm text-slate-600">
+            Отдельный блок в ЛК туров под блоком «Конкурс»: выбор города и тура (этап 1), анкета доп. данных по городу (этап 2), статичный экран ожидания обратной связи (этап 3).
+          </p>
+          <div class="mt-6">
+            <TourCabinetAdminCommerceToursPanel v-bind="commerceToursSection" />
+          </div>
+        </section>
       </div>
     </div>
   </AdminLayout>
@@ -92,6 +102,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import TourCabinetAdminCommerceToursPanel from './TourCabinetAdminCommerceToursPanel.vue'
 import TourCabinetAdminContestDeadlinesPanel from './TourCabinetAdminContestDeadlinesPanel.vue'
 import TourCabinetAdminDirectionCitiesPanel from './TourCabinetAdminDirectionCitiesPanel.vue'
 import TourCabinetAdminFormsPanel from './TourCabinetAdminFormsPanel.vue'
@@ -104,5 +115,6 @@ defineProps({
   contestDeadlinesSection: { type: Object, required: true },
   stage2Section: { type: Object, required: true },
   stage3ConfigSection: { type: Object, required: true },
+  commerceToursSection: { type: Object, required: true },
 })
 </script>

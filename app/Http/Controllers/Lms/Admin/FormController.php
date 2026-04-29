@@ -10,6 +10,7 @@ use App\Models\Lms\LmsFormSubmission;
 use App\Models\Lms\LmsInvitation;
 use App\Models\Lms\LmsProfile;
 use App\Models\User;
+use App\Services\Lms\Forms\FieldValidationPresets;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -240,6 +241,8 @@ class FormController extends Controller
 
     private function validateForm(Request $request): array
     {
+        $validationKeys = array_keys(FieldValidationPresets::available());
+
         return $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -259,6 +262,7 @@ class FormController extends Controller
             'fields.*.key' => ['required', 'string', 'max:100'],
             'fields.*.label' => ['required', 'string', 'max:255'],
             'fields.*.type' => ['required', 'string', 'in:text,textarea,email,phone,number,select,radio,checkbox,date,rating'],
+            'fields.*.validation' => ['nullable', 'string', 'max:50', 'in:'.implode(',', $validationKeys)],
             'fields.*.required' => ['boolean'],
             'fields.*.placeholder' => ['nullable', 'string'],
             'fields.*.options' => ['nullable', 'array'],
@@ -271,11 +275,17 @@ class FormController extends Controller
         $form->fields()->delete();
 
         foreach ($fields as $index => $field) {
+            $validation = $field['validation'] ?? null;
+            if ($validation !== null && ! in_array($field['type'] ?? '', ['text', 'textarea'], true)) {
+                $validation = null;
+            }
+
             LmsFormField::create([
                 'lms_form_id' => $form->id,
                 'key' => $field['key'],
                 'label' => $field['label'],
                 'type' => $field['type'],
+                'validation' => $validation ?: null,
                 'required' => $field['required'] ?? false,
                 'placeholder' => $field['placeholder'] ?? null,
                 'options' => $field['options'] ?? null,
