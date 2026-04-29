@@ -18,7 +18,17 @@ class TourCabinetContestStage3Config extends Model
         'title',
         'task_body',
         'response_format',
+        'text_min_length',
+        'text_max_length',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'text_min_length' => 'integer',
+            'text_max_length' => 'integer',
+        ];
+    }
 
     public static function forDirection(?int $directionId): ?self
     {

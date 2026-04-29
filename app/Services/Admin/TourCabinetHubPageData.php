@@ -135,7 +135,18 @@ class TourCabinetHubPageData
         $questions = TourCabinetContestStage2Question::query()
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(fn (TourCabinetContestStage2Question $q) => [
+                'id' => $q->id,
+                'body' => $q->body,
+                'sort_order' => (int) $q->sort_order,
+                'is_active' => (bool) $q->is_active,
+                'direction_id' => $q->direction_id,
+                'min_length' => $q->min_length,
+                'max_length' => $q->max_length,
+            ])
+            ->values()
+            ->all();
 
         return [
             'questions' => $questions,
@@ -179,6 +190,8 @@ class TourCabinetHubPageData
                 'title' => $row?->title ?? '',
                 'task_body' => $row?->task_body ?? '',
                 'response_format' => $row?->response_format ?? TourCabinetContestStage3Config::FORMAT_VIDEO_LINK,
+                'text_min_length' => $row?->text_min_length,
+                'text_max_length' => $row?->text_max_length,
                 'is_saved' => $row !== null,
                 'max_contest_stages' => $maxRow !== null
                     ? min(3, max(1, (int) $maxRow->max_contest_stages))

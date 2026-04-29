@@ -15,12 +15,21 @@
       <form class="space-y-5" @submit.prevent="submit">
         <div>
           <label class="mb-1 block text-xs font-medium text-gray-600">Текст ответа *</label>
+          <p v-if="textLengthHint" class="mt-0 mb-1 text-xs text-gray-500">{{ textLengthHint }}</p>
           <textarea
             v-model="form.stage3_text"
             rows="8"
+            :maxlength="assignment.text_max_length || undefined"
             class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-rosatom-500 focus:ring-1 focus:ring-rosatom-500/20"
             required
           />
+          <p
+            v-if="assignment.text_min_length || assignment.text_max_length"
+            class="mt-1 text-xs"
+            :class="textCounterClass"
+          >
+            {{ textCounterLabel }}
+          </p>
           <p v-if="form.errors.stage3_text" class="mt-1 text-xs text-red-600">{{ form.errors.stage3_text }}</p>
         </div>
 
@@ -111,6 +120,8 @@ const assignment = computed(() => {
       task_body: a.task_body ?? '',
       response_format: a.response_format === 'file_upload' ? 'file_upload' : 'video_link',
       from_config: !!a.from_config,
+      text_min_length: Number.isFinite(Number(a.text_min_length)) ? Number(a.text_min_length) : null,
+      text_max_length: Number.isFinite(Number(a.text_max_length)) ? Number(a.text_max_length) : null,
     }
   }
   return {
@@ -118,7 +129,35 @@ const assignment = computed(() => {
     task_body: '',
     response_format: 'video_link',
     from_config: false,
+    text_min_length: null,
+    text_max_length: null,
   }
+})
+
+const textLengthHint = computed(() => {
+  const min = assignment.value.text_min_length
+  const max = assignment.value.text_max_length
+  if (!min && !max) return ''
+  if (min && max) return `Ограничения: от ${min} до ${max} символов.`
+  if (min) return `Ограничения: не менее ${min} символов.`
+  return `Ограничения: не более ${max} символов.`
+})
+
+const textCounterLabel = computed(() => {
+  const value = form.stage3_text || ''
+  const len = Array.from(value.trim()).length
+  const max = assignment.value.text_max_length
+  return max ? `${len} / ${max} символов` : `${len} символов`
+})
+
+const textCounterClass = computed(() => {
+  const value = form.stage3_text || ''
+  const len = Array.from(value.trim()).length
+  const min = assignment.value.text_min_length || 0
+  const max = assignment.value.text_max_length || 0
+  if (max && len > max) return 'text-red-600'
+  if (min && len > 0 && len < min) return 'text-amber-600'
+  return 'text-gray-500'
 })
 
 const form = useForm({

@@ -31,6 +31,30 @@
               placeholder="авто"
             />
           </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-600">Мин. символов</label>
+            <input
+              v-model.number="createForm.min_length"
+              type="number"
+              min="0"
+              max="100000"
+              class="w-28 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              placeholder="нет"
+            />
+            <p v-if="createForm.errors.min_length" class="mt-1 text-xs text-red-600">{{ createForm.errors.min_length }}</p>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-600">Макс. символов</label>
+            <input
+              v-model.number="createForm.max_length"
+              type="number"
+              min="0"
+              max="100000"
+              class="w-28 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              placeholder="нет"
+            />
+            <p v-if="createForm.errors.max_length" class="mt-1 text-xs text-red-600">{{ createForm.errors.max_length }}</p>
+          </div>
           <label class="mt-6 flex cursor-pointer items-center gap-2 text-sm text-gray-700">
             <input v-model="createForm.is_active" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-[#003274]" />
             Активен
@@ -61,6 +85,7 @@
                 <RBadge v-else variant="neutral" size="sm">выкл</RBadge>
                 <span v-if="q.direction_id">направление #{{ q.direction_id }}</span>
                 <span v-else>все направления</span>
+                <span>лимит: {{ formatLengthRange(q) }}</span>
               </div>
             </div>
             <div class="flex shrink-0 flex-col gap-2 sm:items-end">
@@ -89,6 +114,33 @@
                   <option value="">все</option>
                   <option v-for="d in directions" :key="'pk-' + q.id + d.key" :value="d.key">{{ d.label }}</option>
                 </select>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <label class="flex items-center gap-1 text-[11px] text-gray-500">
+                  мин
+                  <input
+                    type="number"
+                    min="0"
+                    max="100000"
+                    class="w-20 rounded border border-gray-200 px-2 py-1 text-xs"
+                    :value="lengthDraft(q.id, 'min_length', q.min_length)"
+                    placeholder="нет"
+                    @input="(e) => setDraft(q.id, 'min_length', e.target.value)"
+                  />
+                </label>
+                <label class="flex items-center gap-1 text-[11px] text-gray-500">
+                  макс
+                  <input
+                    type="number"
+                    min="0"
+                    max="100000"
+                    class="w-20 rounded border border-gray-200 px-2 py-1 text-xs"
+                    :value="lengthDraft(q.id, 'max_length', q.max_length)"
+                    placeholder="нет"
+                    @input="(e) => setDraft(q.id, 'max_length', e.target.value)"
+                  />
+                </label>
+                <RButton size="sm" variant="outline" @click="saveLengthLimits(q)">Сохранить лимиты</RButton>
               </div>
               <div class="flex flex-wrap gap-2">
                 <RButton size="sm" variant="outline" @click="saveBody(q)">Сохранить текст</RButton>
@@ -123,6 +175,8 @@ const createForm = useForm({
   direction_id: '',
   sort_order: null,
   is_active: true,
+  min_length: null,
+  max_length: null,
 })
 
 function submitCreate() {
@@ -142,6 +196,38 @@ function patchQuestion(id, payload) {
 function saveBody(q) {
   const body = drafts[q.id]?.body ?? q.body
   patchQuestion(q.id, { body })
+}
+
+function lengthDraft(id, key, fallback) {
+  const draftValue = drafts[id]?.[key]
+  if (draftValue !== undefined && draftValue !== null) return draftValue
+  if (fallback === null || fallback === undefined) return ''
+  return fallback
+}
+
+function normalizeLengthInput(raw) {
+  if (raw === '' || raw === null || raw === undefined) return null
+  const n = Number.parseInt(raw, 10)
+  if (!Number.isFinite(n) || n <= 0) return null
+  return n
+}
+
+function saveLengthLimits(q) {
+  const minRaw = drafts[q.id]?.min_length ?? q.min_length ?? ''
+  const maxRaw = drafts[q.id]?.max_length ?? q.max_length ?? ''
+  patchQuestion(q.id, {
+    min_length: normalizeLengthInput(minRaw),
+    max_length: normalizeLengthInput(maxRaw),
+  })
+}
+
+function formatLengthRange(q) {
+  const min = q.min_length
+  const max = q.max_length
+  if (!min && !max) return 'не задан'
+  if (min && max) return `${min}–${max}`
+  if (min) return `от ${min}`
+  return `до ${max}`
 }
 
 function removeQuestion(q) {

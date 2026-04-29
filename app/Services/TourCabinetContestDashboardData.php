@@ -124,6 +124,8 @@ final class TourCabinetContestDashboardData
             'id' => $q->id,
             'body' => $q->body,
             'answer_text' => optional($answers->get($q->id))->answer_text ?? '',
+            'min_length' => $q->min_length,
+            'max_length' => $q->max_length,
         ])->values()->all();
 
         return [
@@ -303,6 +305,8 @@ final class TourCabinetContestDashboardData
                 'task_body' => $config?->task_body ?? '',
                 'response_format' => $format,
                 'from_config' => $config !== null,
+                'text_min_length' => $config?->text_min_length,
+                'text_max_length' => $config?->text_max_length,
             ],
         ];
     }
