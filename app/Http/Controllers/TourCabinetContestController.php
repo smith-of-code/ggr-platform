@@ -13,6 +13,7 @@ use App\Models\TourCabinetContestStage3Config;
 use App\Models\TourCabinetDirectionCity;
 use App\Models\User;
 use App\Services\SettingsService;
+use App\Services\TourCabinetContestStage1FormResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class TourCabinetContestController extends Controller
 {
     public function __construct(
         private readonly SettingsService $settings,
+        private readonly TourCabinetContestStage1FormResolver $stage1FormResolver,
     ) {}
 
     public function show(): RedirectResponse
@@ -437,7 +439,14 @@ class TourCabinetContestController extends Controller
         if ($ids === [] || ! $progress->direction_id) {
             return false;
         }
+
+        $resolved = $this->stage1FormResolver->resolveBatchForDirection((int) $progress->direction_id, $ids);
+
         foreach ($ids as $cityId) {
+            $expectedSlug = $resolved[$cityId] ?? null;
+            if ($expectedSlug === null) {
+                continue;
+            }
             if (! TourCabinetContestCitySubmission::query()
                 ->where('user_id', $userId)
                 ->where('city_id', $cityId)
@@ -597,12 +606,10 @@ class TourCabinetContestController extends Controller
             ->where('city_id', $city->id)
             ->firstOrFail();
 
-        $standard = $this->settings->getTourCabinetContestStage1FormSlugStandard();
-        $moreData = $this->settings->getTourCabinetContestStage1FormSlugMoreData();
-        $slug = $row->needs_more_data ? $moreData : $standard;
+        $slug = $this->stage1FormResolver->resolveForRow($row);
         if (! $slug) {
             return $this->redirectToContestBlock()
-                ->with('error', 'Форма для этого типа городов не настроена: задайте slug в админке (ЛК туров → формы) или в config/tour_cabinet.php / .env.');
+                ->with('info', 'Для этого города анкета не требуется — статус «Заполнено».');
         }
 
         session(['tour_cabinet_contest_form_city_id' => $city->id]);

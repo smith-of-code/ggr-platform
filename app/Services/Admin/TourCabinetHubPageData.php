@@ -7,6 +7,7 @@ use App\Models\Direction;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsForm;
 use App\Models\TourCabinetCommerceCityForm;
+use App\Models\TourCabinetContestCitySubmission;
 use App\Models\TourCabinetContestDirectionSetting;
 use App\Models\TourCabinetContestStage2Question;
 use App\Models\TourCabinetContestStage3Config;
@@ -85,17 +86,43 @@ class TourCabinetHubPageData
             $directionId = $allDirections->first()?->id;
         }
 
-        $rows = TourCabinetDirectionCity::query()
+        $rowModels = TourCabinetDirectionCity::query()
             ->where('direction_id', $directionId)
             ->with('city:id,name,slug,is_active')
             ->orderBy('position')
             ->orderBy('id')
             ->get();
 
-        $usedCityIds = TourCabinetDirectionCity::query()
-            ->where('direction_id', $directionId)
-            ->pluck('city_id')
+        $cityIds = $rowModels->pluck('city_id')->map(fn ($id) => (int) $id)->all();
+        $submissionsCounts = TourCabinetContestCitySubmission::query()
+            ->whereIn('city_id', $cityIds)
+            ->selectRaw('city_id, COUNT(*) as cnt')
+            ->groupBy('city_id')
+            ->pluck('cnt', 'city_id')
+            ->map(fn ($n) => (int) $n)
             ->all();
+
+        $rows = $rowModels->map(function (TourCabinetDirectionCity $row) use ($submissionsCounts): array {
+            $cityId = (int) $row->city_id;
+
+            return [
+                'id' => $row->id,
+                'direction_id' => $row->direction_id,
+                'city_id' => $cityId,
+                'city' => $row->city ? [
+                    'id' => $row->city->id,
+                    'name' => $row->city->name,
+                    'slug' => $row->city->slug,
+                    'is_active' => (bool) $row->city->is_active,
+                ] : null,
+                'needs_more_data' => (bool) $row->needs_more_data,
+                'lms_form_slug' => $row->lms_form_slug,
+                'position' => (int) $row->position,
+                'submissions_count' => $submissionsCounts[$cityId] ?? 0,
+            ];
+        })->values()->all();
+
+        $usedCityIds = $cityIds;
 
         $cityOptions = City::query()
             ->where('is_active', true)
@@ -108,11 +135,23 @@ class TourCabinetHubPageData
             'label' => $d->title,
         ])->values()->all();
 
+        $allFormsOptions = LmsForm::query()
+            ->orderByDesc('updated_at')
+            ->get(['slug', 'title', 'is_active'])
+            ->map(fn (LmsForm $f) => [
+                'slug' => $f->slug,
+                'title' => $f->title,
+                'is_active' => (bool) $f->is_active,
+            ])
+            ->values()
+            ->all();
+
         return [
             'directions' => $directions,
             'directionId' => $directionId,
             'rows' => $rows,
             'cityOptions' => $cityOptions,
+            'allFormsOptions' => $allFormsOptions,
         ];
     }
 
