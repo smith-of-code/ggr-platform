@@ -7,7 +7,7 @@ server {
     root /var/www/public;
     
     # Max request body size (applies to ALL locations, including PHP-FPM)
-    client_max_body_size 100M;
+    client_max_body_size 256M;
     
     location ~ \.php$ {
         try_files $uri =404;
