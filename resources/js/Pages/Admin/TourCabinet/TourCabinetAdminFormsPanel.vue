@@ -17,6 +17,40 @@
       </Link>
     </div>
 
+    <RCard class="mb-8" elevation="raised">
+      <h2 class="text-lg font-semibold text-gray-900">Дашборд: Стандартная анкета</h2>
+      <p class="mt-2 text-sm text-gray-600">
+        Отдельный блок выше блока «Конкурс» в ЛК туров. Кнопка «Заполнить» открывает выбранную форму.
+        Можно привязать <strong>любую активную</strong> форму платформы — без ограничения по событию.
+      </p>
+      <form class="mt-6 space-y-5" @submit.prevent="submitDashboardStandardForm">
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <SearchSelect
+              :model-value="dashboardForm.dashboard_standard_form_slug || null"
+              label="Форма для блока «Стандартная анкета»"
+              :options="allFormsSelectOptions"
+              value-key="slug"
+              label-key="label"
+              placeholder="Выберите форму"
+              clear-label="— (блок скрыт)"
+              :searchable="allFormsSelectOptions.length > 5"
+              :error="dashboardForm.errors.dashboard_standard_form_slug || ''"
+              @update:model-value="(v) => { dashboardForm.dashboard_standard_form_slug = v ?? '' }"
+            />
+            <p class="mt-2 text-xs text-gray-500">
+              Если значение не выбрано — блок «Стандартная анкета» в ЛК клиента не отображается.
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <RButton type="submit" variant="primary" :loading="dashboardForm.processing" :disabled="dashboardForm.processing">
+            Сохранить
+          </RButton>
+        </div>
+      </form>
+    </RCard>
+
     <RCard v-if="lmsEvent" class="mb-8" elevation="raised">
       <h2 class="text-lg font-semibold text-gray-900">Конкурс, этап 1 — какие формы открывать</h2>
       <form class="mt-6 space-y-5" @submit.prevent="submitSlugs">
@@ -139,6 +173,8 @@ const props = defineProps({
     default: () => ({ standard: '', more_data: '' }),
   },
   formOptions: { type: Array, default: () => [] },
+  dashboardStandardFormSlug: { type: String, default: '' },
+  allFormsOptions: { type: Array, default: () => [] },
 })
 
 const formSelectOptions = computed(() =>
@@ -148,9 +184,22 @@ const formSelectOptions = computed(() =>
   })),
 )
 
+const allFormsSelectOptions = computed(() =>
+  props.allFormsOptions
+    .filter((opt) => opt.is_active)
+    .map((opt) => ({
+      slug: opt.slug,
+      label: `${opt.title} (${opt.slug})`,
+    })),
+)
+
 const slugForm = useForm({
   contest_stage1_form_slug_standard: props.contestFormSlugOverrides.standard ?? '',
   contest_stage1_form_slug_more_data: props.contestFormSlugOverrides.more_data ?? '',
+})
+
+const dashboardForm = useForm({
+  dashboard_standard_form_slug: props.dashboardStandardFormSlug ?? '',
 })
 
 watch(
@@ -162,7 +211,18 @@ watch(
   { deep: true },
 )
 
+watch(
+  () => props.dashboardStandardFormSlug,
+  (v) => {
+    dashboardForm.dashboard_standard_form_slug = v ?? ''
+  },
+)
+
 function submitSlugs() {
   slugForm.put(sameOriginHref(route('admin.tour-cabinet.forms.contest-form-slugs.update', {}, false)), { preserveScroll: true })
+}
+
+function submitDashboardStandardForm() {
+  dashboardForm.put(sameOriginHref(route('admin.tour-cabinet.dashboard-form.update', {}, false)), { preserveScroll: true })
 }
 </script>

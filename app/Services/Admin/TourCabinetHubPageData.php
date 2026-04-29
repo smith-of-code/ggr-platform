@@ -41,6 +41,10 @@ class TourCabinetHubPageData
 
         $raw = $this->settings->getGroupFresh(self::SETTINGS_GROUP);
 
+        $allForms = LmsForm::query()
+            ->orderByDesc('updated_at')
+            ->get(['id', 'slug', 'title', 'is_active']);
+
         return [
             'lmsEvent' => $event?->only(['id', 'slug', 'title']),
             'forms' => $forms,
@@ -49,7 +53,13 @@ class TourCabinetHubPageData
                 'standard' => (string) ($raw['contest_stage1_form_slug_standard'] ?? ''),
                 'more_data' => (string) ($raw['contest_stage1_form_slug_more_data'] ?? ''),
             ],
+            'dashboardStandardFormSlug' => (string) ($raw['dashboard_standard_form_slug'] ?? ''),
             'formOptions' => $forms->map(fn (LmsForm $f) => [
+                'slug' => $f->slug,
+                'title' => $f->title,
+                'is_active' => (bool) $f->is_active,
+            ])->values()->all(),
+            'allFormsOptions' => $allForms->map(fn (LmsForm $f) => [
                 'slug' => $f->slug,
                 'title' => $f->title,
                 'is_active' => (bool) $f->is_active,

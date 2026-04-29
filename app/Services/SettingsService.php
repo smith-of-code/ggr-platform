@@ -102,6 +102,16 @@ class SettingsService
     }
 
     /**
+     * Slug отдельной «стандартной анкеты» дашборда ЛК туров: сначала БД (группа tour_cabinet),
+     * иначе config/tour_cabinet.php (`dashboard_standard_form_slug`).
+     * Любая LmsForm платформы; не обязан совпадать с slug этапа 1.
+     */
+    public function getTourCabinetDashboardStandardFormSlug(): ?string
+    {
+        return $this->resolveTourCabinetContestFormSlug('dashboard_standard_form_slug');
+    }
+
+    /**
      * Общие сроки этапов конкурса в ЛК туров (даты Y-m-d или null).
      *
      * @return array<int, array{start: ?string, end: ?string}>

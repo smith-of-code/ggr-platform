@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Application;
 use App\Models\Consent;
 use App\Models\Favorite;
+use App\Models\Lms\LmsForm;
+use App\Models\Lms\LmsFormSubmission;
 use App\Models\TourCabinetDocument;
 use App\Models\User;
 use App\Services\ConsentService;
+use App\Services\SettingsService;
 use App\Services\TourCabinetContestDashboardData;
 use App\Support\PostAuthRedirect;
 use Illuminate\Auth\Events\Registered;
@@ -124,8 +127,11 @@ class TourCabinetController extends Controller
         ]);
     }
 
-    public function dashboard(Request $request, TourCabinetContestDashboardData $contestDashboardData): Response
-    {
+    public function dashboard(
+        Request $request,
+        TourCabinetContestDashboardData $contestDashboardData,
+        SettingsService $settings,
+    ): Response {
         $user = $request->user();
 
         $composed = trim(implode(' ', array_filter(
@@ -153,11 +159,14 @@ class TourCabinetController extends Controller
                 ->all();
         }
 
+        $dashboardStandardForm = $this->dashboardStandardFormForUser($settings, $user);
+
         return Inertia::render('TourCabinet/Dashboard', [
             ...$contestDashboardData->forUser($user),
             'tourApplications' => $this->tourApplicationsForUser($user),
             'favorites' => $favorites,
             'profileDocuments' => $profileDocuments,
+            'dashboardStandardForm' => $dashboardStandardForm,
             'profile' => [
                 'user_id' => $user->id,
                 'display_name' => $composed !== '' ? $composed : (string) ($user->name ?: 'Участник'),
@@ -354,6 +363,40 @@ class TourCabinetController extends Controller
         $disk = config('filesystems.upload_disk', 'public');
 
         return Storage::disk($disk)->url($user->avatar_path);
+    }
+
+    /**
+     * Резолвит проп `dashboardStandardForm` для дашборда ЛК туров.
+     * Возвращает массив `{slug, title, submitted}` или null, если slug не настроен/форма неактивна/удалена.
+     *
+     * @return array{slug: string, title: string, submitted: bool}|null
+     */
+    private function dashboardStandardFormForUser(SettingsService $settings, User $user): ?array
+    {
+        $slug = $settings->getTourCabinetDashboardStandardFormSlug();
+        if (! is_string($slug) || trim($slug) === '') {
+            return null;
+        }
+
+        $form = LmsForm::query()
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $form) {
+            return null;
+        }
+
+        $submitted = LmsFormSubmission::query()
+            ->where('lms_form_id', $form->id)
+            ->where('user_id', $user->id)
+            ->exists();
+
+        return [
+            'slug' => (string) $form->slug,
+            'title' => (string) $form->title,
+            'submitted' => $submitted,
+        ];
     }
 
     /**

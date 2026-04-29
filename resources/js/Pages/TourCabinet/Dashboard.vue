@@ -312,6 +312,52 @@
         </div>
       </section>
 
+      <section
+        v-if="dashboardStandardForm"
+        id="tour-cabinet-standard-form"
+        class="mt-10 scroll-mt-8"
+      >
+        <div
+          class="overflow-hidden rounded-2xl border-2 border-rosatom-200 bg-gradient-to-r from-rosatom-50 via-white to-amber-50 shadow-sm ring-1 ring-rosatom-600/10"
+        >
+          <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-rosatom-700 shadow-sm ring-1 ring-rosatom-200">
+              <IdentificationIcon class="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-semibold uppercase tracking-wider text-rosatom-700">
+                Стандартная анкета
+              </p>
+              <h2 class="mt-1 text-base font-bold text-slate-900 sm:text-lg">
+                {{ dashboardStandardForm.title }}
+              </h2>
+            </div>
+            <div class="flex shrink-0 items-center gap-2 sm:ml-auto">
+              <span
+                v-if="dashboardStandardForm.submitted"
+                class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-600/20"
+              >
+                <CheckCircleIcon class="h-4 w-4" aria-hidden="true" />
+                Отправлено
+              </span>
+              <a
+                v-else
+                :href="route('forms.public.show', dashboardStandardForm.slug)"
+                class="inline-flex items-center justify-center rounded-xl bg-rosatom-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rosatom-700 focus:outline-none focus:ring-2 focus:ring-rosatom-500 focus:ring-offset-2"
+              >
+                Заполнить
+              </a>
+            </div>
+          </div>
+          <div
+            v-if="!dashboardStandardForm.submitted"
+            class="border-t-2 border-amber-300 bg-amber-100/80 px-5 py-3 text-sm font-semibold text-amber-900 sm:px-6"
+          >
+            Заполните, пожалуйста, стандартную анкету — это занимает несколько минут и нужно для дальнейшего участия.
+          </div>
+        </div>
+      </section>
+
       <section id="tour-cabinet-contest" class="mt-10 scroll-mt-8 space-y-10">
         <div v-if="showContestLocationOffers">
           <h2 class="text-base font-bold lowercase leading-snug text-gray-900">
@@ -438,7 +484,9 @@ import {
   ArrowUpTrayIcon,
   CalendarDaysIcon,
   ChatBubbleLeftRightIcon,
+  CheckCircleIcon,
   ClipboardDocumentListIcon,
+  IdentificationIcon,
   UserCircleIcon,
 } from '@heroicons/vue/24/outline'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -488,6 +536,10 @@ const props = defineProps({
   profileDocuments: {
     type: Array,
     default: () => [],
+  },
+  dashboardStandardForm: {
+    type: Object,
+    default: null,
   },
 })
 

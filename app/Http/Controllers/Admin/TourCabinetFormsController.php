@@ -75,6 +75,44 @@ class TourCabinetFormsController extends Controller
             ->with('success', 'Slug форм конкурса (этап 1) сохранены.');
     }
 
+    /**
+     * Сохранение slug «Стандартной анкеты» отдельного блока на дашборде ЛК туров.
+     * Допустима любая активная форма платформы (без фильтра по lms_event_id).
+     * Пустое значение очищает настройку (блок на дашборде скрыт).
+     */
+    public function updateDashboardStandardFormSlug(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'dashboard_standard_form_slug' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $slug = isset($validated['dashboard_standard_form_slug'])
+            ? trim((string) $validated['dashboard_standard_form_slug'])
+            : '';
+
+        if ($slug !== '') {
+            $exists = LmsForm::query()
+                ->where('slug', $slug)
+                ->where('is_active', true)
+                ->exists();
+
+            if (! $exists) {
+                throw ValidationException::withMessages([
+                    'dashboard_standard_form_slug' => 'Выберите активную форму из списка или оставьте пустым.',
+                ]);
+            }
+        }
+
+        $this->settings->setGroup(self::SETTINGS_GROUP, [
+            'dashboard_standard_form_slug' => $slug,
+        ]);
+
+        return redirect()
+            ->route('admin.tour-cabinet.index')
+            ->withFragment('tour-cabinet-admin-forms')
+            ->with('success', 'Стандартная анкета дашборда сохранена.');
+    }
+
     public function updateContestStageDeadlines(Request $request): RedirectResponse
     {
         $merged = $request->all();

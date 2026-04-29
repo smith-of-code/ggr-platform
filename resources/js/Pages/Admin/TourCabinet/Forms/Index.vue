@@ -31,6 +31,8 @@
         :config-slug="configSlug"
         :contest-form-slug-overrides="contestFormSlugOverrides"
         :form-options="formOptions"
+        :dashboard-standard-form-slug="dashboardStandardFormSlug"
+        :all-forms-options="allFormsOptions"
       />
     </div>
   </AdminLayout>
@@ -52,5 +54,7 @@ defineProps({
     default: () => ({ standard: '', more_data: '' }),
   },
   formOptions: { type: Array, default: () => [] },
+  dashboardStandardFormSlug: { type: String, default: '' },
+  allFormsOptions: { type: Array, default: () => [] },
 })
 </script>
