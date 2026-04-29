@@ -328,6 +328,12 @@ final class TourCabinetContestDashboardData
             return true;
         }
         $st = (int) $progress->current_stage;
+        // Этап 2 заблокирован, пока участник не завершил Этап 1
+        // (нажатие «Перейти к этапу 2» переводит current_stage в 2; до этого момента
+        // даже клик по вкладке «Этап II» не должен открывать форму ответов).
+        if ($st < 2) {
+            return true;
+        }
         if ($st > 2) {
             return true;
         }

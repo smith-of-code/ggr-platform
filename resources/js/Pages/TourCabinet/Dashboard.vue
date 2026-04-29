@@ -631,12 +631,14 @@
                   :city-name="commerceToursCityName"
                   :tour-name="commerceToursTourName"
                   :has-city-form="commerceTours.hasCityForm"
-                  :locked="commerceToursLocked"
+                  :current-stage="Number(commerceTours.currentStage ?? 1)"
+                  :locked="commerceToursStage2Locked"
                 />
                 <CommerceToursStage3Panel
                   v-else
                   :subject="commerceTours.stage3?.subject || ''"
                   :body="commerceTours.stage3?.body || ''"
+                  :locked="commerceToursStage3Locked"
                 />
               </div>
             </div>
@@ -729,6 +731,7 @@ const props = defineProps({
       availableCities: [],
       availableTours: [],
       hasCityForm: false,
+      stage2Locked: true,
       stage3: { subject: '', body: '' },
     }),
   },
@@ -922,6 +925,23 @@ const contestStage3LockNotice = computed(() => {
 const contestStage3Locked = computed(() => contestStage3LockNotice.value !== null)
 
 const commerceToursLocked = computed(() => Number(props.commerceTours?.currentStage ?? 1) >= 3)
+
+// Этап 2 заблокирован, пока участник не нажал «Перейти к этапу 2 →»
+// (фолбэк на старый payload без поля `stage2Locked`: в этом случае вычисляем локально
+// по `currentStage` — Этап 2 открыт только в окне `current_stage === 2`).
+const commerceToursStage2Locked = computed(() => {
+  const payloadFlag = props.commerceTours?.stage2Locked
+  if (typeof payloadFlag === 'boolean') {
+    return payloadFlag
+  }
+  const stage = Number(props.commerceTours?.currentStage ?? 1)
+  return !Number.isFinite(stage) || stage < 2 || stage >= 3
+})
+
+const commerceToursStage3Locked = computed(() => {
+  const stage = Number(props.commerceTours?.currentStage ?? 1)
+  return !Number.isFinite(stage) || stage < 3
+})
 
 const activeCommerceTab = ref(Math.min(Math.max(Number(props.commerceTours?.currentStage ?? 1), 1), 3))
 

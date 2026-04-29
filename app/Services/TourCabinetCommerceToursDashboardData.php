@@ -26,6 +26,7 @@ class TourCabinetCommerceToursDashboardData
      *   availableCities: array<int, array{id:int, name:string}>,
      *   availableTours: array<int, array{id:int, title:string}>,
      *   hasCityForm: bool,
+     *   stage2Locked: bool,
      *   stage3: array{subject:string, body:string}
      * }
      */
@@ -63,19 +64,33 @@ class TourCabinetCommerceToursDashboardData
         $hasCityForm = $cityId !== null
             && TourCabinetCommerceCityForm::query()->where('city_id', $cityId)->exists();
 
+        $clampedStage = max(1, min(3, $currentStage));
+
         return [
             'enabled' => (bool) $stage3['enabled'],
-            'currentStage' => max(1, min(3, $currentStage)),
+            'currentStage' => $clampedStage,
             'cityId' => $cityId,
             'tourId' => $tourId,
             'completedAt' => $progress?->completed_at?->toIso8601String(),
             'availableCities' => $availableCities,
             'availableTours' => $availableTours,
             'hasCityForm' => $hasCityForm,
+            'stage2Locked' => $this->isStage2LockedForParticipant($clampedStage),
             'stage3' => [
                 'subject' => (string) $stage3['subject'],
                 'body' => (string) $stage3['body'],
             ],
         ];
+    }
+
+    /**
+     * Этап 2 («Анкета доп. данных») доступен участнику только в окне `current_stage === 2`.
+     * При `current_stage = 1` пользователь ещё не нажал «Перейти к этапу 2 →» (метод
+     * `TourCabinetCommerceToursController::completeStage1`); при `current_stage >= 3` анкета
+     * уже отправлена и блок переходит в режим только-просмотра ожидания обратной связи.
+     */
+    private function isStage2LockedForParticipant(int $currentStage): bool
+    {
+        return $currentStage < 2 || $currentStage >= 3;
     }
 }
