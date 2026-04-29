@@ -4,6 +4,8 @@
 
 Перенести привязку формы **Этапа 1** конкурса с пары «направление → флаг `needs_more_data`» на **конкретный город направления**: для каждой строки `tour_cabinet_direction_cities` админ может выбрать отдельную `LmsForm` (или не выбирать ничего). Если форма у города не задана — на ЛК участника город получает автоматический статус «Заполнено», без открытия анкеты. Поведение Этапа 2 / Этапа 3 не меняется.
 
+> **Update 2026-04-29 (drop-fallback):** глобальный fallback (`contest_stage1_form_slug_standard` / `more_data`) и админ-блок «Конкурс, этап 1 — какие формы открывать» полностью удалены. Источник формы — только колонка `lms_form_slug` строки `tour_cabinet_direction_cities`. Пустой `lms_form_slug` всегда означает «без формы → автозавершение в ЛК», вне зависимости от значений в `settings`/`config`.
+
 Связанные фичи: `tour-cabinet`, `lk-participant-contests`.
 
 ## In-scope
@@ -14,11 +16,12 @@
 - Миграция sqlite-совместимая (`Schema::table(...)->addColumn(...)`), без `dropColumn` старых полей. Существующие колонки (`needs_more_data`, `position`, FK `direction_id`/`city_id`) **не меняются**.
 - Backwards-compatibility данных: миграция оставляет `lms_form_slug = NULL` у всех существующих строк → продолжают работать через текущий глобальный fallback (см. ниже).
 
-### Источник формы для города (приоритет, сверху вниз)
+### Источник формы для города
 
-1. `tour_cabinet_direction_cities.lms_form_slug` для пары `(direction_id, city_id)` — если строка непустая.
-2. Глобальный slug из `settings` (группа `tour_cabinet`, ключи `contest_stage1_form_slug_standard` / `contest_stage1_form_slug_more_data`) с выбором по `needs_more_data` — **legacy fallback** для совместимости со старыми городами и для сценария «временно одна форма на всё направление».
-3. Если оба пусто → формы у города нет → автостатус «Заполнено» в ЛК.
+- Единственный источник: `tour_cabinet_direction_cities.lms_form_slug` для пары `(direction_id, city_id)`.
+- Если строка непустая → используется эта `LmsForm`.
+- Если пусто (`null` / пустая строка) → формы у города нет → автостатус «Заполнено» в ЛК.
+- Глобальный fallback из `settings` / `config` **не используется** (удалён 2026-04-29).
 
 ### Админка `/admin/tour-cabinet`
 
@@ -26,8 +29,8 @@
   - В форме добавления города — селект «Форма этапа 1 (опционально)» из любых активных `LmsForm` (поле `allFormsOptions`, как у блока «Стандартная анкета»). Пустое значение = не задано.
   - В строке существующего города — inline-селект формы рядом с текущим чекбоксом `needs_more_data` и полем `position`. Сохранение через существующий `PATCH admin.tour-cabinet.direction-cities.update`.
   - При смене / снятии формы у города, **на котором уже есть отправленные сабмиты участников** (`tour_cabinet_contest_city_submissions`), показываем флаш-сообщение / `window.confirm`: «У города N сабмитов от участников. Старые ответы останутся, новые участники получат новую форму». Никаких автоматических действий с существующими `tour_cabinet_contest_progress` или `tour_cabinet_contest_city_submissions`.
-  - Чекбокс «Нужно больше данных» (`needs_more_data`) **остаётся отдельной независимой настройкой** — управляет только бейджем «Необходимо заполнение дополнительных персональных данных» в ЛК и используется глобальным fallback для выбора формы (см. приоритет выше).
-- Блок «Конкурс, этап 1» (`TourCabinetAdminFormsPanel.vue` + `Admin\TourCabinetFormsController::updateContestFormSlugs`) **остаётся** в админке — это глобальный fallback. Над ним короткая подпись: «Используется только если у города в направлении не задана своя форма».
+  - Чекбокс «Нужно больше данных» (`needs_more_data`) **остаётся отдельной независимой настройкой** — управляет только бейджем «Необходимо заполнение дополнительных персональных данных» в ЛК; на выбор формы больше не влияет.
+- Блок «Конкурс, этап 1 — какие формы открывать» (`TourCabinetAdminFormsPanel.vue` + `Admin\TourCabinetFormsController::updateContestFormSlugs`) **полностью удалён** из админки (UI, контроллер-метод, роут `admin.tour-cabinet.forms.contest-form-slugs.update`). Сами getter-ы `getTourCabinetContestStage1FormSlug*` в `SettingsService` остаются как dead-friendly код, но не вызываются.
 
 ### Бэкенд
 
@@ -36,10 +39,10 @@
   - Правило для `lms_form_slug`: `nullable|string|max:191` + проверка существования среди активных `LmsForm` (`exists:lms_forms,slug` + `where('is_active', true)`); пустая строка нормализуется в `null`.
   - При `update` — если новое значение отличается от старого и для города существуют сабмиты в `tour_cabinet_contest_city_submissions`, redirect возвращает в hub дополнительный `with('warning', '…')` вместо `success`.
   - При `destroy` строки direction-city (полное удаление города из направления) — поведение не меняется (старые сабмиты остаются, ссылка на удалённую форму больше не используется).
-- `Services\TourCabinetContestFormLinker::tryLinkAfterSubmission` — расширить логику резолва ожидаемого slug:
-  - Сначала пробовать `row->lms_form_slug` (если непустой).
-  - Иначе — текущий приоритет (`row->needs_more_data ? more_data : standard` из глобальных settings).
-  - Список «допустимых» форм для гарда `in_array($form->slug, $allowed)` строится из объединения двух глобальных slug + всех `lms_form_slug` непустых строк `tour_cabinet_direction_cities` (а в идеале — только из `lms_form_slug` конкретного `cityId` из сессии + global fallback). MVP: проверяем именно `expectedSlug === $form->slug`, без отдельного множества «всех slug».
+- `Services\TourCabinetContestFormLinker::tryLinkAfterSubmission` — резолв ожидаемого slug:
+  - Только `row->lms_form_slug` (через резолвер `resolveForRow`).
+  - Если резолвер вернул `null` → линкер не создаёт `TourCabinetContestCitySubmission` (для города без формы submissions не нужны: статус «Заполнено» вычисляется по `auto_completed`).
+  - Гард `expectedSlug === $form->slug` остаётся.
 - `App\Http\Controllers\TourCabinetContestController::startCityForm` — резолв slug по той же иерархии (per-row → global fallback).
 - `App\Http\Controllers\TourCabinetContestController::completeStage1` (метод `stage1Complete` в контроллере и `Services\TourCabinetContestDashboardData::stage1Complete`):
   - Город считается «выполненным», если **либо** его `resolvedFormSlug === null` (нет формы) — автозавершение, **либо** существует `tour_cabinet_contest_city_submissions` для пары `(user_id, city_id)`.
@@ -68,7 +71,7 @@
 - Изменение Этапов 2 и 3, моделей `TourCabinetContestStage2*`, `TourCabinetContestStage3Config`, обновлений в e-mail-уведомлении о завершении конкурса.
 - Множественность форм на один город (одна `lms_form_slug` на строку `tour_cabinet_direction_cities`).
 - Удаление таблицы `tour_cabinet_contest_city_submissions` или миграция её на «ноль сабмитов для городов без формы» — мы просто не создаём для них записи; UI считает по `auto_completed`.
-- Удаление полей `contest_stage1_form_slug_standard` / `contest_stage1_form_slug_more_data` из `settings` / `config/tour_cabinet.php` / админ-формы — оставляем как fallback (решение пользователя `keep_as_fallback`).
+- Удаление getter-ов `getTourCabinetContestStage1FormSlug*` из `SettingsService` и ключей из `config/tour_cabinet.php` — оставляем (dead-friendly, могут пригодиться позже). UI блока в админке и роут — удалены (см. update 2026-04-29).
 - Принудительный сброс выбора городов / `tour_cabinet_contest_progress` для in-flight участников при раскатке (решение пользователя `force_resubmit` интерпретируется как «без авто-сброса; админ может вручную править данные при необходимости»; реальный сброс должен делаться отдельной админ-кнопкой — отдельная фича).
 - Кастомизация текста «Стандартная анкета» / «Необходимо заполнение …» из админки — формулировки зашиты в шаблон.
 
@@ -89,25 +92,32 @@
 
 - БД: миграция `2026_04_29_190000_add_lms_form_slug_to_tour_cabinet_direction_cities.php` добавляет `string('lms_form_slug', 191)->nullable()->after('needs_more_data')` в `tour_cabinet_direction_cities`. Существующие колонки (`direction_id`, `city_id`, `needs_more_data`, `position`) не тронуты.
 - Модель `App\Models\TourCabinetDirectionCity` — `$fillable` пополнен `lms_form_slug`. Cast не нужен (строка / null).
-- Резолвер: новый сервис `App\Services\TourCabinetContestStage1FormResolver`:
-  - `resolveForRow(TourCabinetDirectionCity): ?string` — возвращает `row->lms_form_slug` (если непустой), иначе глобальный `getTourCabinetContestStage1FormSlugMoreData|Standard()` (по `needs_more_data`), иначе `null`.
-  - `resolveBatchForDirection(int $directionId, list<int> $cityIds): array<int, ?string>` — пакетный запрос для дашборда.
-- `TourCabinetContestFormLinker::tryLinkAfterSubmission` — ожидаемый slug берётся из `resolver->resolveForRow($row)`; локальная логика `needs_more_data ? more_data : standard` удалена; гард `in_array($form->slug, $allowed)` тоже снят (достаточно равенства `expectedSlug === $form->slug`).
+- Резолвер: сервис `App\Services\TourCabinetContestStage1FormResolver`:
+  - `resolveForRow(TourCabinetDirectionCity): ?string` — возвращает `trim($row->lms_form_slug)` (если непустой), иначе `null`. Глобальный fallback **не вызывается** (drop-fallback 2026-04-29).
+  - `resolveBatchForDirection(int $directionId, list<int> $cityIds): array<int, ?string>` — пакетный запрос для дашборда (та же логика — только per-row).
+- `TourCabinetContestFormLinker::tryLinkAfterSubmission` — ожидаемый slug берётся из `resolver->resolveForRow($row)`; гард `expectedSlug === $form->slug`.
 - Админ-бэкенд:
   - `Admin\TourCabinetDirectionCitiesController::store|update` — правило `lms_form_slug: nullable|string|max:191` + хелпер `normalizeAndValidateFormSlug` (пустая строка → `null`, иначе проверка существования активной `LmsForm`). При изменении формы у города с `submissions_count > 0` — flash `success` с префиксом «Внимание:» и количеством сабмитов.
   - `Admin\TourCabinetHubPageData::directionCitiesPayload` — `rows[]` теперь массив явных ключей (`id`, `direction_id`, `city_id`, `city`, `needs_more_data`, `lms_form_slug`, `position`, `submissions_count`); добавлен ключ `allFormsOptions` (любая `LmsForm` платформы — slug, title, is_active).
+  - `Admin\TourCabinetHubPageData::formsPayload` — ключ `contestFormSlugOverrides` удалён (drop-fallback). `formOptions` (формы события `tour_cabinet.lms_event_slug`) удалён, остаётся только `allFormsOptions`, который нужен «Стандартной анкете» дашборда.
+  - `Admin\TourCabinetFormsController::updateContestFormSlugs` — метод удалён, роут `admin.tour-cabinet.forms.contest-form-slugs.update` снят с `routes/web.php`.
 - Админ-фронт:
-  - `Admin/TourCabinet/TourCabinetAdminDirectionCitiesPanel.vue` — новый prop `allFormsOptions`. В форме добавления города — отдельный `<select>` «Форма Этапа 1 (опционально)» с опцией «— Без формы (автозавершение) —». В таблице — отдельная колонка с inline `<select>` по `row.lms_form_slug`; при наличии `submissions_count > 0` показывается надпись «N сабмит(ов) от участников» и `window.confirm` перед сменой/снятием формы. Чекбокс `needs_more_data` остаётся отдельным управлением.
+  - `Admin/TourCabinet/TourCabinetAdminDirectionCitiesPanel.vue` — prop `allFormsOptions`. В форме добавления города — отдельный `<select>` «Форма Этапа 1 (опционально)» с опцией «— Без формы (автозавершение) —». В таблице — отдельная колонка с inline `<select>` по `row.lms_form_slug`; при наличии `submissions_count > 0` показывается надпись «N сабмит(ов) от участников» и `window.confirm` перед сменой/снятием формы. Чекбокс `needs_more_data` остаётся отдельным управлением. Подсказка под таблицей — без упоминания глобального fallback («Если форма не задана — у города в ЛК автоматически статус "Заполнено"»).
   - `Admin/TourCabinet/DirectionCities/Index.vue` — явно пробрасывает проп `:all-forms-options="allFormsOptions"`. `Hub.vue` — без правок (`v-bind="directionCitiesSection"` подхватывает новый ключ payload автоматически).
+  - `Admin/TourCabinet/TourCabinetAdminFormsPanel.vue` — RCard «Конкурс, этап 1 — какие формы открывать» удалена; пропсы `contestFormSlugOverrides`, `formOptions` сняты; computed `formSelectOptions`, `useForm slugForm`, watch и `submitSlugs` — удалены. Остальные секции («Дашборд: Стандартная анкета», «Уведомление о завершении конкурса», список форм) — без изменений.
+  - `Admin/TourCabinet/Forms/Index.vue` — пропсы `contestFormSlugOverrides`, `formOptions` и их проброс в панель удалены.
 - Пользовательский бэкенд:
   - `TourCabinetContestController::__construct` принимает `TourCabinetContestStage1FormResolver`. `startCityForm` резолвит slug через сервис; при `null` — flash `info` «Для этого города анкета не требуется» и редирект на `#tour-cabinet-contest`. `stage1Complete` использует `resolveBatchForDirection` (города без формы пропускаются как уже выполненные).
-  - `Services\TourCabinetContestDashboardData::__construct` принимает резолвер. В `cities[*]` (для шага «cities») добавлен `has_form`. В `selectedCitiesForForms[*]`: `form_slug` через резолвер, новый ключ `auto_completed = (form_slug === null && ! submitted)`. Приватный `stage1Complete` зеркалит логику контроллера через резолвер.
+  - `Services\TourCabinetContestDashboardData::__construct` принимает резолвер. В `cities[*]` (для шага «cities») добавлен `has_form`. В `selectedCitiesForForms[*]`: `form_slug` через резолвер, новый ключ `auto_completed = (form_slug === null && ! submitted)`. Приватный `stage1Complete` зеркалит логику контроллера через резолвер. Ключ `formSlugsConfigured` из payload `contestStage1` удалён (drop-fallback).
 - Пользовательский фронт `TourCabinet/Contest/ContestStage1Panel.vue`:
   - Бейдж «Заполнено» (зелёный) при `auto_completed`; «Отправлено» при `submitted`; кнопка «Заполнить анкету» иначе. Кнопка «Убрать город» доступна только при `!submitted && !auto_completed` (логично: автозавершённый город можно убрать через смену выбора, но не через явное удаление при `auto_completed=true` — там просто бейдж).
-  - Условие «Перейти к этапу 2» упрощено до `stage1Complete && maxContestStages >= 2` (старое требование `formSlugsConfigured.standard && more_data` снято).
-  - Заглушка про «задайте оба slug в админке» заменена на условную плашку через computed `hasUnconfiguredCity` (показывается только если у одного из выбранных городов: ни своей формы, ни глобального fallback, ни сабмита — то есть админ просто не настроил форму).
+  - Условие «Перейти к этапу 2» — `stage1Complete && maxContestStages >= 2`.
+  - Условная плашка через computed `hasUnconfiguredCity` — показывается, если у одного из выбранных городов: нет своей формы, нет сабмита и нет автозавершения. На практике после drop-fallback `auto_completed` совпадает с «нет формы», поэтому плашка фактически не показывается; оставлена защитно.
+  - Prop `formSlugsConfigured` удалён (drop-fallback).
 
 ## Verify summary
+
+### Исходный rollout (2026-04-29 первая итерация)
 
 - `php artisan migrate` (Docker) — `2026_04_29_190000_… DONE 5.33ms`.
 - php-однострочник (`Schema::hasColumn`): `lms_form_slug` присутствует.
@@ -120,6 +130,23 @@
 - `npm run build` (Docker) — `built in 5.54s`, без ошибок.
 - `ReadLints` по 11 затронутым файлам (PHP + Vue + миграция) — чисто.
 
+### Drop-fallback rollout (2026-04-29 вторая итерация)
+
+- php-однострочник `TourCabinetContestStage1FormResolver::resolveForRow` — 4 кейса:
+  1. `slug=NULL, needs_more_data=false` → `NULL`.
+  2. `slug="", needs_more_data=false` → `NULL`.
+  3. `slug=NULL, needs_more_data=true` → `NULL` (глобал не вызывается).
+  4. `slug='explicit-slug', needs_more_data=true` → `'explicit-slug'`.
+- php-однострочник: даже с `settings.contest_stage1_form_slug_standard='legacy-standard'` и `..._more_data='legacy-more'` резолвер для `lms_form_slug=NULL` возвращает `NULL` (fallback не используется).
+- php-однострочник `TourCabinetContestDashboardData::forUser` для tour-cabinet user — `contestStage1` payload содержит ключи `step, progress, directions, cities, selectedCitiesForForms, stage1Complete`; `formSlugsConfigured` отсутствует.
+- php-однострочник `Admin\TourCabinetHubPageData::formsPayload` — payload содержит `lmsEvent, forms, configSlug, dashboardStandardFormSlug, contestCompletionNotification, allFormsOptions`; `contestFormSlugOverrides` и `formOptions` отсутствуют.
+- `php artisan route:list --path=admin/tour-cabinet` — `Showing [43] routes`, роут `admin.tour-cabinet.forms.contest-form-slugs.update` отсутствует, `admin.tour-cabinet.forms.index` (страница «Стандартная анкета» / уведомление / список форм) — на месте.
+- `npm run build` (Docker) — `built in 5.76s`, без ошибок.
+- `ReadLints` по 12 файлам (PHP + Vue + 3 spec) — чисто.
+
 ## Open questions
 
-(пусто — все ключевые вопросы зафиксированы через `AskQuestion` 2026-04-29: `needs_more_data_semantics=independent`, `global_slugs_fate=keep_as_fallback`, `in_flight_users=force_resubmit (интерпретировано как no-op при раскатке)`, `form_change_after_submit=allow_warn`, `form_options_scope=all_forms`).
+(пусто — ключевые вопросы зафиксированы через `AskQuestion`:
+- 2026-04-29 (исходные): `needs_more_data_semantics=independent`, `global_slugs_fate=keep_as_fallback`, `in_flight_users=force_resubmit (интерпретировано как no-op при раскатке)`, `form_change_after_submit=allow_warn`, `form_options_scope=all_forms`.
+- 2026-04-29 (drop-fallback): `fallback_strategy=drop_fallback_clean` — fallback в резолвере отключён, любой `lms_form_slug=NULL` → автозавершение; `global_block_visible=hide_completely` — UI блока «Конкурс, этап 1» полностью удалён, роут снят.
+)

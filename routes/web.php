@@ -237,7 +237,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::patch('/tour-cabinet/support/{ticket}/status', [AdminTourCabinetSupportController::class, 'updateStatus'])->name('tour-cabinet.support.status.update');
 
     Route::get('/tour-cabinet/forms', [AdminTourCabinetFormsController::class, 'index'])->name('tour-cabinet.forms.index');
-    Route::put('/tour-cabinet/forms/contest-form-slugs', [AdminTourCabinetFormsController::class, 'updateContestFormSlugs'])->name('tour-cabinet.forms.contest-form-slugs.update');
     Route::put('/tour-cabinet/dashboard-form', [AdminTourCabinetFormsController::class, 'updateDashboardStandardFormSlug'])->name('tour-cabinet.dashboard-form.update');
     Route::put('/tour-cabinet/contest-stage-deadlines', [AdminTourCabinetFormsController::class, 'updateContestStageDeadlines'])->name('tour-cabinet.contest-stage-deadlines.update');
     Route::put('/tour-cabinet/contest-completion-notification', [AdminTourCabinetFormsController::class, 'updateContestCompletionNotification'])->name('tour-cabinet.contest-completion-notification.update');

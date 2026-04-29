@@ -9,7 +9,7 @@
 |--------|---------|
 | Где живёт ЛК | **`http://…/tour-cabinet`** (тот же ЛК туров, `is_tour_cabinet_user`) |
 | Откуда города | Записи из таблицы **`cities`** (модель `City`); какие города в каком направлении показывать — см. таблицу состава ниже |
-| «White-label» формы | Уже в продукте: **`LmsForm`** + LMS Admin + публичные **`/forms/{slug}`** (`FormPublicController`); две формы этапа 1 — **два разных slug** одного LMS-события (`tour_cabinet.lms_event_slug`); приоритет: **`settings`** (группа `tour_cabinet`, ключи как в config), затем **`config/tour_cabinet.php`** / env; правка в админке: `/admin/tour-cabinet/forms` |
+| «White-label» формы | Уже в продукте: **`LmsForm`** + LMS Admin + публичные **`/forms/{slug}`** (`FormPublicController`); форма этапа 1 — slug на каждой строке `tour_cabinet_direction_cities.lms_form_slug`. Если пусто — статус города «Заполнено» (автозавершение). Глобальный fallback удалён (см. `spec/features/contest-city-forms/spec.md`, update «drop-fallback» 2026-04-29). Правка в админке: `/admin/tour-cabinet#tour-cabinet-admin-cities` (блок «Города по направлениям»). |
 
 ## Направления (этап 1, шаг 1)
 

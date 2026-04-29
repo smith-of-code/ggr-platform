@@ -64,7 +64,7 @@
     <RCard elevation="raised">
       <h2 class="text-lg font-semibold text-gray-900">Текущий список</h2>
       <p class="mt-1 text-xs text-gray-500">
-        Если форма Этапа 1 не задана — у города в ЛК автоматически статус «Заполнено» (используется глобальный fallback из блока «Формы и этап 1», если он настроен).
+        Если форма Этапа 1 не задана — у города в ЛК автоматически статус «Заполнено» (анкета не требуется).
       </p>
       <div v-if="!rows.length" class="mt-4 text-sm text-gray-500">Пока пусто — добавьте города выше.</div>
       <div v-else class="mt-4 overflow-x-auto">

@@ -156,10 +156,6 @@ final class TourCabinetContestDashboardData
                 'directions' => $directions,
                 'cities' => $cities,
                 'selectedCitiesForForms' => $selectedCitiesPayload,
-                'formSlugsConfigured' => [
-                    'standard' => (bool) $this->settings->getTourCabinetContestStage1FormSlugStandard(),
-                    'more_data' => (bool) $this->settings->getTourCabinetContestStage1FormSlugMoreData(),
-                ],
                 'stage1Complete' => $stage1Complete,
             ],
             'contestStage2Questions' => $questionsPayload,

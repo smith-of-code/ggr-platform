@@ -145,7 +145,6 @@ const props = defineProps({
   directions: { type: Array, default: () => [] },
   cities: { type: Array, default: () => [] },
   selectedCitiesForForms: { type: Array, default: () => [] },
-  formSlugsConfigured: { type: Object, default: () => ({ standard: false, more_data: false }) },
   stage1Complete: { type: Boolean, default: false },
   /** Сколько этапов конкурса доступно для направления (1–3). */
   maxContestStages: { type: Number, default: 3 },

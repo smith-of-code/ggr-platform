@@ -51,17 +51,8 @@ class TourCabinetHubPageData
             'lmsEvent' => $event?->only(['id', 'slug', 'title']),
             'forms' => $forms,
             'configSlug' => $slug,
-            'contestFormSlugOverrides' => [
-                'standard' => (string) ($raw['contest_stage1_form_slug_standard'] ?? ''),
-                'more_data' => (string) ($raw['contest_stage1_form_slug_more_data'] ?? ''),
-            ],
             'dashboardStandardFormSlug' => (string) ($raw['dashboard_standard_form_slug'] ?? ''),
             'contestCompletionNotification' => $this->settings->getTourCabinetContestCompletionNotification(),
-            'formOptions' => $forms->map(fn (LmsForm $f) => [
-                'slug' => $f->slug,
-                'title' => $f->title,
-                'is_active' => (bool) $f->is_active,
-            ])->values()->all(),
             'allFormsOptions' => $allForms->map(fn (LmsForm $f) => [
                 'slug' => $f->slug,
                 'title' => $f->title,

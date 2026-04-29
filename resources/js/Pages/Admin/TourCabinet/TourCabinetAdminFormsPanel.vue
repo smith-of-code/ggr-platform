@@ -106,47 +106,6 @@
       </form>
     </RCard>
 
-    <RCard v-if="lmsEvent" class="mb-8" elevation="raised">
-      <h2 class="text-lg font-semibold text-gray-900">Конкурс, этап 1 — какие формы открывать</h2>
-      <form class="mt-6 space-y-5" @submit.prevent="submitSlugs">
-        <div class="grid gap-5 sm:grid-cols-2">
-          <div>
-            <SearchSelect
-              :model-value="slugForm.contest_stage1_form_slug_standard || null"
-              label="Стандартная анкета (города без «больше данных»)"
-              :options="formSelectOptions"
-              value-key="slug"
-              label-key="label"
-              placeholder="Выберите форму"
-              clear-label="—"
-              :searchable="formSelectOptions.length > 5"
-              :error="slugForm.errors.contest_stage1_form_slug_standard || ''"
-              @update:model-value="(v) => { slugForm.contest_stage1_form_slug_standard = v ?? '' }"
-            />
-          </div>
-          <div>
-            <SearchSelect
-              :model-value="slugForm.contest_stage1_form_slug_more_data || null"
-              label="Анкета «нужно больше данных»"
-              :options="formSelectOptions"
-              value-key="slug"
-              label-key="label"
-              placeholder="Выберите форму"
-              clear-label="—"
-              :searchable="formSelectOptions.length > 5"
-              :error="slugForm.errors.contest_stage1_form_slug_more_data || ''"
-              @update:model-value="(v) => { slugForm.contest_stage1_form_slug_more_data = v ?? '' }"
-            />
-          </div>
-        </div>
-        <div class="flex flex-wrap gap-3">
-          <RButton type="submit" variant="primary" :loading="slugForm.processing" :disabled="slugForm.processing">
-            Сохранить привязку форм
-          </RButton>
-        </div>
-      </form>
-    </RCard>
-
     <RCard v-if="!lmsEvent" elevation="raised">
       <p class="text-sm text-amber-800">
         Событие LMS со slug «{{ configSlug }}» не найдено. Проверьте конфигурацию или создайте событие в LMS Admin.
@@ -223,11 +182,6 @@ const props = defineProps({
   lmsEvent: { type: Object, default: null },
   forms: { type: Array, default: () => [] },
   configSlug: { type: String, default: '' },
-  contestFormSlugOverrides: {
-    type: Object,
-    default: () => ({ standard: '', more_data: '' }),
-  },
-  formOptions: { type: Array, default: () => [] },
   dashboardStandardFormSlug: { type: String, default: '' },
   allFormsOptions: { type: Array, default: () => [] },
   contestCompletionNotification: {
@@ -235,13 +189,6 @@ const props = defineProps({
     default: () => ({ enabled: false, subject: '', body: '' }),
   },
 })
-
-const formSelectOptions = computed(() =>
-  props.formOptions.map((opt) => ({
-    slug: opt.slug,
-    label: `${opt.title} (${opt.slug})${opt.is_active ? '' : ' — неактивна'}`,
-  })),
-)
 
 const allFormsSelectOptions = computed(() =>
   props.allFormsOptions
@@ -252,11 +199,6 @@ const allFormsSelectOptions = computed(() =>
     })),
 )
 
-const slugForm = useForm({
-  contest_stage1_form_slug_standard: props.contestFormSlugOverrides.standard ?? '',
-  contest_stage1_form_slug_more_data: props.contestFormSlugOverrides.more_data ?? '',
-})
-
 const dashboardForm = useForm({
   dashboard_standard_form_slug: props.dashboardStandardFormSlug ?? '',
 })
@@ -266,15 +208,6 @@ const completionForm = useForm({
   subject: props.contestCompletionNotification?.subject ?? '',
   body: props.contestCompletionNotification?.body ?? '',
 })
-
-watch(
-  () => props.contestFormSlugOverrides,
-  (o) => {
-    slugForm.contest_stage1_form_slug_standard = o.standard ?? ''
-    slugForm.contest_stage1_form_slug_more_data = o.more_data ?? ''
-  },
-  { deep: true },
-)
 
 watch(
   () => props.dashboardStandardFormSlug,
@@ -292,10 +225,6 @@ watch(
   },
   { deep: true },
 )
-
-function submitSlugs() {
-  slugForm.put(sameOriginHref(route('admin.tour-cabinet.forms.contest-form-slugs.update', {}, false)), { preserveScroll: true })
-}
 
 function submitDashboardStandardForm() {
   dashboardForm.put(sameOriginHref(route('admin.tour-cabinet.dashboard-form.update', {}, false)), { preserveScroll: true })

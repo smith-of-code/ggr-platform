@@ -82,6 +82,28 @@
 - `spec/features/contest-city-forms/spec.md` — добавлен раздел «Реализация (как сделано)» и «Verify summary».
 - `spec/features/contest-city-forms/progress.md` — все 8 задач в Completed.
 
+### Task 9. Drop-fallback (2026-04-29) ✓
+
+Причина: на проде у одного из городов админ выбрал «— Без формы —», но в ЛК участника город всё равно открывал анкету через глобальный fallback (settings `contest_stage1_form_slug_standard`). Решения по `AskQuestion`: `fallback_strategy=drop_fallback_clean`, `global_block_visible=hide_completely`.
+
+- Files (бэкенд):
+  - `app/Services/TourCabinetContestStage1FormResolver.php` — конструктор без зависимостей; `resolveForRow` возвращает только `trim($row->lms_form_slug) ?: null`. Глобал из `SettingsService` больше не вызывается.
+  - `app/Services/TourCabinetContestDashboardData.php` — payload `contestStage1` без ключа `formSlugsConfigured`.
+  - `app/Services/Admin/TourCabinetHubPageData.php::formsPayload` — без ключей `contestFormSlugOverrides` и `formOptions`; остаётся `allFormsOptions` (для блока «Стандартная анкета»).
+  - `app/Http/Controllers/Admin/TourCabinetFormsController.php` — метод `updateContestFormSlugs` удалён, импорт `LmsEvent` удалён.
+  - `routes/web.php` — роут `PUT admin.tour-cabinet.forms.contest-form-slugs.update` удалён; страница `GET admin.tour-cabinet.forms.index` остаётся (UI «Стандартная анкета»).
+- Files (админ-фронт):
+  - `resources/js/Pages/Admin/TourCabinet/TourCabinetAdminFormsPanel.vue` — RCard «Конкурс, этап 1 — какие формы открывать» удалена; пропсы `contestFormSlugOverrides`, `formOptions`, computed `formSelectOptions`, `useForm slugForm`, watch и `submitSlugs` удалены.
+  - `resources/js/Pages/Admin/TourCabinet/Forms/Index.vue` — пропсы `contestFormSlugOverrides`, `formOptions` сняты с `defineProps` и проброса в панель.
+  - `resources/js/Pages/Admin/TourCabinet/TourCabinetAdminDirectionCitiesPanel.vue` — подсказка под таблицей «Текущий список» переписана: упоминание «глобальный fallback из блока Формы и этап 1» удалено.
+- Files (пользовательский фронт):
+  - `resources/js/Pages/TourCabinet/Contest/ContestStage1Panel.vue` — prop `formSlugsConfigured` удалён.
+- Files (spec):
+  - `spec/features/contest-city-forms/spec.md` — Goal с пометкой `Update 2026-04-29 (drop-fallback)`; раздел «Источник формы для города» переписан на единственный источник; «Реализация» обновлена; Verify summary с разделом «Drop-fallback rollout»; Open questions с новыми решениями.
+  - `spec/features/tour-cabinet/spec.md` — раздел «Конкурсный сценарий» и описание `/admin/tour-cabinet/forms` обновлены.
+  - `spec/features/lk-participant-contests/spec.md` — таблица «Принятые решения» обновлена.
+- Verify (Docker, см. Verify summary в spec.md): резолвер 4 кейса (включая сценарий с заданными legacy globals), payload dashboard без `formSlugsConfigured`, payload админки без `contestFormSlugOverrides`/`formOptions`, `route:list` без `contest-form-slugs.update`, `npm run build` 5.76s, `ReadLints` чисто.
+
 ## Partially completed
 
 (пусто)

@@ -29,8 +29,6 @@
         :lms-event="lmsEvent"
         :forms="forms"
         :config-slug="configSlug"
-        :contest-form-slug-overrides="contestFormSlugOverrides"
-        :form-options="formOptions"
         :dashboard-standard-form-slug="dashboardStandardFormSlug"
         :all-forms-options="allFormsOptions"
         :contest-completion-notification="contestCompletionNotification"
@@ -50,11 +48,6 @@ defineProps({
   lmsEvent: { type: Object, default: null },
   forms: { type: Array, default: () => [] },
   configSlug: { type: String, default: '' },
-  contestFormSlugOverrides: {
-    type: Object,
-    default: () => ({ standard: '', more_data: '' }),
-  },
-  formOptions: { type: Array, default: () => [] },
   dashboardStandardFormSlug: { type: String, default: '' },
   allFormsOptions: { type: Array, default: () => [] },
   contestCompletionNotification: {

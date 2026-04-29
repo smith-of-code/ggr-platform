@@ -14,9 +14,9 @@
 
 ## Конкурсный сценарий (направления → города → этапы)
 
-**ЛК конкурса для участника** — тот же префикс **`/tour-cabinet`** (см. `spec/features/lk-participant-contests/spec.md`): выбор направления, городов из таблицы `cities`, две формы этапа 1 на базе **`LmsForm`** (white-label = конструктор форм в LMS Admin для события `lms_event_slug`).
+**ЛК конкурса для участника** — тот же префикс **`/tour-cabinet`** (см. `spec/features/lk-participant-contests/spec.md`): выбор направления, городов из таблицы `cities`, форма этапа 1 на базе **`LmsForm`** (white-label = конструктор форм в LMS Admin для события `lms_event_slug`) — индивидуально для каждого города направления.
 
-Slug двух форм этапа 1: `contest_stage1_form_slug_standard`, `contest_stage1_form_slug_more_data`. **Приоритет:** значения из таблицы `settings` (группа `tour_cabinet`, те же ключи), затем `config/tour_cabinet.php` / env `TOUR_CABINET_CONTEST_STAGE1_FORM_SLUG_*`. Редактирование в админке: **GET** `/admin/tour-cabinet/forms` — блок «Конкурс, этап 1»; **PUT** `admin.tour-cabinet.forms.contest-form-slugs.update`. Пустой выбор в админке = только env/config. Пока оба итоговых slug пустые — UI ЛК показывает заглушку.
+Источник формы Этапа 1 для каждой пары `(direction_id, city_id)` — колонка `tour_cabinet_direction_cities.lms_form_slug`. Если пусто — у города в ЛК статус «Заполнено» (автозавершение, без анкеты). Подробности см. `spec/features/contest-city-forms/spec.md`. Глобальный fallback (`contest_stage1_form_slug_standard` / `more_data`) и админ-блок «Конкурс, этап 1 — какие формы открывать» удалены 2026-04-29 (фича `contest-city-forms`, update «drop-fallback»).
 
 ## Модель пользователя
 
@@ -75,7 +75,7 @@ Slug двух форм этапа 1: `contest_stage1_form_slug_standard`, `conte
 
 Точка входа для редакторов: **GET** `/admin/tour-cabinet` (`admin.tour-cabinet.index`) — одна страница «ЛК туров» с тремя блоками на месте: города по направлениям (переключение направления через query `project_key` + якорь `#tour-cabinet-admin-cities`), формы этапа 1, вопросы этапа 2. Отдельного раздела «этап 3» в админке нет (данные — в ЛК участника). После POST-операций редирект обратно на эту страницу с якорем соответствующего блока.
 
-- **GET** `/admin/tour-cabinet/forms` (`admin.tour-cabinet.forms.index`) — отдельная страница с тем же UI (ссылка «← ЛК туров» ведёт на хаб с `#tour-cabinet-admin-forms`); данные и **PUT** `admin.tour-cabinet.forms.contest-form-slugs.update` — как у блока форм на хабе.
+- **GET** `/admin/tour-cabinet/forms` (`admin.tour-cabinet.forms.index`) — отдельная страница с теми же блоками, что на хабе под `#tour-cabinet-admin-forms`: «Дашборд: Стандартная анкета», «Уведомление о завершении конкурса», список форм события. Блок «Конкурс, этап 1 — какие формы открывать» удалён вместе с роутом `admin.tour-cabinet.forms.contest-form-slugs.update` (см. `contest-city-forms` update 2026-04-29).
 - **PUT** `admin.tour-cabinet.dashboard-form.update` (`/admin/tour-cabinet/dashboard-form`) — привязка формы к блоку «Стандартная анкета» на дашборде ЛК (см. фичу `standart-anketa`). Селект использует `allFormsOptions` (любая активная форма платформы, без ограничения `lms_event_id`). Запись в settings группу `tour_cabinet`, ключ `dashboard_standard_form_slug`. Пустое значение скрывает блок на дашборде.
 - **GET** `/admin/tour-cabinet/direction-cities` (`admin.tour-cabinet.direction-cities.index`, query `project_key`) — отдельная страница с тем же UI; CRUD через **POST/PATCH/DELETE** `admin.tour-cabinet.direction-cities.*`, редиректы на хаб с якорем `#tour-cabinet-admin-cities`.
 - **GET** `/admin/tour-cabinet/stage2-questions` — отдельная страница с тем же UI; CRUD через **POST/PATCH/DELETE** `admin.tour-cabinet.stage2-questions.*`, редиректы на хаб с якорем `#tour-cabinet-admin-stage2`.
