@@ -161,6 +161,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::resource('assignments', AdminAssignmentController::class);
         Route::post('assignments/{assignment}/submissions/{submission}/review', [AdminAssignmentController::class, 'review'])->name('assignments.review');
         Route::post('assignments/{assignment}/submissions/{submission}/comment', [AdminAssignmentController::class, 'comment'])->name('assignments.comment');
+        Route::post('assignments/{assignment}/submissions/{submission}/mark-read', [AdminAssignmentController::class, 'markRead'])->name('assignments.mark-read');
         Route::resource('trajectories', AdminTrajectoryController::class);
         Route::resource('grants', AdminGrantController::class);
         Route::get('grants/{grant}/enrollments', [AdminGrantController::class, 'enrollments'])->name('grants.enrollments');

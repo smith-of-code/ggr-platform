@@ -34,6 +34,7 @@
       - `lms.admin.tests.index`, `lms.admin.tests.results`
       - `lms.admin.assignments.index`, `lms.admin.assignments.show`
       - `lms.admin.assignments.review`, `lms.admin.assignments.comment`
+      - `lms.admin.assignments.mark-read`
     - создание/редактирование/удаление тестов и заданий остаются недоступными (403)
     - в `LmsAdminLayout` для этих ролей в левом меню отображаются только разделы: `Тесты`, `Задания`, `Геймификация` (остальные вкладки скрыты)
     - в кабинете участника (`LmsLayout`) показывается пункт «Админ-панель LMS (проверка)», который ведёт на `lms.admin.tests.index`

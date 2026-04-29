@@ -1,47 +1,96 @@
 <template>
   <LmsAdminLayout :event="event">
     <div class="mb-8">
-      <Link :href="route('lms.admin.assignments.index', event.slug)" class="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-900">
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-        Назад к заданиям
-      </Link>
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <Link :href="route('lms.admin.assignments.index', event.slug)" class="inline-flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-900">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+          Назад к заданиям
+        </Link>
+        <RButton variant="outline" size="sm" @click="toggleOnlyUnread">
+          {{ filters?.only_unread ? 'Показать все' : 'Только с новыми' }}
+        </RButton>
+      </div>
       <h1 class="text-2xl font-bold text-gray-900">{{ assignment.title }}</h1>
       <p class="mt-1 text-sm text-gray-500">Работы участников</p>
+      <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        <span class="rounded-full bg-gray-100 px-3 py-1 text-gray-600">
+          Всего: {{ submissions.total }}
+        </span>
+        <span class="rounded-full bg-gray-100 px-3 py-1 text-gray-600">
+          На странице: {{ submissions.data.length }}
+        </span>
+        <span v-if="filters?.only_unread" class="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
+          Режим: только с новыми
+        </span>
+      </div>
     </div>
+
+    <RCard class="mb-4">
+      <div class="grid gap-3 md:grid-cols-4">
+        <div class="md:col-span-3">
+          <label class="mb-1 block text-xs font-medium text-gray-500">Поиск участника</label>
+          <input
+            v-model="filterForm.search"
+            type="text"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            placeholder="ФИО или email"
+            @keyup.enter="applyFilters"
+          >
+        </div>
+        <div class="flex items-end">
+          <RButton variant="primary" size="sm" @click="applyFilters">
+            Применить
+          </RButton>
+        </div>
+      </div>
+    </RCard>
 
     <div class="space-y-4">
       <RCard
         v-for="sub in submissions.data"
         :key="sub.id"
-        flush
+        class="overflow-hidden border border-gray-200 shadow-sm"
       >
+        <div class="w-full">
         <!-- Collapse header -->
-        <RButton
+        <button
           type="button"
-          variant="ghost"
-          class="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-gray-50"
-          @click="expanded[sub.id] = !expanded[sub.id]"
+          class="flex w-full items-center justify-between bg-white px-5 py-4 text-left hover:bg-gray-50"
+          @click="toggleExpanded(sub)"
         >
-          <div class="flex items-center gap-4">
+          <div class="flex min-w-0 flex-1 items-start gap-4">
             <RAvatar :name="sub.user?.name" size="md" />
-            <div>
-              <p class="text-sm font-medium text-gray-900">{{ sub.user?.name }}</p>
-              <p class="text-xs text-gray-500">{{ sub.user?.email }}</p>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <p class="truncate text-sm font-semibold text-gray-900">{{ sub.user?.name }}</p>
+                <span
+                  v-if="threadCount(sub)"
+                  class="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-500"
+                >
+                  {{ threadCount(sub) }} сообщ.
+                </span>
+                <RBadge v-if="sub.has_unread" variant="warning" size="sm">
+                  Новое
+                </RBadge>
+                <RBadge :variant="statusBadgeVariant(sub.status)">
+                  {{ statusLabel(sub.status) }}
+                </RBadge>
+              </div>
+              <p class="truncate text-xs text-gray-500">{{ sub.user?.email }}</p>
+              <p v-if="sub.participant_last_activity_at" class="mt-0.5 text-[11px] text-gray-400">
+                Активность участника: {{ formatDate(sub.participant_last_activity_at) }}
+              </p>
             </div>
           </div>
-          <div class="flex items-center gap-3">
-            <span v-if="threadCount(sub)" class="text-xs text-gray-400">{{ threadCount(sub) }} сообщ.</span>
-            <RBadge :variant="statusBadgeVariant(sub.status)">
-              {{ statusLabel(sub.status) }}
-            </RBadge>
+          <div class="ml-3 flex shrink-0 items-center">
             <svg class="h-5 w-5 text-gray-400 transition" :class="expanded[sub.id] ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </div>
-        </RButton>
+        </button>
 
         <!-- Expanded content -->
-        <div v-show="expanded[sub.id]" class="border-t border-gray-200 bg-gray-50 p-5">
+        <div v-show="expanded[sub.id]" class="border-t border-gray-200 bg-gray-50/80 p-5">
           <!-- Submitted work -->
           <div v-if="canReviewAssignments" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
             <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ответ участника</p>
@@ -96,6 +145,9 @@
               </div>
               <p v-if="!sub.text_content && !sub.link && !sub.files?.length" class="text-sm text-gray-400">Пустой ответ</p>
             </template>
+            <div v-if="sub.has_unread" class="mt-2">
+              <RBadge variant="warning" size="sm">Есть новые действия участника</RBadge>
+            </div>
           </div>
 
           <!-- Dialog thread -->
@@ -124,6 +176,13 @@
                   <span v-if="!msg.isReview" class="text-[10px] text-gray-400">
                     {{ msg.isStudent ? 'участник' : 'преподаватель' }}
                   </span>
+                  <RBadge
+                    v-if="msg.isStudent && isMessageUnread(sub, msg)"
+                    variant="warning"
+                    size="sm"
+                  >
+                    Новое
+                  </RBadge>
                 </div>
                 <span class="text-xs text-gray-400">{{ formatDate(msg.date) }}</span>
               </div>
@@ -144,7 +203,7 @@
           </div>
 
           <!-- Admin comment form -->
-          <div class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+          <div v-if="canReviewAssignments" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
             <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Комментарий</p>
             <textarea
               v-model="commentForms[sub.id].text"
@@ -232,18 +291,37 @@
             </div>
           </div>
         </div>
+        </div>
       </RCard>
     </div>
 
-    <RCard v-if="submissions.data.length === 0" flush class="px-5 py-16 text-center text-sm text-gray-500">
+    <RCard v-if="submissions.data.length === 0" class="px-5 py-16 text-center text-sm text-gray-500">
       Пока нет отправленных работ
     </RCard>
+
+    <div v-if="submissions.last_page > 1" class="mt-6 flex items-center justify-between">
+      <p class="text-xs text-gray-500">{{ submissions.from }}–{{ submissions.to }} из {{ submissions.total }}</p>
+      <div class="flex gap-1">
+        <button
+          v-for="link in submissions.links"
+          :key="link.label"
+          @click="link.url && router.visit(link.url)"
+          :disabled="!link.url"
+          class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+          :class="[
+            link.active ? 'bg-rosatom-600 text-white' : 'text-gray-500 hover:bg-gray-100',
+            link.url ? 'cursor-pointer' : 'cursor-not-allowed opacity-30',
+          ]"
+          v-html="link.label"
+        />
+      </div>
+    </div>
   </LmsAdminLayout>
 </template>
 
 <script setup>
 import { Link, router } from '@inertiajs/vue3'
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import { fileUrl } from '@/lib/fileUrl'
 
@@ -252,15 +330,34 @@ const props = defineProps({
   assignment: Object,
   submissions: Object,
   canReviewAssignments: { type: Boolean, default: false },
+  filters: { type: Object, default: () => ({}) },
+})
+
+const filterForm = reactive({
+  search: props.filters?.search || '',
 })
 
 const expanded = ref({})
 
-const reviewForms = reactive(
-  Object.fromEntries((props.submissions?.data ?? []).map(s => [s.id, { comment: '', _files: [] }]))
-)
-const commentForms = reactive(
-  Object.fromEntries((props.submissions?.data ?? []).map(s => [s.id, { text: '', _files: [] }]))
+const reviewForms = reactive({})
+const commentForms = reactive({})
+
+function ensureSubmissionForms(subId) {
+  if (!reviewForms[subId]) {
+    reviewForms[subId] = { comment: '', _files: [] }
+  }
+  if (!commentForms[subId]) {
+    commentForms[subId] = { text: '', _files: [] }
+  }
+}
+
+watch(
+  () => (props.submissions?.data ?? []).map(s => s.id),
+  (ids) => {
+    ids.forEach((id) => ensureSubmissionForms(id))
+    expanded.value = {}
+  },
+  { immediate: true },
 )
 
 function getAnswersForTask(sub, taskId) {
@@ -332,15 +429,24 @@ function getDialogMessages(sub) {
   return msgs
 }
 
+function isMessageUnread(sub, msg) {
+  if (!msg?.isStudent || !msg?.date) return false
+  if (!sub?.read_at) return true
+  return new Date(msg.date).getTime() > new Date(sub.read_at).getTime()
+}
+
 function onReviewFiles(subId, e) {
+  ensureSubmissionForms(subId)
   reviewForms[subId]._files = Array.from(e.target.files || [])
 }
 
 function onCommentFiles(subId, e) {
+  ensureSubmissionForms(subId)
   commentForms[subId]._files = Array.from(e.target.files || [])
 }
 
 function clearCommentFiles(subId) {
+  ensureSubmissionForms(subId)
   commentForms[subId]._files = []
 }
 
@@ -357,6 +463,7 @@ function buildFormData(fields) {
 }
 
 function submitReview(sub, decision) {
+  ensureSubmissionForms(sub.id)
   const data = buildFormData({
     decision,
     comment: reviewForms[sub.id]?.comment ?? '',
@@ -371,6 +478,7 @@ function submitReview(sub, decision) {
 }
 
 function submitComment(sub) {
+  ensureSubmissionForms(sub.id)
   const data = buildFormData({
     text: commentForms[sub.id]?.text ?? '',
     files: commentForms[sub.id]?._files ?? [],
@@ -387,5 +495,51 @@ function submitComment(sub) {
       },
     }
   )
+}
+
+function toggleOnlyUnread() {
+  const next = !(props.filters?.only_unread)
+  router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), {
+    only_unread: next ? 1 : undefined,
+    search: filterForm.search || undefined,
+  }, {
+    preserveState: false,
+    replace: true,
+  })
+}
+
+function applyFilters() {
+  router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), {
+    only_unread: props.filters?.only_unread ? 1 : undefined,
+    search: filterForm.search || undefined,
+  }, {
+    preserveState: false,
+    replace: true,
+  })
+}
+
+function markAsRead(sub) {
+  if (!sub?.has_unread) return
+
+  sub.has_unread = false
+  sub.read_at = new Date().toISOString()
+
+  router.post(
+    route('lms.admin.assignments.mark-read', [props.event.slug, props.assignment.id, sub.id]),
+    {},
+    {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+    }
+  )
+}
+
+function toggleExpanded(sub) {
+  const next = !expanded.value[sub.id]
+  expanded.value[sub.id] = next
+  if (next) {
+    markAsRead(sub)
+  }
 }
 </script>

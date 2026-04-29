@@ -57,6 +57,7 @@ class EnsureLmsBackofficeAccess
             'lms.admin.assignments.show',
             'lms.admin.assignments.review',
             'lms.admin.assignments.comment',
+            'lms.admin.assignments.mark-read',
         ], true);
     }
 }
