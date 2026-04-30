@@ -133,6 +133,7 @@ const typeOptions = {
   grant: 'Грант',
   subsidy: 'Субсидия',
   credit: 'Кредит',
+  event: 'Событие',
 }
 
 const CITY_NAMES = [

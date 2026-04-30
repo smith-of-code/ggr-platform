@@ -106,11 +106,12 @@ const props = defineProps({
   enrolled: Boolean,
 })
 
-const TYPE_LABELS = { grant: 'Грант', subsidy: 'Субсидия', credit: 'Кредит' }
+const TYPE_LABELS = { grant: 'Грант', subsidy: 'Субсидия', credit: 'Кредит', event: 'Событие' }
 const TYPE_CLASSES = {
   grant: 'bg-blue-50 text-blue-700',
   subsidy: 'bg-violet-50 text-violet-700',
   credit: 'bg-amber-50 text-amber-700',
+  event: 'bg-emerald-50 text-emerald-700',
 }
 
 const typeLabel = computed(() => TYPE_LABELS[props.grant?.type] || props.grant?.type)

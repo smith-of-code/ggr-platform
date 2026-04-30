@@ -26,15 +26,12 @@ class StageController extends Controller
             return;
         }
 
-        $orderedIds = $course->stagesInCurriculumOrder()->pluck('id')->all();
-        $idx = array_search($stage->id, $orderedIds, true);
-        if ($idx === false || $idx === 0) {
+        $previousStage = $course->previousStageForSequential($stage);
+        if (! $previousStage) {
             return;
         }
 
-        $previousStageId = $orderedIds[$idx - 1];
-
-        $previousCompleted = LmsStageProgress::where('lms_course_stage_id', $previousStageId)
+        $previousCompleted = LmsStageProgress::where('lms_course_stage_id', $previousStage->id)
             ->where('user_id', auth()->id())
             ->where('status', 'completed')
             ->exists();
@@ -81,11 +78,11 @@ class StageController extends Controller
                 'lms_assignment_id' => $block->lms_assignment_id,
                 'lms_video_id' => $block->lms_video_id,
                 'position' => $block->position,
-                'scheduled_at' => $block->scheduled_at?->format('Y-m-d\TH:i:s'),
-                'scheduled_ends_at' => $block->scheduled_ends_at?->format('Y-m-d\TH:i:s'),
-                'test' => $block->test?->only(['id', 'title']),
-                'assignment' => $block->assignment?->only(['id', 'title']),
-                'video' => $block->video?->only(['id', 'title', 'url', 'source', 'duration_seconds']),
+                'scheduled_at' => $block->scheduled_at ? $block->scheduled_at->format('Y-m-d\TH:i:s') : null,
+                'scheduled_ends_at' => $block->scheduled_ends_at ? $block->scheduled_ends_at->format('Y-m-d\TH:i:s') : null,
+                'test' => $block->test ? $block->test->only(['id', 'title']) : null,
+                'assignment' => $block->assignment ? $block->assignment->only(['id', 'title']) : null,
+                'video' => $block->video ? $block->video->only(['id', 'title', 'url', 'source', 'duration_seconds']) : null,
             ];
         });
 
@@ -101,10 +98,10 @@ class StageController extends Controller
             ]),
             'blocks' => $blocks,
             'stages' => $allStages,
-            'linkedTest' => $stage->test?->only(['id', 'title']),
-            'linkedAssignment' => $stage->assignment?->only(['id', 'title']),
-            'linkedVideo' => $stage->video?->only(['id', 'title', 'url', 'source', 'duration_seconds']),
-            'progress' => $progress?->only(['status', 'scorm_data', 'score', 'watched_seconds', 'completed_at']),
+            'linkedTest' => $stage->test ? $stage->test->only(['id', 'title']) : null,
+            'linkedAssignment' => $stage->assignment ? $stage->assignment->only(['id', 'title']) : null,
+            'linkedVideo' => $stage->video ? $stage->video->only(['id', 'title', 'url', 'source', 'duration_seconds']) : null,
+            'progress' => $progress ? $progress->only(['status', 'scorm_data', 'score', 'watched_seconds', 'completed_at']) : null,
             'inlineTest' => $inlineTestData,
             'inlineAssignment' => $inlineAssignmentData,
         ]);
@@ -122,12 +119,12 @@ class StageController extends Controller
         $this->ensureSequentialAccess($course, $stage);
         $user = auth()->user();
 
-        if ($stage->type === 'video' && $stage->video?->duration_seconds) {
+        if ($stage->type === 'video' && $stage->video && $stage->video->duration_seconds) {
             $progress = LmsStageProgress::where('lms_course_stage_id', $stage->id)
                 ->where('user_id', $user->id)
                 ->first();
 
-            $watched = $progress?->watched_seconds ?? 0;
+            $watched = $progress ? ($progress->watched_seconds ?? 0) : 0;
             $required = (int) ($stage->video->duration_seconds * 0.9);
 
             if ($watched < $required) {
@@ -276,7 +273,7 @@ class StageController extends Controller
             'attempts' => $attempts,
             'activeAttempt' => $attemptData,
             'questions' => $questions,
-            'latestResult' => $latestCompleted?->only(['id', 'score', 'max_score', 'percentage', 'passed']),
+            'latestResult' => $latestCompleted ? $latestCompleted->only(['id', 'score', 'max_score', 'percentage', 'passed']) : null,
         ];
     }
 

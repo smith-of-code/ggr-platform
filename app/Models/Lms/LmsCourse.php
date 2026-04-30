@@ -119,37 +119,107 @@ class LmsCourse extends Model
 
         $isSequential = (bool) $this->sequential;
         $availability = [];
-        $prevCompleted = true;
+        $chains = $this->sequentialChains();
 
-        foreach ($ordered as $stage) {
-            $progress = $stageProgress->get($stage->id);
+        foreach ($chains as $chain) {
+            $prevCompleted = true;
 
-            $isAvailable = true;
+            foreach ($chain as $stage) {
+                $progress = $stageProgress->get($stage->id);
+                $isAvailable = true;
 
-            if ($stage->is_locked) {
-                $isAvailable = false;
-            }
-
-            if ($stage->available_from && now()->lt($stage->available_from)) {
-                $isAvailable = false;
-            }
-
-            if ($stage->lms_course_module_id) {
-                $mod = $this->modules->firstWhere('id', $stage->lms_course_module_id);
-                if ($mod && ! $mod->isAvailable()) {
+                if ($stage->is_locked) {
                     $isAvailable = false;
                 }
+
+                if ($stage->available_from && now()->lt($stage->available_from)) {
+                    $isAvailable = false;
+                }
+
+                if ($stage->lms_course_module_id) {
+                    $mod = $this->modules->firstWhere('id', $stage->lms_course_module_id);
+                    if ($mod && ! $mod->isAvailable()) {
+                        $isAvailable = false;
+                    }
+                }
+
+                // sequential применяется в рамках своей цепочки:
+                // этапы без модуля не блокируют этапы внутри модулей
+                if ($isSequential && ! $prevCompleted) {
+                    $isAvailable = false;
+                }
+
+                $availability[$stage->id] = $isAvailable;
+                $prevCompleted = $progress ? $progress->status === 'completed' : false;
             }
-
-            if ($isSequential && ! $prevCompleted) {
-                $isAvailable = false;
-            }
-
-            $availability[$stage->id] = $isAvailable;
-
-            $prevCompleted = $progress?->status === 'completed';
         }
 
         return $availability;
+    }
+
+    public function previousStageForSequential(LmsCourseStage $stage): ?LmsCourseStage
+    {
+        foreach ($this->sequentialChains() as $chain) {
+            $idx = $chain->search(fn (LmsCourseStage $item) => $item->id === $stage->id);
+            if ($idx === false || $idx === 0) {
+                continue;
+            }
+
+            return $chain->values()->get($idx - 1);
+        }
+
+        return null;
+    }
+
+    /**
+     * Цепочки последовательности:
+     * 1) этапы без модуля (одна цепочка)
+     * 2) каждый модуль — отдельная цепочка
+     *
+     * @return Collection<int, Collection<int, LmsCourseStage>>
+     */
+    private function sequentialChains(): Collection
+    {
+        $this->loadMissing(['modules', 'stages']);
+
+        $chains = collect();
+        $allStages = $this->stages;
+        $usedIds = collect();
+
+        $orphan = $allStages
+            ->whereNull('lms_course_module_id')
+            ->sortBy('position')
+            ->values();
+
+        if ($orphan->isNotEmpty()) {
+            $chains->push($orphan);
+            $usedIds = $usedIds->merge($orphan->pluck('id'));
+        }
+
+        foreach ($this->modules as $module) {
+            $moduleStages = $allStages
+                ->where('lms_course_module_id', $module->id)
+                ->sortBy('position')
+                ->values();
+
+            if ($moduleStages->isEmpty()) {
+                continue;
+            }
+
+            $chains->push($moduleStages);
+            $usedIds = $usedIds->merge($moduleStages->pluck('id'));
+        }
+
+        // safety: этапы из отсутствующих модулей/аномалий не теряем
+        $remaining = $allStages
+            ->whereNotIn('id', $usedIds->all())
+            ->sortBy('position')
+            ->values();
+
+        if ($remaining->isNotEmpty()) {
+            $chains->push($remaining);
+        }
+
+        return $chains;
     }
 }

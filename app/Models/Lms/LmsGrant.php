@@ -18,11 +18,13 @@ class LmsGrant extends Model
     public const TYPE_GRANT = 'grant';
     public const TYPE_SUBSIDY = 'subsidy';
     public const TYPE_CREDIT = 'credit';
+    public const TYPE_EVENT = 'event';
 
     public const TYPES = [
         self::TYPE_GRANT => 'Грант',
         self::TYPE_SUBSIDY => 'Субсидия',
         self::TYPE_CREDIT => 'Кредит',
+        self::TYPE_EVENT => 'Событие',
     ];
 
     protected $fillable = [

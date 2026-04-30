@@ -105,6 +105,7 @@ const typeFilterOptions = [
   { value: 'grant', label: 'Грант' },
   { value: 'subsidy', label: 'Субсидия' },
   { value: 'credit', label: 'Кредит' },
+  { value: 'event', label: 'Событие' },
 ]
 
 const CITY_NAMES = [

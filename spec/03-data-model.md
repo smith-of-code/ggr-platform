@@ -957,7 +957,7 @@
 | timestamps | | |
 
 **Связи**: `event()` BelongsTo LmsEvent, `documents()` HasMany LmsGrantDocument, `enrollments()` HasMany LmsGrantEnrollment
-**Константы**: `TYPE_GRANT`, `TYPE_SUBSIDY`, `TYPE_CREDIT`, `TYPES`
+**Константы**: `TYPE_GRANT`, `TYPE_SUBSIDY`, `TYPE_CREDIT`, `TYPE_EVENT`, `TYPES`
 
 ---
 

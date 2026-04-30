@@ -3,7 +3,7 @@
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">Возможности</h1>
-        <p class="mt-1 text-sm text-gray-500">Управление грантами, субсидиями и кредитами</p>
+        <p class="mt-1 text-sm text-gray-500">Управление грантами, субсидиями, кредитами и событиями</p>
       </div>
       <Link :href="route('lms.admin.grants.create', event.slug)">
         <RButton>
@@ -126,7 +126,7 @@ const grantsList = computed(() => {
   return Array.isArray(raw) ? raw : []
 })
 
-const typeLabels = { grant: 'Грант', subsidy: 'Субсидия', credit: 'Кредит' }
+const typeLabels = { grant: 'Грант', subsidy: 'Субсидия', credit: 'Кредит', event: 'Событие' }
 
 const enrollmentsModalOpen = ref(false)
 const enrollmentsModalTitle = ref('')
