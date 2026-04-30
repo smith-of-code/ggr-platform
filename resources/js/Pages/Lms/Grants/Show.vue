@@ -83,12 +83,6 @@
               <div v-if="isExpired" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
                 <p class="text-sm font-medium text-red-800">Срок подачи заявок истёк</p>
               </div>
-              <div v-else-if="!isProfileComplete" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
-                <p class="text-sm font-medium text-amber-800">Для участия необходимо заполнить профиль</p>
-                <Link :href="route('lms.profile.edit', { event: event?.slug })" class="mt-1 inline-block text-sm font-medium text-rosatom-600 hover:underline">
-                  Перейти в личный кабинет
-                </Link>
-              </div>
               <RButton v-else variant="primary" @click="enroll">
                 Участвовать
               </RButton>
@@ -102,7 +96,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { Head, Link, router, usePage } from '@inertiajs/vue3'
+import { Head, router } from '@inertiajs/vue3'
 import LmsLayout from '@/Layouts/LmsLayout.vue'
 
 const props = defineProps({
@@ -110,7 +104,6 @@ const props = defineProps({
   grant: Object,
   documents: Array,
   enrolled: Boolean,
-  isProfileComplete: { type: Boolean, default: false },
 })
 
 const TYPE_LABELS = { grant: 'Грант', subsidy: 'Субсидия', credit: 'Кредит' }

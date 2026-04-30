@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGrant;
 use App\Models\Lms\LmsGrantEnrollment;
-use App\Models\Lms\LmsProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -47,14 +46,9 @@ class GrantController extends Controller
             'enrolled' => in_array($g->id, $enrolledIds),
         ]);
 
-        $profile = LmsProfile::where('user_id', $user->id)
-            ->where('lms_event_id', $event->id)
-            ->first();
-
         return Inertia::render('Lms/Grants/Index', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'grants' => $grantsData,
-            'isProfileComplete' => $profile?->isProfileComplete() ?? false,
             'filters' => [
                 'type' => $request->input('type', ''),
                 'city' => $request->input('city', ''),
@@ -75,10 +69,6 @@ class GrantController extends Controller
             ->where('user_id', $user->id)
             ->exists();
 
-        $profile = LmsProfile::where('user_id', $user->id)
-            ->where('lms_event_id', $event->id)
-            ->first();
-
         $disk = config('filesystems.upload_disk');
         $documents = $grant->documents->map(fn ($d) => [
             'id' => $d->id,
@@ -91,7 +81,6 @@ class GrantController extends Controller
             'grant' => $grant->only(['id', 'title', 'type', 'city', 'description', 'application_start', 'application_end']),
             'documents' => $documents,
             'enrolled' => $enrolled,
-            'isProfileComplete' => $profile?->isProfileComplete() ?? false,
         ]);
     }
 
@@ -102,16 +91,6 @@ class GrantController extends Controller
         }
 
         $user = auth()->user();
-
-        $profile = LmsProfile::where('user_id', $user->id)
-            ->where('lms_event_id', $event->id)
-            ->first();
-
-        if (! $profile || ! $profile->isProfileComplete()) {
-            return redirect()->back()->withErrors([
-                'enroll' => 'Для выбора гранта необходимо заполнить профиль.',
-            ]);
-        }
 
         LmsGrantEnrollment::firstOrCreate([
             'lms_grant_id' => $grant->id,
