@@ -17,13 +17,19 @@
           :error="form.errors.title"
         />
 
-        <SearchSelect
-          v-model="form.curator_id"
-          :options="userOptions"
-          label="Куратор"
-          placeholder="Выберите куратора"
-          search-placeholder="Поиск по имени или email..."
-        />
+        <template v-if="canSetCurator">
+          <SearchSelect
+            v-model="form.curator_id"
+            :options="userOptions"
+            label="Куратор"
+            placeholder="Выберите куратора"
+            search-placeholder="Поиск по имени или email..."
+          />
+        </template>
+        <div v-else class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+          <p class="text-xs uppercase tracking-wide text-gray-500">Куратор</p>
+          <p class="mt-1 text-sm font-medium text-gray-900">{{ fixedCuratorName || 'Текущий пользователь' }}</p>
+        </div>
 
         <MultiSelect
           v-model="form.user_ids"
@@ -50,7 +56,15 @@ import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import SearchSelect from '@/Components/SearchSelect.vue'
 import MultiSelect from '@/Components/MultiSelect.vue'
 
-const props = defineProps({ event: Object, group: Object, users: Array })
+const props = defineProps({
+  event: Object,
+  group: Object,
+  users: Array,
+  canSetCurator: { type: Boolean, default: true },
+  fixedCuratorName: { type: String, default: '' },
+})
+
+const canSetCurator = computed(() => props.canSetCurator)
 
 const userOptions = computed(() =>
   (props.users ?? []).map(u => ({ id: u.id, name: `${u.name} (${u.email})` }))

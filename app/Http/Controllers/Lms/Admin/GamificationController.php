@@ -8,15 +8,17 @@ use App\Models\Lms\LmsGamificationPoint;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsGamificationRule;
 use App\Services\GamificationService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class GamificationController extends Controller
 {
-    public function index(LmsEvent $event): Response
+    public function index(Request $request, LmsEvent $event): Response
     {
         $rules = $event->gamificationRules()->orderBy('created_at', 'desc')->paginate(15);
         $profile = $event->profiles()
@@ -25,8 +27,18 @@ class GamificationController extends Controller
             ->first();
         $canManageRules = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
 
+        $groupUserMap = [];
+        $event->groups()
+            ->with('members:id')
+            ->get(['id', 'lms_event_id', 'title'])
+            ->each(function ($group) use (&$groupUserMap) {
+                foreach ($group->members as $member) {
+                    $groupUserMap[$member->id][] = $group->title;
+                }
+            });
+
         $profiles = $event->profiles()->with(['user:id,name,email', 'lmsRole:id,name', 'cityRelation:id,name'])->get();
-        $users = $profiles->map(function ($profile) {
+        $users = $profiles->map(function ($profile) use ($groupUserMap) {
             $user = $profile->user;
             if (!$user) return null;
             $roleName = $profile->lmsRole ? $profile->lmsRole->name : null;
@@ -40,6 +52,7 @@ class GamificationController extends Controller
                 'email' => $user->email,
                 'role' => $roleName ?? $profile->role ?? '—',
                 'city' => $cityName,
+                'groups' => array_values(array_unique($groupUserMap[$user->id] ?? [])),
             ];
         })->filter()->unique('id')->values();
 
@@ -47,6 +60,17 @@ class GamificationController extends Controller
         $leaderboard = $gamification->getAdminLeaderboardRows($event, 100);
         $userIds = array_column($leaderboard, 'id');
         $pointsByUser = $gamification->getRecentPointsByUserIds($event, $userIds, 100);
+        $canManagePointAdjustments = $profile ? $this->canManagePoints($profile) : false;
+        $pointsHistory = $this->buildPointsHistoryQuery($request, $event)
+            ->paginate(30)
+            ->withQueryString();
+        $historyGroupOptions = $event->groups()
+            ->orderBy('title')
+            ->pluck('title')
+            ->filter(fn ($title) => is_string($title) && trim($title) !== '')
+            ->map(fn ($title) => trim((string) $title))
+            ->unique()
+            ->values();
 
         return Inertia::render('Lms/Admin/Gamification/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -54,7 +78,17 @@ class GamificationController extends Controller
             'users' => $users,
             'leaderboard' => $leaderboard,
             'pointsByUser' => $pointsByUser,
+            'pointsHistory' => $pointsHistory,
+            'historyFilters' => [
+                'search' => trim((string) $request->input('history_search', '')),
+                'type' => (string) $request->input('history_type', ''),
+                'group' => trim((string) $request->input('history_group', '')),
+                'date_from' => (string) $request->input('history_date_from', ''),
+                'date_to' => (string) $request->input('history_date_to', ''),
+            ],
+            'historyGroupOptions' => $historyGroupOptions,
             'canManageRules' => $canManageRules,
+            'canManagePointAdjustments' => $canManagePointAdjustments,
         ]);
     }
 
@@ -136,6 +170,26 @@ class GamificationController extends Controller
         return redirect()->back()->with('success', 'Баллы начислены');
     }
 
+    public function destroyPoint(LmsEvent $event, LmsGamificationPoint $point): RedirectResponse
+    {
+        if ($point->lms_event_id !== $event->id) {
+            abort(404);
+        }
+
+        $profile = $event->profiles()
+            ->where('user_id', auth()->id())
+            ->with('lmsRole:id,name,slug')
+            ->first();
+
+        if (! $profile || ! $this->canManagePoints($profile)) {
+            abort(403, 'Недостаточно прав для удаления начислений баллов.');
+        }
+
+        $point->delete();
+
+        return redirect()->back()->with('success', 'Начисление удалено.');
+    }
+
     private function ensureRuleBelongsToEvent(LmsGamificationRule $rule, LmsEvent $event): void
     {
         if ($rule->lms_event_id !== $event->id) {
@@ -166,5 +220,83 @@ class GamificationController extends Controller
             'max_times.integer' => 'Лимит начислений должен быть целым числом.',
             'max_times.min' => 'Лимит начислений не может быть отрицательным.',
         ];
+    }
+
+    private function canManagePoints(LmsProfile $profile): bool
+    {
+        if (LmsProfile::isBackofficeAdminProfile($profile) || LmsProfile::isGamificationPointsOnlyProfile($profile)) {
+            return true;
+        }
+
+        $candidates = array_filter([
+            $profile->role,
+            $profile->lmsRole ? $profile->lmsRole->slug : null,
+            $profile->lmsRole ? $profile->lmsRole->name : null,
+        ], fn ($v) => is_string($v) && trim($v) !== '');
+
+        foreach ($candidates as $candidate) {
+            $value = mb_strtolower(trim($candidate));
+            if ($value === 'participant' || $value === 'участник') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function buildPointsHistoryQuery(Request $request, LmsEvent $event): Builder
+    {
+        $query = LmsGamificationPoint::query()
+            ->where('lms_event_id', $event->id)
+            ->with([
+                'user:id,name,email',
+                'rule:id,title',
+            ])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+
+        $search = trim((string) $request->input('history_search', ''));
+        if ($search !== '') {
+            $query->where(function (Builder $builder) use ($search) {
+                $builder->where('reason', 'ilike', '%' . $search . '%')
+                    ->orWhereHas('user', function (Builder $userQuery) use ($search) {
+                        $userQuery->where('name', 'ilike', '%' . $search . '%')
+                            ->orWhere('email', 'ilike', '%' . $search . '%');
+                    })
+                    ->orWhereHas('rule', function (Builder $ruleQuery) use ($search) {
+                        $ruleQuery->where('title', 'ilike', '%' . $search . '%');
+                    });
+            });
+        }
+
+        $type = (string) $request->input('history_type', '');
+        if ($type === 'manual') {
+            $query->whereNull('lms_gamification_rule_id');
+        } elseif ($type === 'auto') {
+            $query->whereNotNull('lms_gamification_rule_id');
+        }
+
+        $groupTitle = trim((string) $request->input('history_group', ''));
+        if ($groupTitle !== '') {
+            $memberIds = DB::table('lms_group_members')
+                ->join('lms_groups', 'lms_groups.id', '=', 'lms_group_members.lms_group_id')
+                ->where('lms_groups.lms_event_id', $event->id)
+                ->where('lms_groups.title', $groupTitle)
+                ->pluck('lms_group_members.user_id');
+
+            $query->whereIn('user_id', $memberIds->all());
+        }
+
+        $dateFrom = trim((string) $request->input('history_date_from', ''));
+        if ($dateFrom !== '') {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+
+        $dateTo = trim((string) $request->input('history_date_to', ''));
+        if ($dateTo !== '') {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        return $query;
     }
 }

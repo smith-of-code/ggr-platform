@@ -51,6 +51,7 @@ class EnsureLmsBackofficeAccess
         return in_array($routeName, [
             'lms.admin.gamification.index',
             'lms.admin.gamification.manual-points',
+            'lms.admin.gamification.points.destroy',
             'lms.admin.tests.index',
             'lms.admin.tests.results',
             'lms.admin.assignments.index',
@@ -58,6 +59,12 @@ class EnsureLmsBackofficeAccess
             'lms.admin.assignments.review',
             'lms.admin.assignments.comment',
             'lms.admin.assignments.mark-read',
+            'lms.admin.groups.index',
+            'lms.admin.groups.create',
+            'lms.admin.groups.store',
+            'lms.admin.groups.edit',
+            'lms.admin.groups.update',
+            'lms.admin.groups.destroy',
         ], true);
     }
 }

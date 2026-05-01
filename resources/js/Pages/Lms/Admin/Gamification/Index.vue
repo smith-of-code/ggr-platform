@@ -105,6 +105,7 @@
                           <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Начисление</th>
                           <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Дата</th>
                           <th class="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Баллы</th>
+                          <th v-if="canManagePointAdjustments" class="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Действия</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-gray-100">
@@ -119,6 +120,13 @@
                               {{ (p.points ?? 0) >= 0 ? '+' : '' }}{{ p.points ?? 0 }}
                             </RBadge>
                           </td>
+                          <td v-if="canManagePointAdjustments" class="px-3 py-2 text-right align-top">
+                            <RButton variant="danger" size="sm" iconOnly @click="confirmDestroyPoint(p)">
+                              <template #icon>
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                              </template>
+                            </RButton>
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -130,6 +138,116 @@
           </tbody>
         </table>
         <div v-if="!leaderboard.length" class="px-5 py-10 text-center text-sm text-gray-500">Пока нет начислений</div>
+      </div>
+    </RCard>
+
+    <RCard flush class="mb-6">
+      <template #header>
+        <h2 class="text-base font-bold text-gray-900">Подробная история начислений</h2>
+        <p class="mt-0.5 text-xs text-gray-500">Все начисления по событию с фильтрами и пагинацией</p>
+      </template>
+
+      <div class="border-b border-gray-100 px-4 py-4">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-6">
+          <input
+            v-model="historyForm.search"
+            type="text"
+            class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+            placeholder="Поиск: участник, email, причина, правило"
+            @keyup.enter="applyHistoryFilters"
+          />
+          <select
+            v-model="historyForm.type"
+            class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+          >
+            <option value="">Все типы</option>
+            <option value="manual">Ручное</option>
+            <option value="auto">Автоматическое</option>
+          </select>
+          <select
+            v-model="historyForm.group"
+            class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+          >
+            <option value="">Все группы</option>
+            <option v-for="g in historyGroupOptions" :key="g" :value="g">{{ g }}</option>
+          </select>
+          <input
+            v-model="historyForm.date_from"
+            type="date"
+            class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+          />
+          <input
+            v-model="historyForm.date_to"
+            type="date"
+            class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+          />
+          <div class="flex items-center gap-2">
+            <RButton variant="primary" size="sm" @click="applyHistoryFilters">Применить</RButton>
+            <RButton variant="outline" size="sm" @click="resetHistoryFilters">Сбросить</RButton>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50">
+              <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Дата</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Участник</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Тип</th>
+              <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Основание</th>
+              <th class="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Баллы</th>
+              <th v-if="canManagePointAdjustments" class="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Действия</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="item in historyRows" :key="item.id" class="transition hover:bg-gray-50">
+              <td class="whitespace-nowrap px-4 py-2.5 text-sm text-gray-500">{{ formatPointDate(item.created_at) }}</td>
+              <td class="px-4 py-2.5">
+                <p class="text-sm font-medium text-gray-900">{{ item.user?.name || 'Пользователь удалён' }}</p>
+                <p class="text-xs text-gray-400">{{ item.user?.email || '—' }}</p>
+              </td>
+              <td class="px-4 py-2.5 text-sm text-gray-500">
+                {{ item.lms_gamification_rule_id ? 'Автоматическое' : 'Ручное' }}
+              </td>
+              <td class="px-4 py-2.5">
+                <p class="text-sm text-gray-900">{{ item.reason || '—' }}</p>
+                <p v-if="item.rule?.title" class="text-xs text-gray-500">Правило: {{ item.rule.title }}</p>
+              </td>
+              <td class="px-4 py-2.5 text-right">
+                <RBadge :variant="(item.points ?? 0) >= 0 ? 'success' : 'error'" class="font-bold">
+                  {{ (item.points ?? 0) >= 0 ? '+' : '' }}{{ item.points ?? 0 }}
+                </RBadge>
+              </td>
+              <td v-if="canManagePointAdjustments" class="px-4 py-2.5 text-right">
+                <RButton variant="danger" size="sm" iconOnly @click="confirmDestroyPoint(item)">
+                  <template #icon>
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                  </template>
+                </RButton>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="!historyRows.length" class="px-5 py-10 text-center text-sm text-gray-500">История начислений пока пуста</div>
+      </div>
+
+      <div v-if="historyLinks.length > 3" class="border-t border-gray-100 px-4 py-3">
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="(link, index) in historyLinks"
+            :key="`${index}-${link.label}`"
+            type="button"
+            class="rounded-md px-3 py-1.5 text-sm transition"
+            :class="[
+              link.active ? 'bg-rosatom-600 text-white' : 'text-gray-600 hover:bg-gray-100',
+              link.url ? 'cursor-pointer' : 'cursor-not-allowed opacity-40',
+            ]"
+            :disabled="!link.url"
+            @click="goToHistoryPage(link.url)"
+            v-html="link.label"
+          />
+        </div>
       </div>
     </RCard>
 
@@ -164,6 +282,13 @@
             >
               <option value="">Все города</option>
               <option v-for="c in availableCities" :key="c" :value="c">{{ c }}</option>
+            </select>
+            <select
+              v-model="groupFilter"
+              class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20"
+            >
+              <option value="">Все группы</option>
+              <option v-for="g in availableGroups" :key="g" :value="g">{{ g }}</option>
             </select>
           </div>
 
@@ -243,7 +368,11 @@ const props = defineProps({
   users: Array,
   leaderboard: { type: Array, default: () => [] },
   pointsByUser: { type: Object, default: () => ({}) },
+  pointsHistory: { type: Object, default: () => ({ data: [], links: [] }) },
+  historyFilters: { type: Object, default: () => ({ search: '', type: '', group: '', date_from: '', date_to: '' }) },
+  historyGroupOptions: { type: Array, default: () => [] },
   canManageRules: { type: Boolean, default: true },
+  canManagePointAdjustments: { type: Boolean, default: false },
 })
 
 const leaderboard = computed(() => props.leaderboard || [])
@@ -253,12 +382,23 @@ const expandedUserId = ref(null)
 const searchQuery = ref('')
 const roleFilter = ref('')
 const cityFilter = ref('')
+const groupFilter = ref('')
 const manualForm = reactive({ user_ids: [], points: 0, reason: '' })
+const historyForm = reactive({
+  search: props.historyFilters?.search || '',
+  type: props.historyFilters?.type || '',
+  group: props.historyFilters?.group || '',
+  date_from: props.historyFilters?.date_from || '',
+  date_to: props.historyFilters?.date_to || '',
+})
 
 function pointsForUser(userId) {
   const m = props.pointsByUser || {}
   return m[userId] ?? m[String(userId)] ?? []
 }
+
+const historyRows = computed(() => Array.isArray(props.pointsHistory?.data) ? props.pointsHistory.data : [])
+const historyLinks = computed(() => Array.isArray(props.pointsHistory?.links) ? props.pointsHistory.links : [])
 
 function toggleExpandUser(userId) {
   expandedUserId.value = expandedUserId.value === userId ? null : userId
@@ -291,6 +431,11 @@ const availableCities = computed(() => {
   return [...cities].sort((a, b) => a.localeCompare(b, 'ru'))
 })
 
+const availableGroups = computed(() => {
+  const groups = new Set((props.users || []).flatMap(u => Array.isArray(u.groups) ? u.groups : []).filter(Boolean))
+  return [...groups].sort((a, b) => a.localeCompare(b, 'ru'))
+})
+
 const filteredUsers = computed(() => {
   let list = props.users || []
   const q = searchQuery.value.toLowerCase().trim()
@@ -309,6 +454,10 @@ const filteredUsers = computed(() => {
 
   if (cityFilter.value) {
     list = list.filter(u => u.city === cityFilter.value)
+  }
+
+  if (groupFilter.value) {
+    list = list.filter(u => Array.isArray(u.groups) && u.groups.includes(groupFilter.value))
   }
 
   return list
@@ -349,6 +498,39 @@ function resetForm() {
   searchQuery.value = ''
   roleFilter.value = ''
   cityFilter.value = ''
+  groupFilter.value = ''
+}
+
+function applyHistoryFilters() {
+  const params = {}
+  if (historyForm.search?.trim()) params.history_search = historyForm.search.trim()
+  if (historyForm.type) params.history_type = historyForm.type
+  if (historyForm.group) params.history_group = historyForm.group
+  if (historyForm.date_from) params.history_date_from = historyForm.date_from
+  if (historyForm.date_to) params.history_date_to = historyForm.date_to
+
+  router.get(route('lms.admin.gamification.index', props.event.slug), params, {
+    preserveState: true,
+    preserveScroll: true,
+    replace: true,
+  })
+}
+
+function resetHistoryFilters() {
+  historyForm.search = ''
+  historyForm.type = ''
+  historyForm.group = ''
+  historyForm.date_from = ''
+  historyForm.date_to = ''
+  applyHistoryFilters()
+}
+
+function goToHistoryPage(url) {
+  if (!url) return
+  router.visit(url, {
+    preserveState: true,
+    preserveScroll: true,
+  })
 }
 
 function submitManual() {
@@ -363,6 +545,13 @@ function submitManual() {
 function confirmDestroy(rule) {
   if (confirm(`Удалить правило "${rule.title}"?`)) {
     router.delete(route('lms.admin.gamification.destroy', [props.event.slug, rule.id]))
+  }
+}
+
+function confirmDestroyPoint(point) {
+  if (!point?.id) return
+  if (confirm('Удалить это начисление баллов?')) {
+    router.delete(route('lms.admin.gamification.points.destroy', [props.event.slug, point.id]))
   }
 }
 </script>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lms\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGroup;
+use App\Models\Lms\LmsProfile;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,20 +16,31 @@ class GroupController extends Controller
 {
     public function index(LmsEvent $event): Response
     {
-        $groups = $event->groups()
+        $profile = $this->currentProfile($event);
+        $canManageAllGroups = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
+
+        $groupsQuery = $event->groups()
             ->withCount('members')
             ->with('curator:id,name')
-            ->orderBy('title')
-            ->paginate(15);
+            ->orderBy('title');
+
+        if (! $canManageAllGroups) {
+            $groupsQuery->where('curator_id', auth()->id());
+        }
+
+        $groups = $groupsQuery->paginate(15);
 
         return Inertia::render('Lms/Admin/Groups/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
             'groups' => $groups,
+            'canSetCurator' => $canManageAllGroups,
         ]);
     }
 
     public function create(LmsEvent $event): Response
     {
+        $profile = $this->currentProfile($event);
+        $canSetCurator = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
         $profileUsers = $event->profiles()->with('user:id,name,email')->get()->pluck('user')->filter()->unique('id');
         $users = $profileUsers->isNotEmpty() ? $profileUsers->values() : User::orderBy('name')->get(['id', 'name', 'email']);
 
@@ -36,11 +48,16 @@ class GroupController extends Controller
             'event' => $event->only(['id', 'slug', 'title']),
             'group' => null,
             'users' => $users,
+            'canSetCurator' => $canSetCurator,
+            'fixedCuratorName' => auth()->user() ? auth()->user()->name : null,
         ]);
     }
 
     public function store(Request $request, LmsEvent $event): RedirectResponse
     {
+        $profile = $this->currentProfile($event);
+        $canSetCurator = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'curator_id' => ['nullable', 'exists:users,id'],
@@ -49,6 +66,9 @@ class GroupController extends Controller
         ]);
 
         $validated['lms_event_id'] = $event->id;
+        if (! $canSetCurator) {
+            $validated['curator_id'] = auth()->id();
+        }
 
         $group = LmsGroup::create($validated);
 
@@ -62,6 +82,9 @@ class GroupController extends Controller
     public function edit(LmsEvent $event, LmsGroup $group): Response
     {
         $this->ensureGroupBelongsToEvent($group, $event);
+        $profile = $this->currentProfile($event);
+        $canSetCurator = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
+        $this->ensureCanManageGroup($group, $canSetCurator);
 
         $group->load('members:id,name,email');
         $profileUsers = $event->profiles()->with('user:id,name,email')->get()->pluck('user')->filter()->unique('id');
@@ -71,12 +94,17 @@ class GroupController extends Controller
             'event' => $event->only(['id', 'slug', 'title']),
             'group' => $group,
             'users' => $users,
+            'canSetCurator' => $canSetCurator,
+            'fixedCuratorName' => auth()->user() ? auth()->user()->name : null,
         ]);
     }
 
     public function update(Request $request, LmsEvent $event, LmsGroup $group): RedirectResponse
     {
         $this->ensureGroupBelongsToEvent($group, $event);
+        $profile = $this->currentProfile($event);
+        $canSetCurator = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
+        $this->ensureCanManageGroup($group, $canSetCurator);
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -84,6 +112,10 @@ class GroupController extends Controller
             'user_ids' => ['nullable', 'array'],
             'user_ids.*' => ['exists:users,id'],
         ]);
+
+        if (! $canSetCurator) {
+            $validated['curator_id'] = auth()->id();
+        }
 
         $group->update($validated);
 
@@ -95,6 +127,9 @@ class GroupController extends Controller
     public function destroy(LmsEvent $event, LmsGroup $group): RedirectResponse
     {
         $this->ensureGroupBelongsToEvent($group, $event);
+        $profile = $this->currentProfile($event);
+        $canSetCurator = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
+        $this->ensureCanManageGroup($group, $canSetCurator);
 
         $group->delete();
 
@@ -106,5 +141,24 @@ class GroupController extends Controller
         if ($group->lms_event_id !== $event->id) {
             abort(404);
         }
+    }
+
+    private function ensureCanManageGroup(LmsGroup $group, bool $canManageAllGroups): void
+    {
+        if ($canManageAllGroups) {
+            return;
+        }
+
+        if ((int) $group->curator_id !== (int) auth()->id()) {
+            abort(403, 'Можно управлять только группами, где вы куратор.');
+        }
+    }
+
+    private function currentProfile(LmsEvent $event): ?LmsProfile
+    {
+        return $event->profiles()
+            ->where('user_id', auth()->id())
+            ->with('lmsRole:id,name,slug')
+            ->first();
     }
 }

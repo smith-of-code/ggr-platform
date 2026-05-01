@@ -140,12 +140,14 @@ const limitedBackofficeRoles = [
   'куратор-эксперт',
   'куратор эксперт',
   'тренер команды',
+  'тренер команд',
   'трекер',
   'эксперт',
   'curator-expert',
   'curator expert',
   'team-trainer',
   'team trainer',
+  'team coach',
   'tracker',
   'expert',
   'kurator-ekspert',
@@ -221,6 +223,7 @@ const sidebarItems = computed(() => {
         { id: 'tests', label: 'Тесты', icon: icons.tests },
         { id: 'assignments', label: 'Задания', icon: icons.assignments },
         { id: 'gamification', label: 'Геймификация', icon: icons.gamification },
+        { id: 'groups', label: 'Группы', icon: icons.groups },
       )
 
       return items

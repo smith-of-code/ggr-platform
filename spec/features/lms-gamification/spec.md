@@ -26,6 +26,7 @@
 - `Pages/Lms/Gamification/Leaderboard.vue` — рейтинг участников и групп (подиум, таблица, вкладки)
 - `Pages/Lms/Gamification/MyPoints.vue` — история баллов пользователя
 - `Pages/Lms/Admin/Gamification/Index.vue` — список правил (первый блок), ссылка «Создать правило», рейтинг участников (топ 100, без admin в событии), расшифровка по пользователю (раскрывающаяся подстрока таблицы), модалка ручного начисления
+  и отдельный блок «Подробная история начислений» (глобальная лента начислений по событию с фильтрами и пагинацией)
 - `Pages/Lms/Admin/Gamification/Form.vue` — создание/редактирование правила
 - `Pages/Lms/Profile/Edit.vue` — для ролей с ограниченным backoffice-доступом показывается блок «Геймификация» с переходом к начислению баллов
 
@@ -81,9 +82,18 @@
 ## Ручное начисление (Admin)
 
 - Маршрут: `POST /lms-admin/{event}/gamification/manual-points`
-- Модальное окно с поиском по ФИО/email, фильтрами по роли и городу, массовым выбором
+- Модальное окно с поиском по ФИО/email, фильтрами по роли, городу и группе, массовым выбором
 - Поля: участники (чекбоксы), баллы (число), причина (текст)
 - Создаёт `LmsGamificationPoint` с `lms_gamification_rule_id = null`
+- Удаление начисления: `DELETE /lms-admin/{event}/gamification/points/{point}` из блока расшифровки баллов в админке
+- Право на удаление начислений: все не-участники (admin и прочие роли backoffice, кроме `participant`)
+
+## Подробная история начислений (Admin)
+
+- На странице `lms.admin.gamification.index` отображается таблица всех `lms_gamification_points` по событию.
+- Фильтры: поиск (`history_search` — по имени/email участника, причине и названию правила), тип начисления (`history_type`: `manual`/`auto`), группа (`history_group`), диапазон дат (`history_date_from`, `history_date_to`).
+- Сортировка: по `created_at DESC, id DESC`.
+- Пагинация: 30 записей на страницу.
 
 ## Рейтинг (Leaderboard)
 
@@ -121,3 +131,4 @@
 |---|---|---|
 | GET/POST/PUT/DELETE | `/gamification` (resource) | Admin\GamificationController CRUD |
 | POST | `/gamification/manual-points` | Admin\GamificationController@manualPoints |
+| DELETE | `/gamification/points/{point}` | Admin\GamificationController@destroyPoint |
