@@ -120,12 +120,21 @@
               (записи с № {{ users.from }} по № {{ users.to }})
             </template>
           </p>
-          <div v-if="users.last_page > 1" class="flex flex-wrap items-center gap-3 text-sm">
-            <span class="text-xs text-gray-500">Страница {{ users.current_page }} из {{ users.last_page }}</span>
-            <div class="flex gap-3">
-              <Link v-if="users.prev_page_url" :href="users.prev_page_url" class="font-medium text-[#003274] hover:underline" preserve-scroll>Назад</Link>
-              <Link v-if="users.next_page_url" :href="users.next_page_url" class="font-medium text-[#003274] hover:underline" preserve-scroll>Вперёд</Link>
-            </div>
+          <div v-if="users.last_page > 1" class="flex gap-1">
+            <button
+              v-for="link in users.links"
+              :key="link.label"
+              type="button"
+              :disabled="!link.url"
+              class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+              :class="
+                link.active
+                  ? 'bg-[#003274] text-white'
+                  : 'text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30'
+              "
+              @click="link.url && router.visit(link.url, { preserveState: true, preserveScroll: true })"
+              v-html="link.label"
+            />
           </div>
         </div>
       </div>
