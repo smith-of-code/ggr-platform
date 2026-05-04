@@ -33,7 +33,7 @@ class TourCabinetSupportController extends Controller
             $query->where('category', $category);
         }
 
-        $tickets = $query->paginate(20)->through(function (TourCabinetSupportTicket $t) {
+        $tickets = $query->paginate(20)->withQueryString()->through(function (TourCabinetSupportTicket $t) {
             return [
                 'id' => $t->id,
                 'subject' => $t->subject,

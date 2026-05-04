@@ -68,11 +68,29 @@
           </tr>
         </tbody>
       </table>
-      <div v-if="tickets.prev_page_url || tickets.next_page_url" class="flex justify-end gap-3 border-t border-gray-100 px-4 py-3 text-sm">
-        <Link v-if="tickets.prev_page_url" :href="tickets.prev_page_url" class="font-medium text-[#003274] hover:underline" preserve-scroll>Назад</Link>
-        <Link v-if="tickets.next_page_url" :href="tickets.next_page_url" class="font-medium text-[#003274] hover:underline" preserve-scroll>Вперёд</Link>
-      </div>
       <p v-if="!tickets.data.length" class="px-6 py-10 text-center text-sm text-gray-500">Нет обращений по выбранным фильтрам.</p>
+
+      <div v-if="tickets.last_page > 1" class="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+        <p class="text-xs text-gray-500">
+          {{ tickets.from }}–{{ tickets.to }} из {{ tickets.total }}
+        </p>
+        <div class="flex gap-1">
+          <button
+            v-for="link in tickets.links"
+            :key="link.label"
+            type="button"
+            :disabled="!link.url"
+            class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+            :class="
+              link.active
+                ? 'bg-[#003274] text-white'
+                : 'text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30'
+            "
+            @click="link.url && router.visit(link.url, { preserveState: true, preserveScroll: true })"
+            v-html="link.label"
+          />
+        </div>
+      </div>
     </RCard>
   </AdminLayout>
 </template>

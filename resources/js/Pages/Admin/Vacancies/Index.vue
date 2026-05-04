@@ -63,6 +63,28 @@
       <div v-if="vacancies.data.length === 0" class="px-5 py-16 text-center">
         <p class="text-sm text-gray-400">Вакансий пока нет</p>
       </div>
+
+      <div v-if="vacancies.last_page > 1" class="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+        <p class="text-xs text-gray-500">
+          {{ vacancies.from }}–{{ vacancies.to }} из {{ vacancies.total }}
+        </p>
+        <div class="flex gap-1">
+          <button
+            v-for="link in vacancies.links"
+            :key="link.label"
+            type="button"
+            :disabled="!link.url"
+            class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+            :class="
+              link.active
+                ? 'bg-[#003274] text-white'
+                : 'text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30'
+            "
+            @click="link.url && router.visit(link.url, { preserveState: true })"
+            v-html="link.label"
+          />
+        </div>
+      </div>
     </RCard>
   </AdminLayout>
 </template>

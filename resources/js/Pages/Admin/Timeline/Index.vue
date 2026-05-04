@@ -61,6 +61,28 @@
         <svg class="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5" /></svg>
         <p class="mt-3 text-sm text-gray-400">Событий пока нет</p>
       </div>
+
+      <div v-if="events?.last_page > 1" class="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+        <p class="text-xs text-gray-500">
+          {{ events.from }}–{{ events.to }} из {{ events.total }}
+        </p>
+        <div class="flex gap-1">
+          <button
+            v-for="link in events.links"
+            :key="link.label"
+            type="button"
+            :disabled="!link.url"
+            class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+            :class="
+              link.active
+                ? 'bg-[#003274] text-white'
+                : 'text-gray-500 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30'
+            "
+            @click="link.url && router.visit(link.url, { preserveState: true })"
+            v-html="link.label"
+          />
+        </div>
+      </div>
     </RCard>
   </AdminLayout>
 </template>
