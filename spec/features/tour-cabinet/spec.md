@@ -40,6 +40,8 @@
 |--------|------|------------|
 | GET | `/tour-cabinet` | Дашборд (middleware `tour-cabinet`) |
 | PATCH | `/tour-cabinet/profile` | Сохранение профиля с дашборда (`TourCabinetController@updateProfile`) |
+| POST | `/tour-cabinet/profile/documents` | Загрузка/замена файла документа профиля (`tour-cabinet.profile.documents.upload`, throttle `tour-cabinet-profile-document`); см. раздел «Документы участника и модерация» |
+| DELETE | `/tour-cabinet/profile/documents/{document}` | Удаление файла документа участника (`tour-cabinet.profile.documents.delete`); запрещено при `STATUS_APPROVED` |
 | GET | `/tour-cabinet/contest` | Редирект на дашборд с якорем блока конкурса (`#tour-cabinet-contest`; совместимость со старыми ссылками) |
 | POST | `/tour-cabinet/contest/direction` | Сохранить выбранное направление (`project_key`) |
 | POST | `/tour-cabinet/contest/cities` | Сохранить 1–3 `city_id` из `tour_cabinet_direction_cities` |
@@ -71,6 +73,41 @@
 
 Спецификация: **`support.md`** — тикеты, сообщения, вложения в MVP; ответы только админы портала; опционально в UI текст «напишите на …» через `config('tour_cabinet.support_contact_email')` / `TOUR_CABINET_SUPPORT_CONTACT_EMAIL`; **авто-письма из приложения не отправляются** — только ЛК и админка. Раздел «Поддержка» виден всем с доступом к `/tour-cabinet` (в т.ч. LMS без `is_tour_cabinet_user`).
 
+## Документы участника и модерация
+
+В ЛК `/tour-cabinet`, секция `#tour-cabinet-documents`, участник загружает сканы паспорта (разворот, прописка) и СНИЛС. Модель — `App\Models\TourCabinetDocument` (таблица `tour_cabinet_documents`):
+
+- Типы (`TourCabinetDocument::allowedTypes()`): `passport_spread` («Паспорт: разворот с 1–2 страницей»), `passport_registration` («Паспорт: страница с пропиской»), `snils` («СНИЛС»). Метки — `TourCabinetDocument::typeLabel($type)`.
+- Статусы: `pending_review` (после загрузки), `approved` (модератор подтвердил), `annulled` (модератор отклонил — файл удалён, сохраняются `admin_comment` + `reviewed_at`).
+- Поля: `user_id`, `type`, `file_path`, `original_name`, `status`, `admin_comment`, `reviewed_at`. После `annul` `file_path`/`original_name` сбрасываются в пустую строку (запись по типу остаётся, чтобы хранить комментарий и историю).
+- Хранилище — `config('filesystems.upload_disk')`, каталог `tour-cabinet/documents/{user_id}`. Допустимые форматы загрузки: `pdf,jpg,jpeg,png,doc,docx`, до 50 МБ.
+
+### Поведение в ЛК участника
+
+- `POST tour-cabinet.profile.documents.upload` принимает `type` + `file` (или `file_url` + опц. `file_name`); создаёт/перезаписывает запись по `(user_id, type)` со статусом `pending_review`. Если у документа `STATUS_APPROVED` (`isLockedForParticipant() === true`) — операция запрещена с ошибкой «Этот документ подтверждён модератором. Для изменения обратитесь в поддержку.»
+- `DELETE tour-cabinet.profile.documents.delete` — удаляет файл со storage и саму запись; для подтверждённых документов запрещено («Подтверждённый документ можно удалить только через поддержку.»).
+- На дашборде после approve по типу показывается подпись «Документ подтверждён модератором…», после annul — красная плашка `«Документ отклонён модератором: <admin_comment>»` (или fallback «Документ отклонён. Загрузите файл заново.») и кнопка «Загрузить» снова доступна.
+
+### Действия модератора в админке
+
+Карточка `/admin/tour-cabinet/tour-users/{user}`, блок «Документы ЛК» (`Admin/TourCabinet/TourUsers/Show.vue`):
+
+- **GET** `admin.tour-cabinet.tour-users.documents.download` — скачивание оригинального файла (404, если файла нет).
+- **POST** `admin.tour-cabinet.tour-users.documents.approve` — кнопка «Подтвердить» (доступна, если `has_file && status = pending_review`).
+- **POST** `admin.tour-cabinet.tour-users.documents.annul` — кнопка «Отклонить с комментарием» (доступна, если `has_file && status ∈ {pending_review, approved}`); обязательное поле `comment` (`required|string|min:3|max:2000`, сообщение «Укажите комментарий для участника.»).
+
+Бизнес-логика — `App\Services\TourCabinetDocumentReviewService`:
+
+- `approve(TourCabinetDocument $d)`: требует наличие файла; идемпотентно; ставит `status = approved`, `reviewed_at = now()`, `admin_comment = null`.
+- `annul(TourCabinetDocument $d, string $comment)`: требует наличие файла и непустой trimmed комментарий; в транзакции удаляет файл со storage (ошибки `Storage::delete` логируются как `tour_cabinet_document_annul_delete_failed`, но не валят операцию), сбрасывает `file_path`/`original_name` в пустую строку, ставит `status = annulled`, сохраняет `admin_comment` и `reviewed_at = now()`. После транзакции, если `recipient->email` непустой, ставит в очередь `emails` `SendMailJob` с письмом `TourCabinetDocumentAnnulledMail($recipient, $document->fresh(), $comment)`.
+
+### Email-уведомление об отклонении документа
+
+- Mailable: `App\Mail\TourCabinetDocumentAnnulledMail` (`Queueable`, `UsesMailDisplayName`); конструктор `(User, TourCabinetDocument, string $adminComment)`; subject «Документ в личном кабинете туров отклонён».
+- Шаблон: `resources/views/emails/tour-cabinet-document-annulled.blade.php` — обращение по ФИО (если заполнено), `documentTypeLabel` (через `TourCabinetDocument::typeLabel`), блок «Комментарий модератора» с `white-space: pre-wrap`, кнопка-ссылка на `route('tour-cabinet.dashboard') . '#tour-cabinet-documents'`, подпись `mailFromName` из `UsesMailDisplayName`.
+- Доставка — через единый `App\Jobs\SendMailJob` на очереди `emails`. Письмо — единственное автописьмо, отправляемое из ЛК туров (см. раздел «Поддержка»: тикеты — без авто-писем).
+- Письма об одобрении документа (`approve`) **не отправляются** — out of scope: участник видит статус в ЛК.
+
 ## Портальная админка (ЛК туров)
 
 Точка входа для редакторов: **GET** `/admin/tour-cabinet` (`admin.tour-cabinet.index`) — одна страница «ЛК туров» с тремя блоками на месте: города по направлениям (переключение направления через query `project_key` + якорь `#tour-cabinet-admin-cities`), формы этапа 1, вопросы этапа 2. Отдельного раздела «этап 3» в админке нет (данные — в ЛК участника). После POST-операций редирект обратно на эту страницу с якорем соответствующего блока.
@@ -81,3 +118,5 @@
 - **GET** `/admin/tour-cabinet/stage2-questions` — отдельная страница с тем же UI; CRUD через **POST/PATCH/DELETE** `admin.tour-cabinet.stage2-questions.*`, редиректы на хаб с якорем `#tour-cabinet-admin-stage2`.
 - **GET** `/admin/tour-cabinet/support` (`admin.tour-cabinet.support.index`) — очередь обращений участников ЛК туров; фильтры query `status`, `category`.
 - **GET** `/admin/tour-cabinet/support/{ticket}` (`admin.tour-cabinet.support.show`) — переписка, смена статуса (**PATCH** `admin.tour-cabinet.support.status.update`), ответ (**POST** `admin.tour-cabinet.support.messages.store`, throttle `tour-cabinet-support-message`).
+- **GET** `/admin/tour-cabinet/tour-users` (`admin.tour-cabinet.tour-users.index`) — список «Клиенты ЛК туров» (фильтры query: `q`, `city_id`, `segment` ∈ `all|tour_only|lms`); **GET** `/admin/tour-cabinet/tour-users/export` (`admin.tour-cabinet.tour-users.export`) — выгрузка CSV (`;`, BOM, заголовки на русском).
+- **GET** `/admin/tour-cabinet/tour-users/{user}` (`admin.tour-cabinet.tour-users.show`) — карточка участника: профиль, прогресс конкурса (этапы 1–3), заявки на туры по email и блок «Документы ЛК» (см. раздел «Документы участника и модерация»). **GET/POST** `admin.tour-cabinet.tour-users.documents.{download,approve,annul}` — действия над документами.
