@@ -234,8 +234,9 @@
                       {{ formatStageSchedule(item.stage) }}
                     </span>
                     <span v-if="item.stage.duration_minutes">~{{ item.stage.duration_minutes }} мин</span>
-                    <span v-if="item.stage.available_from && !item.is_available">
-                      Откроется {{ formatDateFull(item.stage.available_from) }}
+                    <span v-if="item.stage.available_from" class="flex items-center gap-1">
+                      <CalendarIcon class="h-3 w-3" />
+                      {{ stageOpeningLabel(item) }} {{ formatDateTimeFull(item.stage.available_from) }}
                     </span>
                   </div>
                 </div>
@@ -265,6 +266,7 @@
             >
               <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" :class="stageStatusClass(item)">
                 <CheckIcon v-if="item.progress?.status === 'completed'" class="h-4 w-4" />
+                <LockClosedIcon v-else-if="!item.is_available" class="h-4 w-4" />
                 <component :is="stageTypeIcon(item.stage.type)" v-else class="h-4 w-4" />
               </div>
               <div class="min-w-0 flex-1">
@@ -276,6 +278,10 @@
                     {{ formatStageSchedule(item.stage) }}
                   </span>
                   <span v-if="item.stage.duration_minutes">~{{ item.stage.duration_minutes }} мин</span>
+                  <span v-if="item.stage.available_from" class="flex items-center gap-1">
+                    <CalendarIcon class="h-3 w-3" />
+                    {{ stageOpeningLabel(item) }} {{ formatDateTimeFull(item.stage.available_from) }}
+                  </span>
                 </div>
               </div>
               <span v-if="item.progress?.status === 'completed'" class="text-xs font-medium text-green-600">Пройден</span>
@@ -422,32 +428,58 @@ function stageWord(n) {
 
 function formatDateFull(d) {
   if (!d) return ''
-  return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+  const parts = dateParts(d)
+  if (!parts) return ''
+  return new Date(parts.year, parts.month - 1, parts.day)
+    .toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function dateParts(value) {
+  if (!value) return null
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/)
+  if (!match) return null
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+    hour: match[4] ?? '',
+    minute: match[5] ?? '',
+  }
+}
+
+function formatDateTimeFull(d) {
+  if (!d) return ''
+  const parts = dateParts(d)
+  if (!parts) return ''
+  const date = new Date(parts.year, parts.month - 1, parts.day)
+  const dateText = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+  return parts.hour ? `${dateText} г., ${parts.hour}:${parts.minute}` : dateText
+}
+
+function stageOpeningLabel(item) {
+  if (!item?.stage?.available_from) return ''
+  return item.is_available ? 'Открыт с' : 'Откроется'
 }
 
 function formatScheduleDate(d) {
   if (!d) return ''
-  const date = new Date(d)
-  const opts = { day: 'numeric', month: 'long' }
-  const h = date.getHours()
-  const m = date.getMinutes()
-  if (h || m) {
-    opts.hour = '2-digit'
-    opts.minute = '2-digit'
-  }
-  return date.toLocaleDateString('ru-RU', opts)
+  const parts = dateParts(d)
+  if (!parts) return ''
+  const date = new Date(parts.year, parts.month - 1, parts.day)
+  const dateText = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+  return parts.hour ? `${dateText}, ${parts.hour}:${parts.minute}` : dateText
 }
 
 function formatStageSchedule(stage) {
   if (!stage?.scheduled_at) return ''
   if (!stage.scheduled_ends_at) return formatScheduleDate(stage.scheduled_at)
-  const d1 = new Date(stage.scheduled_at)
-  const d2 = new Date(stage.scheduled_ends_at)
-  if (d1.toDateString() === d2.toDateString()) {
-    const datePart = d1.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
-    const t1 = d1.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-    const t2 = d2.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-    return `${datePart}, ${t1}–${t2}`
+  const start = dateParts(stage.scheduled_at)
+  const end = dateParts(stage.scheduled_ends_at)
+  if (!start || !end) return ''
+  if (start.year === end.year && start.month === end.month && start.day === end.day) {
+    const datePart = new Date(start.year, start.month - 1, start.day)
+      .toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+    return `${datePart}, ${start.hour}:${start.minute}–${end.hour}:${end.minute}`
   }
   return `${formatScheduleDate(stage.scheduled_at)} — ${formatScheduleDate(stage.scheduled_ends_at)}`
 }

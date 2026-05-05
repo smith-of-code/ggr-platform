@@ -35,6 +35,10 @@
         <RInput v-model="stage.title" placeholder="Название этапа" required />
       </div>
 
+      <div class="grid gap-3 sm:grid-cols-2">
+        <RInput v-model="stage.available_from" label="Открытие этапа" type="datetime-local" />
+      </div>
+
       <!-- Blocks list -->
       <div class="space-y-3">
         <div

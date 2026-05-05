@@ -294,6 +294,7 @@ function handleModuleSelect(mod) {
     type: s.type || 'content',
     content: s.content ?? '',
     position: s.position ?? 0,
+    available_from: normalizeDateTimeLocal(s.available_from),
     source_stage_id: s.id,
     blocks: stageBlocksFromServer(s),
   }))
@@ -313,6 +314,7 @@ function handleStageSelect(stage) {
   target.title = stage.title
   target.type = stage.type || 'content'
   target.content = stage.content ?? ''
+  target.available_from = normalizeDateTimeLocal(stage.available_from)
   target.source_stage_id = stage.id
   target.blocks = stageBlocksFromServer(stage)
 }
@@ -345,12 +347,17 @@ function normalizeScheduledAt(val) {
   return val.length > 16 ? val.slice(0, 16) : val
 }
 
+function normalizeDateTimeLocal(val) {
+  if (!val) return ''
+  return val.length > 16 ? val.slice(0, 16) : val
+}
+
 function emptyBlock() {
   return { type: 'content', content: '', position: 0, scheduled_at: '', scheduled_ends_at: '' }
 }
 
 function emptyStage() {
-  return { title: '', type: 'content', content: '', position: 0, blocks: [emptyBlock()] }
+  return { title: '', type: 'content', content: '', position: 0, available_from: '', blocks: [emptyBlock()] }
 }
 
 function emptyModule() {
@@ -386,6 +393,7 @@ function buildModules() {
         type: s.type || 'content',
         content: s.content ?? '',
         position: s.position ?? 0,
+        available_from: normalizeDateTimeLocal(s.available_from),
         source_stage_id: s.source_stage_id ?? null,
         blocks: stageBlocksFromServer(s),
       })),
@@ -404,6 +412,7 @@ function buildOrphanStages() {
         type: s.type || 'content',
         content: s.content ?? '',
         position: s.position ?? 0,
+        available_from: normalizeDateTimeLocal(s.available_from),
         source_stage_id: s.source_stage_id ?? null,
         blocks: stageBlocksFromServer(s),
       }))
