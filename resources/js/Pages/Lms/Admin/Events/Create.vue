@@ -28,6 +28,15 @@
           <label class="mb-2 block text-sm font-medium text-gray-700">Описание</label>
           <textarea v-model="form.description" rows="4" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" placeholder="Описание события" />
         </div>
+        <div>
+          <RInput
+            v-model="form.default_assignment_deadline"
+            label="Дедлайн по умолчанию"
+            type="datetime-local"
+            :error="form.errors.default_assignment_deadline"
+          />
+          <p class="mt-1 text-xs text-gray-400">Используется для заданий без своего дедлайна и для тестов в отчётах. Время — UTC, как для дедлайна задания.</p>
+        </div>
         <RCheckbox v-model="form.is_active" label="Активно" />
 
         <div>
@@ -52,6 +61,7 @@
 <script setup>
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import { datetimeLocalToUtcIso } from '@/utils/lmsAssignmentDeadline'
 
 const menuSections = [
   { key: 'courses', label: 'Программы' },
@@ -70,6 +80,7 @@ const form = useForm({
   description: '',
   is_active: true,
   menu_config: Object.fromEntries(menuSections.map(s => [s.key, true])),
+  default_assignment_deadline: '',
 })
 
 function slugify(text) {
@@ -89,6 +100,11 @@ function generateSlug() {
 }
 
 function submit() {
-  form.post(route('lms.admin.events.store'))
+  form
+    .transform(data => ({
+      ...data,
+      default_assignment_deadline: datetimeLocalToUtcIso(data.default_assignment_deadline),
+    }))
+    .post(route('lms.admin.events.store'))
 }
 </script>

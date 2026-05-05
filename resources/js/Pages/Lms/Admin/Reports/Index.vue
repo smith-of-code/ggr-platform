@@ -35,12 +35,33 @@
           <option v-for="c in availableCourses" :key="c.id" :value="c.id">{{ c.title }}</option>
         </select>
       </div>
+      <div class="min-w-[160px]">
+        <label class="mb-1 block text-xs font-medium text-gray-500">Город</label>
+        <select v-model="filterCityId" @change="applyFilters" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+          <option value="">Все города</option>
+          <option v-for="c in availableCities" :key="c.id" :value="c.id">{{ c.name }}</option>
+        </select>
+      </div>
+      <div class="min-w-[160px]">
+        <label class="mb-1 block text-xs font-medium text-gray-500">Факультет</label>
+        <select v-model="filterFaculty" @change="applyFilters" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+          <option value="">Все факультеты</option>
+          <option v-for="f in availableFaculties" :key="f" :value="f">{{ f }}</option>
+        </select>
+      </div>
       <div>
         <label class="mb-1 block text-xs font-medium text-gray-500">Период (динамика)</label>
         <div class="flex gap-2">
           <input v-model="filterDateFrom" type="date" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm" @change="applyFilters" />
           <input v-model="filterDateTo" type="date" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm" @change="applyFilters" />
         </div>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-medium text-gray-500">Гранулярность</label>
+        <select v-model="filterGranularity" @change="applyFilters" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+          <option value="day">День</option>
+          <option value="week">Неделя</option>
+        </select>
       </div>
       <button v-if="hasActiveFilters" @click="clearFilters" class="rounded-lg px-3 py-2 text-sm font-medium text-rosatom-600 transition hover:bg-rosatom-50">
         Сбросить
@@ -214,10 +235,161 @@
       </RCard>
     </div>
 
+    <!-- Deadline compliance tab -->
+    <div v-show="activeTab === 'deadline'">
+      <RCard flush>
+        <table class="min-w-full">
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50">
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Задание</th>
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Программа</th>
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Город</th>
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Факультет</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Всего</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">В срок</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">С задержкой</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Просрочено</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Ср. задержка (дн.)</th>
+              <th class="px-5 py-3 w-44 text-xs font-semibold uppercase tracking-wider text-gray-500">Распределение</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="(r, idx) in deadlineCompliance" :key="idx" :class="['transition hover:bg-gray-50', r.is_orphan ? 'bg-amber-50/40' : '']">
+              <td class="px-5 py-3.5 text-sm font-medium text-gray-900">
+                <div class="flex items-center gap-2">
+                  <span>{{ r.assignment_title }}</span>
+                  <RBadge v-if="r.is_orphan" variant="warning" size="sm" title="Задание не привязано к этапам ни одной программы">Вне плана</RBadge>
+                </div>
+              </td>
+              <td class="px-5 py-3.5 text-sm text-gray-600">{{ r.course_title || '—' }}</td>
+              <td class="px-5 py-3.5 text-sm text-gray-600">{{ r.city_name || '—' }}</td>
+              <td class="px-5 py-3.5 text-sm text-gray-600">{{ r.faculty || '—' }}</td>
+              <td class="px-5 py-3.5 text-center text-sm text-gray-700">{{ r.total_users }}</td>
+              <td class="px-5 py-3.5 text-center">
+                <RBadge variant="success" size="sm">{{ r.on_time }}</RBadge>
+              </td>
+              <td class="px-5 py-3.5 text-center">
+                <RBadge variant="warning" size="sm">{{ r.late }}</RBadge>
+              </td>
+              <td class="px-5 py-3.5 text-center">
+                <RBadge variant="danger" size="sm">{{ r.overdue }}</RBadge>
+              </td>
+              <td class="px-5 py-3.5 text-center text-sm text-gray-700">{{ r.avg_delay_days ?? '—' }}</td>
+              <td class="px-5 py-3.5">
+                <div v-if="r.total_users > 0" class="flex h-2 overflow-hidden rounded-full">
+                  <div class="bg-green-500" :style="{ width: (r.on_time / r.total_users * 100) + '%' }" />
+                  <div class="bg-amber-400" :style="{ width: (r.late / r.total_users * 100) + '%' }" />
+                  <div class="bg-red-400" :style="{ width: (r.overdue / r.total_users * 100) + '%' }" />
+                </div>
+                <div v-else class="h-2 rounded-full bg-gray-100" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="(deadlineCompliance || []).length === 0" class="px-5 py-12 text-center text-sm text-gray-400">Нет данных за выбранные фильтры</div>
+      </RCard>
+    </div>
+
+    <!-- Personal progress tab -->
+    <div v-show="activeTab === 'personal'">
+      <RCard flush>
+        <div class="overflow-x-auto">
+          <table class="min-w-full">
+            <thead>
+              <tr class="border-b border-gray-200 bg-gray-50">
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Участник</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Город</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Задания</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Тесты</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Этапы</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500" title="Дополнительные orphan-задания вне плана программы — не учитываются в общем %">Доп.</th>
+                <th class="px-4 py-3 w-56 text-xs font-semibold uppercase tracking-wider text-gray-500">Общий %</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr v-for="r in personalProgress" :key="r.user_id" class="transition hover:bg-gray-50">
+                <td class="px-4 py-3">
+                  <p class="text-sm font-medium text-gray-900">{{ r.user_name }}</p>
+                  <p class="text-xs text-gray-400">{{ r.user_email }}</p>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ r.city_name || '—' }}</td>
+                <td class="px-4 py-3 text-center text-xs text-gray-700">
+                  {{ r.assignments_done }} / {{ r.assignments_total }}
+                  <span class="ml-1 font-bold" :class="progressColor(r.assignments_pct)">({{ r.assignments_pct }}%)</span>
+                </td>
+                <td class="px-4 py-3 text-center text-xs text-gray-700">
+                  {{ r.tests_done }} / {{ r.tests_total }}
+                  <span class="ml-1 font-bold" :class="progressColor(r.tests_pct)">({{ r.tests_pct }}%)</span>
+                </td>
+                <td class="px-4 py-3 text-center text-xs text-gray-700">
+                  {{ r.stages_done }} / {{ r.stages_total }}
+                  <span class="ml-1 font-bold" :class="progressColor(r.stages_pct)">({{ r.stages_pct }}%)</span>
+                </td>
+                <td class="px-4 py-3 text-center text-xs text-gray-500" :title="(r.assignments_orphan_total || 0) > 0 ? 'Orphan-задания вне плана программ' : 'Orphan-задания отсутствуют в событии'">
+                  <span v-if="(r.assignments_orphan_total || 0) > 0" :class="(r.assignments_orphan_done || 0) > 0 ? 'font-medium text-amber-600' : 'text-gray-400'">
+                    {{ r.assignments_orphan_done || 0 }} / {{ r.assignments_orphan_total }}
+                  </span>
+                  <span v-else class="text-gray-300">—</span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                      <div class="h-full rounded-full transition-all" :class="progressBarColor(r.overall_pct)" :style="{ width: r.overall_pct + '%' }" />
+                    </div>
+                    <span class="w-12 text-right text-sm font-bold" :class="progressColor(r.overall_pct)">{{ r.overall_pct }}%</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="(personalProgress || []).length === 0" class="px-5 py-12 text-center text-sm text-gray-400">Нет данных за выбранные фильтры</div>
+      </RCard>
+    </div>
+
+    <!-- Cities comparison tab -->
+    <div v-show="activeTab === 'cities'">
+      <div v-if="!filterCourseId" class="rounded-xl border border-dashed border-gray-300 bg-gray-50/50 px-5 py-12 text-center text-sm text-gray-500">
+        Выберите программу в фильтрах, чтобы увидеть сравнение городов.
+      </div>
+      <RCard v-else flush>
+        <table class="min-w-full">
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50">
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Город</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Участников</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">% в срок</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">% просрочено</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Ср. общий %</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Ср. балл тестов</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="(r, idx) in (cityComparison || [])" :key="idx" class="transition hover:bg-gray-50">
+              <td class="px-5 py-3.5 text-sm font-medium text-gray-900">{{ r.city_name || '— Не указан —' }}</td>
+              <td class="px-5 py-3.5 text-center text-sm text-gray-700">{{ r.participants_count }}</td>
+              <td class="px-5 py-3.5 text-center">
+                <RBadge variant="success" size="sm">{{ r.on_time_pct }}%</RBadge>
+              </td>
+              <td class="px-5 py-3.5 text-center">
+                <RBadge variant="danger" size="sm">{{ r.overdue_pct }}%</RBadge>
+              </td>
+              <td class="px-5 py-3.5 text-center text-sm font-bold" :class="progressColor(r.avg_overall_pct)">{{ r.avg_overall_pct }}%</td>
+              <td class="px-5 py-3.5 text-center text-sm font-bold" :class="progressColor(r.avg_test_score)">{{ r.avg_test_score }}%</td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="(cityComparison || []).length === 0" class="px-5 py-12 text-center text-sm text-gray-400">Нет городов для выбранной программы</div>
+      </RCard>
+    </div>
+
     <!-- Activity Timeline tab -->
     <div v-show="activeTab === 'activity'">
       <RCard>
-        <h3 class="mb-4 text-base font-bold text-gray-900">Динамика за период</h3>
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-base font-bold text-gray-900">Динамика за период</h3>
+          <span class="text-xs text-gray-400">Гранулярность: {{ activityTimeline?.granularity === 'week' ? 'неделя' : 'день' }}</span>
+        </div>
         <div v-if="timelineDates.length" class="space-y-6">
           <div v-for="series in timelineSeries" :key="series.key">
             <div class="mb-2 flex items-center gap-2">
@@ -446,16 +618,26 @@
             <RCheckbox v-model="emailSections.courses" label="Программы (статистика)" />
             <RCheckbox v-model="emailSections.tests" label="Тесты (статистика)" />
             <RCheckbox v-model="emailSections.stages" label="Этапы программ (детализация)" />
+            <RCheckbox v-model="emailSections.deadline" label="Соблюдение сроков (по заданиям)" />
+            <RCheckbox v-model="emailSections.personal" label="Прогресс участников (персональный план)" />
+            <RCheckbox v-model="emailSections.cities" label="Сравнение городов (требует выбора программы)" />
+            <RCheckbox v-model="emailSections.dynamics" label="Динамика (период + гранулярность из фильтров)" />
           </div>
+        </div>
+
+        <div v-if="emailNeedsCourse" class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+          Раздел «Сравнение городов» требует выбранной программы — выберите её в фильтрах вверху страницы.
         </div>
 
         <div class="rounded-xl bg-gray-50 p-3 text-xs text-gray-500">
           Отчёт будет отправлен в формате CSV (открывается в Excel). Кодировка UTF-8 с BOM.
+          Для разделов «Сравнение городов» и «Динамика» используются текущие фильтры
+          (программа, период, гранулярность).
         </div>
       </form>
       <template #footer>
         <RButton variant="outline" @click="showEmailDialog = false">Отмена</RButton>
-        <RButton variant="primary" :disabled="!emailForm.email || selectedSections.length === 0" @click="sendReport">
+        <RButton variant="primary" :disabled="!emailForm.email || selectedSections.length === 0 || emailNeedsCourse" @click="sendReport">
           Отправить
         </RButton>
       </template>
@@ -474,6 +656,9 @@ const props = defineProps({
   courseStats: Array,
   testStats: Array,
   assignmentStats: Array,
+  deadlineCompliance: { type: Array, default: () => [] },
+  personalProgress: { type: Array, default: () => [] },
+  cityComparison: { type: Array, default: null },
   userDetails: Array,
   stageProgress: Array,
   activityTimeline: Object,
@@ -483,12 +668,17 @@ const props = defineProps({
   filters: Object,
   availableRoles: Array,
   availableCourses: Array,
+  availableCities: { type: Array, default: () => [] },
+  availableFaculties: { type: Array, default: () => [] },
 })
 
 const tabs = computed(() => [
   { id: 'courses', label: 'Программы', count: props.courseStats?.length || 0 },
   { id: 'tests', label: 'Тесты', count: props.testStats?.length || 0 },
   { id: 'assignments', label: 'Задания', count: props.assignmentStats?.length || 0 },
+  { id: 'deadline', label: 'Сроки', count: props.deadlineCompliance?.length || 0 },
+  { id: 'personal', label: 'Прогресс участников', count: props.personalProgress?.length || 0 },
+  { id: 'cities', label: 'Города', count: props.cityComparison?.length || 0 },
   { id: 'activity', label: 'Динамика' },
   { id: 'groups', label: 'Группы', count: props.groupStats?.length || 0 },
   { id: 'gamification', label: 'Геймификация', count: props.gamificationBreakdown?.length || 0 },
@@ -501,30 +691,45 @@ const userSearch = ref('')
 const userSort = ref('name')
 const showEmailDialog = ref(false)
 const emailForm = reactive({ email: '', errors: {} })
-const emailSections = reactive({ users: true, courses: true, tests: true, stages: false })
+const emailSections = reactive({
+  users: true, courses: true, tests: true, stages: false,
+  deadline: false, personal: false, cities: false, dynamics: false,
+})
 const expandedCourses = ref([])
 
 const filterRole = ref(props.filters?.role || '')
 const filterCourseId = ref(props.filters?.course_id || '')
+const filterCityId = ref(props.filters?.city_id || '')
+const filterFaculty = ref(props.filters?.faculty || '')
 const filterDateFrom = ref(props.filters?.date_from || '')
 const filterDateTo = ref(props.filters?.date_to || '')
+const filterGranularity = ref(props.filters?.granularity || 'day')
 
-const hasActiveFilters = computed(() => filterRole.value || filterCourseId.value || filterDateFrom.value || filterDateTo.value)
+const hasActiveFilters = computed(() =>
+  filterRole.value || filterCourseId.value || filterCityId.value || filterFaculty.value
+  || filterDateFrom.value || filterDateTo.value || filterGranularity.value === 'week'
+)
 
 function applyFilters() {
   const params = {}
   if (filterRole.value) params.role = filterRole.value
   if (filterCourseId.value) params.course_id = filterCourseId.value
+  if (filterCityId.value) params.city_id = filterCityId.value
+  if (filterFaculty.value) params.faculty = filterFaculty.value
   if (filterDateFrom.value) params.date_from = filterDateFrom.value
   if (filterDateTo.value) params.date_to = filterDateTo.value
+  if (filterGranularity.value && filterGranularity.value !== 'day') params.granularity = filterGranularity.value
   router.get(route('lms.admin.reports.index', props.event.slug), params, { preserveState: true })
 }
 
 function clearFilters() {
   filterRole.value = ''
   filterCourseId.value = ''
+  filterCityId.value = ''
+  filterFaculty.value = ''
   filterDateFrom.value = ''
   filterDateTo.value = ''
+  filterGranularity.value = 'day'
   router.get(route('lms.admin.reports.index', props.event.slug), {}, { preserveState: true })
 }
 
@@ -534,8 +739,14 @@ const selectedSections = computed(() => {
   if (emailSections.courses) s.push('courses')
   if (emailSections.tests) s.push('tests')
   if (emailSections.stages) s.push('stages')
+  if (emailSections.deadline) s.push('deadline')
+  if (emailSections.personal) s.push('personal')
+  if (emailSections.cities) s.push('cities')
+  if (emailSections.dynamics) s.push('dynamics')
   return s
 })
+
+const emailNeedsCourse = computed(() => emailSections.cities && !filterCourseId.value)
 
 const summaryCards = computed(() => [
   { label: 'Участников', value: props.summary?.total_users ?? 0, color: 'text-rosatom-600', bg: 'bg-rosatom-500' },
@@ -599,12 +810,18 @@ const timelineDates = computed(() => {
   const from = props.activityTimeline?.from
   const to = props.activityTimeline?.to
   if (!from || !to) return []
+  const isWeek = props.activityTimeline?.granularity === 'week'
   const dates = []
   let d = new Date(from)
+  if (isWeek) {
+    // Align to Monday (Postgres DATE_TRUNC('week') returns Monday).
+    const dow = (d.getDay() + 6) % 7
+    d.setDate(d.getDate() - dow)
+  }
   const end = new Date(to)
   while (d <= end) {
     dates.push(d.toISOString().split('T')[0])
-    d.setDate(d.getDate() + 1)
+    d.setDate(d.getDate() + (isWeek ? 7 : 1))
   }
   return dates
 })
@@ -613,8 +830,11 @@ const timelineSeries = computed(() => {
   const tl = props.activityTimeline || {}
   return [
     { key: 'enrollments', label: 'Записи на программы', color: 'bg-blue-500', barColor: 'bg-blue-400', data: tl.enrollments || {}, max: maxVal(tl.enrollments), total: sumVal(tl.enrollments) },
-    { key: 'completions', label: 'Завершения', color: 'bg-green-500', barColor: 'bg-green-400', data: tl.completions || {}, max: maxVal(tl.completions), total: sumVal(tl.completions) },
+    { key: 'completions', label: 'Завершения программ', color: 'bg-green-500', barColor: 'bg-green-400', data: tl.completions || {}, max: maxVal(tl.completions), total: sumVal(tl.completions) },
     { key: 'test_attempts', label: 'Попытки тестов', color: 'bg-purple-500', barColor: 'bg-purple-400', data: tl.test_attempts || {}, max: maxVal(tl.test_attempts), total: sumVal(tl.test_attempts) },
+    { key: 'assignments_approved', label: 'Принятые задания', color: 'bg-emerald-500', barColor: 'bg-emerald-400', data: tl.assignments_approved || {}, max: maxVal(tl.assignments_approved), total: sumVal(tl.assignments_approved) },
+    { key: 'tests_passed', label: 'Сданные тесты', color: 'bg-teal-500', barColor: 'bg-teal-400', data: tl.tests_passed || {}, max: maxVal(tl.tests_passed), total: sumVal(tl.tests_passed) },
+    { key: 'stages_completed', label: 'Завершённые этапы', color: 'bg-indigo-500', barColor: 'bg-indigo-400', data: tl.stages_completed || {}, max: maxVal(tl.stages_completed), total: sumVal(tl.stages_completed) },
   ]
 })
 
@@ -638,6 +858,22 @@ function formatShortDate(d) {
   return dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 }
 
+function progressColor(pct) {
+  const v = Number(pct) || 0
+  if (v >= 80) return 'text-green-600'
+  if (v >= 50) return 'text-amber-600'
+  if (v > 0) return 'text-red-600'
+  return 'text-gray-400'
+}
+
+function progressBarColor(pct) {
+  const v = Number(pct) || 0
+  if (v >= 80) return 'bg-green-500'
+  if (v >= 50) return 'bg-amber-500'
+  if (v > 0) return 'bg-red-500'
+  return 'bg-gray-300'
+}
+
 function activityClass(lastActivity) {
   if (!lastActivity) return 'text-red-500'
   const diff = (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24)
@@ -653,10 +889,17 @@ function formatDate(d) {
 }
 
 function sendReport() {
-  router.post(route('lms.admin.reports.send', props.event.slug), {
+  const payload = {
     email: emailForm.email,
     sections: selectedSections.value,
-  }, {
+  }
+  if (filterCourseId.value) payload.course_id = filterCourseId.value
+  if (emailSections.dynamics) {
+    if (filterDateFrom.value) payload.date_from = filterDateFrom.value
+    if (filterDateTo.value) payload.date_to = filterDateTo.value
+    payload.granularity = filterGranularity.value || 'day'
+  }
+  router.post(route('lms.admin.reports.send', props.event.slug), payload, {
     onSuccess: () => {
       showEmailDialog.value = false
       emailForm.email = ''

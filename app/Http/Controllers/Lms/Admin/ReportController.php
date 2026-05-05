@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsProfile;
 use App\Support\MailDisplayName;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,8 +22,11 @@ class ReportController extends Controller
         $eventId = $event->id;
         $roleFilter = $request->query('role');
         $courseFilter = $request->query('course_id');
+        $cityFilter = $request->query('city_id');
+        $facultyFilter = $request->query('faculty');
         $dateFrom = $request->query('date_from');
         $dateTo = $request->query('date_to');
+        $granularity = $request->query('granularity', 'day');
 
         $totalUsers = LmsProfile::where('lms_event_id', $eventId)
             ->when($roleFilter, fn ($q) => $q->where('role', $roleFilter))
@@ -31,9 +35,30 @@ class ReportController extends Controller
         $courseStats = $this->getCourseStats($eventId, $roleFilter);
         $testStats = $this->getTestStats($eventId, $roleFilter);
         $assignmentStats = $this->getAssignmentStats($eventId, $roleFilter);
+        $courseFilterInt = $courseFilter !== null && $courseFilter !== '' ? (int) $courseFilter : null;
+        $cityFilterInt = $cityFilter !== null && $cityFilter !== '' ? (int) $cityFilter : null;
+        $facultyFilterStr = $facultyFilter !== null && $facultyFilter !== '' ? (string) $facultyFilter : null;
+
+        $deadlineCompliance = $this->getDeadlineCompliance(
+            $eventId,
+            $roleFilter,
+            $courseFilterInt,
+            $cityFilterInt,
+            $facultyFilterStr,
+        );
+        $personalProgress = $this->getPersonalProgress(
+            $eventId,
+            $roleFilter,
+            $courseFilterInt,
+            $cityFilterInt,
+            $facultyFilterStr,
+        );
+        $cityComparison = $courseFilterInt !== null
+            ? $this->getCityComparison($eventId, $courseFilterInt)
+            : null;
         $userDetails = $this->getUserDetails($eventId, $roleFilter, $courseFilter);
         $stageProgress = $this->getStageProgress($eventId);
-        $activityTimeline = $this->getActivityTimeline($eventId, $dateFrom, $dateTo);
+        $activityTimeline = $this->getActivityTimeline($eventId, $dateFrom, $dateTo, (string) $granularity);
         $groupStats = $this->getGroupStats($eventId);
         $gamificationBreakdown = $this->getGamificationBreakdown($eventId);
 
@@ -79,12 +104,33 @@ class ReportController extends Controller
             ->orderBy('title')
             ->get(['id', 'title']);
 
+        $cities = DB::table('lms_profiles')
+            ->where('lms_profiles.lms_event_id', $eventId)
+            ->whereNotNull('lms_profiles.city_id')
+            ->join('cities', 'cities.id', '=', 'lms_profiles.city_id')
+            ->select('cities.id', 'cities.name')
+            ->distinct()
+            ->orderBy('cities.name')
+            ->get();
+
+        $faculties = DB::table('lms_course_enrollments')
+            ->join('lms_courses', 'lms_courses.id', '=', 'lms_course_enrollments.lms_course_id')
+            ->where('lms_courses.lms_event_id', $eventId)
+            ->whereNotNull('lms_course_enrollments.faculty')
+            ->where('lms_course_enrollments.faculty', '!=', '')
+            ->distinct()
+            ->orderBy('lms_course_enrollments.faculty')
+            ->pluck('lms_course_enrollments.faculty');
+
         return Inertia::render('Lms/Admin/Reports/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
             'summary' => $summary,
             'courseStats' => $courseStats,
             'testStats' => $testStats,
             'assignmentStats' => $assignmentStats,
+            'deadlineCompliance' => $deadlineCompliance,
+            'personalProgress' => $personalProgress,
+            'cityComparison' => $cityComparison,
             'userDetails' => $userDetails,
             'stageProgress' => $stageProgress,
             'activityTimeline' => $activityTimeline,
@@ -94,11 +140,16 @@ class ReportController extends Controller
             'filters' => [
                 'role' => $roleFilter,
                 'course_id' => $courseFilter,
+                'city_id' => $cityFilter,
+                'faculty' => $facultyFilter,
                 'date_from' => $dateFrom,
                 'date_to' => $dateTo,
+                'granularity' => $granularity,
             ],
             'availableRoles' => $roles,
             'availableCourses' => $courses,
+            'availableCities' => $cities,
+            'availableFaculties' => $faculties,
         ]);
     }
 
@@ -106,8 +157,17 @@ class ReportController extends Controller
     {
         $eventId = $event->id;
         $section = $request->query('section', 'all');
+        $courseFilter = $request->query('course_id');
+        $courseFilterInt = $courseFilter !== null && $courseFilter !== '' ? (int) $courseFilter : null;
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+        $granularity = (string) $request->query('granularity', 'day');
 
-        return response()->streamDownload(function () use ($eventId, $event, $section) {
+        if ($section === 'cities' && $courseFilterInt === null) {
+            abort(422, 'course_id is required for cities section.');
+        }
+
+        return response()->streamDownload(function () use ($eventId, $event, $section, $courseFilterInt, $dateFrom, $dateTo, $granularity) {
             echo "\xEF\xBB\xBF";
 
             if (in_array($section, ['all', 'users'])) {
@@ -125,6 +185,18 @@ class ReportController extends Controller
             if (in_array($section, ['all', 'stages'])) {
                 $this->writeCsvStages($eventId);
             }
+            if (in_array($section, ['all', 'deadline'])) {
+                $this->writeCsvDeadline($eventId);
+            }
+            if (in_array($section, ['all', 'personal'])) {
+                $this->writeCsvPersonal($eventId);
+            }
+            if ($section === 'cities' || ($section === 'all' && $courseFilterInt !== null)) {
+                $this->writeCsvCities($eventId, $courseFilterInt);
+            }
+            if (in_array($section, ['all', 'dynamics'])) {
+                $this->writeCsvDynamics($eventId, $dateFrom, $dateTo, $granularity);
+            }
         }, 'report_'.$event->slug.'_'.now()->format('Y-m-d').'.csv', [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
@@ -135,9 +207,19 @@ class ReportController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'email'],
             'sections' => ['required', 'array'],
+            'sections.*' => ['string', 'in:users,courses,tests,stages,deadline,personal,cities,dynamics'],
+            'course_id' => ['nullable', 'integer'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'granularity' => ['nullable', 'in:day,week'],
         ]);
 
         $eventId = $event->id;
+        $courseId = isset($validated['course_id']) ? (int) $validated['course_id'] : null;
+
+        if (in_array('cities', $validated['sections'], true) && $courseId === null) {
+            abort(422, 'course_id is required for cities section.');
+        }
 
         $rows = [];
         $rows[] = ['Отчёт по событию: '.$event->title];
@@ -184,6 +266,78 @@ class ReportController extends Controller
                 $total = $s->started + $s->in_progress + $s->completed;
                 $pct = $total > 0 ? round($s->completed / $total * 100, 1) : 0;
                 $rows[] = [$s->course_title, $s->stage_title, $s->started, $s->in_progress, $s->completed, $pct.'%'];
+            }
+            $rows[] = [];
+        }
+
+        if (in_array('deadline', $validated['sections'], true)) {
+            $rows[] = ['=== СОБЛЮДЕНИЕ СРОКОВ ==='];
+            $rows[] = ['Задание', 'Курс', 'Город', 'Факультет', 'Вне плана', 'Всего', 'В срок', 'С задержкой', 'Просрочено', 'Ср. задержка (дн.)'];
+            foreach ($this->getDeadlineCompliance($eventId) as $r) {
+                $rows[] = [
+                    $r->assignment_title, $r->course_title ?? '—', $r->city_name ?? '—', $r->faculty ?? '—',
+                    $r->is_orphan ? 'да' : 'нет',
+                    $r->total_users, $r->on_time, $r->late, $r->overdue,
+                    $r->avg_delay_days !== null ? (string) $r->avg_delay_days : '—',
+                ];
+            }
+            $rows[] = [];
+        }
+
+        if (in_array('personal', $validated['sections'], true)) {
+            $rows[] = ['=== ПРОГРЕСС УЧАСТНИКОВ ==='];
+            $rows[] = ['Имя', 'Email', 'Роль', 'Город', 'Заданий', 'Принято', '% заданий', 'Тестов', 'Сдано', '% тестов', 'Этапов', 'Завершено', '% этапов', 'Общий %', 'Доп. (вне плана)', 'Доп. принято'];
+            foreach ($this->getPersonalProgress($eventId) as $r) {
+                $rows[] = [
+                    $r->user_name, $r->user_email, $r->role ?? '—', $r->city_name ?? '—',
+                    $r->assignments_total, $r->assignments_done, $r->assignments_pct.'%',
+                    $r->tests_total, $r->tests_done, $r->tests_pct.'%',
+                    $r->stages_total, $r->stages_done, $r->stages_pct.'%',
+                    $r->overall_pct.'%',
+                    (int) ($r->assignments_orphan_total ?? 0),
+                    (int) ($r->assignments_orphan_done ?? 0),
+                ];
+            }
+            $rows[] = [];
+        }
+
+        if (in_array('cities', $validated['sections'], true)) {
+            $rows[] = ['=== СРАВНЕНИЕ ГОРОДОВ ==='];
+            $rows[] = ['Программа ID', $courseId];
+            $rows[] = ['Город', 'Участников', '% в срок', '% просрочено', 'Ср. общий %', 'Ср. балл тестов'];
+            foreach ($this->getCityComparison($eventId, $courseId) as $r) {
+                $rows[] = [
+                    $r->city_name ?? '—', $r->participants_count,
+                    $r->on_time_pct.'%', $r->overdue_pct.'%',
+                    $r->avg_overall_pct.'%', $r->avg_test_score.'%',
+                ];
+            }
+            $rows[] = [];
+        }
+
+        if (in_array('dynamics', $validated['sections'], true)) {
+            $granularity = $validated['granularity'] ?? 'day';
+            $timeline = $this->getActivityTimeline($eventId, $validated['date_from'] ?? null, $validated['date_to'] ?? null, $granularity);
+            $modeLabel = $timeline['granularity'] === 'week' ? 'НЕДЕЛЯ' : 'ДЕНЬ';
+            $rows[] = ["=== ДИНАМИКА ({$modeLabel}) ==="];
+            $rows[] = ['Период', $timeline['from'].' — '.$timeline['to']];
+            $rows[] = ['Корзина', 'Записи', 'Завершения курсов', 'Попытки тестов', 'Принятые задания', 'Сданные тесты', 'Завершённые этапы'];
+
+            $series = ['enrollments', 'completions', 'test_attempts', 'assignments_approved', 'tests_passed', 'stages_completed'];
+            $allKeys = [];
+            foreach ($series as $key) {
+                foreach ($timeline[$key] as $bucket => $_) {
+                    $allKeys[$bucket] = true;
+                }
+            }
+            ksort($allKeys);
+
+            foreach (array_keys($allKeys) as $bucket) {
+                $vals = [$bucket];
+                foreach ($series as $key) {
+                    $vals[] = (int) ($timeline[$key][$bucket] ?? 0);
+                }
+                $rows[] = $vals;
             }
             $rows[] = [];
         }
@@ -289,6 +443,407 @@ class ReportController extends Controller
             ->get();
     }
 
+    /**
+     * Соблюдение сроков ДЗ. Разбивка по `assignment × course × city × faculty`.
+     * Дедлайн считается в SQL по той же цепочке, что и `DeadlineService::resolveDeadline`:
+     * `assignment.deadline → event.default_assignment_deadline → config('lms.reports.default_deadline')`.
+     * Postgres-only: используется `EXTRACT(EPOCH FROM ...)` и `::timestamp`.
+     */
+    private function getDeadlineCompliance(
+        int $eventId,
+        ?string $roleFilter = null,
+        ?int $courseFilter = null,
+        ?int $cityFilter = null,
+        ?string $facultyFilter = null,
+    ) {
+        $defaultDeadline = Carbon::parse(config('lms.reports.default_deadline'))
+            ->utc()
+            ->format('Y-m-d H:i:s');
+        $deadlineExpr = "COALESCE(a.deadline, e.default_assignment_deadline, '{$defaultDeadline}'::timestamp)";
+
+        $approvedSubquery = '(SELECT s.lms_assignment_id, s.user_id, MAX(r.created_at) AS approved_at '
+            .'FROM lms_assignment_submissions s '
+            .'JOIN lms_assignment_reviews r ON r.lms_assignment_submission_id = s.id '
+            ."WHERE r.decision = 'approve' "
+            .'GROUP BY s.lms_assignment_id, s.user_id) ar';
+
+        $planRows = DB::table('lms_assignments as a')
+            ->join('lms_events as e', 'e.id', '=', 'a.lms_event_id')
+            ->join('lms_stage_blocks as sb', 'sb.lms_assignment_id', '=', 'a.id')
+            ->join('lms_course_stages as cs', 'cs.id', '=', 'sb.lms_course_stage_id')
+            ->join('lms_courses as c', 'c.id', '=', 'cs.lms_course_id')
+            ->join('lms_course_enrollments as ce', 'ce.lms_course_id', '=', 'c.id')
+            ->join('users as u', 'u.id', '=', 'ce.user_id')
+            ->join('lms_profiles as p', function ($join) use ($eventId) {
+                $join->on('p.user_id', '=', 'u.id')
+                    ->where('p.lms_event_id', $eventId);
+            })
+            ->leftJoin('cities', 'cities.id', '=', 'p.city_id')
+            ->leftJoin(DB::raw($approvedSubquery), function ($join) {
+                $join->on('ar.lms_assignment_id', '=', 'a.id')
+                    ->on('ar.user_id', '=', 'u.id');
+            })
+            ->where('a.lms_event_id', $eventId)
+            ->when($roleFilter, fn ($q) => $q->where('p.role', $roleFilter))
+            ->when($courseFilter, fn ($q) => $q->where('c.id', $courseFilter))
+            ->when($cityFilter, fn ($q) => $q->where('p.city_id', $cityFilter))
+            ->when($facultyFilter, fn ($q) => $q->where('ce.faculty', $facultyFilter))
+            ->select(
+                'a.id as assignment_id',
+                'a.title as assignment_title',
+                'c.id as course_id',
+                'c.title as course_title',
+                'p.city_id as city_id',
+                'cities.name as city_name',
+                'ce.faculty as faculty',
+                DB::raw('false as is_orphan'),
+                DB::raw('COUNT(DISTINCT u.id) as total_users'),
+                DB::raw("COUNT(DISTINCT CASE WHEN ar.approved_at IS NOT NULL AND ar.approved_at <= {$deadlineExpr} THEN u.id END) as on_time"),
+                DB::raw("COUNT(DISTINCT CASE WHEN ar.approved_at IS NOT NULL AND ar.approved_at >  {$deadlineExpr} THEN u.id END) as late"),
+                DB::raw('COUNT(DISTINCT CASE WHEN ar.approved_at IS NULL THEN u.id END) as overdue'),
+                DB::raw('ROUND(AVG(CASE WHEN ar.approved_at IS NOT NULL AND ar.approved_at > '.$deadlineExpr.' THEN CEIL(EXTRACT(EPOCH FROM (ar.approved_at - '.$deadlineExpr.')) / 86400.0) END)::numeric, 2) as avg_delay_days'),
+            )
+            ->groupBy('a.id', 'a.title', 'c.id', 'c.title', 'p.city_id', 'cities.name', 'ce.faculty')
+            ->orderBy('a.title')
+            ->orderBy('c.title')
+            ->orderBy('cities.name')
+            ->orderBy('ce.faculty')
+            ->get();
+
+        $orphanRows = ($courseFilter !== null || ($facultyFilter !== null && $facultyFilter !== ''))
+            ? collect()
+            : $this->getOrphanDeadlineCompliance($eventId, $deadlineExpr, $approvedSubquery, $roleFilter, $cityFilter);
+
+        return $planRows->concat($orphanRows)->values();
+    }
+
+    /**
+     * Orphan-задания (без `lms_stage_blocks` ни в одном курсе): база
+     * участников = `lms_profiles` события (фильтры role/city_id применяются),
+     * группировка только по самому заданию. Поля city/course/faculty = null,
+     * `is_orphan=true`. Скрываются при наличии фильтра по программе или
+     * факультету (т.к. orphan по определению вне плана).
+     */
+    private function getOrphanDeadlineCompliance(
+        int $eventId,
+        string $deadlineExpr,
+        string $approvedSubquery,
+        ?string $roleFilter,
+        ?int $cityFilter,
+    ) {
+        return DB::table('lms_assignments as a')
+            ->join('lms_events as e', 'e.id', '=', 'a.lms_event_id')
+            ->join('lms_profiles as p', function ($join) use ($eventId) {
+                $join->where('p.lms_event_id', $eventId);
+            })
+            ->join('users as u', 'u.id', '=', 'p.user_id')
+            ->leftJoin(DB::raw($approvedSubquery), function ($join) {
+                $join->on('ar.lms_assignment_id', '=', 'a.id')
+                    ->on('ar.user_id', '=', 'u.id');
+            })
+            ->where('a.lms_event_id', $eventId)
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('lms_stage_blocks as sb')
+                    ->whereColumn('sb.lms_assignment_id', 'a.id');
+            })
+            ->when($roleFilter, fn ($q) => $q->where('p.role', $roleFilter))
+            ->when($cityFilter, fn ($q) => $q->where('p.city_id', $cityFilter))
+            ->select(
+                'a.id as assignment_id',
+                'a.title as assignment_title',
+                DB::raw('NULL::bigint as course_id'),
+                DB::raw('NULL::text as course_title'),
+                DB::raw('NULL::bigint as city_id'),
+                DB::raw('NULL::text as city_name'),
+                DB::raw('NULL::text as faculty'),
+                DB::raw('true as is_orphan'),
+                DB::raw('COUNT(DISTINCT u.id) as total_users'),
+                DB::raw("COUNT(DISTINCT CASE WHEN ar.approved_at IS NOT NULL AND ar.approved_at <= {$deadlineExpr} THEN u.id END) as on_time"),
+                DB::raw("COUNT(DISTINCT CASE WHEN ar.approved_at IS NOT NULL AND ar.approved_at >  {$deadlineExpr} THEN u.id END) as late"),
+                DB::raw('COUNT(DISTINCT CASE WHEN ar.approved_at IS NULL THEN u.id END) as overdue'),
+                DB::raw('ROUND(AVG(CASE WHEN ar.approved_at IS NOT NULL AND ar.approved_at > '.$deadlineExpr.' THEN CEIL(EXTRACT(EPOCH FROM (ar.approved_at - '.$deadlineExpr.')) / 86400.0) END)::numeric, 2) as avg_delay_days'),
+            )
+            ->groupBy('a.id', 'a.title')
+            ->orderBy('a.title')
+            ->get();
+    }
+
+    /**
+     * Индивидуальный % прогресса участника по персональному плану программы.
+     * План = объединение `lms_course_stages` + `lms_stage_blocks` курсов из
+     * `lms_course_enrollments` пользователя в рамках события. Orphan-задания
+     * (без записи в `lms_stage_blocks` ни одной программы) НЕ включаются в
+     * total. На каждого user_id возвращается:
+     *   assignments_total/done/pct, tests_total/done/pct,
+     *   stages_total/done/pct, overall_pct.
+     * `overall_pct` = item-fairness: суммируем done и total по трём секциям и
+     * делим (а не среднее средних) — каждая единица плана весит одинаково.
+     */
+    private function getPersonalProgress(
+        int $eventId,
+        ?string $roleFilter = null,
+        ?int $courseFilter = null,
+        ?int $cityFilter = null,
+        ?string $facultyFilter = null,
+    ) {
+        $planWhere = "c.lms_event_id = {$eventId}";
+        if ($courseFilter) {
+            $planWhere .= " AND c.id = {$courseFilter}";
+        }
+        if ($facultyFilter !== null && $facultyFilter !== '') {
+            $facultyEsc = str_replace("'", "''", $facultyFilter);
+            $planWhere .= " AND ce.faculty = '{$facultyEsc}'";
+        }
+
+        $assignmentsTotalSub = '(SELECT ce.user_id, COUNT(DISTINCT sb.lms_assignment_id) AS cnt '
+            .'FROM lms_course_enrollments ce '
+            .'JOIN lms_courses c ON c.id = ce.lms_course_id '
+            .'JOIN lms_course_stages cs ON cs.lms_course_id = c.id '
+            .'JOIN lms_stage_blocks sb ON sb.lms_course_stage_id = cs.id '
+            ."WHERE {$planWhere} AND sb.lms_assignment_id IS NOT NULL "
+            .'GROUP BY ce.user_id) as at';
+
+        $assignmentsDoneSub = '(SELECT ce.user_id, COUNT(DISTINCT sb.lms_assignment_id) AS cnt '
+            .'FROM lms_course_enrollments ce '
+            .'JOIN lms_courses c ON c.id = ce.lms_course_id '
+            .'JOIN lms_course_stages cs ON cs.lms_course_id = c.id '
+            .'JOIN lms_stage_blocks sb ON sb.lms_course_stage_id = cs.id '
+            .'JOIN lms_assignment_submissions s ON s.lms_assignment_id = sb.lms_assignment_id AND s.user_id = ce.user_id '
+            ."WHERE {$planWhere} AND sb.lms_assignment_id IS NOT NULL AND s.status = 'approved' "
+            .'GROUP BY ce.user_id) as ad';
+
+        $testsTotalSub = '(SELECT ce.user_id, COUNT(DISTINCT sb.lms_test_id) AS cnt '
+            .'FROM lms_course_enrollments ce '
+            .'JOIN lms_courses c ON c.id = ce.lms_course_id '
+            .'JOIN lms_course_stages cs ON cs.lms_course_id = c.id '
+            .'JOIN lms_stage_blocks sb ON sb.lms_course_stage_id = cs.id '
+            ."WHERE {$planWhere} AND sb.lms_test_id IS NOT NULL "
+            .'GROUP BY ce.user_id) as tt';
+
+        $testsDoneSub = '(SELECT ce.user_id, COUNT(DISTINCT sb.lms_test_id) AS cnt '
+            .'FROM lms_course_enrollments ce '
+            .'JOIN lms_courses c ON c.id = ce.lms_course_id '
+            .'JOIN lms_course_stages cs ON cs.lms_course_id = c.id '
+            .'JOIN lms_stage_blocks sb ON sb.lms_course_stage_id = cs.id '
+            .'JOIN lms_test_attempts ta ON ta.lms_test_id = sb.lms_test_id AND ta.user_id = ce.user_id '
+            ."WHERE {$planWhere} AND sb.lms_test_id IS NOT NULL AND ta.passed = true "
+            .'GROUP BY ce.user_id) as td';
+
+        $stagesTotalSub = '(SELECT ce.user_id, COUNT(DISTINCT cs.id) AS cnt '
+            .'FROM lms_course_enrollments ce '
+            .'JOIN lms_courses c ON c.id = ce.lms_course_id '
+            .'JOIN lms_course_stages cs ON cs.lms_course_id = c.id '
+            ."WHERE {$planWhere} "
+            .'GROUP BY ce.user_id) as st';
+
+        $stagesDoneSub = '(SELECT sp.user_id, COUNT(DISTINCT sp.lms_course_stage_id) AS cnt '
+            .'FROM lms_stage_progress sp '
+            .'JOIN lms_course_stages cs ON cs.id = sp.lms_course_stage_id '
+            .'JOIN lms_courses c ON c.id = cs.lms_course_id '
+            .'JOIN lms_course_enrollments ce ON ce.lms_course_id = c.id AND ce.user_id = sp.user_id '
+            ."WHERE {$planWhere} AND sp.status = 'completed' "
+            .'GROUP BY sp.user_id) as sd';
+
+        $rows = DB::table('lms_profiles as p')
+            ->join('users as u', 'u.id', '=', 'p.user_id')
+            ->leftJoin('cities', 'cities.id', '=', 'p.city_id')
+            ->leftJoin(DB::raw($assignmentsTotalSub), 'at.user_id', '=', 'u.id')
+            ->leftJoin(DB::raw($assignmentsDoneSub), 'ad.user_id', '=', 'u.id')
+            ->leftJoin(DB::raw($testsTotalSub), 'tt.user_id', '=', 'u.id')
+            ->leftJoin(DB::raw($testsDoneSub), 'td.user_id', '=', 'u.id')
+            ->leftJoin(DB::raw($stagesTotalSub), 'st.user_id', '=', 'u.id')
+            ->leftJoin(DB::raw($stagesDoneSub), 'sd.user_id', '=', 'u.id')
+            ->where('p.lms_event_id', $eventId)
+            ->when($roleFilter, fn ($q) => $q->where('p.role', $roleFilter))
+            ->when($cityFilter, fn ($q) => $q->where('p.city_id', $cityFilter))
+            ->select(
+                'u.id as user_id',
+                'u.name as user_name',
+                'u.email as user_email',
+                'p.role',
+                'p.city_id',
+                'cities.name as city_name',
+                DB::raw('COALESCE(at.cnt, 0) as assignments_total'),
+                DB::raw('COALESCE(ad.cnt, 0) as assignments_done'),
+                DB::raw('COALESCE(tt.cnt, 0) as tests_total'),
+                DB::raw('COALESCE(td.cnt, 0) as tests_done'),
+                DB::raw('COALESCE(st.cnt, 0) as stages_total'),
+                DB::raw('COALESCE(sd.cnt, 0) as stages_done'),
+            )
+            ->orderBy('u.name')
+            ->get();
+
+        $orphanIds = DB::table('lms_assignments as a')
+            ->where('a.lms_event_id', $eventId)
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('lms_stage_blocks as sb')
+                    ->whereColumn('sb.lms_assignment_id', 'a.id');
+            })
+            ->pluck('a.id');
+        $orphanTotal = $orphanIds->count();
+        $orphanDoneByUser = $orphanTotal > 0
+            ? DB::table('lms_assignment_submissions')
+                ->whereIn('lms_assignment_id', $orphanIds)
+                ->where('status', 'approved')
+                ->selectRaw('user_id, COUNT(DISTINCT lms_assignment_id) as cnt')
+                ->groupBy('user_id')
+                ->pluck('cnt', 'user_id')
+            : collect();
+
+        return $rows->map(function ($r) use ($orphanTotal, $orphanDoneByUser) {
+            $aTotal = (int) $r->assignments_total;
+            $aDone = min((int) $r->assignments_done, $aTotal);
+            $tTotal = (int) $r->tests_total;
+            $tDone = min((int) $r->tests_done, $tTotal);
+            $sTotal = (int) $r->stages_total;
+            $sDone = min((int) $r->stages_done, $sTotal);
+
+            $totalAll = $aTotal + $tTotal + $sTotal;
+            $doneAll = $aDone + $tDone + $sDone;
+
+            $r->assignments_done = $aDone;
+            $r->tests_done = $tDone;
+            $r->stages_done = $sDone;
+            $r->assignments_pct = $aTotal > 0 ? round($aDone / $aTotal * 100, 1) : 0.0;
+            $r->tests_pct = $tTotal > 0 ? round($tDone / $tTotal * 100, 1) : 0.0;
+            $r->stages_pct = $sTotal > 0 ? round($sDone / $sTotal * 100, 1) : 0.0;
+            $r->overall_pct = $totalAll > 0 ? round($doneAll / $totalAll * 100, 1) : 0.0;
+
+            // Orphan-задания (вне плана программ): отдельные счётчики, НЕ
+            // влияют на assignments_*/overall_pct.
+            $orphanDone = (int) ($orphanDoneByUser[$r->user_id] ?? 0);
+            $r->assignments_orphan_total = $orphanTotal;
+            $r->assignments_orphan_done = min($orphanDone, $orphanTotal);
+
+            return $r;
+        });
+    }
+
+    /**
+     * Сравнение городов внутри одной программы. `course_id` обязателен —
+     * иначе 422. На каждый `city_id` (включая null = «город не указан»):
+     *   participants_count, on_time_pct, overdue_pct, avg_overall_pct, avg_test_score.
+     *
+     * Реюз: `getDeadlineCompliance` (per-assignment×city → суммируем) и
+     * `getPersonalProgress` (per-user → группируем по city и усредняем
+     * `overall_pct`). Avg test score — отдельный SQL (best attempt per user×test
+     * для тестов курса) с группировкой по `lms_profiles.city_id`.
+     *
+     * Участник учитывается в `participants_count`, если он enrolled в course
+     * И имеет профиль события; в `avg_overall_pct` — только участники с
+     * непустым планом (a+t+s > 0), чтобы 0/0/0 не размывали среднее.
+     */
+    private function getCityComparison(int $eventId, ?int $courseId)
+    {
+        if ($courseId === null) {
+            abort(422, 'course_id is required for city comparison.');
+        }
+
+        $compliance = $this->getDeadlineCompliance($eventId, null, $courseId, null, null);
+        $progress = $this->getPersonalProgress($eventId, null, $courseId, null, null);
+
+        $participants = DB::table('lms_course_enrollments as ce')
+            ->join('lms_profiles as p', function ($join) use ($eventId) {
+                $join->on('p.user_id', '=', 'ce.user_id')
+                    ->where('p.lms_event_id', $eventId);
+            })
+            ->where('ce.lms_course_id', $courseId)
+            ->select('p.city_id', DB::raw('COUNT(DISTINCT ce.user_id) as cnt'))
+            ->groupBy('p.city_id')
+            ->pluck('cnt', 'city_id');
+
+        $testIdsSub = '(SELECT DISTINCT sb.lms_test_id '
+            .'FROM lms_stage_blocks sb '
+            .'JOIN lms_course_stages cs ON cs.id = sb.lms_course_stage_id '
+            ."WHERE cs.lms_course_id = {$courseId} AND sb.lms_test_id IS NOT NULL) ct";
+
+        $bestAttemptSub = '(SELECT ta.user_id, ta.lms_test_id, MAX(ta.percentage) AS best_pct '
+            .'FROM lms_test_attempts ta '
+            ."JOIN {$testIdsSub} ON ct.lms_test_id = ta.lms_test_id "
+            .'GROUP BY ta.user_id, ta.lms_test_id) ba';
+
+        $testScores = DB::table(DB::raw($bestAttemptSub))
+            ->join('lms_profiles as p', function ($join) use ($eventId) {
+                $join->on('p.user_id', '=', 'ba.user_id')
+                    ->where('p.lms_event_id', $eventId);
+            })
+            ->select('p.city_id', DB::raw('AVG(ba.best_pct) as avg_score'))
+            ->groupBy('p.city_id')
+            ->pluck('avg_score', 'city_id');
+
+        $cityNames = [];
+        $byCity = [];
+        foreach ($compliance as $row) {
+            $key = $row->city_id;
+            if (! isset($byCity[$key])) {
+                $byCity[$key] = ['on_time' => 0, 'late' => 0, 'overdue' => 0, 'total' => 0];
+                $cityNames[$key] = $row->city_name;
+            }
+            $byCity[$key]['on_time'] += (int) $row->on_time;
+            $byCity[$key]['late'] += (int) $row->late;
+            $byCity[$key]['overdue'] += (int) $row->overdue;
+            $byCity[$key]['total'] += (int) $row->total_users;
+        }
+
+        $progressByCity = [];
+        foreach ($progress as $row) {
+            $hasPlan = ((int) $row->assignments_total + (int) $row->tests_total + (int) $row->stages_total) > 0;
+            if (! $hasPlan) {
+                continue;
+            }
+            $key = $row->city_id;
+            $progressByCity[$key] ??= [];
+            $progressByCity[$key][] = (float) $row->overall_pct;
+            $cityNames[$key] ??= $row->city_name;
+        }
+
+        $cityIds = array_unique(array_merge(
+            array_keys($participants->all()),
+            array_keys($byCity),
+            array_keys($progressByCity),
+        ));
+
+        $result = [];
+        foreach ($cityIds as $cityId) {
+            $key = $cityId === '' ? null : $cityId;
+            $compRow = $byCity[$key] ?? ['on_time' => 0, 'late' => 0, 'overdue' => 0, 'total' => 0];
+            $progressList = $progressByCity[$key] ?? [];
+            $total = $compRow['total'];
+
+            $result[] = (object) [
+                'city_id' => $key === '' ? null : ($key !== null ? (int) $key : null),
+                'city_name' => $cityNames[$key] ?? null,
+                'participants_count' => (int) ($participants[$key] ?? 0),
+                'on_time_pct' => $total > 0 ? round($compRow['on_time'] / $total * 100, 1) : 0.0,
+                'overdue_pct' => $total > 0 ? round($compRow['overdue'] / $total * 100, 1) : 0.0,
+                'avg_overall_pct' => count($progressList) > 0
+                    ? round(array_sum($progressList) / count($progressList), 1)
+                    : 0.0,
+                'avg_test_score' => isset($testScores[$key])
+                    ? round((float) $testScores[$key], 1)
+                    : 0.0,
+            ];
+        }
+
+        usort($result, function ($a, $b) {
+            if ($a->city_name === null && $b->city_name === null) {
+                return 0;
+            }
+            if ($a->city_name === null) {
+                return 1;
+            }
+            if ($b->city_name === null) {
+                return -1;
+            }
+
+            return strcmp($a->city_name, $b->city_name);
+        });
+
+        return collect($result);
+    }
+
     private function getUserDetails(int $eventId, ?string $roleFilter, ?string $courseFilter)
     {
         $query = DB::table('lms_profiles')
@@ -350,19 +905,36 @@ class ReportController extends Controller
             ->get();
     }
 
-    private function getActivityTimeline(int $eventId, ?string $dateFrom, ?string $dateTo)
+    /**
+     * Динамика активности за период.
+     *
+     * `granularity=day` (default) — DATE(col); `granularity=week` —
+     * DATE_TRUNC('week', col)::date (Postgres-only). Ключ корзины во всех
+     * сериях — ISO-дата `YYYY-MM-DD`. Контракт совместим: дневной режим
+     * сохраняет ключи `enrollments / completions / test_attempts`, недельный
+     * добавляет `assignments_approved / tests_passed / stages_completed`
+     * (в дневном режиме они также возвращаются — UI вправе их не отображать).
+     * В ответ включено поле `granularity` для UI-разводки.
+     */
+    private function getActivityTimeline(int $eventId, ?string $dateFrom, ?string $dateTo, string $granularity = 'day')
     {
-        $from = $dateFrom ? $dateFrom : now()->subDays(30)->format('Y-m-d');
+        $granularity = $granularity === 'week' ? 'week' : 'day';
+        $defaultDays = $granularity === 'week' ? 90 : 30;
+        $from = $dateFrom ? $dateFrom : now()->subDays($defaultDays)->format('Y-m-d');
         $to = $dateTo ? $dateTo : now()->format('Y-m-d');
+
+        $bucket = fn (string $col) => $granularity === 'week'
+            ? "DATE_TRUNC('week', {$col})::date"
+            : "DATE({$col})";
 
         $enrollments = DB::table('lms_course_enrollments')
             ->join('lms_courses', 'lms_courses.id', '=', 'lms_course_enrollments.lms_course_id')
             ->where('lms_courses.lms_event_id', $eventId)
             ->whereBetween('lms_course_enrollments.created_at', [$from.' 00:00:00', $to.' 23:59:59'])
-            ->select(DB::raw('DATE(lms_course_enrollments.created_at) as date'), DB::raw('COUNT(*) as count'))
-            ->groupBy('date')
-            ->orderBy('date')
-            ->pluck('count', 'date');
+            ->select(DB::raw($bucket('lms_course_enrollments.created_at').' as bucket'), DB::raw('COUNT(*) as count'))
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->pluck('count', 'bucket');
 
         $completions = DB::table('lms_course_enrollments')
             ->join('lms_courses', 'lms_courses.id', '=', 'lms_course_enrollments.lms_course_id')
@@ -370,26 +942,64 @@ class ReportController extends Controller
             ->where('lms_course_enrollments.status', 'completed')
             ->whereNotNull('lms_course_enrollments.completed_at')
             ->whereBetween('lms_course_enrollments.completed_at', [$from.' 00:00:00', $to.' 23:59:59'])
-            ->select(DB::raw('DATE(lms_course_enrollments.completed_at) as date'), DB::raw('COUNT(*) as count'))
-            ->groupBy('date')
-            ->orderBy('date')
-            ->pluck('count', 'date');
+            ->select(DB::raw($bucket('lms_course_enrollments.completed_at').' as bucket'), DB::raw('COUNT(*) as count'))
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->pluck('count', 'bucket');
 
         $testAttempts = DB::table('lms_test_attempts')
             ->join('lms_tests', 'lms_tests.id', '=', 'lms_test_attempts.lms_test_id')
             ->where('lms_tests.lms_event_id', $eventId)
             ->whereBetween('lms_test_attempts.created_at', [$from.' 00:00:00', $to.' 23:59:59'])
-            ->select(DB::raw('DATE(lms_test_attempts.created_at) as date'), DB::raw('COUNT(*) as count'))
-            ->groupBy('date')
-            ->orderBy('date')
-            ->pluck('count', 'date');
+            ->select(DB::raw($bucket('lms_test_attempts.created_at').' as bucket'), DB::raw('COUNT(*) as count'))
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->pluck('count', 'bucket');
+
+        $assignmentsApproved = DB::table('lms_assignment_reviews as r')
+            ->join('lms_assignment_submissions as s', 's.id', '=', 'r.lms_assignment_submission_id')
+            ->join('lms_assignments as a', 'a.id', '=', 's.lms_assignment_id')
+            ->where('a.lms_event_id', $eventId)
+            ->where('r.decision', 'approve')
+            ->whereBetween('r.created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->select(DB::raw($bucket('r.created_at').' as bucket'), DB::raw('COUNT(*) as count'))
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->pluck('count', 'bucket');
+
+        $testsPassed = DB::table('lms_test_attempts as ta')
+            ->join('lms_tests as t', 't.id', '=', 'ta.lms_test_id')
+            ->where('t.lms_event_id', $eventId)
+            ->where('ta.passed', true)
+            ->whereNotNull('ta.finished_at')
+            ->whereBetween('ta.finished_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->select(DB::raw($bucket('ta.finished_at').' as bucket'), DB::raw('COUNT(*) as count'))
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->pluck('count', 'bucket');
+
+        $stagesCompleted = DB::table('lms_stage_progress as sp')
+            ->join('lms_course_stages as cs', 'cs.id', '=', 'sp.lms_course_stage_id')
+            ->join('lms_courses as c', 'c.id', '=', 'cs.lms_course_id')
+            ->where('c.lms_event_id', $eventId)
+            ->where('sp.status', 'completed')
+            ->whereNotNull('sp.completed_at')
+            ->whereBetween('sp.completed_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->select(DB::raw($bucket('sp.completed_at').' as bucket'), DB::raw('COUNT(*) as count'))
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->pluck('count', 'bucket');
 
         return [
             'from' => $from,
             'to' => $to,
+            'granularity' => $granularity,
             'enrollments' => $enrollments,
             'completions' => $completions,
             'test_attempts' => $testAttempts,
+            'assignments_approved' => $assignmentsApproved,
+            'tests_passed' => $testsPassed,
+            'stages_completed' => $stagesCompleted,
         ];
     }
 
@@ -511,5 +1121,83 @@ class ReportController extends Controller
             echo "\"{$s->course_title}\";\"{$s->stage_title}\";\"{$s->started}\";\"{$s->in_progress}\";\"{$s->completed}\"\n";
         }
         echo "\n";
+    }
+
+    private function writeCsvDeadline(int $eventId): void
+    {
+        echo "\"=== СОБЛЮДЕНИЕ СРОКОВ ===\"\n";
+        echo "\"Задание\";\"Курс\";\"Город\";\"Факультет\";\"Вне плана\";\"Всего\";\"В срок\";\"С задержкой\";\"Просрочено\";\"Ср. задержка (дн.)\"\n";
+        $rows = $this->getDeadlineCompliance($eventId);
+        foreach ($rows as $r) {
+            $course = $this->csvCell($r->course_title);
+            $city = $this->csvCell($r->city_name);
+            $faculty = $this->csvCell($r->faculty);
+            $avg = $r->avg_delay_days !== null ? (string) $r->avg_delay_days : '—';
+            $orphan = $r->is_orphan ? 'да' : 'нет';
+            echo "\"{$r->assignment_title}\";\"{$course}\";\"{$city}\";\"{$faculty}\";\"{$orphan}\";\"{$r->total_users}\";\"{$r->on_time}\";\"{$r->late}\";\"{$r->overdue}\";\"{$avg}\"\n";
+        }
+        echo "\n";
+    }
+
+    private function writeCsvPersonal(int $eventId): void
+    {
+        echo "\"=== ПРОГРЕСС УЧАСТНИКОВ ===\"\n";
+        echo "\"Имя\";\"Email\";\"Роль\";\"Город\";\"Заданий\";\"Принято\";\"% заданий\";\"Тестов\";\"Сдано\";\"% тестов\";\"Этапов\";\"Завершено\";\"% этапов\";\"Общий %\";\"Доп. (вне плана)\";\"Доп. принято\"\n";
+        $rows = $this->getPersonalProgress($eventId);
+        foreach ($rows as $r) {
+            $city = $this->csvCell($r->city_name);
+            $role = $this->csvCell($r->role);
+            $orphanTotal = (int) ($r->assignments_orphan_total ?? 0);
+            $orphanDone = (int) ($r->assignments_orphan_done ?? 0);
+            echo "\"{$r->user_name}\";\"{$r->user_email}\";\"{$role}\";\"{$city}\";\"{$r->assignments_total}\";\"{$r->assignments_done}\";\"{$r->assignments_pct}%\";\"{$r->tests_total}\";\"{$r->tests_done}\";\"{$r->tests_pct}%\";\"{$r->stages_total}\";\"{$r->stages_done}\";\"{$r->stages_pct}%\";\"{$r->overall_pct}%\";\"{$orphanTotal}\";\"{$orphanDone}\"\n";
+        }
+        echo "\n";
+    }
+
+    private function writeCsvCities(int $eventId, int $courseId): void
+    {
+        echo "\"=== СРАВНЕНИЕ ГОРОДОВ ===\"\n";
+        echo "\"Программа ID\";\"{$courseId}\"\n";
+        echo "\"Город\";\"Участников\";\"% в срок\";\"% просрочено\";\"Ср. общий %\";\"Ср. балл тестов\"\n";
+        $rows = $this->getCityComparison($eventId, $courseId);
+        foreach ($rows as $r) {
+            $city = $this->csvCell($r->city_name);
+            echo "\"{$city}\";\"{$r->participants_count}\";\"{$r->on_time_pct}%\";\"{$r->overdue_pct}%\";\"{$r->avg_overall_pct}%\";\"{$r->avg_test_score}%\"\n";
+        }
+        echo "\n";
+    }
+
+    private function writeCsvDynamics(int $eventId, ?string $dateFrom, ?string $dateTo, string $granularity): void
+    {
+        $timeline = $this->getActivityTimeline($eventId, $dateFrom, $dateTo, $granularity);
+        $modeLabel = $timeline['granularity'] === 'week' ? 'НЕДЕЛЯ' : 'ДЕНЬ';
+        echo "\"=== ДИНАМИКА ({$modeLabel}) ===\"\n";
+        echo "\"Период\";\"{$timeline['from']} — {$timeline['to']}\"\n";
+        echo "\"Корзина\";\"Записи\";\"Завершения курсов\";\"Попытки тестов\";\"Принятые задания\";\"Сданные тесты\";\"Завершённые этапы\"\n";
+
+        $series = ['enrollments', 'completions', 'test_attempts', 'assignments_approved', 'tests_passed', 'stages_completed'];
+        $allKeys = [];
+        foreach ($series as $key) {
+            foreach ($timeline[$key] as $bucket => $_) {
+                $allKeys[$bucket] = true;
+            }
+        }
+        ksort($allKeys);
+
+        foreach (array_keys($allKeys) as $bucket) {
+            $vals = [];
+            foreach ($series as $key) {
+                $vals[] = (int) ($timeline[$key][$bucket] ?? 0);
+            }
+            echo "\"{$bucket}\";\"{$vals[0]}\";\"{$vals[1]}\";\"{$vals[2]}\";\"{$vals[3]}\";\"{$vals[4]}\";\"{$vals[5]}\"\n";
+        }
+        echo "\n";
+    }
+
+    private function csvCell(?string $value): string
+    {
+        $value = $value ?? '—';
+
+        return str_replace('"', '""', $value);
     }
 }

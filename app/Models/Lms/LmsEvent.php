@@ -2,6 +2,7 @@
 
 namespace App\Models\Lms;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -14,6 +15,11 @@ class LmsEvent extends Model
         return 'slug';
     }
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return Carbon::instance($date)->utc()->format('Y-m-d\TH:i:s\Z');
+    }
+
     protected $fillable = [
         'title',
         'slug',
@@ -22,11 +28,13 @@ class LmsEvent extends Model
         'sso_provider_url',
         'is_active',
         'menu_config',
+        'default_assignment_deadline',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'menu_config' => 'array',
+        'default_assignment_deadline' => 'datetime',
     ];
 
     public const DEFAULT_MENU_CONFIG = [

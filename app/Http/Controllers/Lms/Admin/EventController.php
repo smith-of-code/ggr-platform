@@ -35,6 +35,7 @@ class EventController extends Controller
             'description' => ['nullable', 'string'],
             'menu_config' => ['nullable', 'array'],
             'menu_config.*' => ['boolean'],
+            'default_assignment_deadline' => ['nullable', 'date'],
         ]);
 
         $validated['slug'] = $this->uniqueSlug(LmsEvent::class, $validated['title'], $validated['slug'] ?? null);
@@ -68,6 +69,7 @@ class EventController extends Controller
             'description' => ['nullable', 'string'],
             'menu_config' => ['nullable', 'array'],
             'menu_config.*' => ['boolean'],
+            'default_assignment_deadline' => ['nullable', 'date'],
         ]);
 
         $validated['slug'] = $this->uniqueSlug(LmsEvent::class, $validated['title'], $validated['slug'] ?? null, $event->id);
