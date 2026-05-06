@@ -265,23 +265,6 @@
           Вакансии
         </Link>
 
-        <!-- LMS Switch -->
-        <div class="mx-1 my-4 border-t border-gray-200"></div>
-        <a
-          :href="route('lms.admin.events.index')"
-          class="group flex items-center gap-3 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 px-3 py-3 text-sm font-semibold text-indigo-700 transition-all duration-150 hover:from-indigo-100 hover:to-blue-100 hover:shadow-sm"
-        >
-          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-            </svg>
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="leading-tight">Админка LMS ВШГР</p>
-            <p class="text-xs font-normal text-indigo-500">Программы, тесты, участники</p>
-          </div>
-          <svg class="h-4 w-4 shrink-0 text-indigo-400 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-        </a>
       </nav>
 
       <!-- User footer -->
@@ -293,6 +276,42 @@
             <p class="truncate text-xs text-gray-400">{{ $page.props.auth?.user?.email }}</p>
           </div>
         </div>
+
+        <div class="mt-3 flex flex-col gap-1.5">
+          <a
+            v-if="canAccessPortalAdmin"
+            :href="route('admin.dashboard')"
+            class="flex items-center justify-center gap-1.5 rounded-lg border border-[#003274]/15 bg-[#003274]/5 py-2 text-xs font-semibold text-[#003274] transition hover:bg-[#003274]/10"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>
+            Админка портала
+          </a>
+          <a
+            v-if="canAccessLmsAdmin"
+            :href="route('lms.admin.events.index')"
+            class="flex items-center justify-center gap-1.5 rounded-lg border border-[#003274]/15 bg-[#003274]/5 py-2 text-xs font-semibold text-[#003274] transition hover:bg-[#003274]/10"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+            Админка LMS
+          </a>
+          <a
+            v-if="lmsEntryUrl"
+            :href="lmsEntryUrl"
+            class="flex items-center justify-center gap-1.5 rounded-lg border border-[#003274]/15 bg-[#003274]/5 py-2 text-xs font-semibold text-[#003274] transition hover:bg-[#003274]/10"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
+            ЛК LMS
+          </a>
+          <a
+            v-if="tourCabinetUrl"
+            :href="tourCabinetUrl"
+            class="flex items-center justify-center gap-1.5 rounded-lg border border-[#003274]/15 bg-[#003274]/5 py-2 text-xs font-semibold text-[#003274] transition hover:bg-[#003274]/10"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" /></svg>
+            ЛК туров
+          </a>
+        </div>
+
         <div class="mt-3 flex gap-2">
           <Link :href="route('home')" class="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-gray-200 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-50">
             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
@@ -336,11 +355,17 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import ToastNotifications from '@/Components/ToastNotifications.vue'
 
 const sidebarOpen = ref(false)
+
+const page = usePage()
+const canAccessPortalAdmin = computed(() => Boolean(page.props.auth?.user?.is_admin))
+const canAccessLmsAdmin = computed(() => Boolean(page.props.auth?.user?.is_admin || page.props.hasAnyLmsAdminAccess))
+const lmsEntryUrl = computed(() => page.props.lmsEntryUrl || null)
+const tourCabinetUrl = computed(() => page.props.tourCabinetUrl || null)
 
 function onSidebarNavClick(e) {
   if (typeof window === 'undefined' || window.matchMedia('(min-width: 1024px)').matches) return

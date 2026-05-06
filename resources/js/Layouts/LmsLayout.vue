@@ -49,9 +49,35 @@
           </div>
         </template>
         <template #footer>
-          <RButton variant="ghost" size="sm" block @click="onNavigate('lms.profile.edit')">
-            <template #icon><UserCircleIcon class="h-4 w-4" /></template>
-            Мой профиль
+          <RButton
+            v-if="canAccessPortalAdmin"
+            variant="ghost"
+            size="sm"
+            block
+            @click="onGoToPortalAdmin"
+          >
+            <template #icon><ShieldCheckIcon class="h-4 w-4" /></template>
+            Админка портала
+          </RButton>
+          <RButton
+            v-if="canAccessLmsAdmin"
+            variant="ghost"
+            size="sm"
+            block
+            @click="onNavigate('lms.admin')"
+          >
+            <template #icon><Cog6ToothIcon class="h-4 w-4" /></template>
+            Админка LMS
+          </RButton>
+          <RButton
+            v-if="lmsEntryUrl"
+            variant="ghost"
+            size="sm"
+            block
+            @click="onGoToLmsEntry"
+          >
+            <template #icon><AcademicCapIcon class="h-4 w-4" /></template>
+            ЛК LMS
           </RButton>
           <RButton
             v-if="tourCabinetUrl"
@@ -61,7 +87,14 @@
             @click="visitTourCabinet"
           >
             <template #icon><ArrowTopRightOnSquareIcon class="h-4 w-4" /></template>
-            ЛК Туров
+            ЛК туров
+          </RButton>
+
+          <div class="my-2 border-t border-white/10"></div>
+
+          <RButton variant="ghost" size="sm" block @click="onNavigate('lms.profile.edit')">
+            <template #icon><UserCircleIcon class="h-4 w-4" /></template>
+            Мой профиль
           </RButton>
           <RButton variant="ghost" size="sm" block @click="logout">
             <template #icon><ArrowRightOnRectangleIcon class="h-4 w-4" /></template>
@@ -135,8 +168,9 @@ import {
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   ArrowTopRightOnSquareIcon,
-  WrenchScrewdriverIcon,
   Cog6ToothIcon,
+  ShieldCheckIcon,
+  AcademicCapIcon,
 } from '@heroicons/vue/24/outline'
 import ToastNotifications from '@/Components/ToastNotifications.vue'
 
@@ -212,6 +246,14 @@ const canLimitedBackofficeAccess = computed(() => {
 })
 
 const canAnyBackofficeAccess = computed(() => effectiveRoleSlug.value === 'admin' || canLimitedBackofficeAccess.value)
+
+const canAccessPortalAdmin = computed(() => Boolean(usePage().props.auth?.user?.is_admin))
+const canAccessLmsAdmin = computed(() =>
+  Boolean(usePage().props.auth?.user?.is_admin)
+    || Boolean(usePage().props.hasAnyLmsAdminAccess)
+    || canAnyBackofficeAccess.value,
+)
+const lmsEntryUrl = computed(() => usePage().props.lmsEntryUrl || null)
 
 const showLeaderCabinet = computed(() => {
   const role = effectiveRoleSlug.value
@@ -291,14 +333,6 @@ const sidebarItems = computed(() => {
   if (showLeaderCabinet.value) {
     items.push({ id: 'lms.leader.dashboard', label: 'Кабинет лидера', icon: icons.leader })
   }
-  if (canAnyBackofficeAccess.value) {
-    items.push({
-      id: 'lms.admin',
-      label: canLimitedBackofficeAccess.value ? 'Админ-панель LMS (проверка)' : 'Админ-панель LMS',
-      icon: icons.admin,
-    })
-  }
-
   return items
 })
 
@@ -365,5 +399,17 @@ function onNavigate(itemId) {
 function logout() {
   closeMobileSidebar()
   router.post(route('lms.logout', { event: props.event?.slug }))
+}
+
+function onGoToPortalAdmin() {
+  closeMobileSidebar()
+  router.visit(route('admin.dashboard'))
+}
+
+function onGoToLmsEntry() {
+  closeMobileSidebar()
+  const url = lmsEntryUrl.value
+  if (!url) return
+  router.visit(url)
 }
 </script>

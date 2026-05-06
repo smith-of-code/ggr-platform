@@ -119,6 +119,9 @@ class HandleInertiaRequests extends Middleware
             'lmsEntryUrl' => fn () => PostAuthRedirect::lmsProfileUrlForUser($request->user()),
             'tourCabinetUrl' => fn () => PostAuthRedirect::tourCabinetDashboardUrl($request->user()),
             'tourCabinetPortalUrl' => fn () => PostAuthRedirect::tourCabinetPortalAbsoluteUrl(),
+            'hasAnyLmsAdminAccess' => fn () => $request->user()
+                ? LmsProfile::userHasAnyLmsAdminProfile($request->user())
+                : false,
             'gamificationEnabled' => function () use ($request) {
                 $user = $request->user();
                 if (!$user) return false;

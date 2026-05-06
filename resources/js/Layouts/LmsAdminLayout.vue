@@ -32,15 +32,6 @@
                 <p class="text-xs" style="color: var(--color-primary-light)">Админ-панель</p>
               </div>
             </div>
-            <a
-              v-if="canAccessPortalAdmin"
-              :href="route('admin.dashboard')"
-              class="group mt-3 flex w-full items-center gap-2.5 rounded-lg bg-white/10 px-3 py-2 text-left text-xs font-semibold text-white/90 transition hover:bg-white/20 hover:text-white"
-              @click="sidebarOpen = false"
-            >
-              <svg class="h-4 w-4 shrink-0 text-white/60 transition group-hover:-translate-x-0.5 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-              <span>Админка портала</span>
-            </a>
           </div>
           <button
             type="button"
@@ -54,16 +45,55 @@
       </template>
       <template #footer>
         <RButton
-          v-if="event"
+          v-if="canAccessPortalAdmin"
           variant="ghost"
           size="sm"
           block
-          @click="onReturnToLms"
+          @click="onGoToPortalAdmin"
         >
-          <template #icon>
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
-          </template>
-          {{ returnToFooterLabel }}
+          <template #icon><ShieldCheckIcon class="h-4 w-4" /></template>
+          Админка портала
+        </RButton>
+        <RButton
+          v-if="canAccessLmsAdmin"
+          variant="ghost"
+          size="sm"
+          block
+          @click="onGoToLmsAdmin"
+        >
+          <template #icon><Cog6ToothIcon class="h-4 w-4" /></template>
+          Админка LMS
+        </RButton>
+        <RButton
+          v-if="lmsEntryUrl"
+          variant="ghost"
+          size="sm"
+          block
+          @click="onGoToLmsEntry"
+        >
+          <template #icon><AcademicCapIcon class="h-4 w-4" /></template>
+          ЛК LMS
+        </RButton>
+        <RButton
+          v-if="tourCabinetUrl"
+          variant="ghost"
+          size="sm"
+          block
+          @click="visitTourCabinet"
+        >
+          <template #icon><ArrowTopRightOnSquareIcon class="h-4 w-4" /></template>
+          ЛК туров
+        </RButton>
+
+        <div class="my-2 border-t border-white/10"></div>
+
+        <RButton variant="ghost" size="sm" block @click="onGoToProfile">
+          <template #icon><UserCircleIcon class="h-4 w-4" /></template>
+          Мой профиль
+        </RButton>
+        <RButton variant="ghost" size="sm" block @click="onLogout">
+          <template #icon><ArrowRightOnRectangleIcon class="h-4 w-4" /></template>
+          Выйти
         </RButton>
       </template>
     </RSidebar>
@@ -109,7 +139,15 @@
 <script setup>
 import { usePage, router } from '@inertiajs/vue3'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { CheckCircleIcon } from '@heroicons/vue/24/outline'
+import {
+  CheckCircleIcon,
+  ShieldCheckIcon,
+  Cog6ToothIcon,
+  AcademicCapIcon,
+  ArrowTopRightOnSquareIcon,
+  UserCircleIcon,
+  ArrowRightOnRectangleIcon,
+} from '@heroicons/vue/24/outline'
 import ToastNotifications from '@/Components/ToastNotifications.vue'
 import { sameOriginHref } from '@/utils/sameOriginHref.js'
 
@@ -123,6 +161,12 @@ const page = usePage()
 const sidebarOpen = ref(false)
 
 const canAccessPortalAdmin = computed(() => Boolean(page.props.auth?.user?.is_admin))
+const canAccessLmsAdmin = computed(() =>
+  Boolean(page.props.auth?.user?.is_admin) || Boolean(page.props.hasAnyLmsAdminAccess),
+)
+const lmsEntryUrl = computed(() => page.props.lmsEntryUrl || null)
+const tourCabinetUrl = computed(() => page.props.tourCabinetUrl || null)
+const tourCabinetPortalUrl = computed(() => page.props.tourCabinetPortalUrl || null)
 const normalizedRoleCandidates = computed(() => {
   const profile = page.props.profile || {}
   const candidates = [
@@ -166,10 +210,6 @@ const canLimitedBackofficeAccess = computed(() =>
 
 /** Оболочка форм с портала: пути /admin/tour-cabinet/lms/... без редиректа с /lms-admin. */
 const usePortalLmsFormShell = computed(() => page.url.startsWith('/admin/tour-cabinet/lms/'))
-
-const returnToFooterLabel = computed(() =>
-  usePortalLmsFormShell.value ? 'В настройки ЛК туров' : 'Вернуться в LMS',
-)
 
 function closeMobileSidebar() {
   sidebarOpen.value = false
@@ -322,14 +362,73 @@ function navigateTo(routeName, params = {}) {
   router.visit(sameOriginHref(route(routeName, params)))
 }
 
-function onReturnToLms() {
+function onGoToProfile() {
   closeMobileSidebar()
-  if (usePortalLmsFormShell.value) {
-    router.visit(sameOriginHref(`${route('admin.tour-cabinet.index', {}, false)}#tour-cabinet-admin-forms`))
+  if (props.event) {
+    navigateTo('lms.profile.edit', { event: props.event.slug })
     return
   }
+  const url = lmsEntryUrl.value
+  if (url) {
+    router.visit(sameOriginHref(url))
+  }
+}
+
+function onLogout() {
+  closeMobileSidebar()
+  if (props.event && !usePortalLmsFormShell.value) {
+    router.post(route('lms.logout', { event: props.event.slug }))
+    return
+  }
+  router.post(route('logout'))
+}
+
+function onGoToPortalAdmin() {
+  closeMobileSidebar()
+  navigateTo('admin.dashboard')
+}
+
+function onGoToLmsAdmin() {
+  closeMobileSidebar()
+  if (props.event) {
+    if (canLimitedBackofficeAccess.value) {
+      navigateTo('lms.admin.tests.index', { event: props.event.slug })
+      return
+    }
+    navigateTo('lms.admin.courses.index', { event: props.event.slug })
+    return
+  }
+  navigateTo('lms.admin.events.index')
+}
+
+function onGoToLmsEntry() {
+  closeMobileSidebar()
   if (props.event) {
     navigateTo('lms.dashboard', { event: props.event.slug })
+    return
   }
+  const url = lmsEntryUrl.value
+  if (url) {
+    router.visit(sameOriginHref(url))
+  }
+}
+
+function visitTourCabinet() {
+  closeMobileSidebar()
+  const portal = tourCabinetPortalUrl.value
+  if (portal) {
+    window.location.assign(portal)
+    return
+  }
+  const path = tourCabinetUrl.value
+  if (!path) return
+  const host = window.location.hostname
+  if (host.startsWith('lms.')) {
+    const protocol = window.location.protocol
+    const mainHost = host.replace(/^lms\./, 'main.')
+    window.location.assign(`${protocol}//${mainHost}${path.startsWith('/') ? path : `/${path}`}`)
+    return
+  }
+  router.visit(path)
 }
 </script>
