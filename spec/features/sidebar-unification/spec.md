@@ -10,9 +10,28 @@
 
 | Лейаут                 | Файл                                       | Маршрут           | Тема                                              |
 |------------------------|--------------------------------------------|-------------------|---------------------------------------------------|
-| Портал-админ           | `resources/js/Layouts/AdminLayout.vue`     | `/admin/*`        | Светлая (белый сайдбар, синий акцент `#003274`)   |
-| LMS участника          | `resources/js/Layouts/LmsLayout.vue`       | `/lms/{event}/*`  | Тёмная (`RSidebar`, `--color-primary-dark`)       |
-| LMS-админ              | `resources/js/Layouts/LmsAdminLayout.vue`  | `/lms-admin/*`    | Тёмная (`RSidebar`)                               |
+| Портал-админ           | `resources/js/Layouts/AdminLayout.vue`     | `/admin/*`        | Светлая (`AppSidebar theme="light"`)              |
+| LMS участника          | `resources/js/Layouts/LmsLayout.vue`       | `/lms/{event}/*`  | Тёмная (`AppSidebar theme="dark"`)                |
+| LMS-админ              | `resources/js/Layouts/LmsAdminLayout.vue`  | `/lms-admin/*`    | Тёмная (`AppSidebar theme="dark"`)                |
+
+### Общий компонент `AppSidebar`
+
+Расположение: `resources/js/Components/AppSidebar.vue`. Заменяет прежнюю
+комбинацию из самописной разметки в `AdminLayout` и `RSidebar` из UI-kit
+в `LmsLayout` / `LmsAdminLayout`. Обеспечивает идентичную структуру и
+поведение для всех трёх лейаутов; различие — только в значении `theme`.
+
+Props:
+
+| Prop          | Тип                | Default | Описание                                                                                  |
+|---------------|--------------------|---------|-------------------------------------------------------------------------------------------|
+| `items`       | `Array<Item>`      | —       | Пункты меню. Элемент: `{ id, label, icon?, badge?, type? }`. `type='section'` — заголовок группы. |
+| `activeItem`  | `string`           | `''`    | `id` подсвеченного пункта (с индикатором-полосой слева).                                  |
+| `collapsed`   | `boolean`          | `false` | Свёрнутый сайдбар (только иконки, ширина 60px).                                           |
+| `theme`       | `'dark' \| 'light'` | `'dark'` | Тема. Управляет фоном, цветом текста и акцентом индикатора активного пункта.             |
+
+Slots: `logo` (верхняя зона — лого, user-card), `footer` (нижняя зона — кнопки).
+Emits: `select(itemId)` при клике на пункт меню.
 
 ## Целевое состояние
 
@@ -45,8 +64,9 @@
 
 - В тёмных лейаутах (`LmsLayout`, `LmsAdminLayout`) — `RButton variant="ghost" size="sm" block`
   (как в существующих кнопках футера).
-- В светлом `AdminLayout` — кнопки-`<a>`/`<Link>` с `border border-gray-200 rounded-lg ... text-xs`
-  (как в существующих «На сайт / Выход»).
+- В светлом `AdminLayout` — кнопки-`<a>`/`<Link>` в ghost-стиле
+  (`text-gray-600 hover:bg-gray-50 hover:text-gray-900`), с теми же иконками
+  и общим визуальным ритмом, что и пункты меню.
 
 ### Поведение клика «Админка LMS» в зависимости от лейаута
 

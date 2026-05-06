@@ -9,11 +9,12 @@
       @click="sidebarOpen = false"
     />
 
-    <RSidebar
+    <AppSidebar
       id="lms-admin-sidebar"
       :items="sidebarItems"
       :active-item="activeItemId"
       :collapsed="false"
+      theme="dark"
       class="fixed inset-y-0 left-0 z-40 max-lg:!h-dvh max-lg:shadow-2xl transition-transform duration-200 ease-out lg:z-30 lg:translate-x-0"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
       @select="onSelect"
@@ -42,61 +43,75 @@
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
           </button>
         </div>
+        <!-- User card -->
+        <div class="mt-4 rounded-xl bg-white/10 p-3">
+          <div class="flex items-center gap-3">
+            <RAvatar :name="page.props.auth?.user?.name || 'U'" size="sm" />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-semibold text-white">{{ page.props.auth?.user?.name }}</p>
+              <p class="truncate text-xs" style="color: var(--color-primary-light)">{{ page.props.auth?.user?.email }}</p>
+            </div>
+          </div>
+        </div>
       </template>
       <template #footer>
-        <RButton
-          v-if="canAccessPortalAdmin"
-          variant="ghost"
-          size="sm"
-          block
-          @click="onGoToPortalAdmin"
-        >
-          <template #icon><ShieldCheckIcon class="h-4 w-4" /></template>
-          Админка портала
-        </RButton>
-        <RButton
-          v-if="canAccessLmsAdmin"
-          variant="ghost"
-          size="sm"
-          block
-          @click="onGoToLmsAdmin"
-        >
-          <template #icon><Cog6ToothIcon class="h-4 w-4" /></template>
-          Админка LMS
-        </RButton>
-        <RButton
-          v-if="lmsEntryUrl"
-          variant="ghost"
-          size="sm"
-          block
-          @click="onGoToLmsEntry"
-        >
-          <template #icon><AcademicCapIcon class="h-4 w-4" /></template>
-          ЛК LMS
-        </RButton>
-        <RButton
-          v-if="tourCabinetUrl"
-          variant="ghost"
-          size="sm"
-          block
-          @click="visitTourCabinet"
-        >
-          <template #icon><ArrowTopRightOnSquareIcon class="h-4 w-4" /></template>
-          ЛК туров
-        </RButton>
+        <div class="space-y-0.5">
+          <a
+            v-if="canAccessPortalAdmin"
+            :href="route('admin.dashboard')"
+            class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/65 transition-all duration-150 hover:bg-white/10 hover:text-white"
+          >
+            <ShieldCheckIcon class="h-5 w-5 shrink-0 text-white/40 transition group-hover:text-white/70" />
+            Админка портала
+          </a>
+          <a
+            v-if="canAccessLmsAdmin"
+            :href="route('lms.admin.events.index')"
+            class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/65 transition-all duration-150 hover:bg-white/10 hover:text-white"
+          >
+            <Cog6ToothIcon class="h-5 w-5 shrink-0 text-white/40 transition group-hover:text-white/70" />
+            Админка LMS
+          </a>
+          <button
+            v-if="lmsEntryUrl"
+            type="button"
+            class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-white/65 transition-all duration-150 hover:bg-white/10 hover:text-white"
+            @click="onGoToLmsEntry"
+          >
+            <AcademicCapIcon class="h-5 w-5 shrink-0 text-white/40 transition group-hover:text-white/70" />
+            ЛК LMS
+          </button>
+          <button
+            v-if="tourCabinetUrl"
+            type="button"
+            class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-white/65 transition-all duration-150 hover:bg-white/10 hover:text-white"
+            @click="visitTourCabinet"
+          >
+            <ArrowTopRightOnSquareIcon class="h-5 w-5 shrink-0 text-white/40 transition group-hover:text-white/70" />
+            ЛК туров
+          </button>
 
-        <div class="my-2 border-t border-white/10"></div>
+          <div class="my-2 border-t border-white/10"></div>
 
-        <RButton variant="ghost" size="sm" block @click="onGoToProfile">
-          <template #icon><UserCircleIcon class="h-4 w-4" /></template>
-          Мой профиль
-        </RButton>
-        <RButton variant="ghost" size="sm" block @click="onLogout">
-          <template #icon><ArrowRightOnRectangleIcon class="h-4 w-4" /></template>
-          Выйти
-        </RButton>
+          <button
+            type="button"
+            class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-white/65 transition-all duration-150 hover:bg-white/10 hover:text-white"
+            @click="onGoToProfile"
+          >
+            <UserCircleIcon class="h-5 w-5 shrink-0 text-white/40 transition group-hover:text-white/70" />
+            Мой профиль
+          </button>
+          <button
+            type="button"
+            class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-white/65 transition-all duration-150 hover:bg-white/10 hover:text-white"
+            @click="onLogout"
+          >
+            <ArrowRightOnRectangleIcon class="h-5 w-5 shrink-0 text-white/40 transition group-hover:text-white/70" />
+            Выйти
+          </button>
+        </div>
       </template>
-    </RSidebar>
+    </AppSidebar>
 
     <div class="flex min-w-0 flex-1 flex-col lg:ml-[240px]">
       <header class="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm sm:px-6 lg:px-8">
@@ -149,6 +164,7 @@ import {
   ArrowRightOnRectangleIcon,
 } from '@heroicons/vue/24/outline'
 import ToastNotifications from '@/Components/ToastNotifications.vue'
+import AppSidebar from '@/Components/AppSidebar.vue'
 import { sameOriginHref } from '@/utils/sameOriginHref.js'
 
 const props = defineProps({
@@ -390,14 +406,6 @@ function onGoToPortalAdmin() {
 
 function onGoToLmsAdmin() {
   closeMobileSidebar()
-  if (props.event) {
-    if (canLimitedBackofficeAccess.value) {
-      navigateTo('lms.admin.tests.index', { event: props.event.slug })
-      return
-    }
-    navigateTo('lms.admin.courses.index', { event: props.event.slug })
-    return
-  }
   navigateTo('lms.admin.events.index')
 }
 
