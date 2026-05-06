@@ -13,6 +13,8 @@ class TourCabinetDocument extends Model
 
     public const TYPE_SNILS = 'snils';
 
+    public const TYPE_PERSONAL_DATA_CONSENT = 'personal_data_consent';
+
     public const STATUS_PENDING_REVIEW = 'pending_review';
 
     public const STATUS_APPROVED = 'approved';
@@ -40,6 +42,7 @@ class TourCabinetDocument extends Model
     public static function allowedTypes(): array
     {
         return [
+            self::TYPE_PERSONAL_DATA_CONSENT,
             self::TYPE_PASSPORT_SPREAD,
             self::TYPE_PASSPORT_REGISTRATION,
             self::TYPE_SNILS,
@@ -49,6 +52,7 @@ class TourCabinetDocument extends Model
     public static function typeLabel(string $type): string
     {
         return match ($type) {
+            self::TYPE_PERSONAL_DATA_CONSENT => 'Согласие на обработку персональных данных',
             self::TYPE_PASSPORT_SPREAD => 'Паспорт: разворот с 1–2 страницей',
             self::TYPE_PASSPORT_REGISTRATION => 'Паспорт: страница с пропиской',
             self::TYPE_SNILS => 'СНИЛС',

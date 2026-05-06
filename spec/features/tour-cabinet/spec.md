@@ -65,6 +65,10 @@
 
 Защита дашборда: `EnsureTourCabinetUser` — без сессии редирект на `tour-cabinet.login`, без флага — на `home` с flash `error`.
 
+**Гейт «полного профиля» (фича `tour-cabinet-profile-required-gate`)**: доступ к маршрутам участия (конкурс `tour-cabinet.contest.*`, коммерческие туры `tour-cabinet.commerce-tours.*`) дополнительно ограничен middleware `tour-cabinet.profile-complete` (`App\Http\Middleware\EnsureTourCabinetProfileComplete`). Middleware пропускает запрос только если `App\Services\TourCabinetProfileCompleteness::isComplete(User)` возвращает `true` — т.е. заполнены `last_name`, `first_name`, `gender`, `birth_date`, `phone`, `email` И в `tour_cabinet_documents` есть запись типа `personal_data_consent` со статусом `pending_review` или `approved` (непустой `file_path`). Иначе GET → редирект на `tour-cabinet.dashboard` с flash-ошибкой и якорем `#tour-cabinet-profile`, mutating → `back()->withInput()->withErrors(['profile' => '...'])`. Маршруты `tour-cabinet.profile.*`, `tour-cabinet.profile.documents.*`, `tour-cabinet.support.*`, `tour-cabinet.upload.*`, `tour-cabinet.logout` остаются доступными.
+
+Дашборд `TourCabinetController::dashboard` отдаёт в Inertia-проп `profileGate = { complete: bool, missing: string[], message: string }`; на фронте в `Dashboard.vue` при `profileGate.complete === false` рендерится контрастная плашка-уведомление над секцией `#tour-cabinet-profile` и блокируются (через `pointer-events-none + opacity-50 + grayscale + aria-hidden`) секции `#tour-cabinet-favorites`, `#tour-cabinet-standard-form`, `#tour-cabinet-atomic-ticket`, `#tour-cabinet-contest`, `#tour-cabinet-commerce-tours`. Секции `#tour-cabinet-profile`, `#tour-cabinet-documents` и блок «Поддержка» доступны без ограничений.
+
 ## Отправка форм
 
 Используются существующие маршруты `forms.public.show` / `forms.public.submit`; при авторизованном пользователе ответы привязываются к `user_id` в логике `FormPublicController`.
@@ -77,7 +81,7 @@
 
 В ЛК `/tour-cabinet`, секция `#tour-cabinet-documents`, участник загружает сканы паспорта (разворот, прописка) и СНИЛС. Модель — `App\Models\TourCabinetDocument` (таблица `tour_cabinet_documents`):
 
-- Типы (`TourCabinetDocument::allowedTypes()`): `passport_spread` («Паспорт: разворот с 1–2 страницей»), `passport_registration` («Паспорт: страница с пропиской»), `snils` («СНИЛС»). Метки — `TourCabinetDocument::typeLabel($type)`.
+- Типы (`TourCabinetDocument::allowedTypes()`): `personal_data_consent` («Согласие на обработку персональных данных», обязательный документ для допуска к этапам — см. фичу `tour-cabinet-profile-required-gate`), `passport_spread` («Паспорт: разворот с 1–2 страницей»), `passport_registration` («Паспорт: страница с пропиской»), `snils` («СНИЛС»). Метки — `TourCabinetDocument::typeLabel($type)`.
 - Статусы: `pending_review` (после загрузки), `approved` (модератор подтвердил), `annulled` (модератор отклонил — файл удалён, сохраняются `admin_comment` + `reviewed_at`).
 - Поля: `user_id`, `type`, `file_path`, `original_name`, `status`, `admin_comment`, `reviewed_at`. После `annul` `file_path`/`original_name` сбрасываются в пустую строку (запись по типу остаётся, чтобы хранить комментарий и историю).
 - Хранилище — `config('filesystems.upload_disk')`, каталог `tour-cabinet/documents/{user_id}`. Допустимые форматы загрузки: `pdf,jpg,jpeg,png,doc,docx`, до 50 МБ.

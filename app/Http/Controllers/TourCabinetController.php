@@ -13,6 +13,7 @@ use App\Services\ConsentService;
 use App\Services\SettingsService;
 use App\Services\TourCabinetCommerceToursDashboardData;
 use App\Services\TourCabinetContestDashboardData;
+use App\Services\TourCabinetProfileCompleteness;
 use App\Support\PostAuthRedirect;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -133,6 +134,7 @@ class TourCabinetController extends Controller
         TourCabinetContestDashboardData $contestDashboardData,
         TourCabinetCommerceToursDashboardData $commerceToursDashboardData,
         SettingsService $settings,
+        TourCabinetProfileCompleteness $profileCompleteness,
     ): Response {
         $user = $request->user();
 
@@ -166,6 +168,13 @@ class TourCabinetController extends Controller
         $atomicTicket = $settings->getTourCabinetAtomicTicketBlock();
         $atomicTicketBlock = $atomicTicket['enabled'] ? $atomicTicket : null;
 
+        $missingProfileFields = $profileCompleteness->missingFields($user);
+        $profileGate = [
+            'complete' => $missingProfileFields === [],
+            'missing' => $missingProfileFields,
+            'message' => 'Сначала заполните профиль и загрузите согласие на обработку персональных данных, чтобы получить доступ к остальным разделам.',
+        ];
+
         return Inertia::render('TourCabinet/Dashboard', [
             ...$contestDashboardData->forUser($user),
             'commerceTours' => $commerceToursDashboardData->buildPayload($user),
@@ -174,6 +183,7 @@ class TourCabinetController extends Controller
             'profileDocuments' => $profileDocuments,
             'dashboardStandardForm' => $dashboardStandardForm,
             'atomicTicketBlock' => $atomicTicketBlock,
+            'profileGate' => $profileGate,
             'profile' => [
                 'user_id' => $user->id,
                 'display_name' => $composed !== '' ? $composed : (string) ($user->name ?: 'Участник'),

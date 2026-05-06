@@ -3,6 +3,7 @@
 use App\Http\Middleware\CheckPageVisibility;
 use App\Http\Middleware\EnsureLmsBackofficeAccess;
 use App\Http\Middleware\EnsurePortalAdmin;
+use App\Http\Middleware\EnsureTourCabinetProfileComplete;
 use App\Http\Middleware\EnsureTourCabinetUser;
 use App\Http\Middleware\ForceRequestRootUrl;
 use App\Http\Middleware\RedirectTourCabinetGuest;
@@ -50,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'lms.backoffice' => EnsureLmsBackofficeAccess::class,
             'portal.admin' => EnsurePortalAdmin::class,
             'tour-cabinet' => EnsureTourCabinetUser::class,
+            'tour-cabinet.profile-complete' => EnsureTourCabinetProfileComplete::class,
             'tour-cabinet.guest' => RedirectTourCabinetGuest::class,
         ]);
 

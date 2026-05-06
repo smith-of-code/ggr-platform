@@ -99,6 +99,51 @@
         </div>
       </div>
 
+      <!-- Гейт профиля: уведомление о необходимости заполнить профиль и загрузить согласие на ОПД -->
+      <section
+        v-if="profileGateActive"
+        id="tour-cabinet-profile-gate"
+        class="mt-8 scroll-mt-8"
+        aria-live="polite"
+      >
+        <div
+          class="flex flex-col gap-4 rounded-2xl border-2 border-amber-300 bg-amber-100/80 p-5 text-amber-900 shadow-sm sm:flex-row sm:items-start sm:gap-5 sm:p-6"
+        >
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/80 text-amber-700 ring-1 ring-amber-300">
+            <ExclamationTriangleIcon class="h-6 w-6" aria-hidden="true" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-base font-bold sm:text-lg">Сначала заполните профиль</h2>
+            <p class="mt-1 text-sm leading-relaxed">
+              {{ profileGate.message || 'Сначала заполните профиль и загрузите согласие на обработку персональных данных, чтобы получить доступ к остальным разделам.' }}
+            </p>
+            <ul v-if="profileGateMissingLabels.length" class="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+              <li
+                v-for="label in profileGateMissingLabels"
+                :key="label"
+                class="rounded-full bg-white/70 px-3 py-1 ring-1 ring-amber-300"
+              >
+                {{ label }}
+              </li>
+            </ul>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <a
+                href="#tour-cabinet-profile"
+                class="inline-flex items-center justify-center rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              >
+                Перейти к профилю
+              </a>
+              <a
+                href="#tour-cabinet-documents"
+                class="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-amber-900 ring-1 ring-amber-300 transition hover:bg-amber-50"
+              >
+                Загрузить согласие на ОПД
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Полный профиль -->
       <section id="tour-cabinet-profile" class="mt-10 scroll-mt-8">
         <div v-show="fullProfileVisible">
@@ -180,11 +225,15 @@
             <div
               v-for="dt in docConfig"
               :key="dt.type"
-              class="rounded-xl border border-slate-100 bg-slate-50/40 p-4"
+              class="rounded-xl border p-4"
+              :class="dt.required ? 'border-amber-300 bg-amber-50/70' : 'border-slate-100 bg-slate-50/40'"
             >
               <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-medium text-slate-900">{{ dt.label }}</p>
+                  <p v-if="dt.hint" class="mt-1 text-xs font-semibold text-amber-900">
+                    {{ dt.hint }}
+                  </p>
                   <p v-if="hasDocFile(uploadedDoc(dt.type))" class="mt-1 text-xs text-emerald-700">
                     Загружен: {{ uploadedDoc(dt.type).original_name }}
                   </p>
@@ -227,7 +276,12 @@
       </section>
 
       <!-- Избранное: города и туры с портала -->
-      <section id="tour-cabinet-favorites" class="mt-10 scroll-mt-8">
+      <section
+        id="tour-cabinet-favorites"
+        class="mt-10 scroll-mt-8"
+        :class="gatedSectionClass"
+        :aria-hidden="profileGateActive"
+      >
         <div class="flex flex-wrap items-end justify-between gap-3">
           <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Избранное на сайте</h2>
           <Link
@@ -316,6 +370,8 @@
         v-if="dashboardStandardForm"
         id="tour-cabinet-standard-form"
         class="mt-10 scroll-mt-8"
+        :class="gatedSectionClass"
+        :aria-hidden="profileGateActive"
       >
         <div
           class="overflow-hidden rounded-2xl border-2 border-rosatom-200 bg-gradient-to-r from-rosatom-50 via-white to-amber-50 shadow-sm ring-1 ring-rosatom-600/10"
@@ -362,6 +418,8 @@
         v-if="atomicTicketBlock"
         id="tour-cabinet-atomic-ticket"
         class="mt-10 scroll-mt-8"
+        :class="gatedSectionClass"
+        :aria-hidden="profileGateActive"
       >
         <h2 v-if="atomicTicketBlock.title" class="text-center text-2xl font-bold text-slate-900 sm:text-3xl">
           {{ atomicTicketBlock.title }}
@@ -455,7 +513,12 @@
         </div>
       </section>
 
-      <section id="tour-cabinet-contest" class="mt-10 scroll-mt-8 space-y-10">
+      <section
+        id="tour-cabinet-contest"
+        class="mt-10 scroll-mt-8 space-y-10"
+        :class="gatedSectionClass"
+        :aria-hidden="profileGateActive"
+      >
         <div v-if="showContestLocationOffers">
           <h2 class="text-base font-bold lowercase leading-snug text-gray-900">
             сейчас доступно участие в конкурсе следующих туров:
@@ -577,7 +640,11 @@
         v-if="commerceTours.enabled"
         id="tour-cabinet-commerce-tours"
         class="mt-10 scroll-mt-8 transition duration-500"
-        :class="highlightedAnchor === 'tour-cabinet-commerce-tours' ? 'rounded-3xl ring-4 ring-amber-400 ring-offset-2' : ''"
+        :class="[
+          highlightedAnchor === 'tour-cabinet-commerce-tours' ? 'rounded-3xl ring-4 ring-amber-400 ring-offset-2' : '',
+          gatedSectionClass,
+        ]"
+        :aria-hidden="profileGateActive"
       >
         <div class="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 sm:p-7">
           <div class="border-b border-slate-100 pb-4">
@@ -658,6 +725,7 @@ import {
   ChatBubbleLeftRightIcon,
   CheckCircleIcon,
   ClipboardDocumentListIcon,
+  ExclamationTriangleIcon,
   IdentificationIcon,
   UserCircleIcon,
 } from '@heroicons/vue/24/outline'
@@ -735,7 +803,29 @@ const props = defineProps({
       stage3: { subject: '', body: '' },
     }),
   },
+  profileGate: {
+    type: Object,
+    default: () => ({ complete: true, missing: [], message: '' }),
+  },
 })
+
+const PROFILE_GATE_FIELD_LABELS = {
+  last_name: 'Фамилия',
+  first_name: 'Имя',
+  gender: 'Пол',
+  birth_date: 'Дата рождения',
+  phone: 'Телефон',
+  email: 'Email',
+  personal_data_consent: 'Согласие на обработку персональных данных',
+}
+
+const profileGateActive = computed(() => props.profileGate?.complete === false)
+const profileGateMissingLabels = computed(() =>
+  (props.profileGate?.missing ?? []).map((key) => PROFILE_GATE_FIELD_LABELS[key] ?? key)
+)
+const gatedSectionClass = computed(() =>
+  profileGateActive.value ? 'pointer-events-none select-none opacity-50 grayscale' : ''
+)
 
 function tourApplicationStatusPillClass(statusKey) {
   switch (statusKey) {
@@ -1051,6 +1141,12 @@ function logout() {
 }
 
 const docConfig = [
+  {
+    type: 'personal_data_consent',
+    label: 'Согласие на обработку персональных данных *',
+    required: true,
+    hint: 'Обязательный документ — без него нельзя приступить к этапам конкурса и заявкам на туры.',
+  },
   { type: 'passport_spread', label: 'Паспорт: разворот с 1–2 страницей (фото и данные) *' },
   { type: 'passport_registration', label: 'Паспорт: страница с пропиской *' },
   { type: 'snils', label: 'СНИЛС *' },

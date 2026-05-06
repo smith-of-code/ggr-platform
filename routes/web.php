@@ -95,28 +95,32 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
         Route::delete('/profile/documents/{document}', [TourCabinetController::class, 'deleteProfileDocument'])
             ->middleware('throttle:tour-cabinet-profile-document')
             ->name('profile.documents.delete');
-        Route::get('/contest', [TourCabinetContestController::class, 'show'])->name('contest');
-        Route::post('/contest/direction', [TourCabinetContestController::class, 'storeDirection'])->name('contest.direction');
-        Route::post('/contest/cities', [TourCabinetContestController::class, 'storeCities'])->name('contest.cities');
-        Route::post('/contest/cities/reopen-selection', [TourCabinetContestController::class, 'reopenCitySelection'])->name('contest.reopen-city-selection');
-        Route::delete('/contest/selected-cities/{city}', [TourCabinetContestController::class, 'removeSelectedCity'])->name('contest.remove-city');
-        Route::get('/contest/cities/{city}/form', [TourCabinetContestController::class, 'startCityForm'])->name('contest.city-form');
-        Route::post('/contest/complete-stage-1', [TourCabinetContestController::class, 'completeStage1'])->name('contest.complete-stage-1');
-        Route::get('/contest/stage-2', [TourCabinetContestController::class, 'showStage2'])->name('contest.stage2');
-        Route::post('/contest/stage-2', [TourCabinetContestController::class, 'storeStage2'])->name('contest.stage2.store');
-        Route::get('/contest/stage-3', [TourCabinetContestController::class, 'showStage3'])->name('contest.stage3');
-        Route::post('/contest/stage-3', [TourCabinetContestController::class, 'storeStage3'])
-            ->middleware('throttle:tour-cabinet-profile-document')
-            ->name('contest.stage3.store');
-        Route::get('/contest/stage-3/attachment', [TourCabinetContestController::class, 'downloadStage3Attachment'])
-            ->middleware('throttle:tour-cabinet-support-download')
-            ->name('contest.stage3.attachment');
+        // Маршруты участия: блокируются, пока не заполнен профиль и не загружено согласие на ОПД.
+        // Профиль (`profile.*`), поддержка (`support.*`), загрузка файлов (`upload.*`) и логаут — намеренно вне гейта.
+        Route::middleware('tour-cabinet.profile-complete')->group(function () {
+            Route::get('/contest', [TourCabinetContestController::class, 'show'])->name('contest');
+            Route::post('/contest/direction', [TourCabinetContestController::class, 'storeDirection'])->name('contest.direction');
+            Route::post('/contest/cities', [TourCabinetContestController::class, 'storeCities'])->name('contest.cities');
+            Route::post('/contest/cities/reopen-selection', [TourCabinetContestController::class, 'reopenCitySelection'])->name('contest.reopen-city-selection');
+            Route::delete('/contest/selected-cities/{city}', [TourCabinetContestController::class, 'removeSelectedCity'])->name('contest.remove-city');
+            Route::get('/contest/cities/{city}/form', [TourCabinetContestController::class, 'startCityForm'])->name('contest.city-form');
+            Route::post('/contest/complete-stage-1', [TourCabinetContestController::class, 'completeStage1'])->name('contest.complete-stage-1');
+            Route::get('/contest/stage-2', [TourCabinetContestController::class, 'showStage2'])->name('contest.stage2');
+            Route::post('/contest/stage-2', [TourCabinetContestController::class, 'storeStage2'])->name('contest.stage2.store');
+            Route::get('/contest/stage-3', [TourCabinetContestController::class, 'showStage3'])->name('contest.stage3');
+            Route::post('/contest/stage-3', [TourCabinetContestController::class, 'storeStage3'])
+                ->middleware('throttle:tour-cabinet-profile-document')
+                ->name('contest.stage3.store');
+            Route::get('/contest/stage-3/attachment', [TourCabinetContestController::class, 'downloadStage3Attachment'])
+                ->middleware('throttle:tour-cabinet-support-download')
+                ->name('contest.stage3.attachment');
 
-        Route::post('/commerce-tours/city', [TourCabinetCommerceToursController::class, 'storeCity'])->name('commerce-tours.city.store');
-        Route::post('/commerce-tours/tour', [TourCabinetCommerceToursController::class, 'storeTour'])->name('commerce-tours.tour.store');
-        Route::post('/commerce-tours/complete-stage-1', [TourCabinetCommerceToursController::class, 'completeStage1'])->name('commerce-tours.complete-stage-1');
-        Route::get('/commerce-tours/stage-2/form', [TourCabinetCommerceToursController::class, 'startCityForm'])->name('commerce-tours.stage-2.form');
-        Route::post('/commerce-tours/reopen-selection', [TourCabinetCommerceToursController::class, 'reopenSelection'])->name('commerce-tours.reopen-selection');
+            Route::post('/commerce-tours/city', [TourCabinetCommerceToursController::class, 'storeCity'])->name('commerce-tours.city.store');
+            Route::post('/commerce-tours/tour', [TourCabinetCommerceToursController::class, 'storeTour'])->name('commerce-tours.tour.store');
+            Route::post('/commerce-tours/complete-stage-1', [TourCabinetCommerceToursController::class, 'completeStage1'])->name('commerce-tours.complete-stage-1');
+            Route::get('/commerce-tours/stage-2/form', [TourCabinetCommerceToursController::class, 'startCityForm'])->name('commerce-tours.stage-2.form');
+            Route::post('/commerce-tours/reopen-selection', [TourCabinetCommerceToursController::class, 'reopenSelection'])->name('commerce-tours.reopen-selection');
+        });
 
         Route::post('/upload/presigned-url', [PresignedUploadController::class, 'presignedUrl'])->name('upload.presigned-url');
         Route::post('/upload/confirm', [PresignedUploadController::class, 'confirm'])->name('upload.confirm');
