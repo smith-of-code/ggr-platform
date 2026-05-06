@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AtomsVkusaContent;
+use App\Models\City;
 use App\Models\Direction;
 use App\Models\Lms\LmsForm;
+use App\Models\Post;
+use App\Models\Recipe;
 use App\Models\Tour;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class DirectionController extends Controller
+class AtomsVkusaPageController extends Controller
 {
-    public function show(Request $request, string $slug): Response
+    public function show(Request $request): Response
     {
-        $direction = Direction::where('slug', $slug)
+        $direction = Direction::where('slug', 'atomy-vkusa')
             ->where('is_active', true)
             ->firstOrFail();
 
@@ -30,9 +34,33 @@ class DirectionController extends Controller
 
         $paidForm = $this->loadPaidForm($direction);
 
-        return Inertia::render('Directions/Show', [
+        $content = AtomsVkusaContent::content();
+
+        $recipesQuery = Recipe::where('is_published', true)
+            ->with('city')
+            ->latest('published_at');
+
+        if ($request->filled('recipe_city')) {
+            $recipesQuery->where('city_id', $request->recipe_city);
+        }
+
+        $recipes = $recipesQuery->paginate(12)->withQueryString();
+        $recipeCities = City::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+
+        $news = Post::where('category', 'atoms_vkusa')
+            ->where('is_published', true)
+            ->latest('published_at')
+            ->take(6)
+            ->get();
+
+        return Inertia::render('Directions/ShowAtomsVkusa', [
             'direction' => $direction,
+            'content' => $content,
             'featuredTours' => $featuredTours,
+            'recipes' => $recipes,
+            'recipeCities' => $recipeCities,
+            'news' => $news,
+            'recipeFilters' => $request->only(['recipe_city']),
             'paidForm' => $paidForm,
         ]);
     }

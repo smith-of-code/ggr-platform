@@ -36,7 +36,7 @@ return [
         [
             'slug' => 'atomy-vkusa',
             'label' => 'Атомы вкуса',
-            'route_prefix' => '/directions/atomy-vkusa',
+            'route_prefix' => '/atomy-vkusa',
         ],
         [
             'slug' => 'blog',

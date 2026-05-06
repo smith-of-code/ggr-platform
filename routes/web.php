@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\PromocodeController as AdminPromocodeController;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancyController;
 use App\Http\Controllers\Admin\VshgrPageController as AdminVshgrPageController;
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\AtomsVkusaPageController;
 use App\Http\Controllers\PromocodeController;
 use App\Http\Controllers\Lms\Admin\FormController as LmsAdminFormController;
 use App\Http\Controllers\BlogController;
@@ -142,6 +143,7 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
     Route::post('/logout', [TourCabinetController::class, 'logout'])->middleware('auth')->name('logout');
 });
 
+Route::get('/atomy-vkusa', [AtomsVkusaPageController::class, 'show'])->name('atomy-vkusa.show');
 Route::get('/directions/{slug}', [DirectionController::class, 'show'])->name('directions.show');
 
 Route::get('/vacancies', [VacancyController::class, 'index'])->name('vacancies.index');

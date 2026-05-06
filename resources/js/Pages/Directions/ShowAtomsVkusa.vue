@@ -550,7 +550,7 @@ function scrollTo(id) {
 function filterRecipes() {
   const params = {}
   if (recipeCity.value) params.recipe_city = recipeCity.value
-  router.get(route('directions.show', props.direction.slug), params, {
+  router.get(route('atomy-vkusa.show'), params, {
     preserveState: true,
     preserveScroll: true,
     only: ['recipes', 'recipeFilters'],

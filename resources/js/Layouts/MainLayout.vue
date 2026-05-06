@@ -255,7 +255,7 @@ const allNavItems = computed(() => [
   { slug: 'opportunity-tours', label: 'Туры возможностей', href: route('opportunity-tours.index'), active: page.url.startsWith('/opportunity-tours') },
   { slug: 'education', label: 'ВШГР', href: route('education.index'), active: page.url.startsWith('/vshgr') || page.url.startsWith('/lms/') },
   { slug: 'research', label: 'Исследования', href: route('research.index'), active: page.url.startsWith('/research') },
-  { slug: 'atomy-vkusa', label: 'Атомы вкуса', href: route('directions.show', 'atomy-vkusa'), active: page.url.startsWith('/directions/atomy-vkusa') },
+  { slug: 'atomy-vkusa', label: 'Атомы вкуса', href: route('atomy-vkusa.show'), active: page.url.startsWith('/atomy-vkusa') },
   { slug: 'blog', label: 'Блог', href: route('blog.index'), active: page.url.startsWith('/blog') },
   { slug: 'vacancies', label: 'Вакансии', href: route('vacancies.index'), active: page.url.startsWith('/vacancies') },
 ])

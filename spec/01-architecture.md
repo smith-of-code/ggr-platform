@@ -157,3 +157,10 @@ docker/
 - Driver: Redis
 - Horizon supervisors: `supervisor-default` (queue: default), `supervisor-emails` (queue: emails)
 - Horizon config: `config/horizon.php`
+
+## Локализация
+
+- Дефолтная локаль приложения: `ru` (`config/app.php` → `'locale' => env('APP_LOCALE', 'ru')`).
+- Fallback-локаль: `en` (`APP_FALLBACK_LOCALE`) — используется для непереведённых ключей (например, валидация Laravel).
+- Переводы: `lang/ru/*.php` (`auth.php`, `passwords.php`, `pagination.php`).
+- Лейблы Laravel-пагинатора (`pagination.previous`, `pagination.next`) переведены на русский — отображаются как «« Назад» / «Вперёд »» в UI и админки, и публичных страниц через `link.label` пагинатора.
