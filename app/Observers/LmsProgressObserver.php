@@ -8,6 +8,7 @@ use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsTestAttempt;
 use App\Models\Lms\LmsAssignmentReview;
+use App\Models\Lms\LmsAssignmentSubmission;
 use App\Models\Lms\LmsTrajectoryEnrollment;
 use App\Models\User;
 use App\Services\GamificationService;
@@ -100,12 +101,28 @@ class LmsProgressObserver
             return;
         }
 
-        $this->gamification->awardPoints(
-            $test->event,
-            User::find($attempt->user_id),
-            'test_pass',
-            "Тест: {$test->title} ({$attempt->percentage}%)"
-        );
+        $user = User::find($attempt->user_id);
+        if (! $user) {
+            return;
+        }
+
+        if ((int) $test->gamification_points > 0) {
+            $this->gamification->awardFixedPoints(
+                $test->event,
+                $user,
+                (int) $test->gamification_points,
+                GamificationService::SOURCE_TEST_PASSED,
+                $test->id,
+                "Тест: {$test->title} ({$attempt->percentage}%)"
+            );
+        } else {
+            $this->gamification->awardPoints(
+                $test->event,
+                $user,
+                'test_pass',
+                "Тест: {$test->title} ({$attempt->percentage}%)"
+            );
+        }
     }
 
     public function assignmentApproved(LmsAssignmentReview $review): void
@@ -118,20 +135,46 @@ class LmsProgressObserver
             ->with('assignment.event')
             ->first();
 
-        if (!$submission?->assignment?->event) {
+        $this->awardAssignmentGamificationPoints($submission);
+    }
+
+    /**
+     * Одобрение задания: рецензия (on_review) или автоматическое при отправке (on_submit).
+     */
+    public function awardAssignmentGamificationPoints(?LmsAssignmentSubmission $submission): void
+    {
+        if (! $submission?->assignment?->event) {
             return;
         }
 
-        if (!$this->isLinkedToGamificationCourse(null, $submission->assignment->id)) {
+        if (! $this->isLinkedToGamificationCourse(null, $submission->assignment->id)) {
             return;
         }
 
-        $this->gamification->awardPoints(
-            $submission->assignment->event,
-            User::find($submission->user_id),
-            'assignment_approved',
-            "Задание: {$submission->assignment->title}"
-        );
+        $user = User::find($submission->user_id);
+        if (! $user) {
+            return;
+        }
+
+        $assignment = $submission->assignment;
+
+        if ((int) $assignment->gamification_points > 0) {
+            $this->gamification->awardFixedPoints(
+                $assignment->event,
+                $user,
+                (int) $assignment->gamification_points,
+                GamificationService::SOURCE_ASSIGNMENT_APPROVED,
+                $assignment->id,
+                "Задание: {$assignment->title}"
+            );
+        } else {
+            $this->gamification->awardPoints(
+                $assignment->event,
+                $user,
+                'assignment_approved',
+                "Задание: {$assignment->title}"
+            );
+        }
     }
 
     private function isLinkedToGamificationCourse(?int $testId, ?int $assignmentId): bool

@@ -14,6 +14,8 @@ class LmsGamificationPoint extends Model
         'lms_event_id',
         'user_id',
         'lms_gamification_rule_id',
+        'source_type',
+        'source_id',
         'points',
         'reason',
     ];

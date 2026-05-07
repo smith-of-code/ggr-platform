@@ -13,7 +13,7 @@
 - `App\Models\Lms\LmsGamificationPoint`
 
 ### Сервисы
-- `App\Services\GamificationService` — awardPoints, getLeaderboard, getAdminLeaderboardRows, getRecentPointsByUserIds, getUserPoints, getUserRank
+- `App\Services\GamificationService` — `awardPoints`, `awardFixedPoints` (идемпотентно по `user_id` + `source_type` + `source_id` в рамках события), getLeaderboard, getAdminLeaderboardRows, getRecentPointsByUserIds, getUserPoints, getUserRank
 
 ### Observer
 - `App\Observers\LmsProgressObserver` — автоматические триггеры через Eloquent events
@@ -51,10 +51,20 @@
 | id | bigint | PK |
 | lms_event_id | FK → lms_events | cascade delete |
 | user_id | FK → users | cascade delete |
-| lms_gamification_rule_id | FK → rules | nullable, null = ручное начисление |
+| lms_gamification_rule_id | FK → rules | nullable, null если не по правилу |
+| source_type | string(64) | nullable; тип источника фиксированного начисления (константы `GamificationService::SOURCE_*`) |
+| source_id | bigint | nullable; id сущности-источника (например id теста или задания) |
 | points | integer | Баллы |
 | reason | string | Причина начисления |
 | timestamps | | |
+
+Индекс: `(lms_event_id, user_id, source_type, source_id)` для защиты от повторного начисления за тот же тест/задание.
+
+**Семантика `lms_gamification_rule_id` / source:**
+
+- Ручное начисление из модалки админки: `lms_gamification_rule_id = null`, `source_type` и `source_id` = null.
+- Авто по правилу: `lms_gamification_rule_id` заполнен.
+- Фиксированные баллы за тест/задание: `lms_gamification_rule_id = null`, `source_type` и `source_id` заполнены (`awardFixedPoints`).
 
 ## Автоматические действия (триггеры)
 
@@ -62,8 +72,8 @@
 |---|---|---|
 | `module_complete` | Завершение модуля (все этапы модуля `lms_course_modules` со статусом completed; этап без модуля считается модулем из одного этапа) | `LmsStageProgress::created` / `updated` → `LmsProgressObserver::maybeAwardModuleComplete` |
 | `course_complete` | Завершение курса | `LmsCourseEnrollment::updated` → Observer |
-| `test_pass` | Успешное прохождение теста | `LmsTestAttempt::created` → Observer |
-| `assignment_approved` | Одобрение задания | `LmsAssignmentReview::created` → Observer |
+| `test_pass` | Успешное прохождение теста | `LmsTestAttempt::created` → Observer; если у теста `gamification_points > 0`, вызывается `awardFixedPoints` с `SOURCE_TEST_PASSED` и `source_id = lms_tests.id`, иначе — только `awardPoints` по правилам |
+| `assignment_approved` | Одобрение задания | `LmsAssignmentReview::created` (решение approve) **или** отправка участником при `completion_mode = on_submit` (статус сразу `approved`) → `LmsProgressObserver::awardAssignmentGamificationPoints`; если у задания `gamification_points > 0`, вызывается `awardFixedPoints` с `SOURCE_ASSIGNMENT_APPROVED` и `source_id = lms_assignments.id`, иначе — только `awardPoints` по правилам |
 | `trajectory_complete` | Завершение траектории | `LmsTrajectoryEnrollment::updated` → Observer |
 | `login_daily` | Ежедневный вход | `AuthController::login()` |
 | `video_watch` | Просмотр видео | `VideoController::show()` |
@@ -74,10 +84,9 @@
 
 ## Механизм начисления
 
-1. Триггер вызывает `GamificationService::awardPoints($event, $user, $action, $reason)`
-2. Сервис ищет активные auto-правила по `action` и `lms_event_id`
-3. Для каждого правила проверяет `max_times` — не превышен ли лимит
-4. Создаёт `LmsGamificationPoint` с привязкой к правилу
+1. Триггер вызывает `awardPoints` и/или `awardFixedPoints` в зависимости от настроек теста/задания (см. таблицу триггеров).
+2. Для `awardPoints`: сервис ищет активные auto-правила по `action` и `lms_event_id`, проверяет `max_times`, создаёт строки с `lms_gamification_rule_id`.
+3. Для `awardFixedPoints`: если запись с тем же `(lms_event_id, user_id, source_type, source_id)` уже есть — выход; иначе создаётся одна строка с указанными `points` и пустым `lms_gamification_rule_id`.
 
 ## Ручное начисление (Admin)
 
@@ -92,6 +101,8 @@
 
 - На странице `lms.admin.gamification.index` отображается таблица всех `lms_gamification_points` по событию.
 - Фильтры: поиск (`history_search` — по имени/email участника, причине и названию правила), тип начисления (`history_type`: `manual`/`auto`), группа (`history_group`), диапазон дат (`history_date_from`, `history_date_to`).
+- `history_type=manual`: только записи без правила **и** без пары `source_type`/`source_id` (чисто ручные из модалки).
+- `history_type=auto`: есть `lms_gamification_rule_id` **или** заполнены оба поля `source_type` и `source_id` (в т.ч. фиксированные баллы за тест/задание).
 - Сортировка: по `created_at DESC, id DESC`.
 - Пагинация: 30 записей на страницу.
 

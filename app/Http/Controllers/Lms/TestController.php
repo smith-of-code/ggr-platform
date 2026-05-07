@@ -96,7 +96,7 @@ class TestController extends Controller
                 $test->only([
                     'id', 'title', 'description',
                     'time_limit_minutes', 'shuffle_questions', 'shuffle_answers',
-                    'passing_score', 'max_attempts',
+                    'passing_score', 'max_attempts', 'gamification_points',
                 ]),
                 ['questions_count' => $questionsCount]
             ),

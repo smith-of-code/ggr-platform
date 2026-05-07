@@ -102,6 +102,9 @@
                 </RBadge>
               </div>
               <p class="truncate text-xs text-gray-500">{{ sub.user?.email }}</p>
+              <p v-if="participantCourseTitles(sub).length" class="mt-0.5 truncate text-[11px] text-gray-500">
+                Программа: {{ participantCourseTitles(sub).join(', ') }}
+              </p>
               <p v-if="sub.participant_last_activity_at" class="mt-0.5 text-[11px] text-gray-400">
                 Активность участника: {{ formatDate(sub.participant_last_activity_at) }}
               </p>
@@ -116,6 +119,43 @@
 
         <!-- Expanded content -->
         <div v-show="expanded[sub.id]" class="border-t border-gray-200 bg-gray-50/80 p-5">
+          <!-- Participant context -->
+          <div
+            v-if="participantCourseTitles(sub).length || hasProfileContext(sub)"
+            class="mb-5 rounded-xl border border-rosatom-100 bg-rosatom-50/50 p-4"
+          >
+            <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-rosatom-700">
+              Контекст участника
+            </p>
+            <div class="grid gap-3 text-sm md:grid-cols-2">
+              <div>
+                <p class="text-xs font-medium text-gray-400">Программа</p>
+                <div v-if="participantCourseTitles(sub).length" class="mt-1 flex flex-wrap gap-1.5">
+                  <span
+                    v-for="course in participantCourseTitles(sub)"
+                    :key="course"
+                    class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-700 ring-1 ring-rosatom-100"
+                  >
+                    {{ course }}
+                  </span>
+                </div>
+                <p v-else class="mt-1 text-gray-500">Не найдена привязка к программе</p>
+              </div>
+              <div>
+                <p class="text-xs font-medium text-gray-400">Профиль</p>
+                <p class="mt-1 text-gray-700">
+                  {{ profileSummary(sub) || 'Данные профиля не заполнены' }}
+                </p>
+              </div>
+            </div>
+            <div v-if="sub.participant_context?.profile?.project_description" class="mt-3">
+              <p class="text-xs font-medium text-gray-400">Идея / проект</p>
+              <p class="mt-1 whitespace-pre-wrap text-sm text-gray-800">
+                {{ sub.participant_context.profile.project_description }}
+              </p>
+            </div>
+          </div>
+
           <!-- Submitted work -->
           <div v-if="canReviewAssignments" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
             <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Ответ участника</p>
@@ -429,6 +469,37 @@ function formatDate(dateStr) {
 
 function threadCount(sub) {
   return (sub.reviews?.length || 0) + (sub.comments?.length || 0)
+}
+
+function participantCourseTitles(sub) {
+  return (sub.participant_context?.courses || [])
+    .map(course => course.title)
+    .filter(Boolean)
+}
+
+function hasProfileContext(sub) {
+  const profile = sub.participant_context?.profile
+  return Boolean(profile && [
+    profile.project_description,
+    profile.city,
+    profile.position,
+    profile.organization,
+    profile.direction_label,
+    profile.faculty_label,
+  ].some(Boolean))
+}
+
+function profileSummary(sub) {
+  const profile = sub.participant_context?.profile
+  if (!profile) return ''
+
+  return [
+    profile.faculty_label,
+    profile.direction_label,
+    profile.city,
+    profile.position,
+    profile.organization,
+  ].filter(Boolean).join(' · ')
 }
 
 function getDialogMessages(sub) {

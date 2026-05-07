@@ -18,7 +18,8 @@
 - В админ-разделе участников добавлено отображение необязательных программ и выбранных факультетов.
 - В Excel-экспорт участников добавлены колонки по необязательным программам и факультетам программ.
 - В админском списке участников добавлены фильтры по программе и факультету программы; экспорт Excel учитывает эти фильтры.
+- Для датированных блоков этапа (`workshop`, `city_meeting`, `curator_meeting` с `scheduled_at`) запрещена преждевременная отметка `Отметить как пройденное`: кнопка блокируется на фронте, а `StageController@complete` повторно защищает endpoint.
 
 ## Open issues
 
-- Verify `npm run build` не выполнен: Docker недоступен в текущем окружении. `bash -lc "source docker/.env.local && docker exec ${APP_NAME}_fpm npm run build"` ушёл в WSL без Docker integration; PowerShell-вариант через `docker exec ${APP_NAME}_fpm npm run build` упал с отсутствующим `dockerDesktopLinuxEngine` pipe.
+- Нет открытых вопросов.

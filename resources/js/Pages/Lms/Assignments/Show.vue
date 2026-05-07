@@ -14,9 +14,18 @@
       <RCard elevation="raised">
         <div class="flex items-start justify-between gap-4">
           <h1 class="font-brand text-2xl font-bold text-gray-900">{{ assignment?.title }}</h1>
-          <RBadge :variant="statusBadgeVariant(submission?.status || 'not_submitted')" size="sm" class="shrink-0">
-            {{ statusLabel(submission?.status || 'not_submitted') }}
-          </RBadge>
+          <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <RBadge
+              v-if="(assignment?.gamification_points ?? 0) > 0"
+              variant="primary"
+              size="sm"
+            >
+              +{{ assignment.gamification_points }} баллов
+            </RBadge>
+            <RBadge :variant="statusBadgeVariant(submission?.status || 'not_submitted')" size="sm">
+              {{ statusLabel(submission?.status || 'not_submitted') }}
+            </RBadge>
+          </div>
         </div>
 
         <div v-if="assignment?.deadline" class="mt-3 flex items-center gap-2 text-sm text-gray-500">

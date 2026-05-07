@@ -66,6 +66,14 @@
             label="Дедлайн"
             type="datetime-local"
           />
+          <RInput
+            v-model.number="form.gamification_points"
+            label="Баллы за выполнение (геймификация)"
+            type="number"
+            :min="0"
+            :error="form.errors.gamification_points"
+          />
+          <p class="-mt-2 text-xs text-gray-500">0 — начисление только по правилам события (если настроены).</p>
           <RCheckbox v-model="form.is_active" label="Активно" />
         </div>
       </RCard>
@@ -226,6 +234,7 @@ const form = useForm({
   template_files: templateFilesFromAssignment(),
   completion_mode: props.assignment?.completion_mode ?? 'on_review',
   deadline: props.assignment?.deadline ? lmsDeadlineToDatetimeLocalUtc(props.assignment.deadline) : '',
+  gamification_points: props.assignment?.gamification_points ?? 0,
   is_active: props.assignment?.is_active ?? true,
   tasks: buildTasks(),
 })

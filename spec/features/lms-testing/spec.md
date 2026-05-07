@@ -24,6 +24,13 @@
 - `Pages/Lms/Tests/Index.vue`, `Show.vue`, `Take.vue`, `Result.vue`
 - `Pages/Lms/Admin/Tests/Index.vue`, `Form.vue`
 - `Pages/Lms/Admin/Tests/Results.vue` — детальная таблица попыток по тесту
+- `Components/Lms/InlineTest.vue` — встроенный тест на этапе курса
+
+### Поле `gamification_points` (таблица `lms_tests`)
+
+- Целое неотрицательное значение: сколько баллов геймификации начислить участнику при **успешной сдаче** теста (см. `lms-gamification`).
+- Значение `0` означает: начисление только по auto-правилам с действием `test_pass`, без фиксированной суммы с теста.
+- Не смешивать с `lms_test_questions.points` / score попытки — это оценка ответов, а не рейтинг.
 
 ## Ключевые workflow
 

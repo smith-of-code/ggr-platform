@@ -165,6 +165,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::resource('trajectories', AdminTrajectoryController::class);
         Route::get('grants/export', [AdminGrantController::class, 'export'])->name('grants.export');
         Route::get('grants/{grant}/participants', [AdminGrantController::class, 'participants'])->name('grants.participants');
+        Route::post('grants/{grant}/participants/{enrollment}/comments', [AdminGrantController::class, 'storeParticipantComment'])->name('grants.participants.comments.store');
         Route::resource('grants', AdminGrantController::class);
         Route::get('grants/{grant}/enrollments', [AdminGrantController::class, 'enrollments'])->name('grants.enrollments');
         Route::resource('videos', AdminVideoController::class);

@@ -25,11 +25,13 @@ class LmsAssignment extends Model
         'completion_mode',
         'deadline',
         'is_active',
+        'gamification_points',
     ];
 
     protected $casts = [
         'deadline' => 'datetime',
         'is_active' => 'boolean',
+        'gamification_points' => 'integer',
     ];
 
     /** @return BelongsTo<LmsEvent, $this> */

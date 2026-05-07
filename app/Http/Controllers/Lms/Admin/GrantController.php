@@ -7,10 +7,12 @@ use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGrant;
 use App\Models\Lms\LmsGrantDocument;
 use App\Models\Lms\LmsGrantEnrollment;
+use App\Models\Lms\LmsGrantEnrollmentComment;
 use App\Models\Lms\LmsProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -19,6 +21,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class GrantController extends Controller
 {
+    private const PARTICIPANT_STATUS_LABELS = [
+        'new' => 'Новая',
+        'called' => 'Созвонились',
+        'no_answer' => 'Не дозвонились',
+        'interested' => 'Заинтересован',
+        'not_interested' => 'Не заинтересован',
+        'done' => 'Обработано',
+    ];
+
     public function index(LmsEvent $event): Response
     {
         $grants = LmsGrant::where('lms_event_id', $event->id)
@@ -110,7 +121,10 @@ class GrantController extends Controller
         }
 
         $enrollments = LmsGrantEnrollment::where('lms_grant_id', $grant->id)
-            ->with('user:id,name,last_name,first_name,patronymic,email,phone')
+            ->with([
+                'user:id,name,last_name,first_name,patronymic,email,phone',
+                'adminComments.admin:id,name',
+            ])
             ->orderByDesc('created_at')
             ->get();
         $profiles = LmsProfile::where('lms_event_id', $event->id)
@@ -123,6 +137,8 @@ class GrantController extends Controller
                 'id' => $e->id,
                 'user' => $e->user?->only(['id', 'name', 'last_name', 'first_name', 'patronymic', 'email', 'phone']),
                 'profile' => $profiles->get($e->user_id)?->only(['city', 'position', 'organization', 'project_description']),
+                'latest_admin_status' => $e->adminComments->first()?->status,
+                'admin_comments' => $this->formatAdminCommentsForPayload($e),
                 'created_at' => $e->created_at?->format('d.m.Y H:i'),
             ]);
 
@@ -134,7 +150,10 @@ class GrantController extends Controller
         $grantId = (int) $request->query('grant_id', 0);
         $grants = LmsGrant::where('lms_event_id', $event->id)
             ->when($grantId > 0, fn ($query) => $query->where('id', $grantId))
-            ->with(['enrollments.user:id,name,last_name,first_name,patronymic,email,phone'])
+            ->with([
+                'enrollments.user:id,name,last_name,first_name,patronymic,email,phone',
+                'enrollments.adminComments.admin:id,name',
+            ])
             ->orderBy('position')
             ->orderBy('title')
             ->get();
@@ -163,7 +182,10 @@ class GrantController extends Controller
         }
 
         $enrollments = LmsGrantEnrollment::where('lms_grant_id', $grant->id)
-            ->with('user:id,name,last_name,first_name,patronymic,email,phone')
+            ->with([
+                'user:id,name,last_name,first_name,patronymic,email,phone',
+                'adminComments.admin:id,name',
+            ])
             ->orderByDesc('created_at')
             ->paginate(50)
             ->withQueryString();
@@ -176,6 +198,8 @@ class GrantController extends Controller
             'id' => $enrollment->id,
             'user' => $enrollment->user?->only(['id', 'name', 'last_name', 'first_name', 'patronymic', 'email', 'phone']),
             'profile' => $profiles->get($enrollment->user_id)?->only(['city', 'position', 'organization', 'project_description']),
+            'latest_admin_status' => $enrollment->adminComments->first()?->status,
+            'admin_comments' => $this->formatAdminCommentsForPayload($enrollment),
             'created_at' => $enrollment->created_at?->format('d.m.Y H:i'),
         ]);
 
@@ -190,7 +214,35 @@ class GrantController extends Controller
                 ],
             ),
             'enrollments' => $enrollments,
+            'statusLabels' => self::PARTICIPANT_STATUS_LABELS,
         ]);
+    }
+
+    public function storeParticipantComment(Request $request, LmsEvent $event, LmsGrant $grant, LmsGrantEnrollment $enrollment): RedirectResponse
+    {
+        if ($grant->lms_event_id !== $event->id || $enrollment->lms_grant_id !== $grant->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'status' => ['nullable', Rule::in(array_keys(self::PARTICIPANT_STATUS_LABELS))],
+            'comment' => ['nullable', 'string', 'max:5000'],
+        ]);
+        $comment = trim((string) ($validated['comment'] ?? ''));
+        $status = $validated['status'] ?? null;
+
+        if ($comment === '' && ! $status) {
+            return redirect()->back()->with('error', 'Добавьте комментарий или выберите статус');
+        }
+
+        LmsGrantEnrollmentComment::create([
+            'lms_grant_enrollment_id' => $enrollment->id,
+            'admin_id' => Auth::id(),
+            'status' => $status,
+            'comment' => $comment !== '' ? $comment : null,
+        ]);
+
+        return redirect()->back()->with('success', 'Комментарий сохранён');
     }
 
     public function destroy(LmsEvent $event, LmsGrant $grant): RedirectResponse
@@ -275,7 +327,8 @@ class GrantController extends Controller
         ]];
         $participantRows = [[
             'Название возможности', 'Тип', 'Приём заявок', 'Статус приёма',
-            'ФИО участника', 'Email', 'Телефон', 'Проект', 'Город', 'Должность', 'Организация', 'Дата участия',
+            'ФИО участника', 'Email', 'Телефон', 'Проект', 'Город', 'Должность', 'Организация',
+            'Статус обработки', 'Комментарии администраторов', 'Дата участия',
         ]];
 
         foreach ($grants as $grant) {
@@ -286,13 +339,14 @@ class GrantController extends Controller
             $summaryRows[] = [$grant->title, $type, $period, $status, (string) $grant->enrollments->count()];
 
             if ($grant->enrollments->isEmpty()) {
-                $participantRows[] = [$grant->title, $type, $period, $status, '', '', '', '', '', '', '', ''];
+                $participantRows[] = [$grant->title, $type, $period, $status, '', '', '', '', '', '', '', '', '', ''];
                 continue;
             }
 
             foreach ($grant->enrollments as $enrollment) {
                 $user = $enrollment->user;
                 $profile = $profiles->get($enrollment->user_id);
+                $latestStatus = $enrollment->adminComments->first()?->status;
                 $participantRows[] = [
                     $grant->title,
                     $type,
@@ -305,6 +359,8 @@ class GrantController extends Controller
                     $profile?->city ?? '',
                     $profile?->position ?? '',
                     $profile?->organization ?? '',
+                    $latestStatus ? (self::PARTICIPANT_STATUS_LABELS[$latestStatus] ?? $latestStatus) : '',
+                    $this->formatAdminCommentsForExport($enrollment),
                     $enrollment->created_at?->format('d.m.Y H:i') ?? '',
                 ];
             }
@@ -321,7 +377,7 @@ class GrantController extends Controller
                 'name' => 'Участники',
                 'title' => 'Участники возможностей',
                 'rows' => $participantRows,
-                'widths' => [42, 16, 24, 24, 34, 28, 20, 58, 22, 28, 32, 20],
+                'widths' => [42, 16, 24, 24, 34, 28, 20, 58, 22, 28, 32, 24, 58, 20],
             ],
         ]);
     }
@@ -428,5 +484,38 @@ class GrantController extends Controller
         return collect([$user->last_name, $user->first_name, $user->patronymic])
             ->filter()
             ->join(' ') ?: (string) $user->name;
+    }
+
+    private function formatAdminCommentsForPayload(LmsGrantEnrollment $enrollment): array
+    {
+        return $enrollment->adminComments
+            ->map(fn (LmsGrantEnrollmentComment $comment) => [
+                'id' => $comment->id,
+                'status' => $comment->status,
+                'status_label' => $comment->status ? (self::PARTICIPANT_STATUS_LABELS[$comment->status] ?? $comment->status) : null,
+                'comment' => $comment->comment,
+                'admin_name' => $comment->admin?->name,
+                'created_at' => $comment->created_at?->format('d.m.Y H:i'),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function formatAdminCommentsForExport(LmsGrantEnrollment $enrollment): string
+    {
+        return $enrollment->adminComments
+            ->reverse()
+            ->map(function (LmsGrantEnrollmentComment $comment) {
+                $status = $comment->status ? (self::PARTICIPANT_STATUS_LABELS[$comment->status] ?? $comment->status) : null;
+                $parts = array_filter([
+                    $comment->created_at?->format('d.m.Y H:i'),
+                    $comment->admin?->name,
+                    $status ? '['.$status.']' : null,
+                    $comment->comment,
+                ]);
+
+                return implode(' ', $parts);
+            })
+            ->implode("\n");
     }
 }

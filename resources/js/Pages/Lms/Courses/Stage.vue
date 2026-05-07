@@ -212,15 +212,23 @@
 
         <!-- Mark as Complete -->
         <div v-if="!hasAutoCompleteBlock && !isCompleted" class="mt-8">
-          <RButton
-            v-if="!videoDuration || videoWatchComplete"
-            variant="primary"
-            @click="markComplete"
-          >
-            Отметить как пройденное
-          </RButton>
+          <template v-if="!videoDuration || videoWatchComplete">
+            <RButton
+              variant="primary"
+              :disabled="isCompletionBlockedBySchedule"
+              @click="markComplete"
+            >
+              Отметить как пройденное
+            </RButton>
+            <p v-if="isCompletionBlockedBySchedule" class="mt-2 text-sm font-medium text-amber-700">
+              Отметить можно только после наступления даты события.
+            </p>
+          </template>
           <p v-else class="text-sm text-gray-400">
             Кнопка завершения появится после полного просмотра видео
+          </p>
+          <p v-if="$page.props.errors?.stage" class="mt-2 text-sm font-medium text-red-600">
+            {{ $page.props.errors.stage }}
           </p>
         </div>
         <div v-else-if="isCompleted" class="mt-8 flex items-center gap-2 text-accent-green">
@@ -286,6 +294,8 @@ const props = defineProps({
 })
 
 const scormFrame = ref(null)
+const nowMs = ref(Date.now())
+let nowInterval = null
 
 const stageReturnUrl = computed(() =>
   route('lms.stages.show', { event: props.event?.slug, course: props.course?.id, stage: props.stage?.id })
@@ -309,6 +319,16 @@ const displayBlocks = computed(() => {
 const hasAutoCompleteBlock = computed(() => {
   return displayBlocks.value.some(b => b.type === 'test' || b.type === 'assignment')
 })
+
+const scheduledEventTypes = ['workshop', 'city_meeting', 'curator_meeting']
+const futureScheduledEventBlock = computed(() => {
+  return displayBlocks.value.find((block) => {
+    if (!scheduledEventTypes.includes(block.type) || !block.scheduled_at) return false
+
+    return new Date(block.scheduled_at).getTime() > nowMs.value
+  })
+})
+const isCompletionBlockedBySchedule = computed(() => Boolean(futureScheduledEventBlock.value))
 
 const firstVideoBlock = computed(() => {
   return displayBlocks.value.find(b => b.type === 'video')
@@ -507,6 +527,10 @@ function saveScormData() {
 const hasScormBlock = computed(() => displayBlocks.value.some(b => b.type === 'scorm'))
 
 onMounted(() => {
+  nowInterval = setInterval(() => {
+    nowMs.value = Date.now()
+  }, 60000)
+
   if (hasScormBlock.value) {
     if (props.progress?.scorm_data) {
       scormData = { ...props.progress.scorm_data }
@@ -527,6 +551,11 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (nowInterval) {
+    clearInterval(nowInterval)
+    nowInterval = null
+  }
+
   if (hasScormBlock.value) {
     if (window.API) delete window.API
     if (window.API_1484_11) delete window.API_1484_11
@@ -616,6 +645,10 @@ function typeBadgeVariant(type) {
 }
 
 function markComplete() {
+  if (isCompletionBlockedBySchedule.value) {
+    return
+  }
+
   router.post(route('lms.stages.complete', {
     event: props.event?.slug,
     course: props.course?.id,

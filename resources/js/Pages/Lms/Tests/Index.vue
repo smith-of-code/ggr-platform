@@ -26,6 +26,13 @@
             <h3 class="font-semibold text-gray-900">{{ test.title }}</h3>
             <p class="mt-2 line-clamp-2 text-sm text-gray-500">{{ test.description }}</p>
             <div class="mt-4 flex flex-wrap gap-3 text-sm">
+              <RBadge
+                v-if="(test.gamification_points ?? 0) > 0"
+                variant="primary"
+                size="sm"
+              >
+                +{{ test.gamification_points }} за успешную сдачу
+              </RBadge>
               <span class="text-gray-400">Проходной балл: {{ test.passing_score ?? 0 }}%</span>
               <RBadge v-if="test.best_score != null" variant="primary" size="sm">
                 Ваш лучший: {{ test.best_score }}%
