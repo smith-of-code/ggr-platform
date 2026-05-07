@@ -187,6 +187,7 @@ class AssignmentController extends Controller
 
         $submissions = $submissionsQuery->paginate(15)->withQueryString();
         $submissionIds = $submissions->getCollection()->pluck('id')->all();
+        $submissionUserIds = $submissions->getCollection()->pluck('user_id')->filter()->unique()->values();
         $readMap = collect();
 
         if ($submissionIds !== []) {
@@ -196,15 +197,51 @@ class AssignmentController extends Controller
                 ->pluck('last_read_at', 'lms_assignment_submission_id');
         }
 
-        $submissions->getCollection()->transform(function (LmsAssignmentSubmission $submission) use ($readMap, $isAssignmentOverdue) {
+        $profiles = LmsProfile::where('lms_event_id', $event->id)
+            ->whereIn('user_id', $submissionUserIds)
+            ->get(['user_id', 'project_description', 'city', 'position', 'organization', 'direction', 'faculty'])
+            ->keyBy('user_id');
+        $linkedCourseIds = $this->assignmentLinkedCourseIds($assignment);
+        $courseEnrollments = $linkedCourseIds->isNotEmpty()
+            ? LmsCourseEnrollment::whereIn('user_id', $submissionUserIds)
+                ->whereIn('lms_course_id', $linkedCourseIds)
+                ->whereNotIn('status', ['pending', 'rejected'])
+                ->with('course:id,title')
+                ->get()
+                ->groupBy('user_id')
+            : collect();
+
+        $submissions->getCollection()->transform(function (LmsAssignmentSubmission $submission) use ($readMap, $isAssignmentOverdue, $profiles, $courseEnrollments) {
             $readAtRaw = $readMap->get($submission->id);
             $readAt = $readAtRaw ? Carbon::parse($readAtRaw) : null;
             $participantActivityAt = $submission->participant_last_activity_at;
             $hasUnread = $participantActivityAt !== null && ($readAt === null || $readAt->lt($participantActivityAt));
+            $profile = $profiles->get($submission->user_id);
 
             $submission->setAttribute('read_at', $readAt ? $readAt->toIso8601String() : null);
             $submission->setAttribute('has_unread', $hasUnread);
             $submission->setAttribute('is_overdue', $isAssignmentOverdue && ! in_array($submission->status, ['submitted', 'approved', 'resubmitted'], true));
+            $submission->setAttribute('participant_context', [
+                'courses' => $courseEnrollments->get($submission->user_id, collect())
+                    ->map(fn (LmsCourseEnrollment $enrollment) => [
+                        'id' => $enrollment->course?->id,
+                        'title' => $enrollment->course?->title,
+                        'status' => $enrollment->status,
+                    ])
+                    ->filter(fn (array $course) => $course['id'] !== null)
+                    ->values()
+                    ->all(),
+                'profile' => $profile ? [
+                    'project_description' => $profile->project_description,
+                    'city' => $profile->city,
+                    'position' => $profile->position,
+                    'organization' => $profile->organization,
+                    'direction' => $profile->direction,
+                    'direction_label' => $profile->direction ? (LmsProfile::DIRECTION_LABELS[$profile->direction] ?? $profile->direction) : null,
+                    'faculty' => $profile->faculty,
+                    'faculty_label' => $profile->faculty ? (LmsProfile::FACULTY_LABELS[$profile->faculty] ?? $profile->faculty) : null,
+                ] : null,
+            ]);
 
             return $submission;
         });
@@ -489,6 +526,20 @@ class AssignmentController extends Controller
                 }
             }
         }
+    }
+
+    private function assignmentLinkedCourseIds(LmsAssignment $assignment)
+    {
+        return LmsCourseStage::where('lms_assignment_id', $assignment->id)
+            ->pluck('lms_course_id')
+            ->merge(
+                LmsStageBlock::where('lms_stage_blocks.lms_assignment_id', $assignment->id)
+                    ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
+                    ->pluck('lms_course_stages.lms_course_id')
+            )
+            ->filter()
+            ->unique()
+            ->values();
     }
 
     private function markSubmissionAsReadForCurrentUser(LmsAssignmentSubmission $submission): void

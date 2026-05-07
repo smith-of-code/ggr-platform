@@ -118,6 +118,13 @@ class StageController extends Controller
         }
         $this->ensureSequentialAccess($course, $stage);
         $user = auth()->user();
+        $stage->loadMissing(['video', 'blocks']);
+
+        if ($this->stageHasFutureScheduledEvent($stage)) {
+            return redirect()->back()->withErrors([
+                'stage' => 'Отметить можно только после наступления даты события.',
+            ]);
+        }
 
         if ($stage->type === 'video' && $stage->video && $stage->video->duration_seconds) {
             $progress = LmsStageProgress::where('lms_course_stage_id', $stage->id)
@@ -158,6 +165,16 @@ class StageController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    private function stageHasFutureScheduledEvent(LmsCourseStage $stage): bool
+    {
+        $scheduledTypes = ['workshop', 'city_meeting', 'curator_meeting'];
+
+        return $stage->blocks
+            ->contains(fn ($block) => in_array($block->type, $scheduledTypes, true)
+                && $block->scheduled_at !== null
+                && $block->scheduled_at->isFuture());
     }
 
     public function heartbeat(

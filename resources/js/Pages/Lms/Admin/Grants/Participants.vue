@@ -37,6 +37,7 @@
               <th class="px-5 py-3 font-medium">Город</th>
               <th class="px-5 py-3 font-medium">Должность</th>
               <th class="px-5 py-3 font-medium">Организация</th>
+              <th class="px-5 py-3 font-medium">Админ-комментарии</th>
               <th class="px-5 py-3 font-medium">Дата</th>
             </tr>
           </thead>
@@ -50,10 +51,59 @@
               <td class="px-5 py-4 text-gray-500">{{ e.profile?.city || '—' }}</td>
               <td class="px-5 py-4 text-gray-500">{{ e.profile?.position || '—' }}</td>
               <td class="px-5 py-4 text-gray-500">{{ e.profile?.organization || '—' }}</td>
+              <td class="min-w-[360px] px-5 py-4 align-top">
+                <div class="space-y-3">
+                  <div v-if="e.latest_admin_status" class="inline-flex rounded-full bg-rosatom-50 px-2.5 py-1 text-xs font-semibold text-rosatom-700">
+                    {{ statusLabels[e.latest_admin_status] || e.latest_admin_status }}
+                  </div>
+                  <div v-if="e.admin_comments?.length" class="space-y-2">
+                    <div
+                      v-for="comment in e.admin_comments.slice(0, 3)"
+                      :key="comment.id"
+                      class="rounded-lg border border-gray-100 bg-gray-50 p-2 text-xs text-gray-600"
+                    >
+                      <div class="mb-1 flex flex-wrap items-center gap-1 text-[11px] text-gray-400">
+                        <span>{{ comment.created_at }}</span>
+                        <span v-if="comment.admin_name">· {{ comment.admin_name }}</span>
+                        <span v-if="comment.status_label" class="font-semibold text-rosatom-700">· {{ comment.status_label }}</span>
+                      </div>
+                      <p v-if="comment.comment" class="whitespace-pre-wrap">{{ comment.comment }}</p>
+                    </div>
+                    <p v-if="e.admin_comments.length > 3" class="text-xs text-gray-400">
+                      Ещё комментариев: {{ e.admin_comments.length - 3 }}
+                    </p>
+                  </div>
+                  <p v-else class="text-xs text-gray-400">Комментариев пока нет</p>
+
+                  <div class="space-y-2 rounded-lg border border-gray-100 bg-white p-2">
+                    <select
+                      v-model="commentForms[e.id].status"
+                      class="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-xs text-gray-700"
+                    >
+                      <option value="">Статус обработки</option>
+                      <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
+                    </select>
+                    <textarea
+                      v-model="commentForms[e.id].comment"
+                      rows="2"
+                      class="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-xs text-gray-700"
+                      placeholder="Комментарий виден только администраторам"
+                    />
+                    <RButton
+                      size="sm"
+                      variant="outline"
+                      :disabled="!canSaveComment(e.id)"
+                      @click="saveComment(e)"
+                    >
+                      Сохранить
+                    </RButton>
+                  </div>
+                </div>
+              </td>
               <td class="px-5 py-4 text-gray-400">{{ e.created_at || '—' }}</td>
             </tr>
             <tr v-if="!enrollments.data.length">
-              <td colspan="9" class="px-5 py-16 text-center text-sm text-gray-400">Нет записавшихся участников</td>
+              <td colspan="10" class="px-5 py-16 text-center text-sm text-gray-400">Нет записавшихся участников</td>
             </tr>
           </tbody>
         </table>
@@ -80,14 +130,34 @@
 </template>
 
 <script setup>
-import { Head, Link } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
+import { reactive, watch } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 
 const props = defineProps({
   event: Object,
   grant: Object,
   enrollments: Object,
+  statusLabels: { type: Object, default: () => ({}) },
 })
+
+const commentForms = reactive({})
+
+watch(
+  () => (props.enrollments?.data ?? []).map(e => e.id),
+  (ids) => {
+    ids.forEach((id) => {
+      if (!commentForms[id]) {
+        const enrollment = props.enrollments.data.find(e => e.id === id)
+        commentForms[id] = {
+          status: enrollment?.latest_admin_status || '',
+          comment: '',
+        }
+      }
+    })
+  },
+  { immediate: true },
+)
 
 function fullName(user) {
   if (!user) return '—'
@@ -96,5 +166,29 @@ function fullName(user) {
 
 function rowNumber(idx) {
   return (props.enrollments.from || 1) + idx
+}
+
+function canSaveComment(enrollmentId) {
+  const form = commentForms[enrollmentId]
+  return Boolean(form?.status || form?.comment?.trim())
+}
+
+function saveComment(enrollment) {
+  const form = commentForms[enrollment.id]
+  if (!form) return
+
+  router.post(
+    route('lms.admin.grants.participants.comments.store', [props.event.slug, props.grant.id, enrollment.id]),
+    {
+      status: form.status || null,
+      comment: form.comment || '',
+    },
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        form.comment = ''
+      },
+    },
+  )
 }
 </script>
