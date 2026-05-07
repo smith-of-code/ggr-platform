@@ -32,11 +32,13 @@ class City extends Model
         'facts',
         'energy_cities_block',
         'block_visibility',
+        'show_order_tour_button',
     ];
 
     protected $casts = [
         'infrastructure' => 'array',
         'is_active' => 'boolean',
+        'show_order_tour_button' => 'boolean',
         'attractions' => 'array',
         'social_objects' => 'array',
         'gallery' => 'array',

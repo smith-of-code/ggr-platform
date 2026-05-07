@@ -54,6 +54,17 @@
                 </svg>
                 Поделиться
               </button>
+              <button
+                v-if="city.show_order_tour_button"
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl bg-[#C91E5B] px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#a81549] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                @click="openOrderTourModal"
+              >
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                </svg>
+                Заказать тур
+              </button>
             </div>
           </div>
           <p
@@ -440,7 +451,90 @@
           </div>
         </section>
       </div>
+
+      <!-- CTA: order tour -->
+      <section v-if="city.show_order_tour_button" class="reveal mx-auto mb-10 max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#C91E5B] to-[#a81549] px-8 py-10 text-center shadow-lg sm:py-12">
+          <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+            <div class="absolute -left-10 -top-10 h-48 w-48 rounded-full bg-white/[0.06]" />
+            <div class="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-white/[0.06]" />
+          </div>
+          <h2 class="relative text-2xl font-extrabold text-white sm:text-3xl">Хотите посетить {{ city.name }}?</h2>
+          <p class="relative mt-3 text-base text-white/80">Оставьте заявку — мы подберём тур и свяжемся с вами в ближайшее время.</p>
+          <button
+            type="button"
+            class="relative mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-white/70 bg-white px-8 py-3.5 text-sm font-bold text-[#C91E5B] shadow transition hover:bg-white/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            @click="openOrderTourModal"
+          >
+            <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+            </svg>
+            Заказать тур
+          </button>
+        </div>
+      </section>
     </div>
+
+    <!-- Order tour modal -->
+    <RModal v-model="showOrderTourModal" :title="orderTourSent ? '' : 'Заявка на тур'" :subtitle="orderTourSent ? '' : 'Заполните форму, и мы свяжемся с вами'" size="md">
+      <div v-if="orderTourSent" class="flex flex-col items-center py-6 text-center">
+        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+          <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+        </div>
+        <h3 class="mt-4 text-xl font-bold text-gray-900">Заявка отправлена!</h3>
+        <p class="mt-2 max-w-sm text-gray-600">Спасибо за интерес к туру. Мы свяжемся с вами в ближайшее время.</p>
+      </div>
+      <form v-else class="space-y-4" @submit.prevent="submitOrderTour">
+        <RInput v-model="orderTourForm.name" label="Имя" placeholder="Ваше имя" required :error="orderTourForm.errors.name" />
+        <RInput v-model="orderTourForm.email" type="email" label="Email" placeholder="your@email.com" required :error="orderTourForm.errors.email" />
+        <RInput v-model="orderTourForm.phone" type="tel" label="Телефон" placeholder="+7 (___) ___-__-__" :error="orderTourForm.errors.phone" />
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Сообщение</label>
+          <textarea
+            v-model="orderTourForm.message"
+            rows="3"
+            placeholder="Ваше сообщение..."
+            class="mt-1.5 w-full rounded-xl border-gray-300 px-4 py-3 transition focus:border-[#003274] focus:ring-[#003274]/20"
+            :class="orderTourForm.errors.message ? 'border-red-500 ring-1 ring-red-500/20' : ''"
+          />
+          <p v-if="orderTourForm.errors.message" class="mt-1 text-sm text-red-600">{{ orderTourForm.errors.message }}</p>
+        </div>
+        <div>
+          <label class="flex cursor-pointer items-start gap-3">
+            <input
+              v-model="orderTourForm.consent"
+              type="checkbox"
+              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#003274] focus:ring-[#003274]"
+              :true-value="true"
+              :false-value="false"
+            />
+            <span class="text-sm text-gray-600">
+              Отправляя заявку, вы даёте
+              <a :href="$page.props.consentDocumentUrl" target="_blank" class="text-[#003274] underline hover:text-[#025ea1]">согласие на обработку персональных данных</a>
+            </span>
+          </label>
+          <p v-if="orderTourForm.errors.consent" class="mt-1 text-sm text-red-600">{{ orderTourForm.errors.consent }}</p>
+        </div>
+      </form>
+
+      <template #footer>
+        <template v-if="orderTourSent">
+          <RButton variant="primary" @click="closeOrderTourModal">Закрыть</RButton>
+        </template>
+        <template v-else>
+          <RButton type="button" variant="outline" @click="closeOrderTourModal">Отмена</RButton>
+          <RButton
+            type="button"
+            variant="primary"
+            :disabled="!orderTourForm.consent || orderTourForm.processing"
+            :loading="orderTourForm.processing"
+            @click="submitOrderTour"
+          >
+            Отправить
+          </RButton>
+        </template>
+      </template>
+    </RModal>
 
     <!-- Gallery lightbox -->
     <Teleport to="body">
@@ -600,7 +694,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { Link, Head, router, usePage } from '@inertiajs/vue3'
+import { Link, Head, router, usePage, useForm } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { useScrollReveal } from '@/composables/useScrollReveal'
 
@@ -922,4 +1016,57 @@ onUnmounted(() => {
     clearTimeout(shareCopiedTimer)
   }
 })
+
+const showOrderTourModal = ref(false)
+const orderTourSent = ref(false)
+
+const orderTourForm = useForm({
+  type: 'tour',
+  tour_id: null,
+  tour_departure_id: null,
+  promocode_id: null,
+  name: '',
+  email: '',
+  phone: '',
+  message: '',
+  consent: false,
+})
+
+function openOrderTourModal() {
+  orderTourForm.clearErrors()
+  orderTourForm.reset()
+  orderTourSent.value = false
+  showOrderTourModal.value = true
+  const u = page.props.auth?.user
+  if (u) {
+    const parts = [u.last_name, u.first_name, u.patronymic].filter(Boolean)
+    orderTourForm.name = parts.length ? parts.join(' ') : (u.name || '')
+    orderTourForm.email = u.email || ''
+    orderTourForm.phone = u.phone || ''
+  }
+}
+
+function closeOrderTourModal() {
+  showOrderTourModal.value = false
+  orderTourSent.value = false
+  orderTourForm.reset()
+  orderTourForm.clearErrors()
+}
+
+function submitOrderTour() {
+  orderTourForm
+    .transform((data) => ({
+      ...data,
+      message: data.message
+        ? `[Заказ тура — ${props.city.name}] ${data.message}`.trim()
+        : `[Заказ тура — ${props.city.name}]`,
+    }))
+    .post(route('applications.store'), {
+      preserveScroll: true,
+      onSuccess: () => {
+        orderTourSent.value = true
+        orderTourForm.reset()
+      },
+    })
+}
 </script>
