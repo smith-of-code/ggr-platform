@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\DB;
 
 class GamificationService
 {
+    /** Идемпотентное начисление за успешную сдачу конкретного теста. */
+    public const SOURCE_TEST_PASSED = 'lms_test_passed';
+
+    /** Идемпотентное начисление за одобрение конкретного задания. */
+    public const SOURCE_ASSIGNMENT_APPROVED = 'lms_assignment_approved';
+
     public function isGamificationEnabled(LmsEvent $event, User $user): bool
     {
         $anyUnlockingCourse = LmsCourse::where('lms_event_id', $event->id)
@@ -63,6 +69,47 @@ class GamificationService
                 'reason' => $reason ?? $rule->title,
             ]);
         }
+    }
+
+    /**
+     * Фиксированные баллы за тест/задание: одно начисление на пару (событие, пользователь, source_type, source_id).
+     */
+    public function awardFixedPoints(
+        LmsEvent $event,
+        User $user,
+        int $points,
+        string $sourceType,
+        int $sourceId,
+        ?string $reason = null,
+    ): void {
+        if ($points <= 0) {
+            return;
+        }
+
+        if (! $this->isGamificationEnabled($event, $user)) {
+            return;
+        }
+
+        $exists = LmsGamificationPoint::query()
+            ->where('lms_event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->where('source_type', $sourceType)
+            ->where('source_id', $sourceId)
+            ->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        LmsGamificationPoint::create([
+            'lms_event_id' => $event->id,
+            'user_id' => $user->id,
+            'lms_gamification_rule_id' => null,
+            'source_type' => $sourceType,
+            'source_id' => $sourceId,
+            'points' => $points,
+            'reason' => $reason,
+        ]);
     }
 
     public function getLeaderboard(LmsEvent $event, int $limit = 50): array

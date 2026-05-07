@@ -23,6 +23,7 @@
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Вопросов</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Попыток</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Проходной балл</th>
+            <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Баллы</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Статус</th>
             <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Действия</th>
           </tr>
@@ -33,6 +34,10 @@
             <td class="px-5 py-3.5 text-center text-sm text-gray-500">{{ test.questions_count ?? 0 }}</td>
             <td class="px-5 py-3.5 text-center text-sm text-gray-500">{{ test.attempts_count ?? 0 }}</td>
             <td class="px-5 py-3.5 text-center text-sm text-gray-500">{{ test.passing_score ?? '—' }}%</td>
+            <td class="px-5 py-3.5 text-center text-sm">
+              <RBadge v-if="(test.gamification_points ?? 0) > 0" variant="primary" size="sm">+{{ test.gamification_points }}</RBadge>
+              <span v-else class="text-gray-400">—</span>
+            </td>
             <td class="px-5 py-3.5 text-center">
               <RBadge :variant="test.is_active ? 'primary' : 'neutral'" :dot="true">
                 {{ test.is_active ? 'Активен' : 'Скрыт' }}

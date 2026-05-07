@@ -26,6 +26,7 @@
           <tr class="border-b border-gray-200 bg-gray-50">
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Название</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Отправок</th>
+            <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Баллы</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Дедлайн</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Статус</th>
             <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Действия</th>
@@ -42,6 +43,10 @@
               </div>
             </td>
             <td class="px-5 py-3.5 text-center text-sm text-gray-500">{{ a.submissions_count ?? 0 }}</td>
+            <td class="px-5 py-3.5 text-center text-sm">
+              <RBadge v-if="(a.gamification_points ?? 0) > 0" variant="primary" size="sm">+{{ a.gamification_points }}</RBadge>
+              <span v-else class="text-gray-400">—</span>
+            </td>
             <td class="px-5 py-3.5 text-sm text-gray-500">{{ a.deadline ? formatLmsAssignmentDeadline(a.deadline, 'short') : '—' }}</td>
             <td class="px-5 py-3.5 text-center">
               <RBadge :variant="a.is_active ? 'primary' : 'neutral'" :dot="true">

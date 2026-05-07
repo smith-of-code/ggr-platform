@@ -102,6 +102,7 @@ class AssignmentController extends Controller
         $validated['lms_event_id'] = $event->id;
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['completion_mode'] ??= 'on_review';
+        $validated['gamification_points'] = (int) ($validated['gamification_points'] ?? 0);
 
         $templateFiles = $this->normalizeTemplateFiles($validated['template_files'] ?? []);
         unset($validated['template_files']);
@@ -281,6 +282,7 @@ class AssignmentController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['completion_mode'] ??= $assignment->completion_mode;
+        $validated['gamification_points'] = (int) ($validated['gamification_points'] ?? 0);
 
         $templateFiles = $this->normalizeTemplateFiles($validated['template_files'] ?? []);
         unset($validated['template_files']);
@@ -418,6 +420,7 @@ class AssignmentController extends Controller
             'template_files.*.name' => ['nullable', 'string', 'max:255'],
             'completion_mode' => ['sometimes', 'string', 'in:on_submit,on_review'],
             'deadline' => ['nullable', 'date'],
+            'gamification_points' => ['nullable', 'integer', 'min:0'],
             'tasks' => ['nullable', 'array'],
             'tasks.*.title' => ['required', 'string', 'max:255'],
             'tasks.*.description' => ['nullable', 'string'],

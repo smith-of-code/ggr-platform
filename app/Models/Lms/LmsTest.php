@@ -22,6 +22,7 @@ class LmsTest extends Model
         'max_attempts',
         'in_menu',
         'is_active',
+        'gamification_points',
     ];
 
     protected $casts = [
@@ -30,6 +31,7 @@ class LmsTest extends Model
         'show_correct_answers' => 'boolean',
         'in_menu' => 'boolean',
         'is_active' => 'boolean',
+        'gamification_points' => 'integer',
     ];
 
     /** @return BelongsTo<LmsEvent, $this> */

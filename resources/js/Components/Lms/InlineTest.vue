@@ -54,9 +54,17 @@
         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
           <ClipboardDocumentListIcon class="h-5 w-5 text-amber-600" />
         </div>
-        <div>
+        <div class="min-w-0 flex-1">
           <p class="font-medium text-gray-900">{{ test.title }}</p>
           <p v-if="test.description" class="mt-1 text-sm text-gray-500">{{ test.description }}</p>
+          <RBadge
+            v-if="(test.gamification_points ?? 0) > 0"
+            variant="primary"
+            size="sm"
+            class="mt-2"
+          >
+            +{{ test.gamification_points }} за успешную сдачу
+          </RBadge>
         </div>
       </div>
 

@@ -21,6 +21,7 @@
 ### Страницы
 - `Pages/Lms/Assignments/Index.vue`, `Show.vue`
 - `Pages/Lms/Admin/Assignments/Index.vue`, `Form.vue`, `Submissions.vue`
+- `Components/Lms/InlineAssignment.vue` — встроенное задание на этапе курса
 
 ## Схема БД
 
@@ -36,6 +37,7 @@
 | completion_mode | enum(on_submit, on_review) | NOT NULL, default `on_review` |
 | deadline | timestamp | nullable |
 | is_active | boolean | default true |
+| gamification_points | unsignedInteger | default `0`; фиксированные баллы геймификации за одобрение задания (`0` = только правила события, см. `lms-gamification`) |
 | timestamps | | |
 
 ### lms_assignment_submissions

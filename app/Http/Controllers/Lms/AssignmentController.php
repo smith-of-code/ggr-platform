@@ -14,6 +14,7 @@ use App\Models\Lms\LmsStageBlock;
 use App\Models\Lms\LmsStageProgress;
 use App\Models\Lms\LmsSubmissionAnswer;
 use App\Models\UploadedMedia;
+use App\Observers\LmsProgressObserver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -88,7 +89,7 @@ class AssignmentController extends Controller
         $assignmentsWithStatus = collect($assignmentsPaginator->items())->map(function ($assignment) use ($submissions) {
             $submission = $submissions->get($assignment->id);
             return [
-                'assignment' => $assignment->only(['id', 'title', 'description', 'deadline']),
+                'assignment' => $assignment->only(['id', 'title', 'description', 'deadline', 'gamification_points']),
                 'submission' => $submission?->only(['id', 'status', 'created_at']),
             ];
         });
@@ -151,7 +152,7 @@ class AssignmentController extends Controller
         return Inertia::render('Lms/Assignments/Show', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'assignment' => array_merge(
-                $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline', 'completion_mode']),
+                $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline', 'completion_mode', 'gamification_points']),
                 [
                     'template_files' => $assignment->templateFiles(),
                     'tasks' => $assignment->tasks,
@@ -218,6 +219,8 @@ class AssignmentController extends Controller
 
         if ($status === 'approved') {
             $this->markLinkedStagesCompleted($assignment, $user);
+            $submission->load('assignment.event');
+            app(LmsProgressObserver::class)->awardAssignmentGamificationPoints($submission);
         }
 
         return redirect()->back();

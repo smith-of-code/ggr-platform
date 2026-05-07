@@ -50,19 +50,29 @@
         >
           <div
             v-if="isOverdueUnsubmitted(item)"
-            class="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 shadow-sm"
+            class="absolute right-3 top-3 z-20 inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 shadow-sm"
           >
             <ExclamationTriangleIcon class="h-3.5 w-3.5" />
             Просрочено
           </div>
-          <AssignmentCard
-            :title="item.assignment.title"
-            :description="stripHtml(item.assignment.description)"
-            :status="mapStatus(item.submission?.status)"
-            :deadline="formatDeadline(item.assignment.deadline)"
-            :attachments="item.submission?.files?.length || 0"
-            @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: item.assignment.id }))"
-          />
+          <div class="flex flex-col gap-2">
+            <div
+              v-if="(item.assignment.gamification_points ?? 0) > 0"
+              class="flex shrink-0 justify-start px-0.5"
+            >
+              <span class="inline-flex rounded-full bg-rosatom-100 px-2.5 py-1 text-xs font-semibold text-rosatom-800 shadow-sm">
+                +{{ item.assignment.gamification_points }} баллов
+              </span>
+            </div>
+            <AssignmentCard
+              :title="item.assignment.title"
+              :description="stripHtml(item.assignment.description)"
+              :status="mapStatus(item.submission?.status)"
+              :deadline="formatDeadline(item.assignment.deadline)"
+              :attachments="item.submission?.files?.length || 0"
+              @click="router.visit(route('lms.assignments.show', { event: event?.slug, assignment: item.assignment.id }))"
+            />
+          </div>
         </div>
       </div>
 

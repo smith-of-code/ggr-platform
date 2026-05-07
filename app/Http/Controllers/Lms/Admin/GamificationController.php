@@ -271,9 +271,17 @@ class GamificationController extends Controller
 
         $type = (string) $request->input('history_type', '');
         if ($type === 'manual') {
-            $query->whereNull('lms_gamification_rule_id');
+            $query->whereNull('lms_gamification_rule_id')
+                ->whereNull('source_type')
+                ->whereNull('source_id');
         } elseif ($type === 'auto') {
-            $query->whereNotNull('lms_gamification_rule_id');
+            $query->where(function (Builder $q) {
+                $q->whereNotNull('lms_gamification_rule_id')
+                    ->orWhere(function (Builder $q2) {
+                        $q2->whereNotNull('source_type')
+                            ->whereNotNull('source_id');
+                    });
+            });
         }
 
         $groupTitle = trim((string) $request->input('history_group', ''));

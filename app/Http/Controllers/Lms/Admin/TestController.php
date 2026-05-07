@@ -52,6 +52,7 @@ class TestController extends Controller
         $validated['in_menu'] = $request->boolean('in_menu', false);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['passing_score'] ??= 60;
+        $validated['gamification_points'] = (int) ($validated['gamification_points'] ?? 0);
 
         $test = LmsTest::create($validated);
 
@@ -84,6 +85,7 @@ class TestController extends Controller
         $validated['in_menu'] = $request->boolean('in_menu', false);
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['passing_score'] ??= 60;
+        $validated['gamification_points'] = (int) ($validated['gamification_points'] ?? 0);
 
         $test->update($validated);
 
@@ -245,6 +247,7 @@ class TestController extends Controller
             'in_menu' => ['boolean'],
             'passing_score' => ['nullable', 'integer', 'min:0', 'max:100'],
             'max_attempts' => ['nullable', 'integer', 'min:0'],
+            'gamification_points' => ['nullable', 'integer', 'min:0'],
             'questions' => ['nullable', 'array'],
             'questions.*.question' => ['required', 'string'],
             'questions.*.type' => ['nullable', 'string'],

@@ -284,7 +284,7 @@ class StageController extends Controller
 
         return [
             'test' => array_merge(
-                $test->only(['id', 'title', 'description', 'time_limit_minutes', 'passing_score', 'max_attempts']),
+                $test->only(['id', 'title', 'description', 'time_limit_minutes', 'passing_score', 'max_attempts', 'gamification_points']),
                 ['questions_count' => $questionsCount]
             ),
             'attempts' => $attempts,
@@ -320,7 +320,7 @@ class StageController extends Controller
 
         return [
             'assignment' => array_merge(
-                $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline', 'completion_mode']),
+                $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline', 'completion_mode', 'gamification_points']),
                 [
                     'template_files' => $assignment->templateFiles(),
                     'tasks' => $assignment->tasks,

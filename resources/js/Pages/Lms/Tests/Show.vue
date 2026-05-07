@@ -11,7 +11,17 @@
       </Link>
 
       <RCard class="p-6 lg:p-8">
-        <h1 class="font-brand text-2xl font-bold text-gray-900">{{ test?.title }}</h1>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <h1 class="font-brand text-2xl font-bold text-gray-900">{{ test?.title }}</h1>
+          <RBadge
+            v-if="(test?.gamification_points ?? 0) > 0"
+            variant="primary"
+            size="sm"
+            class="shrink-0"
+          >
+            +{{ test.gamification_points }} за успешную сдачу
+          </RBadge>
+        </div>
         <p class="mt-3 text-gray-500">{{ test?.description }}</p>
 
         <div class="mt-6 grid gap-4 sm:grid-cols-2">

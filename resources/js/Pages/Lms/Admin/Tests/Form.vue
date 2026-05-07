@@ -38,6 +38,16 @@
           <div>
             <RInput v-model.number="form.max_attempts" label="Макс. попыток" type="number" placeholder="0 = без ограничений" />
           </div>
+          <div class="sm:col-span-2">
+            <RInput
+              v-model.number="form.gamification_points"
+              label="Баллы за успешную сдачу (геймификация)"
+              type="number"
+              :min="0"
+              :error="form.errors.gamification_points"
+            />
+            <p class="mt-1 text-xs text-gray-500">0 — начисление только по правилам события. Не путать с баллами вопросов теста.</p>
+          </div>
         </div>
         <div class="flex flex-wrap gap-3 border-t border-gray-200 pt-5">
           <RCheckbox v-model="form.in_menu" label="Показывать в меню «Тестирование»" />
@@ -154,6 +164,7 @@ const form = useForm({
   in_menu: props.test?.in_menu ?? false,
   passing_score: props.test?.passing_score ?? 60,
   max_attempts: props.test?.max_attempts ?? null,
+  gamification_points: props.test?.gamification_points ?? 0,
   questions: initialQuestions,
 })
 
