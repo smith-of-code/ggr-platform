@@ -103,9 +103,12 @@ class AssignmentController extends Controller
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['completion_mode'] ??= 'on_review';
 
-        $validated = $this->handleTemplateUpload($request, $validated, $event);
+        $templateFiles = $this->normalizeTemplateFiles($validated['template_files'] ?? []);
+        unset($validated['template_files']);
 
         $assignment = LmsAssignment::create($validated);
+        $assignment->setTemplateFiles($templateFiles);
+        $assignment->save();
 
         $this->syncTasks($assignment, $request->input('tasks', []), $request, $event);
 
@@ -120,33 +123,66 @@ class AssignmentController extends Controller
         $canReviewAssignments = in_array($accessLevel, ['admin', 'gamification_points_only'], true);
         $onlyUnread = $request->boolean('only_unread', false);
         $search = trim((string) $request->query('search', ''));
+        $statusFilter = (string) $request->query('status', '');
+        if (! in_array($statusFilter, ['approved', 'submitted', 'revision', 'new', 'overdue'], true)) {
+            $statusFilter = '';
+        }
 
         $assignment->load('tasks');
 
-        $submissionsQuery = $assignment->submissions()
-            ->with(['user:id,name,email', 'reviews.reviewer:id,name', 'comments.user:id,name', 'answers.task'])
-            ->orderBy('created_at', 'desc');
+        $unreadScope = function ($unread) use ($viewerId) {
+            $unread->whereDoesntHave('reads', function ($read) use ($viewerId) {
+                $read->where('user_id', $viewerId)->whereNotNull('last_read_at');
+            })->orWhereHas('reads', function ($read) use ($viewerId) {
+                $read->where('user_id', $viewerId)
+                    ->whereColumn('last_read_at', '<', 'lms_assignment_submissions.participant_last_activity_at');
+            });
+        };
 
-        if ($onlyUnread) {
-            $submissionsQuery->whereNotNull('participant_last_activity_at')
-                ->where(function ($unread) use ($viewerId) {
-                    $unread->whereDoesntHave('reads', function ($read) use ($viewerId) {
-                        $read->where('user_id', $viewerId)->whereNotNull('last_read_at');
-                    })->orWhereHas('reads', function ($read) use ($viewerId) {
-                        $read->where('user_id', $viewerId)
-                            ->whereColumn('last_read_at', '<', 'lms_assignment_submissions.participant_last_activity_at');
-                    });
-                });
-        }
+        $baseSubmissionsQuery = $assignment->submissions();
 
         if ($search !== '') {
-            $submissionsQuery->whereHas('user', function ($query) use ($search) {
+            $baseSubmissionsQuery->whereHas('user', function ($query) use ($search) {
                 $query->where('name', 'ilike', '%' . $search . '%')
                     ->orWhere('email', 'ilike', '%' . $search . '%')
                     ->orWhere('last_name', 'ilike', '%' . $search . '%')
                     ->orWhere('first_name', 'ilike', '%' . $search . '%')
                     ->orWhere('patronymic', 'ilike', '%' . $search . '%');
             });
+        }
+
+        $isAssignmentOverdue = $assignment->deadline !== null && $assignment->deadline->lt(now());
+        $overdueSubmissionScope = fn ($query) => $query->whereNotIn('status', ['submitted', 'approved', 'resubmitted']);
+
+        $statusCounts = [
+            'approved' => (clone $baseSubmissionsQuery)->where('status', 'approved')->count(),
+            'submitted' => (clone $baseSubmissionsQuery)->where('status', 'submitted')->count(),
+            'revision' => (clone $baseSubmissionsQuery)->where('status', 'revision')->count(),
+            'new' => (clone $baseSubmissionsQuery)
+                ->whereNotNull('participant_last_activity_at')
+                ->where($unreadScope)
+                ->count(),
+            'overdue' => $isAssignmentOverdue
+                ? (clone $baseSubmissionsQuery)->where($overdueSubmissionScope)->count()
+                : 0,
+        ];
+
+        $submissionsQuery = (clone $baseSubmissionsQuery)
+            ->with(['user:id,name,email', 'reviews.reviewer:id,name', 'comments.user:id,name', 'answers.task'])
+            ->orderBy('created_at', 'desc');
+
+        if ($onlyUnread) {
+            $submissionsQuery->whereNotNull('participant_last_activity_at')
+                ->where($unreadScope);
+        }
+
+        if ($statusFilter === 'new') {
+            $submissionsQuery->whereNotNull('participant_last_activity_at')
+                ->where($unreadScope);
+        } elseif ($statusFilter === 'overdue') {
+            $submissionsQuery->where($overdueSubmissionScope);
+        } elseif ($statusFilter !== '') {
+            $submissionsQuery->where('status', $statusFilter);
         }
 
         $submissions = $submissionsQuery->paginate(15)->withQueryString();
@@ -160,7 +196,7 @@ class AssignmentController extends Controller
                 ->pluck('last_read_at', 'lms_assignment_submission_id');
         }
 
-        $submissions->getCollection()->transform(function (LmsAssignmentSubmission $submission) use ($readMap) {
+        $submissions->getCollection()->transform(function (LmsAssignmentSubmission $submission) use ($readMap, $isAssignmentOverdue) {
             $readAtRaw = $readMap->get($submission->id);
             $readAt = $readAtRaw ? Carbon::parse($readAtRaw) : null;
             $participantActivityAt = $submission->participant_last_activity_at;
@@ -168,6 +204,7 @@ class AssignmentController extends Controller
 
             $submission->setAttribute('read_at', $readAt ? $readAt->toIso8601String() : null);
             $submission->setAttribute('has_unread', $hasUnread);
+            $submission->setAttribute('is_overdue', $isAssignmentOverdue && ! in_array($submission->status, ['submitted', 'approved', 'resubmitted'], true));
 
             return $submission;
         });
@@ -176,10 +213,12 @@ class AssignmentController extends Controller
             'event' => $event->only(['id', 'slug', 'title']),
             'assignment' => $assignment,
             'submissions' => $submissions,
+            'statusCounts' => $statusCounts,
             'canReviewAssignments' => $canReviewAssignments,
             'filters' => [
                 'only_unread' => $onlyUnread,
                 'search' => $search,
+                'status' => $statusFilter,
             ],
         ]);
     }
@@ -189,6 +228,7 @@ class AssignmentController extends Controller
         $this->ensureAssignmentBelongsToEvent($assignment, $event);
 
         $assignment->load('tasks');
+        $assignment->setAttribute('template_files', $assignment->templateFiles());
 
         return Inertia::render('Lms/Admin/Assignments/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -205,9 +245,12 @@ class AssignmentController extends Controller
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['completion_mode'] ??= $assignment->completion_mode;
 
-        $validated = $this->handleTemplateUpload($request, $validated, $event);
+        $templateFiles = $this->normalizeTemplateFiles($validated['template_files'] ?? []);
+        unset($validated['template_files']);
 
         $assignment->update($validated);
+        $assignment->setTemplateFiles($templateFiles);
+        $assignment->save();
 
         $this->syncTasks($assignment, $request->input('tasks', []), $request, $event);
 
@@ -333,6 +376,9 @@ class AssignmentController extends Controller
             'description' => ['nullable', 'string'],
             'template_file' => ['nullable', 'string', 'max:500'],
             'template_file_name' => ['nullable', 'string', 'max:255'],
+            'template_files' => ['nullable', 'array'],
+            'template_files.*.path' => ['required_with:template_files', 'string', 'max:2000'],
+            'template_files.*.name' => ['nullable', 'string', 'max:255'],
             'completion_mode' => ['sometimes', 'string', 'in:on_submit,on_review'],
             'deadline' => ['nullable', 'date'],
             'tasks' => ['nullable', 'array'],
@@ -345,18 +391,32 @@ class AssignmentController extends Controller
         ];
     }
 
-    private function handleTemplateUpload(Request $request, array $validated, LmsEvent $event): array
+    /**
+     * @param  array<int, mixed>  $files
+     * @return array<int, array{name: string, path: string}>
+     */
+    private function normalizeTemplateFiles(array $files): array
     {
-        if ($request->hasFile('template_file_upload')) {
-            $request->validate(['template_file_upload' => ['file', 'max:51200']]);
-            $disk = config('filesystems.upload_disk');
-            $file = $request->file('template_file_upload');
-            $path = $file->store('uploads/assignment-templates', $disk);
-            $validated['template_file'] = Storage::disk($disk)->url($path);
-            $validated['template_file_name'] = $file->getClientOriginalName();
-        }
+        return collect($files)
+            ->map(function ($file) {
+                if (! is_array($file)) {
+                    return null;
+                }
 
-        return $validated;
+                $path = $file['path'] ?? null;
+                if (! is_string($path) || trim($path) === '') {
+                    return null;
+                }
+
+                $name = is_string($file['name'] ?? null) && trim($file['name']) !== ''
+                    ? trim($file['name'])
+                    : basename(parse_url($path, PHP_URL_PATH) ?: 'template');
+
+                return ['name' => $name, 'path' => $path];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function syncTasks(LmsAssignment $assignment, array $tasks, Request $request, LmsEvent $event): void

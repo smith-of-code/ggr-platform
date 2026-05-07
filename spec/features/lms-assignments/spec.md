@@ -31,7 +31,8 @@
 | lms_event_id | FK → lms_events | cascade delete |
 | title | string | NOT NULL |
 | description | text | nullable |
-| template_file | string | nullable |
+| template_file | text | nullable, legacy URL или JSON-массив шаблонов `[{name,path}]` |
+| template_file_name | string | nullable, имя первого шаблона для обратной совместимости |
 | completion_mode | enum(on_submit, on_review) | NOT NULL, default `on_review` |
 | deadline | timestamp | nullable |
 | is_active | boolean | default true |
@@ -92,7 +93,7 @@
 | POST | `/assignments/{assignment}/submit` | AssignmentController@submit |
 | POST | `/assignments/{assignment}/comment` | AssignmentController@comment |
 | PATCH | `/assignments/{assignment}/submissions/{submission}` | AssignmentController@update |
-| GET | `/assignments/{assignment}/template-download` | AssignmentController@downloadTemplate |
+| GET | `/assignments/{assignment}/template-download?template=N` | AssignmentController@downloadTemplate |
 | GET | `/assignments/{assignment}/tasks/{task}/template-download` | AssignmentController@downloadTaskTemplate |
 
 ### Админ (prefix: `/lms-admin/{event}`)
@@ -117,7 +118,7 @@ CRUD заданий для этих ролей недоступен (403).
 - На списке заданий (`Index.vue`) показывается бейдж с количеством submissions, где есть непрочитанная активность участника.
 - Доступен фильтр «Только с новыми».
 - На странице submissions (`Submissions.vue`) у каждой ветки участника показывается бейдж «Новое», а в обсуждении — метки «Новое» у сообщений участника после `last_read_at`.
-- При открытии ветки вызывается `mark-read`, фиксируя `last_read_at` для текущего админа/эксперта.
+- При открытии ветки вызывается `mark-read`, фиксируя `last_read_at` для текущего админа/эксперта. Запрос выполняется фоново через `axios`, без Inertia-перезагрузки списка, чтобы первая попытка открыть «новую» работу не закрывала раскрытую карточку и не сбрасывала плашку статуса.
 - На странице submissions добавлены:
   - поиск по участнику (ФИО/email);
   - пагинация списка submissions (с сохранением активных фильтров).
@@ -128,12 +129,27 @@ CRUD заданий для этих ролей недоступен (403).
 - На фронте дедлайн форматируется через `resources/js/utils/lmsAssignmentDeadline.js` (`toLocaleString('ru-RU', …)` с **`timeZone: 'UTC'`**): админ-таблица, список и карточки участника, страница задания показывают **те же календарные дату и время, что в UTC в БД**, без сдвига в часовой пояс браузера (согласовано с полем дедлайна в админ-форме).
 - В **админ-форме** задания (`Form.vue`) поле `datetime-local` заполняется через **`lmsDeadlineToDatetimeLocalUtc`**: часы и дата как в UTC из API (без сдвига в часовой пояс браузера), чтобы в поле отображалось то же «настенное» время, что хранится как UTC. При сохранении значение из поля передаётся как **`datetimeLocalToUtcIso`** (`…T09:00` → `…T09:00:00Z`) для однозначного разбора на бэкенде.
 
+## Доступность заданий участнику
+
+- В пользовательском списке `/lms/{event}/assignments` и на dashboard показываются только активные задания, которые добавлены в этапы программ, где участник записан на курс со статусом не `pending` и не `rejected`.
+- Привязка учитывается как через legacy-поле `lms_course_stages.lms_assignment_id`, так и через блоки `lms_stage_blocks.lms_assignment_id`.
+- Задания, созданные в админке, но ещё не добавленные в программу/этап, участнику не показываются.
+- Прямой переход на страницу задания без записи на связанную программу запрещён (`403`).
+
 ## Ключевые workflow
 
 ### Создание задания (Admin)
-1. Админ заполняет форму (`Form.vue`): title (обязательно), description, template_file, completion_mode, deadline, is_active.
+1. Админ заполняет форму (`Form.vue`): title (обязательно), description, один или несколько файлов `template_files`, completion_mode, deadline, is_active.
 2. `Admin\AssignmentController@store` валидирует и создаёт `LmsAssignment`.
 3. Если `completion_mode` не передан — используется default `on_review`.
+
+### Шаблоны задания
+
+- У задания может быть несколько файлов-шаблонов.
+- В админке `Pages/Lms/Admin/Assignments/Form.vue` поддержаны множественный выбор в медиапикере и кнопка «Добавить ещё файл».
+- Для новых/обновлённых заданий `lms_assignments.template_file` хранит JSON-массив `[{name,path}]`.
+- Старые задания с одиночным URL в `template_file` продолжают работать: backend нормализует их в один элемент `template_files`.
+- Участник видит все шаблоны на странице задания и во встроенном задании внутри урока; скачивание идёт через `template-download?template=N`, чтобы сохранить исходное имя файла.
 
 ### Обновление задания (Admin)
 1. Та же форма с предзаполненными данными.
@@ -142,13 +158,18 @@ CRUD заданий для этих ролей недоступен (403).
 
 ### Отправка работы (Участник)
 1. Участник отправляет ответ: text_content, link, files.
-2. Файлы сохраняются в `storage/app/public/assignments/{assignment_id}/`.
+2. Файлы сохраняются в `storage/app/public/assignments/{assignment_id}/` или через presigned upload. Для заданий с task-ответами backend принимает вложенные поля `answers.*.files` и `answers.*.file_urls`. В `files` сохраняется массив `{name, path}`: `name` — исходное имя файла на компьютере участника, `path` — технический URL/путь хранения.
 3. Используется `updateOrCreate` — один пользователь = одна submission на задание.
 4. Статус сразу ставится `submitted`.
 
+### Просроченные задания
+1. На странице списка заданий участника (`Pages/Lms/Assignments/Index.vue`) карточка визуально выделяется красной рамкой/фоном и бейджем `Просрочено`, если `deadline` уже прошёл, а работа ещё не находится в статусе `submitted` или `approved`.
+2. Над списком заданий участника доступен фильтр `Просрочено: X`; счётчик считается на backend по доступным участнику заданиям и учитывает активный поиск.
+3. На странице задания и во встроенном задании уже отображается красная отметка `Просрочено` рядом с дедлайном.
+
 ### Обновление работы (Участник, resubmit)
 1. Участник обновляет существующую submission.
-2. Файлы дополняются (append), не заменяются.
+2. Файлы дополняются (append), не заменяются; повторное сохранение draft/submit без нового файла не затирает уже сохранённые вложения task-ответа.
 3. Статус ставится `resubmitted`.
 
 ### Рецензирование (Admin)
@@ -156,6 +177,9 @@ CRUD заданий для этих ролей недоступен (403).
 2. Может приложить комментарий и файлы к решению.
 3. Создаётся запись `LmsAssignmentReview` с файлами в формате `[{name, path}]`.
 4. Статус submission обновляется: approve→approved, revision→revision, reject→rejected.
+5. На странице админского списка работ отправка решений и комментариев сохраняет текущую прокрутку, чтобы проверяющий оставался на том же участнике после обновления данных.
+6. Над списком работ доступны фильтры со счётчиками: `Принято`, `На проверке`, `На доработке`, `Новое`, `Просрочено`. Счётчики считаются по текущему заданию и учитывают активный поиск по участнику; фильтр `Новое` использует unread-логику по `participant_last_activity_at` и `LmsAssignmentSubmissionRead`.
+7. Если дедлайн задания прошёл, submissions со статусом не `submitted`, не `approved` и не `resubmitted` подсвечиваются красным и получают бейдж `Просрочено`; фильтр `Просрочено` показывает только такие работы.
 
 ### Диалог по работе (Участник и Преподаватель)
 

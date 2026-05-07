@@ -97,6 +97,9 @@
     <!-- Courses tab -->
     <div v-show="activeTab === 'courses'">
       <RCard flush>
+        <div class="border-b border-gray-100 bg-blue-50/70 px-5 py-3 text-xs leading-relaxed text-blue-800">
+          В строке программы «Записано» — все участники с записью на программу. В строках занятий это та же аудитория программы; «Открыли этап» показывает, сколько участников уже создали прогресс по конкретному занятию, поэтому возможна ситуация: на программу записано 144 человека, но занятие пока никто не открывал.
+        </div>
         <table class="min-w-full">
           <thead>
             <tr class="border-b border-gray-200 bg-gray-50">
@@ -135,15 +138,18 @@
                 </td>
               </tr>
               <tr v-if="expandedCourses.includes(c.id)" v-for="s in courseStages(c.id)" :key="'s-' + s.id">
-                <td class="py-2.5 pl-14 pr-5 text-xs text-gray-500">{{ s.stage_title }}</td>
-                <td class="py-2.5 text-center text-xs text-gray-400">{{ s.total_users }}</td>
-                <td class="py-2.5 text-center text-xs text-gray-400">{{ s.started }}</td>
+                <td class="py-2.5 pl-14 pr-5 text-xs text-gray-500">
+                  <div>{{ s.stage_title }}</div>
+                  <div class="mt-0.5 text-[11px] text-gray-400">Открыли этап: {{ s.opened }}</div>
+                </td>
+                <td class="py-2.5 text-center text-xs text-gray-400">{{ s.enrolled }}</td>
+                <td class="py-2.5 text-center text-xs text-gray-400">{{ s.not_started }}</td>
                 <td class="py-2.5 text-center text-xs text-amber-500">{{ s.in_progress }}</td>
                 <td class="py-2.5 text-center text-xs text-green-500">{{ s.completed }}</td>
-                <td class="py-2.5 text-center text-xs text-gray-500">{{ s.total_users > 0 ? Math.round(s.completed / s.total_users * 100) : 0 }}%</td>
+                <td class="py-2.5 text-center text-xs text-gray-500">{{ stagePct(s) }}%</td>
                 <td class="py-2.5 px-5">
                   <div class="h-1.5 overflow-hidden rounded-full bg-gray-100">
-                    <div class="h-full rounded-full bg-green-400" :style="{ width: (s.total_users > 0 ? s.completed / s.total_users * 100 : 0) + '%' }" />
+                    <div class="h-full rounded-full bg-green-400" :style="{ width: stagePct(s) + '%' }" />
                   </div>
                 </td>
               </tr>
@@ -792,6 +798,10 @@ function coursePct(c) {
 
 function courseInProgressPct(c) {
   return c.enrolled > 0 ? Math.round(c.in_progress / c.enrolled * 100) : 0
+}
+
+function stagePct(s) {
+  return s.enrolled > 0 ? Math.round(s.completed / s.enrolled * 100) : 0
 }
 
 function testPassPct(t) {

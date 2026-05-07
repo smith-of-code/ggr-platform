@@ -57,7 +57,7 @@ class ReportController extends Controller
             ? $this->getCityComparison($eventId, $courseFilterInt)
             : null;
         $userDetails = $this->getUserDetails($eventId, $roleFilter, $courseFilter);
-        $stageProgress = $this->getStageProgress($eventId);
+        $stageProgress = $this->getStageProgress($eventId, $roleFilter);
         $activityTimeline = $this->getActivityTimeline($eventId, $dateFrom, $dateTo, (string) $granularity);
         $groupStats = $this->getGroupStats($eventId);
         $gamificationBreakdown = $this->getGamificationBreakdown($eventId);
@@ -260,12 +260,11 @@ class ReportController extends Controller
 
         if (in_array('stages', $validated['sections'])) {
             $rows[] = ['=== ЭТАПЫ КУРСОВ ==='];
-            $rows[] = ['Курс', 'Этап', 'Начали', 'В процессе', 'Завершили', '% завершения'];
+            $rows[] = ['Курс', 'Этап', 'Записано на программу', 'Открыли этап', 'Не начали', 'В процессе', 'Завершили', '% завершения'];
             $stages = $this->getStageProgress($eventId);
             foreach ($stages as $s) {
-                $total = $s->started + $s->in_progress + $s->completed;
-                $pct = $total > 0 ? round($s->completed / $total * 100, 1) : 0;
-                $rows[] = [$s->course_title, $s->stage_title, $s->started, $s->in_progress, $s->completed, $pct.'%'];
+                $pct = $s->enrolled > 0 ? round($s->completed / $s->enrolled * 100, 1) : 0;
+                $rows[] = [$s->course_title, $s->stage_title, $s->enrolled, $s->opened, $s->not_started, $s->in_progress, $s->completed, $pct.'%'];
             }
             $rows[] = [];
         }
@@ -384,6 +383,7 @@ class ReportController extends Controller
             DB::raw("COUNT(DISTINCT CASE WHEN lms_course_enrollments.status = 'enrolled' THEN lms_course_enrollments.user_id END) as not_started"),
         )
             ->groupBy('lms_courses.id', 'lms_courses.title')
+            ->orderBy('lms_courses.position')
             ->orderBy('lms_courses.title')
             ->get();
     }
@@ -883,25 +883,56 @@ class ReportController extends Controller
             ->get();
     }
 
-    private function getStageProgress(int $eventId)
+    private function getStageProgress(int $eventId, ?string $roleFilter = null)
     {
-        return DB::table('lms_course_stages')
+        $query = DB::table('lms_course_stages')
             ->join('lms_courses', 'lms_courses.id', '=', 'lms_course_stages.lms_course_id')
+            ->leftJoin('lms_course_modules', 'lms_course_modules.id', '=', 'lms_course_stages.lms_course_module_id')
+            ->leftJoin('lms_course_enrollments', 'lms_course_enrollments.lms_course_id', '=', 'lms_courses.id')
             ->where('lms_courses.lms_event_id', $eventId)
-            ->leftJoin('lms_stage_progress', 'lms_stage_progress.lms_course_stage_id', '=', 'lms_course_stages.id')
+            ->leftJoin('lms_stage_progress', function ($join) {
+                $join->on('lms_stage_progress.lms_course_stage_id', '=', 'lms_course_stages.id')
+                    ->on('lms_stage_progress.user_id', '=', 'lms_course_enrollments.user_id');
+            });
+
+        if ($roleFilter) {
+            $query->leftJoin('lms_profiles', function ($join) use ($eventId) {
+                $join->on('lms_profiles.user_id', '=', 'lms_course_enrollments.user_id')
+                    ->where('lms_profiles.lms_event_id', $eventId);
+            })->where('lms_profiles.role', $roleFilter);
+        }
+
+        return $query
             ->select(
                 'lms_course_stages.id',
                 'lms_course_stages.title as stage_title',
                 'lms_courses.id as course_id',
                 'lms_courses.title as course_title',
-                DB::raw("COUNT(DISTINCT CASE WHEN lms_stage_progress.status = 'not_started' THEN lms_stage_progress.user_id END) as started"),
+                'lms_courses.position as course_position',
+                'lms_course_modules.position as module_position',
+                'lms_course_stages.lms_course_module_id',
+                'lms_course_stages.position as stage_position',
+                DB::raw('COUNT(DISTINCT lms_course_enrollments.user_id) as enrolled'),
+                DB::raw('COUNT(DISTINCT lms_stage_progress.user_id) as opened'),
                 DB::raw("COUNT(DISTINCT CASE WHEN lms_stage_progress.status = 'in_progress' THEN lms_stage_progress.user_id END) as in_progress"),
                 DB::raw("COUNT(DISTINCT CASE WHEN lms_stage_progress.status = 'completed' THEN lms_stage_progress.user_id END) as completed"),
-                DB::raw('COUNT(DISTINCT lms_stage_progress.user_id) as total_users'),
+                DB::raw("GREATEST(COUNT(DISTINCT lms_course_enrollments.user_id) - COUNT(DISTINCT CASE WHEN lms_stage_progress.status IN ('in_progress', 'completed') THEN lms_stage_progress.user_id END), 0) as not_started"),
             )
-            ->groupBy('lms_course_stages.id', 'lms_course_stages.title', 'lms_courses.id', 'lms_courses.title')
+            ->groupBy(
+                'lms_course_stages.id',
+                'lms_course_stages.title',
+                'lms_courses.id',
+                'lms_courses.title',
+                'lms_courses.position',
+                'lms_course_modules.position',
+                'lms_course_stages.lms_course_module_id',
+                'lms_course_stages.position',
+            )
+            ->orderBy('lms_courses.position')
             ->orderBy('lms_courses.title')
+            ->orderByRaw('CASE WHEN lms_course_stages.lms_course_module_id IS NULL THEN -1 ELSE COALESCE(lms_course_modules.position, 9999) END')
             ->orderBy('lms_course_stages.position')
+            ->orderBy('lms_course_stages.title')
             ->get();
     }
 
@@ -1115,10 +1146,11 @@ class ReportController extends Controller
     private function writeCsvStages(int $eventId): void
     {
         echo "\"=== ЭТАПЫ КУРСОВ ===\"\n";
-        echo "\"Курс\";\"Этап\";\"Начали\";\"В процессе\";\"Завершили\"\n";
+        echo "\"Курс\";\"Этап\";\"Записано на программу\";\"Открыли этап\";\"Не начали\";\"В процессе\";\"Завершили\";\"% завершения\"\n";
         $stages = $this->getStageProgress($eventId);
         foreach ($stages as $s) {
-            echo "\"{$s->course_title}\";\"{$s->stage_title}\";\"{$s->started}\";\"{$s->in_progress}\";\"{$s->completed}\"\n";
+            $pct = $s->enrolled > 0 ? round($s->completed / $s->enrolled * 100, 1) : 0;
+            echo "\"{$s->course_title}\";\"{$s->stage_title}\";\"{$s->enrolled}\";\"{$s->opened}\";\"{$s->not_started}\";\"{$s->in_progress}\";\"{$s->completed}\";\"{$pct}%\"\n";
         }
         echo "\n";
     }

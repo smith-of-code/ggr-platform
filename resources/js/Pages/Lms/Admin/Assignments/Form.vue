@@ -32,19 +32,25 @@
 
           <!-- Template file upload -->
           <div>
-            <label class="mb-2 block text-sm font-medium text-gray-700">Шаблон задания (файл)</label>
-            <div v-if="form.template_file && !templateUploading" class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
-              <svg class="h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-              <a :href="form.template_file" target="_blank" class="flex-1 truncate text-sm text-rosatom-600 hover:underline">
-                {{ form.template_file_name || 'Шаблон' }}
-              </a>
-              <button type="button" class="text-gray-400 hover:text-red-500" @click="removeTemplate">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+            <label class="mb-2 block text-sm font-medium text-gray-700">Шаблоны задания (файлы)</label>
+            <div v-if="form.template_files.length" class="space-y-2">
+              <div v-for="(file, idx) in form.template_files" :key="`${file.path}-${idx}`" class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                <svg class="h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                <a :href="file.path" target="_blank" class="flex-1 truncate text-sm text-rosatom-600 hover:underline">
+                  {{ file.name || 'Шаблон' }}
+                </a>
+                <button type="button" class="text-gray-400 hover:text-red-500" @click="removeTemplate(idx)">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <button type="button" class="group flex w-full cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-3 transition hover:border-rosatom-400 hover:bg-rosatom-50/30" @click="openTplPicker('main')">
+                <svg class="h-5 w-5 text-gray-400 group-hover:text-rosatom-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                <span class="text-sm text-gray-500 group-hover:text-gray-700">Добавить ещё файл</span>
               </button>
             </div>
             <button v-else type="button" class="group flex w-full cursor-pointer items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-3 transition hover:border-rosatom-400 hover:bg-rosatom-50/30" @click="openTplPicker('main')">
               <svg class="h-5 w-5 text-gray-400 group-hover:text-rosatom-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
-              <span class="text-sm text-gray-500 group-hover:text-gray-700">Выберите файл шаблона</span>
+              <span class="text-sm text-gray-500 group-hover:text-gray-700">Выберите файлы шаблонов</span>
             </button>
           </div>
 
@@ -154,6 +160,7 @@
       accept="*"
       file-type="all"
       upload-field="file"
+      :multiple="tplPicker.target === 'main'"
       @close="tplPicker.show = false"
       @select="onTplPickerSelect"
     />
@@ -172,6 +179,24 @@ import { lmsDeadlineToDatetimeLocalUtc, datetimeLocalToUtcIso } from '@/utils/lm
 const props = defineProps({ event: Object, assignment: Object })
 
 const tplPicker = ref({ show: false, target: 'main', idx: -1 })
+
+function templateFilesFromAssignment() {
+  if (props.assignment?.template_files?.length) {
+    return props.assignment.template_files.map(file => ({
+      name: file.name || file.path?.split('/').pop() || 'Шаблон',
+      path: file.path || '',
+    })).filter(file => file.path)
+  }
+
+  if (props.assignment?.template_file) {
+    return [{
+      name: props.assignment.template_file_name || props.assignment.template_file.split('/').pop() || 'Шаблон',
+      path: props.assignment.template_file,
+    }]
+  }
+
+  return []
+}
 
 function emptyTask() {
   return { title: '', description: '', response_type: 'file', template_file: '', template_file_name: '', position: 0, _uploading: false }
@@ -198,6 +223,7 @@ const form = useForm({
   description: props.assignment?.description ?? '',
   template_file: props.assignment?.template_file ?? '',
   template_file_name: props.assignment?.template_file_name ?? '',
+  template_files: templateFilesFromAssignment(),
   completion_mode: props.assignment?.completion_mode ?? 'on_review',
   deadline: props.assignment?.deadline ? lmsDeadlineToDatetimeLocalUtc(props.assignment.deadline) : '',
   is_active: props.assignment?.is_active ?? true,
@@ -216,22 +242,30 @@ function moveTask(idx, delta) {
   form.tasks = arr
 }
 
-function removeTemplate() {
-  form.template_file = ''
-  form.template_file_name = ''
+function removeTemplate(idx) {
+  form.template_files.splice(idx, 1)
 }
 
 function openTplPicker(target, idx = -1) {
   tplPicker.value = { show: true, target, idx }
 }
 
+function addMainTemplate(path, name) {
+  if (!path || form.template_files.some(file => file.path === path)) return
+  form.template_files.push({
+    path,
+    name: name || path.split('/').pop() || 'Шаблон',
+  })
+}
+
 function onTplPickerSelect(url, name) {
-  const resolvedName = name || url.split('/').pop()
   if (tplPicker.value.target === 'main') {
-    form.template_file = url
-    form.template_file_name = resolvedName
+    const urls = Array.isArray(url) ? url : [url]
+    const names = Array.isArray(name) ? name : [name]
+    urls.forEach((itemUrl, idx) => addMainTemplate(itemUrl, names[idx]))
   } else if (tplPicker.value.idx >= 0) {
     const task = form.tasks[tplPicker.value.idx]
+    const resolvedName = name || url.split('/').pop()
     task.template_file = url
     task.template_file_name = resolvedName
   }
@@ -253,6 +287,9 @@ function submit() {
 
   const withPayload = data => ({
     ...data,
+    template_file: form.template_files[0]?.path || '',
+    template_file_name: form.template_files[0]?.name || '',
+    template_files: form.template_files,
     tasks,
     deadline: datetimeLocalToUtcIso(data.deadline),
   })
