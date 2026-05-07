@@ -50,7 +50,7 @@ class FormController extends Controller
         $excludeId = $request->query('exclude_id');
         $baseSlug = Str::slug($title) ?: 'form';
 
-        $query = LmsForm::where('slug', $baseSlug);
+        $query = LmsForm::withTrashed()->where('slug', $baseSlug);
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
         }
@@ -61,7 +61,8 @@ class FormController extends Controller
             $suffix = 1;
             while (count($suggestions) < 3) {
                 $candidate = $baseSlug . '-' . $suffix;
-                $exists = LmsForm::where('slug', $candidate)
+                $exists = LmsForm::withTrashed()
+                    ->where('slug', $candidate)
                     ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
                     ->exists();
                 if (!$exists) {
@@ -121,6 +122,57 @@ class FormController extends Controller
         $form->delete();
 
         return $this->redirectToFormsIndex($event)->with('success', 'Форма удалена');
+    }
+
+    public function duplicate(LmsEvent $event, LmsForm $form): RedirectResponse
+    {
+        $this->ensureFormBelongsToEvent($form, $event);
+        $form->load('fields');
+
+        DB::transaction(function () use ($event, $form) {
+            $titleSuffix = ' — копия';
+            $maxTitleLen = 255;
+            $newTitle = mb_strlen($form->title.$titleSuffix) <= $maxTitleLen
+                ? $form->title.$titleSuffix
+                : mb_substr($form->title, 0, $maxTitleLen - mb_strlen($titleSuffix)).$titleSuffix;
+
+            $baseSlug = Str::slug($newTitle) ?: 'form';
+            $newSlug = $baseSlug.'-'.Str::random(6);
+
+            $copy = LmsForm::create([
+                'lms_event_id' => $event->id,
+                'title' => $newTitle,
+                'description' => $form->description,
+                'slug' => $newSlug,
+                'is_active' => false,
+                'is_anonymous' => $form->is_anonymous,
+                'allow_embed' => $form->allow_embed,
+                'create_users' => $form->create_users,
+                'require_consent' => $form->require_consent,
+                'consent_document_url' => $form->consent_document_url,
+                'fio_field_key' => $form->fio_field_key,
+                'email_field_key' => $form->email_field_key,
+                'phone_field_key' => $form->phone_field_key,
+                'position_field_key' => $form->position_field_key,
+                'thank_you_message' => $form->thank_you_message,
+            ]);
+
+            foreach ($form->fields as $field) {
+                LmsFormField::create([
+                    'lms_form_id' => $copy->id,
+                    'key' => $field->key,
+                    'label' => $field->label,
+                    'type' => $field->type,
+                    'validation' => $field->validation,
+                    'required' => $field->required,
+                    'placeholder' => $field->placeholder,
+                    'options' => $field->options,
+                    'position' => $field->position,
+                ]);
+            }
+        });
+
+        return $this->redirectToFormsIndex($event)->with('success', 'Форма продублирована');
     }
 
     public function stats(LmsEvent $event, LmsForm $form): Response
@@ -320,6 +372,8 @@ class FormController extends Controller
                 'store' => 'admin.tour-cabinet.lms.forms.store',
                 'edit' => 'admin.tour-cabinet.lms.forms.edit',
                 'update' => 'admin.tour-cabinet.lms.forms.update',
+                'destroy' => 'admin.tour-cabinet.lms.forms.destroy',
+                'duplicate' => 'admin.tour-cabinet.lms.forms.duplicate',
                 'stats' => 'admin.tour-cabinet.lms.forms.stats',
                 'checkSlug' => 'admin.tour-cabinet.lms.forms.check-slug',
                 'createUsers' => 'admin.tour-cabinet.lms.forms.create-users',
@@ -332,6 +386,8 @@ class FormController extends Controller
             'store' => 'lms.admin.forms.store',
             'edit' => 'lms.admin.forms.edit',
             'update' => 'lms.admin.forms.update',
+            'destroy' => 'lms.admin.forms.destroy',
+            'duplicate' => 'lms.admin.forms.duplicate',
             'stats' => 'lms.admin.forms.stats',
             'checkSlug' => 'lms.admin.forms.check-slug',
             'createUsers' => 'lms.admin.forms.create-users',

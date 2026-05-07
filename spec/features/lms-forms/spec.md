@@ -41,7 +41,7 @@
 | lms_event_id | FK → lms_events | cascade delete |
 | title | string | Название формы |
 | description | text | Описание |
-| slug | string | Уникальный slug для публичного URL |
+| slug | string | Уникальный slug для публичного URL (unique-индекс БД; занятые slug удалённых форм НЕ освобождаются — см. Soft delete) |
 | is_active | boolean | Активность |
 | is_anonymous | boolean | Анонимное прохождение |
 | allow_embed | boolean | Разрешить iframe-встраивание |
@@ -51,6 +51,7 @@
 | phone_field_key | string | Ключ поля телефона |
 | position_field_key | string | Ключ поля должности |
 | thank_you_message | text | Сообщение после отправки |
+| deleted_at | timestamp nullable | Soft delete (трейт `Illuminate\Database\Eloquent\SoftDeletes`); миграция `2026_05_07_180000_add_soft_deletes_to_lms_forms_table` |
 
 ### lms_form_fields
 | Колонка | Тип | Описание |
@@ -127,8 +128,11 @@
 | GET | `/forms/{form}/edit` | FormController@edit |
 | PUT | `/forms/{form}` | FormController@update |
 | DELETE | `/forms/{form}` | FormController@destroy |
+| POST | `/forms/{form}/duplicate` | FormController@duplicate |
 | GET | `/forms/{form}/stats` | FormController@stats |
 | POST | `/forms/{form}/create-users` | FormController@createUsersFromSubmissions |
+
+Те же роуты зеркалятся под префиксом `/admin/tour-cabinet/lms/{event}` (group `admin.tour-cabinet.lms.*`) — используются из карточек форм на хабе портальной админки ЛК туров (см. `spec/features/tour-cabinet/spec.md`).
 
 ### Публичный
 | Метод | URI | Действие |
@@ -182,3 +186,32 @@
    - Создаётся LmsProfile для текущего события
    - Создаётся LmsInvitation для отправки ссылки регистрации
    - Submission помечается `user_created = true`
+
+### 6. Дублирование формы
+1. На списке форм (LMS Admin или хаб ЛК туров) админ нажимает «Дублировать» в карточке формы.
+2. `POST /forms/{form}/duplicate` (`forms.duplicate`) → `FormController@duplicate` в одной транзакции:
+   - создаётся новая `LmsForm` в том же событии: `title = "{original} — копия"` (с обрезкой до 255 символов), уникальный сгенерированный `slug` (`Str::slug(title) . '-' . Str::random(6)`), `is_active = false`, остальные booleans/nullable копируются;
+   - копируются все `LmsFormField` (`key`, `label`, `type`, `validation`, `required`, `placeholder`, `options`, `position`).
+3. **Не копируются** submissions, responses, статистика — у дубля счётчик ответов 0.
+4. Редирект на список форм с flash «Форма продублирована». Дубль выключен (`is_active = false`) — редактор активирует его вручную после правки.
+
+### 7. Удаление формы (soft delete)
+1. На списке форм админ нажимает «Удалить» в карточке формы; нативный confirm с упоминанием количества ответов (`form.submissions_count`).
+2. `DELETE /forms/{form}` (`forms.destroy`) → `FormController@destroy` → `$form->delete()`. Благодаря трейту `SoftDeletes` модели `LmsForm` это **мягкое удаление**: ставится `deleted_at = now()`, строка остаётся в БД. Связанные `lms_form_fields`, `lms_form_submissions`, `lms_form_responses` физически НЕ удаляются — FK cascade срабатывает только при `forceDelete()`, вызывается только из «Корзины форм» (см. workflow 8).
+3. После soft-delete форма исчезает из всех админских списков (default scope `SoftDeletes` исключает её), а `FormPublicController::show/apiShow` отдаёт 404 (там обычный `where('slug', ...)`).
+4. `FormController::checkSlug` использует `LmsForm::withTrashed()->where('slug', ...)` — занятый удалённой формой slug **не** считается свободным, чтобы не нарваться на DB unique constraint при создании новой формы.
+5. **Внимание**: внешние ссылки по slug в портальной админке ЛК туров (`tour_cabinet_settings.dashboard_standard_form_slug`, `tour_cabinet_direction_cities.lms_form_slug`, `tour_cabinet_commerce_city_forms.lms_form_slug`) после удаления **не очищаются** автоматически — slug там хранится как текст, не FK. Соответствующие места считаются «без формы». См. `spec/features/tour-cabinet-forms-delete-copy/spec.md`.
+
+### 8. Корзина форм (восстановление и полное удаление)
+
+Точка входа: карточка «Корзина форм» на `/admin/settings` → страница `/admin/settings/forms-trash`.
+
+| Метод | URI | Имя роута | Действие |
+|---|---|---|---|
+| GET | `/admin/settings/forms-trash` | `admin.settings.forms-trash.index` | `Admin\LmsFormTrashController@index` — пагинированный список soft-deleted форм с `event`, `fields_count`, `submissions_count`, `deleted_at`, отсортированный по `deleted_at desc`. |
+| POST | `/admin/settings/forms-trash/{form}/restore` | `admin.settings.forms-trash.restore` | `LmsFormTrashController@restore` — `LmsForm::onlyTrashed()->findOrFail($form)->restore()`; форма возвращается в обычные списки и в публичный доступ (если `is_active`). Flash «Форма «X» восстановлена». |
+| DELETE | `/admin/settings/forms-trash/{form}` | `admin.settings.forms-trash.destroy` | `LmsFormTrashController@forceDelete` — `findOrFail` через `onlyTrashed`, затем `forceDelete()`. FK cascade удаляет `lms_form_fields`, `lms_form_submissions`, `lms_form_responses`. Безвозвратно. Flash «Форма «X» удалена навсегда». |
+
+UI (`Admin/Settings/FormsTrash.vue`) — таблица с колонками «Форма (title + slug)», «Событие LMS», «Полей», «Отправок», «Удалена», «Действия». Кнопки в каждой строке: **Восстановить** (`router.post`) и **Удалить навсегда** (`router.delete`). Перед обоими — нативный `confirm()` с явным текстом; для force-delete confirm перечисляет, сколько полей и отправок будет потеряно. Пагинация — стандартный `paginate(20)` payload (`forms.data`/`forms.links`). Пустое состояние — «Корзина пуста».
+
+Восстановление через БД (`update lms_forms set deleted_at = null where id = X` или tinker `LmsForm::withTrashed()->find($id)->restore()`) по-прежнему работает, но штатный путь — UI «Корзина форм».

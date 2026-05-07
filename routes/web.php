@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\OpportunityToursPageController as AdminOpportunit
 use App\Http\Controllers\Admin\PageVisibilityController as AdminPageVisibilityController;
 use App\Http\Controllers\Admin\RecipeController as AdminRecipeController;
 use App\Http\Controllers\Admin\ResearchPageController as AdminResearchPageController;
+use App\Http\Controllers\Admin\LmsFormTrashController as AdminLmsFormTrashController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\TimelineEventController as AdminTimelineController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
@@ -262,6 +263,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
         ->middleware('lms.backoffice')
         ->group(function () {
             Route::get('forms/check-slug', [LmsAdminFormController::class, 'checkSlug'])->name('forms.check-slug');
+            Route::post('forms/{form}/duplicate', [LmsAdminFormController::class, 'duplicate'])->name('forms.duplicate');
             Route::resource('forms', LmsAdminFormController::class)->except(['show']);
             Route::get('forms/{form}/stats', [LmsAdminFormController::class, 'stats'])->name('forms.stats');
             Route::post('forms/{form}/create-users', [LmsAdminFormController::class, 'createUsersFromSubmissions'])->name('forms.create-users');
@@ -297,6 +299,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
 
     Route::get('/settings/page-visibility', [AdminPageVisibilityController::class, 'index'])->name('settings.page-visibility');
     Route::put('/settings/page-visibility', [AdminPageVisibilityController::class, 'update'])->name('settings.page-visibility.update');
+
+    Route::get('/settings/forms-trash', [AdminLmsFormTrashController::class, 'index'])->name('settings.forms-trash.index');
+    Route::post('/settings/forms-trash/{form}/restore', [AdminLmsFormTrashController::class, 'restore'])
+        ->whereNumber('form')
+        ->name('settings.forms-trash.restore');
+    Route::delete('/settings/forms-trash/{form}', [AdminLmsFormTrashController::class, 'forceDelete'])
+        ->whereNumber('form')
+        ->name('settings.forms-trash.destroy');
 });
 
 // Social OAuth (global)

@@ -208,6 +208,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::get('reports/download', [AdminReportController::class, 'download'])->name('reports.download');
         Route::post('reports/send', [AdminReportController::class, 'sendEmail'])->name('reports.send');
         Route::get('forms/check-slug', [AdminFormController::class, 'checkSlug'])->name('forms.check-slug');
+        Route::post('forms/{form}/duplicate', [AdminFormController::class, 'duplicate'])->name('forms.duplicate');
         Route::resource('forms', AdminFormController::class);
         Route::get('forms/{form}/stats', [AdminFormController::class, 'stats'])->name('forms.stats');
         Route::post('forms/{form}/create-users', [AdminFormController::class, 'createUsersFromSubmissions'])->name('forms.create-users');

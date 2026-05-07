@@ -5,6 +5,8 @@ export const defaultLmsAdminFormRouteNames = {
   store: 'lms.admin.forms.store',
   edit: 'lms.admin.forms.edit',
   update: 'lms.admin.forms.update',
+  destroy: 'lms.admin.forms.destroy',
+  duplicate: 'lms.admin.forms.duplicate',
   stats: 'lms.admin.forms.stats',
   checkSlug: 'lms.admin.forms.check-slug',
   createUsers: 'lms.admin.forms.create-users',

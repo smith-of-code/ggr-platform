@@ -141,20 +141,62 @@
             <span v-if="form.allow_embed" class="text-gray-400">Embed</span>
           </div>
 
-          <div class="flex flex-wrap gap-2">
-            <Link :href="sameOriginHref(route('forms.public.show', form.slug, false))" class="min-w-[7rem] flex-1">
+          <div class="flex items-center gap-2">
+            <Link :href="sameOriginHref(route('forms.public.show', form.slug, false))" class="min-w-0 flex-1">
               <RButton variant="outline" size="sm" block>Публичная страница</RButton>
             </Link>
             <Link
               :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.stats', [lmsEvent.slug, form.id], false))"
               target="_blank"
               rel="noopener noreferrer"
+              title="Статистика"
+              aria-label="Статистика"
             >
-              <RButton variant="outline" size="sm">Статистика</RButton>
+              <RButton variant="ghost" size="sm" icon-only>
+                <template #icon>
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+                </template>
+              </RButton>
             </Link>
-            <Link :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.edit', [lmsEvent.slug, form.id], false))">
-              <RButton variant="ghost" size="sm">Редактировать</RButton>
+            <Link
+              :href="sameOriginHref(route('admin.tour-cabinet.lms.forms.edit', [lmsEvent.slug, form.id], false))"
+              title="Редактировать"
+              aria-label="Редактировать"
+            >
+              <RButton variant="ghost" size="sm" icon-only>
+                <template #icon>
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                </template>
+              </RButton>
             </Link>
+            <RButton
+              variant="ghost"
+              size="sm"
+              icon-only
+              :loading="duplicatingFormId === form.id"
+              :disabled="duplicatingFormId === form.id || deletingFormId === form.id"
+              title="Дублировать"
+              aria-label="Дублировать"
+              @click="duplicateForm(form)"
+            >
+              <template #icon>
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" /></svg>
+              </template>
+            </RButton>
+            <RButton
+              variant="danger"
+              size="sm"
+              icon-only
+              :loading="deletingFormId === form.id"
+              :disabled="duplicatingFormId === form.id || deletingFormId === form.id"
+              title="Удалить"
+              aria-label="Удалить"
+              @click="deleteForm(form)"
+            >
+              <template #icon>
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+              </template>
+            </RButton>
           </div>
         </div>
       </div>
@@ -173,8 +215,8 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
-import { Link, useForm } from '@inertiajs/vue3'
+import { computed, ref, watch } from 'vue'
+import { Link, router, useForm } from '@inertiajs/vue3'
 import SearchSelect from '@/Components/SearchSelect.vue'
 import { sameOriginHref } from '@/utils/sameOriginHref.js'
 
@@ -232,5 +274,43 @@ function submitDashboardStandardForm() {
 
 function submitCompletionNotification() {
   completionForm.put(sameOriginHref(route('admin.tour-cabinet.contest-completion-notification.update', {}, false)), { preserveScroll: true })
+}
+
+const duplicatingFormId = ref(null)
+const deletingFormId = ref(null)
+
+function duplicateForm(form) {
+  if (!props.lmsEvent || duplicatingFormId.value === form.id) return
+  duplicatingFormId.value = form.id
+  router.post(
+    sameOriginHref(route('admin.tour-cabinet.lms.forms.duplicate', [props.lmsEvent.slug, form.id], false)),
+    {},
+    {
+      preserveScroll: true,
+      onFinish: () => {
+        duplicatingFormId.value = null
+      },
+    },
+  )
+}
+
+function deleteForm(form) {
+  if (!props.lmsEvent || deletingFormId.value === form.id) return
+  const submissions = Number(form.submissions_count ?? 0)
+  const message = submissions > 0
+    ? `Удалить форму «${form.title}»? Будут удалены все ответы (${submissions}).`
+    : `Удалить форму «${form.title}»?`
+  if (!confirm(message)) return
+
+  deletingFormId.value = form.id
+  router.delete(
+    sameOriginHref(route('admin.tour-cabinet.lms.forms.destroy', [props.lmsEvent.slug, form.id], false)),
+    {
+      preserveScroll: true,
+      onFinish: () => {
+        deletingFormId.value = null
+      },
+    },
+  )
 }
 </script>
