@@ -304,7 +304,10 @@ class StageController extends Controller
         return [
             'assignment' => array_merge(
                 $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline', 'completion_mode']),
-                ['tasks' => $assignment->tasks]
+                [
+                    'template_files' => $assignment->templateFiles(),
+                    'tasks' => $assignment->tasks,
+                ],
             ),
             'submission' => $submission,
             'presignedUpload' => $isS3 ? [

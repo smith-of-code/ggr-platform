@@ -26,13 +26,15 @@
         v-html="assignment.description"
       />
 
-      <div v-if="assignment.template_file" class="mt-4">
+      <div v-if="assignmentTemplates.length" class="mt-4 flex flex-wrap gap-2">
         <a
-          :href="route('lms.assignments.template-download', { event: event?.slug, assignment: assignment.id })"
+          v-for="(template, idx) in assignmentTemplates"
+          :key="`${template.path}-${idx}`"
+          :href="route('lms.assignments.template-download', { event: event?.slug, assignment: assignment.id, template: idx })"
           class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
         >
           <ArrowDownTrayIcon class="h-4 w-4" />
-          {{ assignment.template_file_name || 'Скачать шаблон задания' }}
+          {{ template.name || `Шаблон ${idx + 1}` }}
         </a>
       </div>
 
@@ -88,9 +90,9 @@
           <p v-if="submission.text_content" class="mt-2 rounded-lg bg-white p-2 text-sm text-gray-700">{{ submission.text_content }}</p>
           <a v-if="submission.link" :href="submission.link" target="_blank" class="mt-1 block text-sm text-rosatom-600 hover:underline">{{ submission.link }}</a>
           <div v-if="submission.files?.length" class="mt-1.5 flex flex-wrap gap-1.5">
-            <a v-for="(file, idx) in submission.files" :key="idx" :href="fileUrl(file)" target="_blank" class="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+            <a v-for="(file, idx) in submission.files" :key="idx" :href="submissionFileUrl(file)" target="_blank" class="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50">
               <PaperClipIcon class="h-3 w-3" />
-              Файл {{ idx + 1 }}
+              {{ submissionFileName(file, idx) }}
             </a>
           </div>
         </template>
@@ -242,6 +244,15 @@ const presigned = props.presignedUpload
   : null
 
 const hasTasks = computed(() => (props.assignment?.tasks?.length ?? 0) > 0)
+const assignmentTemplates = computed(() => {
+  if (props.assignment?.template_files?.length) return props.assignment.template_files
+  if (!props.assignment?.template_file) return []
+
+  return [{
+    path: props.assignment.template_file,
+    name: props.assignment.template_file_name || 'Скачать шаблон задания',
+  }]
+})
 const isOverdue = computed(() => {
   if (!props.assignment?.deadline) return false
   return new Date(props.assignment.deadline) < new Date()
@@ -305,6 +316,14 @@ function statusBadgeVariant(s) {
   return { not_submitted: 'neutral', draft: 'neutral', submitted: 'info', revision: 'warning', approved: 'success', rejected: 'error', resubmitted: 'info' }[s] || 'neutral'
 }
 
+function submissionFileUrl(file) {
+  return fileUrl(typeof file === 'string' ? file : file?.path)
+}
+
+function submissionFileName(file, idx) {
+  return typeof file === 'string' ? `Файл ${idx + 1}` : (file?.name || `Файл ${idx + 1}`)
+}
+
 const dialogMessages = computed(() => {
   if (!props.submission) return []
   const messages = []
@@ -319,12 +338,12 @@ const dialogMessages = computed(() => {
 })
 
 async function uploadFilesPresigned(files) {
-  const urls = []
+  const uploaded = []
   for (const file of files) {
     const result = await presigned.uploadFile(file)
-    if (result?.url) urls.push(result.url)
+    if (result?.url) uploaded.push({ url: result.url, name: file.name })
   }
-  return urls
+  return uploaded
 }
 
 async function buildFormData() {
@@ -338,10 +357,10 @@ async function buildFormData() {
       fd.append(`answers[${idx}][link]`, taskAnswers[task.id]?.link || '')
       if (task.response_type === 'file' && taskAnswers[task.id]?._files?.length) {
         if (presigned) {
-          const urls = await uploadFilesPresigned(taskAnswers[task.id]._files)
-          urls.forEach((url, fi) => {
-            fd.append(`answers[${idx}][file_urls][${fi}][url]`, url)
-            fd.append(`answers[${idx}][file_urls][${fi}][name]`, taskAnswers[task.id]._files[fi]?.name || 'file')
+          const files = await uploadFilesPresigned(taskAnswers[task.id]._files)
+          files.forEach((file, fi) => {
+            fd.append(`answers[${idx}][file_urls][${fi}][url]`, file.url)
+            fd.append(`answers[${idx}][file_urls][${fi}][name]`, file.name)
           })
         } else {
           taskAnswers[task.id]._files.forEach(f => fd.append(`answers[${idx}][files][]`, f))
@@ -352,8 +371,11 @@ async function buildFormData() {
     fd.append('text_content', form.text_content || '')
     fd.append('link', form.link || '')
     if (presigned && selectedFiles.value.length) {
-      const urls = await uploadFilesPresigned(selectedFiles.value)
-      urls.forEach(url => fd.append('file_urls[]', url))
+      const files = await uploadFilesPresigned(selectedFiles.value)
+      files.forEach((file, fi) => {
+        fd.append(`file_urls[${fi}][url]`, file.url)
+        fd.append(`file_urls[${fi}][name]`, file.name)
+      })
     } else {
       selectedFiles.value.forEach(f => fd.append('files[]', f))
     }

@@ -103,9 +103,12 @@ class AssignmentController extends Controller
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['completion_mode'] ??= 'on_review';
 
-        $validated = $this->handleTemplateUpload($request, $validated, $event);
+        $templateFiles = $this->normalizeTemplateFiles($validated['template_files'] ?? []);
+        unset($validated['template_files']);
 
         $assignment = LmsAssignment::create($validated);
+        $assignment->setTemplateFiles($templateFiles);
+        $assignment->save();
 
         $this->syncTasks($assignment, $request->input('tasks', []), $request, $event);
 
@@ -189,6 +192,7 @@ class AssignmentController extends Controller
         $this->ensureAssignmentBelongsToEvent($assignment, $event);
 
         $assignment->load('tasks');
+        $assignment->setAttribute('template_files', $assignment->templateFiles());
 
         return Inertia::render('Lms/Admin/Assignments/Form', [
             'event' => $event->only(['id', 'slug', 'title']),
@@ -205,9 +209,12 @@ class AssignmentController extends Controller
         $validated['is_active'] = $request->boolean('is_active', true);
         $validated['completion_mode'] ??= $assignment->completion_mode;
 
-        $validated = $this->handleTemplateUpload($request, $validated, $event);
+        $templateFiles = $this->normalizeTemplateFiles($validated['template_files'] ?? []);
+        unset($validated['template_files']);
 
         $assignment->update($validated);
+        $assignment->setTemplateFiles($templateFiles);
+        $assignment->save();
 
         $this->syncTasks($assignment, $request->input('tasks', []), $request, $event);
 
@@ -333,6 +340,9 @@ class AssignmentController extends Controller
             'description' => ['nullable', 'string'],
             'template_file' => ['nullable', 'string', 'max:500'],
             'template_file_name' => ['nullable', 'string', 'max:255'],
+            'template_files' => ['nullable', 'array'],
+            'template_files.*.path' => ['required_with:template_files', 'string', 'max:2000'],
+            'template_files.*.name' => ['nullable', 'string', 'max:255'],
             'completion_mode' => ['sometimes', 'string', 'in:on_submit,on_review'],
             'deadline' => ['nullable', 'date'],
             'tasks' => ['nullable', 'array'],
@@ -345,18 +355,32 @@ class AssignmentController extends Controller
         ];
     }
 
-    private function handleTemplateUpload(Request $request, array $validated, LmsEvent $event): array
+    /**
+     * @param  array<int, mixed>  $files
+     * @return array<int, array{name: string, path: string}>
+     */
+    private function normalizeTemplateFiles(array $files): array
     {
-        if ($request->hasFile('template_file_upload')) {
-            $request->validate(['template_file_upload' => ['file', 'max:51200']]);
-            $disk = config('filesystems.upload_disk');
-            $file = $request->file('template_file_upload');
-            $path = $file->store('uploads/assignment-templates', $disk);
-            $validated['template_file'] = Storage::disk($disk)->url($path);
-            $validated['template_file_name'] = $file->getClientOriginalName();
-        }
+        return collect($files)
+            ->map(function ($file) {
+                if (! is_array($file)) {
+                    return null;
+                }
 
-        return $validated;
+                $path = $file['path'] ?? null;
+                if (! is_string($path) || trim($path) === '') {
+                    return null;
+                }
+
+                $name = is_string($file['name'] ?? null) && trim($file['name']) !== ''
+                    ? trim($file['name'])
+                    : basename(parse_url($path, PHP_URL_PATH) ?: 'template');
+
+                return ['name' => $name, 'path' => $path];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function syncTasks(LmsAssignment $assignment, array $tasks, Request $request, LmsEvent $event): void

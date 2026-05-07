@@ -49,4 +49,65 @@ class LmsAssignment extends Model
     {
         return $this->hasMany(LmsAssignmentTask::class, 'lms_assignment_id')->orderBy('position');
     }
+
+    /**
+     * @return array<int, array{name: string, path: string}>
+     */
+    public function templateFiles(): array
+    {
+        if (! $this->template_file) {
+            return [];
+        }
+
+        $decoded = json_decode($this->template_file, true);
+        if (is_array($decoded)) {
+            return collect($decoded)
+                ->map(fn ($file) => $this->normalizeTemplateFile($file))
+                ->filter()
+                ->values()
+                ->all();
+        }
+
+        return [[
+            'name' => $this->template_file_name ?: basename(parse_url($this->template_file, PHP_URL_PATH) ?: 'template'),
+            'path' => $this->template_file,
+        ]];
+    }
+
+    /**
+     * @param  array<int, array{name?: string, path?: string}>  $files
+     */
+    public function setTemplateFiles(array $files): void
+    {
+        $normalized = collect($files)
+            ->map(fn ($file) => $this->normalizeTemplateFile($file))
+            ->filter()
+            ->values()
+            ->all();
+
+        $this->template_file = $normalized === [] ? null : json_encode($normalized, JSON_UNESCAPED_UNICODE);
+        $this->template_file_name = $normalized[0]['name'] ?? null;
+    }
+
+    /**
+     * @param  mixed  $file
+     * @return array{name: string, path: string}|null
+     */
+    private function normalizeTemplateFile(mixed $file): ?array
+    {
+        if (! is_array($file)) {
+            return null;
+        }
+
+        $path = $file['path'] ?? $file['url'] ?? null;
+        if (! is_string($path) || trim($path) === '') {
+            return null;
+        }
+
+        $name = is_string($file['name'] ?? null) && trim($file['name']) !== ''
+            ? trim($file['name'])
+            : basename(parse_url($path, PHP_URL_PATH) ?: 'template');
+
+        return ['name' => $name, 'path' => $path];
+    }
 }

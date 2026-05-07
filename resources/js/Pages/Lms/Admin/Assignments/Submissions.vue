@@ -324,6 +324,7 @@ import { Link, router } from '@inertiajs/vue3'
 import { ref, reactive, watch } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import { fileUrl } from '@/lib/fileUrl'
+import axios from 'axios'
 
 const props = defineProps({
   event: Object,
@@ -355,7 +356,9 @@ watch(
   () => (props.submissions?.data ?? []).map(s => s.id),
   (ids) => {
     ids.forEach((id) => ensureSubmissionForms(id))
-    expanded.value = {}
+    expanded.value = Object.fromEntries(
+      Object.entries(expanded.value).filter(([id]) => ids.includes(Number(id)))
+    )
   },
   { immediate: true },
 )
@@ -524,15 +527,7 @@ function markAsRead(sub) {
   sub.has_unread = false
   sub.read_at = new Date().toISOString()
 
-  router.post(
-    route('lms.admin.assignments.mark-read', [props.event.slug, props.assignment.id, sub.id]),
-    {},
-    {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-    }
-  )
+  axios.post(route('lms.admin.assignments.mark-read', [props.event.slug, props.assignment.id, sub.id]))
 }
 
 function toggleExpanded(sub) {

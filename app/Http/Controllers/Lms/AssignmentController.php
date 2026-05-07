@@ -123,7 +123,10 @@ class AssignmentController extends Controller
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'assignment' => array_merge(
                 $assignment->only(['id', 'title', 'description', 'template_file', 'template_file_name', 'deadline', 'completion_mode']),
-                ['tasks' => $assignment->tasks]
+                [
+                    'template_files' => $assignment->templateFiles(),
+                    'tasks' => $assignment->tasks,
+                ],
             ),
             'submission' => $submission,
             'presignedUpload' => $isS3 ? [
@@ -149,11 +152,18 @@ class AssignmentController extends Controller
             'files' => ['nullable', 'array'],
             'files.*' => ['file'],
             'file_urls' => ['nullable', 'array'],
-            'file_urls.*' => ['string', 'url'],
+            'file_urls.*' => ['nullable'],
+            'file_urls.*.url' => ['nullable', 'string', 'url'],
+            'file_urls.*.name' => ['nullable', 'string', 'max:255'],
             'answers' => ['nullable', 'array'],
             'answers.*.task_id' => ['required_with:answers', 'integer'],
             'answers.*.text_content' => ['nullable', 'string'],
             'answers.*.link' => ['nullable', 'url', 'max:500'],
+            'answers.*.files' => ['nullable', 'array'],
+            'answers.*.files.*' => ['file'],
+            'answers.*.file_urls' => ['nullable', 'array'],
+            'answers.*.file_urls.*.url' => ['nullable', 'string', 'url'],
+            'answers.*.file_urls.*.name' => ['nullable', 'string', 'max:255'],
         ]);
 
         $disk = config('filesystems.upload_disk');
@@ -200,11 +210,18 @@ class AssignmentController extends Controller
             'files' => ['nullable', 'array'],
             'files.*' => ['file'],
             'file_urls' => ['nullable', 'array'],
-            'file_urls.*' => ['string', 'url'],
+            'file_urls.*' => ['nullable'],
+            'file_urls.*.url' => ['nullable', 'string', 'url'],
+            'file_urls.*.name' => ['nullable', 'string', 'max:255'],
             'answers' => ['nullable', 'array'],
             'answers.*.task_id' => ['required_with:answers', 'integer'],
             'answers.*.text_content' => ['nullable', 'string'],
             'answers.*.link' => ['nullable', 'url', 'max:500'],
+            'answers.*.files' => ['nullable', 'array'],
+            'answers.*.files.*' => ['file'],
+            'answers.*.file_urls' => ['nullable', 'array'],
+            'answers.*.file_urls.*.url' => ['nullable', 'string', 'url'],
+            'answers.*.file_urls.*.name' => ['nullable', 'string', 'max:255'],
         ]);
 
         $disk = config('filesystems.upload_disk');
@@ -252,7 +269,9 @@ class AssignmentController extends Controller
             'files' => ['nullable', 'array', 'max:5'],
             'files.*' => ['file', 'max:20480'],
             'file_urls' => ['nullable', 'array', 'max:5'],
-            'file_urls.*' => ['string', 'url'],
+            'file_urls.*' => ['nullable'],
+            'file_urls.*.url' => ['nullable', 'string', 'url'],
+            'file_urls.*.name' => ['nullable', 'string', 'max:255'],
         ]);
 
         $disk = config('filesystems.upload_disk');
@@ -263,8 +282,11 @@ class AssignmentController extends Controller
                 $files[] = ['name' => $file->getClientOriginalName(), 'path' => Storage::disk($disk)->url($path)];
             }
         }
-        foreach ($request->input('file_urls', []) as $url) {
-            $files[] = ['name' => basename(parse_url($url, PHP_URL_PATH) ?: 'file'), 'path' => $url];
+        foreach ($request->input('file_urls', []) as $fileUrl) {
+            $normalized = $this->normalizeUploadedFileUrl($fileUrl);
+            if ($normalized) {
+                $files[] = $normalized;
+            }
         }
 
         LmsAssignmentComment::create([
@@ -283,12 +305,15 @@ class AssignmentController extends Controller
 
     public function downloadTemplate(LmsEvent $event, LmsAssignment $assignment): StreamedResponse
     {
-        if ($assignment->lms_event_id !== $event->id || !$assignment->template_file) {
+        $templateIndex = (int) request()->query('template', 0);
+        $template = $assignment->templateFiles()[$templateIndex] ?? null;
+
+        if ($assignment->lms_event_id !== $event->id || ! $template) {
             abort(404);
         }
 
-        [$disk, $path] = $this->resolveFileLocation($assignment->template_file);
-        $name = $assignment->template_file_name ?: basename(parse_url($assignment->template_file, PHP_URL_PATH) ?: 'template');
+        [$disk, $path] = $this->resolveFileLocation($template['path']);
+        $name = $template['name'];
 
         return Storage::disk($disk)->download($path, $name);
     }
@@ -333,7 +358,9 @@ class AssignmentController extends Controller
             'files' => ['nullable', 'array'],
             'files.*' => ['file'],
             'file_urls' => ['nullable', 'array'],
-            'file_urls.*' => ['string', 'url'],
+            'file_urls.*' => ['nullable'],
+            'file_urls.*.url' => ['nullable', 'string', 'url'],
+            'file_urls.*.name' => ['nullable', 'string', 'max:255'],
         ]);
 
         $files = $submission->files ?? [];
@@ -363,6 +390,8 @@ class AssignmentController extends Controller
             }
 
             $task = $taskMap->get($taskId);
+            $existingAnswer = $submission->answers
+                ->firstWhere('lms_assignment_task_id', $taskId);
             $files = null;
 
             if ($task->response_type === 'file') {
@@ -377,12 +406,14 @@ class AssignmentController extends Controller
                     }
                 }
                 foreach ($answerData['file_urls'] ?? [] as $fileUrl) {
-                    $uploaded[] = [
-                        'name' => $fileUrl['name'] ?? basename(parse_url($fileUrl['url'] ?? '', PHP_URL_PATH) ?: 'file'),
-                        'path' => $fileUrl['url'] ?? $fileUrl,
-                    ];
+                    $normalized = $this->normalizeUploadedFileUrl($fileUrl);
+                    if ($normalized) {
+                        $uploaded[] = $normalized;
+                    }
                 }
-                $files = $uploaded ?: null;
+                $files = $uploaded
+                    ? array_merge($existingAnswer?->files ?? [], $uploaded)
+                    : ($existingAnswer?->files ?? null);
             }
 
             LmsSubmissionAnswer::updateOrCreate(
@@ -402,20 +433,44 @@ class AssignmentController extends Controller
     private function collectFileUrls(Request $request, string $directory): array
     {
         $disk = config('filesystems.upload_disk');
-        $urls = [];
+        $files = [];
 
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
                 $path = $file->store($directory, $disk);
-                $urls[] = Storage::disk($disk)->url($path);
+                $files[] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => Storage::disk($disk)->url($path),
+                ];
             }
         }
 
-        foreach ($request->input('file_urls', []) as $url) {
-            $urls[] = $url;
+        foreach ($request->input('file_urls', []) as $fileUrl) {
+            $normalized = $this->normalizeUploadedFileUrl($fileUrl);
+            if ($normalized) {
+                $files[] = $normalized;
+            }
         }
 
-        return $urls;
+        return $files;
+    }
+
+    /**
+     * @param  array<string, mixed>|string|null  $fileUrl
+     * @return array{name: string, path: string}|null
+     */
+    private function normalizeUploadedFileUrl(array|string|null $fileUrl): ?array
+    {
+        $url = is_array($fileUrl) ? ($fileUrl['url'] ?? '') : $fileUrl;
+        if (! is_string($url) || $url === '') {
+            return null;
+        }
+
+        $name = is_array($fileUrl) && is_string($fileUrl['name'] ?? null) && trim($fileUrl['name']) !== ''
+            ? trim($fileUrl['name'])
+            : basename(parse_url($url, PHP_URL_PATH) ?: 'file');
+
+        return ['name' => $name, 'path' => $url];
     }
 
     /**
