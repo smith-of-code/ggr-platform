@@ -123,33 +123,66 @@ class AssignmentController extends Controller
         $canReviewAssignments = in_array($accessLevel, ['admin', 'gamification_points_only'], true);
         $onlyUnread = $request->boolean('only_unread', false);
         $search = trim((string) $request->query('search', ''));
+        $statusFilter = (string) $request->query('status', '');
+        if (! in_array($statusFilter, ['approved', 'submitted', 'revision', 'new', 'overdue'], true)) {
+            $statusFilter = '';
+        }
 
         $assignment->load('tasks');
 
-        $submissionsQuery = $assignment->submissions()
-            ->with(['user:id,name,email', 'reviews.reviewer:id,name', 'comments.user:id,name', 'answers.task'])
-            ->orderBy('created_at', 'desc');
+        $unreadScope = function ($unread) use ($viewerId) {
+            $unread->whereDoesntHave('reads', function ($read) use ($viewerId) {
+                $read->where('user_id', $viewerId)->whereNotNull('last_read_at');
+            })->orWhereHas('reads', function ($read) use ($viewerId) {
+                $read->where('user_id', $viewerId)
+                    ->whereColumn('last_read_at', '<', 'lms_assignment_submissions.participant_last_activity_at');
+            });
+        };
 
-        if ($onlyUnread) {
-            $submissionsQuery->whereNotNull('participant_last_activity_at')
-                ->where(function ($unread) use ($viewerId) {
-                    $unread->whereDoesntHave('reads', function ($read) use ($viewerId) {
-                        $read->where('user_id', $viewerId)->whereNotNull('last_read_at');
-                    })->orWhereHas('reads', function ($read) use ($viewerId) {
-                        $read->where('user_id', $viewerId)
-                            ->whereColumn('last_read_at', '<', 'lms_assignment_submissions.participant_last_activity_at');
-                    });
-                });
-        }
+        $baseSubmissionsQuery = $assignment->submissions();
 
         if ($search !== '') {
-            $submissionsQuery->whereHas('user', function ($query) use ($search) {
+            $baseSubmissionsQuery->whereHas('user', function ($query) use ($search) {
                 $query->where('name', 'ilike', '%' . $search . '%')
                     ->orWhere('email', 'ilike', '%' . $search . '%')
                     ->orWhere('last_name', 'ilike', '%' . $search . '%')
                     ->orWhere('first_name', 'ilike', '%' . $search . '%')
                     ->orWhere('patronymic', 'ilike', '%' . $search . '%');
             });
+        }
+
+        $isAssignmentOverdue = $assignment->deadline !== null && $assignment->deadline->lt(now());
+        $overdueSubmissionScope = fn ($query) => $query->whereNotIn('status', ['submitted', 'approved', 'resubmitted']);
+
+        $statusCounts = [
+            'approved' => (clone $baseSubmissionsQuery)->where('status', 'approved')->count(),
+            'submitted' => (clone $baseSubmissionsQuery)->where('status', 'submitted')->count(),
+            'revision' => (clone $baseSubmissionsQuery)->where('status', 'revision')->count(),
+            'new' => (clone $baseSubmissionsQuery)
+                ->whereNotNull('participant_last_activity_at')
+                ->where($unreadScope)
+                ->count(),
+            'overdue' => $isAssignmentOverdue
+                ? (clone $baseSubmissionsQuery)->where($overdueSubmissionScope)->count()
+                : 0,
+        ];
+
+        $submissionsQuery = (clone $baseSubmissionsQuery)
+            ->with(['user:id,name,email', 'reviews.reviewer:id,name', 'comments.user:id,name', 'answers.task'])
+            ->orderBy('created_at', 'desc');
+
+        if ($onlyUnread) {
+            $submissionsQuery->whereNotNull('participant_last_activity_at')
+                ->where($unreadScope);
+        }
+
+        if ($statusFilter === 'new') {
+            $submissionsQuery->whereNotNull('participant_last_activity_at')
+                ->where($unreadScope);
+        } elseif ($statusFilter === 'overdue') {
+            $submissionsQuery->where($overdueSubmissionScope);
+        } elseif ($statusFilter !== '') {
+            $submissionsQuery->where('status', $statusFilter);
         }
 
         $submissions = $submissionsQuery->paginate(15)->withQueryString();
@@ -163,7 +196,7 @@ class AssignmentController extends Controller
                 ->pluck('last_read_at', 'lms_assignment_submission_id');
         }
 
-        $submissions->getCollection()->transform(function (LmsAssignmentSubmission $submission) use ($readMap) {
+        $submissions->getCollection()->transform(function (LmsAssignmentSubmission $submission) use ($readMap, $isAssignmentOverdue) {
             $readAtRaw = $readMap->get($submission->id);
             $readAt = $readAtRaw ? Carbon::parse($readAtRaw) : null;
             $participantActivityAt = $submission->participant_last_activity_at;
@@ -171,6 +204,7 @@ class AssignmentController extends Controller
 
             $submission->setAttribute('read_at', $readAt ? $readAt->toIso8601String() : null);
             $submission->setAttribute('has_unread', $hasUnread);
+            $submission->setAttribute('is_overdue', $isAssignmentOverdue && ! in_array($submission->status, ['submitted', 'approved', 'resubmitted'], true));
 
             return $submission;
         });
@@ -179,10 +213,12 @@ class AssignmentController extends Controller
             'event' => $event->only(['id', 'slug', 'title']),
             'assignment' => $assignment,
             'submissions' => $submissions,
+            'statusCounts' => $statusCounts,
             'canReviewAssignments' => $canReviewAssignments,
             'filters' => [
                 'only_unread' => $onlyUnread,
                 'search' => $search,
+                'status' => $statusFilter,
             ],
         ]);
     }

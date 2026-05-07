@@ -30,29 +30,48 @@ class AssignmentController extends Controller
 
         $enrolledCourseIds = LmsCourseEnrollment::where('user_id', $user->id)
             ->whereHas('course', fn($q) => $q->where('lms_event_id', $event->id))
+            ->whereNotIn('status', ['pending', 'rejected'])
             ->pluck('lms_course_id');
 
-        $courseAssignmentIds = DB::table('lms_stage_blocks')
-            ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
-            ->whereIn('lms_course_stages.lms_course_id', $enrolledCourseIds)
-            ->whereNotNull('lms_stage_blocks.lms_assignment_id')
-            ->distinct()
-            ->pluck('lms_stage_blocks.lms_assignment_id');
-
-        $allLinkedAssignmentIds = DB::table('lms_stage_blocks')
+        $courseAssignmentIds = DB::table('lms_course_stages')
+            ->whereIn('lms_course_id', $enrolledCourseIds)
             ->whereNotNull('lms_assignment_id')
-            ->distinct()
-            ->pluck('lms_assignment_id');
+            ->pluck('lms_assignment_id')
+            ->merge(
+                DB::table('lms_stage_blocks')
+                    ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
+                    ->whereIn('lms_course_stages.lms_course_id', $enrolledCourseIds)
+                    ->whereNotNull('lms_stage_blocks.lms_assignment_id')
+                    ->pluck('lms_stage_blocks.lms_assignment_id')
+            )
+            ->unique()
+            ->values();
 
         $assignmentsQuery = LmsAssignment::where('lms_event_id', $event->id)
             ->where('is_active', true)
-            ->where(function ($q) use ($courseAssignmentIds, $allLinkedAssignmentIds) {
-                $q->whereIn('id', $courseAssignmentIds)
-                  ->orWhereNotIn('id', $allLinkedAssignmentIds);
-            });
+            ->whereIn('id', $courseAssignmentIds);
+
+        $overdueOnly = $request->boolean('overdue', false);
 
         if ($search = $request->get('search')) {
             $assignmentsQuery->where('title', 'ilike', '%' . $search . '%');
+        }
+
+        $overdueScope = function ($query) use ($user) {
+            $query->whereNotNull('deadline')
+                ->where('deadline', '<', now())
+                ->whereDoesntHave('submissions', function ($submission) use ($user) {
+                    $submission->where('user_id', $user->id)
+                        ->whereIn('status', ['submitted', 'approved']);
+                });
+        };
+
+        $assignmentCounts = [
+            'overdue' => (clone $assignmentsQuery)->where($overdueScope)->count(),
+        ];
+
+        if ($overdueOnly) {
+            $assignmentsQuery->where($overdueScope);
         }
 
         $assignmentsQuery->orderByRaw('CASE WHEN deadline IS NULL THEN 1 ELSE 0 END')
@@ -79,7 +98,11 @@ class AssignmentController extends Controller
         return Inertia::render('Lms/Assignments/Index', [
             'event' => $event->only(['id', 'slug', 'title', 'menu_config']),
             'assignments' => $assignmentsPaginator,
-            'filters' => $request->only(['search']),
+            'assignmentCounts' => $assignmentCounts,
+            'filters' => [
+                'search' => $search,
+                'overdue' => $overdueOnly,
+            ],
         ]);
     }
 
@@ -90,23 +113,29 @@ class AssignmentController extends Controller
         }
         $user = auth()->user();
 
-        $isLinkedToCourse = DB::table('lms_stage_blocks')
-            ->where('lms_assignment_id', $assignment->id)
+        $hasAccess = DB::table('lms_course_stages')
+            ->join('lms_course_enrollments', function ($join) use ($user) {
+                $join->on('lms_course_enrollments.lms_course_id', '=', 'lms_course_stages.lms_course_id')
+                    ->where('lms_course_enrollments.user_id', '=', $user->id)
+                    ->whereNotIn('lms_course_enrollments.status', ['pending', 'rejected']);
+            })
+            ->where('lms_course_stages.lms_assignment_id', $assignment->id)
             ->exists();
 
-        if ($isLinkedToCourse) {
+        if (! $hasAccess) {
             $hasAccess = DB::table('lms_stage_blocks')
                 ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
                 ->join('lms_course_enrollments', function ($join) use ($user) {
                     $join->on('lms_course_enrollments.lms_course_id', '=', 'lms_course_stages.lms_course_id')
-                         ->where('lms_course_enrollments.user_id', '=', $user->id);
+                        ->where('lms_course_enrollments.user_id', '=', $user->id)
+                        ->whereNotIn('lms_course_enrollments.status', ['pending', 'rejected']);
                 })
                 ->where('lms_stage_blocks.lms_assignment_id', $assignment->id)
                 ->exists();
+        }
 
-            if (!$hasAccess) {
-                abort(403);
-            }
+        if (! $hasAccess) {
+            abort(403);
         }
 
         $assignment->load('tasks');

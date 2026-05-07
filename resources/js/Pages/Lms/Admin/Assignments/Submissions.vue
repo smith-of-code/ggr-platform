@@ -6,8 +6,8 @@
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
           Назад к заданиям
         </Link>
-        <RButton variant="outline" size="sm" @click="toggleOnlyUnread">
-          {{ filters?.only_unread ? 'Показать все' : 'Только с новыми' }}
+        <RButton v-if="filters?.status || filters?.only_unread" variant="outline" size="sm" @click="clearStatusFilter">
+          Показать все
         </RButton>
       </div>
       <h1 class="text-2xl font-bold text-gray-900">{{ assignment.title }}</h1>
@@ -26,6 +26,22 @@
     </div>
 
     <RCard class="mb-4">
+      <div class="mb-4 flex flex-wrap gap-2">
+        <button
+          v-for="item in statusFilterButtons"
+          :key="item.value"
+          type="button"
+          :class="[
+            'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
+            isStatusFilterActive(item.value)
+              ? 'border-rosatom-500 bg-rosatom-50 text-rosatom-700'
+              : 'border-gray-200 bg-white text-gray-500 hover:border-rosatom-200 hover:text-rosatom-700',
+          ]"
+          @click="applyStatusFilter(item.value)"
+        >
+          {{ item.label }}: {{ item.count }}
+        </button>
+      </div>
       <div class="grid gap-3 md:grid-cols-4">
         <div class="md:col-span-3">
           <label class="mb-1 block text-xs font-medium text-gray-500">Поиск участника</label>
@@ -49,13 +65,19 @@
       <RCard
         v-for="sub in submissions.data"
         :key="sub.id"
-        class="overflow-hidden border border-gray-200 shadow-sm"
+        :class="[
+          'overflow-hidden border shadow-sm',
+          sub.is_overdue ? 'border-red-200 bg-red-50/70 ring-1 ring-red-100' : 'border-gray-200',
+        ]"
       >
         <div class="w-full">
         <!-- Collapse header -->
         <button
           type="button"
-          class="flex w-full items-center justify-between bg-white px-5 py-4 text-left hover:bg-gray-50"
+          :class="[
+            'flex w-full items-center justify-between px-5 py-4 text-left',
+            sub.is_overdue ? 'bg-red-50 hover:bg-red-100/60' : 'bg-white hover:bg-gray-50',
+          ]"
           @click="toggleExpanded(sub)"
         >
           <div class="flex min-w-0 flex-1 items-start gap-4">
@@ -71,6 +93,9 @@
                 </span>
                 <RBadge v-if="sub.has_unread" variant="warning" size="sm">
                   Новое
+                </RBadge>
+                <RBadge v-if="sub.is_overdue" variant="danger" size="sm">
+                  Просрочено
                 </RBadge>
                 <RBadge :variant="statusBadgeVariant(sub.status)">
                   {{ statusLabel(sub.status) }}
@@ -321,7 +346,7 @@
 
 <script setup>
 import { Link, router } from '@inertiajs/vue3'
-import { ref, reactive, watch } from 'vue'
+import { computed, ref, reactive, watch } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import { fileUrl } from '@/lib/fileUrl'
 import axios from 'axios'
@@ -330,6 +355,7 @@ const props = defineProps({
   event: Object,
   assignment: Object,
   submissions: Object,
+  statusCounts: { type: Object, default: () => ({}) },
   canReviewAssignments: { type: Boolean, default: false },
   filters: { type: Object, default: () => ({}) },
 })
@@ -342,6 +368,14 @@ const expanded = ref({})
 
 const reviewForms = reactive({})
 const commentForms = reactive({})
+
+const statusFilterButtons = computed(() => [
+  { value: 'approved', label: 'Принято', count: props.statusCounts?.approved ?? 0 },
+  { value: 'submitted', label: 'На проверке', count: props.statusCounts?.submitted ?? 0 },
+  { value: 'revision', label: 'На доработке', count: props.statusCounts?.revision ?? 0 },
+  { value: 'new', label: 'Новое', count: props.statusCounts?.new ?? 0 },
+  { value: 'overdue', label: 'Просрочено', count: props.statusCounts?.overdue ?? 0 },
+])
 
 function ensureSubmissionForms(subId) {
   if (!reviewForms[subId]) {
@@ -476,7 +510,14 @@ function submitReview(sub, decision) {
   router.post(
     route('lms.admin.assignments.review', [props.event.slug, props.assignment.id, sub.id]),
     data,
-    { forceFormData: true }
+    {
+      forceFormData: true,
+      preserveScroll: true,
+      onSuccess: () => {
+        reviewForms[sub.id].comment = ''
+        reviewForms[sub.id]._files = []
+      },
+    }
   )
 }
 
@@ -492,6 +533,7 @@ function submitComment(sub) {
     data,
     {
       forceFormData: true,
+      preserveScroll: true,
       onSuccess: () => {
         commentForms[sub.id].text = ''
         commentForms[sub.id]._files = []
@@ -500,10 +542,14 @@ function submitComment(sub) {
   )
 }
 
-function toggleOnlyUnread() {
-  const next = !(props.filters?.only_unread)
+function isStatusFilterActive(status) {
+  return props.filters?.status === status || (status === 'new' && props.filters?.only_unread)
+}
+
+function applyStatusFilter(status) {
+  const nextStatus = isStatusFilterActive(status) ? undefined : status
   router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), {
-    only_unread: next ? 1 : undefined,
+    status: nextStatus,
     search: filterForm.search || undefined,
   }, {
     preserveState: false,
@@ -513,7 +559,16 @@ function toggleOnlyUnread() {
 
 function applyFilters() {
   router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), {
-    only_unread: props.filters?.only_unread ? 1 : undefined,
+    status: props.filters?.status || (props.filters?.only_unread ? 'new' : undefined),
+    search: filterForm.search || undefined,
+  }, {
+    preserveState: false,
+    replace: true,
+  })
+}
+
+function clearStatusFilter() {
+  router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), {
     search: filterForm.search || undefined,
   }, {
     preserveState: false,

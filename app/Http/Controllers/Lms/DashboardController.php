@@ -57,6 +57,20 @@ class DashboardController extends Controller
                 'completed_at' => $enrollment->completed_at,
             ];
         })->values();
+        $enrolledCourseIds = $courseEnrollments->pluck('course.id');
+        $availableAssignmentIds = DB::table('lms_course_stages')
+            ->whereIn('lms_course_id', $enrolledCourseIds)
+            ->whereNotNull('lms_assignment_id')
+            ->pluck('lms_assignment_id')
+            ->merge(
+                DB::table('lms_stage_blocks')
+                    ->join('lms_course_stages', 'lms_course_stages.id', '=', 'lms_stage_blocks.lms_course_stage_id')
+                    ->whereIn('lms_course_stages.lms_course_id', $enrolledCourseIds)
+                    ->whereNotNull('lms_stage_blocks.lms_assignment_id')
+                    ->pluck('lms_stage_blocks.lms_assignment_id')
+            )
+            ->unique()
+            ->values();
 
         $activeTrajectories = LmsTrajectoryEnrollment::whereHas('trajectory', fn($q) => $q->where('lms_event_id', $event->id))
             ->where('user_id', $user->id)
@@ -66,6 +80,7 @@ class DashboardController extends Controller
 
         $upcomingAssignments = LmsAssignment::where('lms_event_id', $event->id)
             ->where('is_active', true)
+            ->whereIn('id', $availableAssignmentIds)
             ->whereNotNull('deadline')
             ->where('deadline', '>', now())
             ->orderBy('deadline')
