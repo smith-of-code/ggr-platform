@@ -205,6 +205,10 @@
                 <input v-model.number="form.position" type="number" class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition focus:border-[#003274] focus:bg-white focus:ring-2 focus:ring-[#003274]/10" />
               </div>
               <RCheckbox v-model="form.is_active" label="Активен" />
+              <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                <RCheckbox v-model="form.show_order_tour_button" label="Показывать кнопку «Заказать тур»" />
+                <p class="mt-1.5 pl-6 text-xs text-emerald-700">На странице города появится акцентная кнопка для заявки на тур.</p>
+              </div>
             </div>
           </RCard>
 
@@ -405,6 +409,7 @@ const form = useForm({
     social_objects: props.city?.block_visibility?.social_objects ?? true,
     energy_cities_block: props.city?.block_visibility?.energy_cities_block ?? true,
   },
+  show_order_tour_button: props.city?.show_order_tour_button ?? false,
 })
 
 function addFact() {

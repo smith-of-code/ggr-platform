@@ -74,10 +74,12 @@ class CityController extends Controller
             'block_visibility.attractions' => 'boolean',
             'block_visibility.social_objects' => 'boolean',
             'block_visibility.energy_cities_block' => 'boolean',
+            'show_order_tour_button' => 'boolean',
         ]);
 
         $validated['slug'] = $this->uniqueSlug(City::class, $validated['name'], $validated['slug'] ?? null);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['show_order_tour_button'] = $request->boolean('show_order_tour_button', false);
 
         City::create($validated);
 
@@ -137,10 +139,12 @@ class CityController extends Controller
             'block_visibility.attractions' => 'boolean',
             'block_visibility.social_objects' => 'boolean',
             'block_visibility.energy_cities_block' => 'boolean',
+            'show_order_tour_button' => 'boolean',
         ]);
 
         $validated['slug'] = $this->uniqueSlug(City::class, $validated['name'], $validated['slug'] ?? null, $city->id);
         $validated['is_active'] = $request->boolean('is_active', true);
+        $validated['show_order_tour_button'] = $request->boolean('show_order_tour_button', false);
 
         $city->update($validated);
 
