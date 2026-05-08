@@ -118,6 +118,10 @@
 
 Выгрузка заявок по `tour_cabinet_contest_progress` + join городов + сабмиты форм + ответы этапа 2/3 — детали колонок при реализации экспорта.
 
+## Сброс прогресса конкурса (админка)
+
+В разделе `/admin/settings/contest-reset` (`admin.settings.contest-reset.{index,reset}`) администратор портала может найти конкретного участника (по email/ФИО/ID) и одной кнопкой сбросить весь его прогресс конкурса: удаляются записи в `tour_cabinet_contest_progress`, `tour_cabinet_contest_city_submissions`, `tour_cabinet_contest_stage2_answers` + файл `stage3_attachment_path` со storage. LMS-`lms_form_submissions` остаются в БД (первичные данные LMS-модуля). После сброса участник на дашборде ЛК снова увидит выбор направления — как новый участник. Подробнее: `spec/features/admin-settings-reset-contest-progress/spec.md`.
+
 ## Открытое на реализации
 
 - Excel-выгрузка по прогрессу и ответам; при необходимости — ужесточение валидации URL видео этапа 3.

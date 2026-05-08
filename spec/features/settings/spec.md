@@ -16,9 +16,15 @@
 
 ### Контроллеры
 - `App\Http\Controllers\Admin\SettingsController` — index, mail, updateMail, testMail
+- `App\Http\Controllers\Admin\PageVisibilityController` — управление видимостью разделов сайта (`admin.settings.page-visibility.*`)
+- `App\Http\Controllers\Admin\LmsFormTrashController` — корзина soft-deleted форм (`admin.settings.forms-trash.*`); см. фичу `tour-cabinet-forms-delete-copy`
+- `App\Http\Controllers\Admin\ContestProgressResetController` — сброс прогресса конкурса конкретного участника (`admin.settings.contest-reset.*`); см. фичу `admin-settings-reset-contest-progress`
 
 ### Страницы
-- `Pages/Admin/Settings/Index.vue`, `Mail.vue`
+- `Pages/Admin/Settings/Index.vue` — хаб с карточками всех разделов настроек
+- `Pages/Admin/Settings/Mail.vue` — настройки SMTP
+- `Pages/Admin/Settings/FormsTrash.vue` — корзина форм
+- `Pages/Admin/Settings/ContestReset/Index.vue` — поиск участника и сброс его прогресса конкурса
 
 ## Ключевые workflow
 

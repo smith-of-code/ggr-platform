@@ -58,5 +58,13 @@ const sections = [
     iconBg: 'bg-red-50 group-hover:bg-red-100',
     iconColor: 'text-red-600',
   },
+  {
+    route: 'admin.settings.contest-reset.index',
+    title: 'Сброс прогресса конкурса',
+    description: 'Полный сброс выбора направления, городов, ответов этапов 1–3 у конкретного участника ЛК туров',
+    icon: 'M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3',
+    iconBg: 'bg-indigo-50 group-hover:bg-indigo-100',
+    iconColor: 'text-indigo-600',
+  },
 ]
 </script>

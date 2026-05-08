@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AtomsVkusaController as AdminAtomsVkusaController
 use App\Http\Controllers\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\Admin\BlogSubscriberController as AdminBlogSubscriberController;
 use App\Http\Controllers\Admin\CityController as AdminCityController;
+use App\Http\Controllers\Admin\ContestProgressResetController as AdminContestProgressResetController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DirectionController as AdminDirectionController;
 use App\Http\Controllers\Admin\EducationProductController as AdminEducationProductController;
@@ -307,6 +308,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'portal.admin'])->gr
     Route::delete('/settings/forms-trash/{form}', [AdminLmsFormTrashController::class, 'forceDelete'])
         ->whereNumber('form')
         ->name('settings.forms-trash.destroy');
+
+    Route::get('/settings/contest-reset', [AdminContestProgressResetController::class, 'index'])
+        ->name('settings.contest-reset.index');
+    Route::post('/settings/contest-reset/{user}', [AdminContestProgressResetController::class, 'reset'])
+        ->whereNumber('user')
+        ->name('settings.contest-reset.reset');
 });
 
 // Social OAuth (global)
