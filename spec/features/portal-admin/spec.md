@@ -43,6 +43,7 @@
 - Контент: Города, LMS ВШГР, Туры, Блог
 - Образование: Продукты ВШГР
 - Исследования: Исследования, Рецепты
+- Настройки (единый пункт меню → хаб `admin.settings.index` с карточками подразделов; см. `spec/features/admin-settings-sidebar/spec.md`)
 
 ## Маршруты
 Все под `/admin` с middleware `auth` и `portal.admin` (флаг `users.is_admin`, см. `App\Http\Middleware\EnsurePortalAdmin`):

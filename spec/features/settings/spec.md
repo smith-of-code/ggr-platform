@@ -26,6 +26,9 @@
 - `Pages/Admin/Settings/FormsTrash.vue` — корзина форм
 - `Pages/Admin/Settings/ContestReset/Index.vue` — поиск участника и сброс его прогресса конкурса
 
+### Точки входа из левого меню
+- `resources/js/Layouts/AdminLayout.vue` — единый пункт «Настройки» в левом меню ведёт на хаб `admin.settings.index`, оттуда пользователь переходит к подразделам через карточки (см. `spec/features/admin-settings-sidebar/spec.md`).
+
 ## Ключевые workflow
 
 - Настройки почты хранятся в группе mail_settings
