@@ -18,7 +18,7 @@ class VideoController extends Controller
 {
     public function index(LmsEvent $event): Response
     {
-        $videos = $event->videos()->with('courses')->orderBy('created_at', 'desc')->paginate(15);
+        $videos = $event->videos()->with('courses')->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
         return Inertia::render('Lms/Admin/Videos/Index', [
             'event' => $event->only(['id', 'slug', 'title']),

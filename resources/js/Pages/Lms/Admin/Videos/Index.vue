@@ -47,6 +47,22 @@
       </table>
       <div v-if="videos.data.length === 0" class="px-5 py-16 text-center text-sm text-gray-500">Видео пока нет</div>
     </RCard>
+
+    <div v-if="videos.last_page > 1" class="mt-6 flex items-center justify-between">
+      <p class="text-xs text-gray-500">{{ videos.from }}–{{ videos.to }} из {{ videos.total }}</p>
+      <div class="flex gap-1">
+        <button
+          v-for="link in videos.links"
+          :key="link.label"
+          type="button"
+          @click="link.url && router.visit(link.url, { preserveState: true })"
+          :disabled="!link.url"
+          class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+          :class="link.active ? 'bg-rosatom-600 text-white' : 'text-gray-500 hover:bg-gray-100 disabled:opacity-30'"
+          v-html="link.label"
+        />
+      </div>
+    </div>
   </LmsAdminLayout>
 </template>
 
