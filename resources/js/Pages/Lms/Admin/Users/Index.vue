@@ -109,6 +109,10 @@
           <template #icon><AcademicCapIcon class="h-4 w-4" /></template>
           Записать на программы
         </RButton>
+        <RButton variant="danger" size="sm" :loading="bulkDestroying" @click="handleBulkDestroy">
+          <template #icon><TrashIcon class="h-4 w-4" /></template>
+          Удалить из события
+        </RButton>
         <button type="button" class="ml-auto text-xs text-gray-500 hover:text-gray-700" @click="selectedIds = []">
           Снять выделение
         </button>
@@ -210,6 +214,11 @@
     <!-- Success flash -->
     <div v-if="$page.props.flash?.success" class="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
       {{ $page.props.flash.success }}
+    </div>
+
+    <!-- Error flash -->
+    <div v-if="$page.props.flash?.error" class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+      {{ $page.props.flash.error }}
     </div>
 
     <!-- Table -->
@@ -569,6 +578,7 @@ const sendingInvites = ref(false)
 const showBulkEnrollModal = ref(false)
 const bulkEnrollCourseIds = ref([])
 const enrolling = ref(false)
+const bulkDestroying = ref(false)
 
 const statusOptions = [
   { value: 'imported', label: 'Импортирован' },
@@ -667,6 +677,25 @@ function handleSendInvitations() {
       },
       onFinish: () => {
         sendingInvites.value = false
+      },
+    }
+  )
+}
+
+function handleBulkDestroy() {
+  const n = selectedIds.value.length
+  if (!confirm(`Удалить ${n} участник(ов) из события? Пользовательские аккаунты не удаляются — только участие в этом событии.`)) return
+
+  bulkDestroying.value = true
+  router.post(
+    route('lms.admin.users.bulk-destroy', props.event.slug),
+    { profile_ids: selectedIds.value },
+    {
+      onSuccess: () => {
+        selectedIds.value = []
+      },
+      onFinish: () => {
+        bulkDestroying.value = false
       },
     }
   )

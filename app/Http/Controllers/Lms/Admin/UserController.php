@@ -19,6 +19,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -324,6 +325,7 @@ class UserController extends Controller
             'project_description' => ['nullable', 'string', 'max:2000'],
             'role_id'    => ['nullable', 'exists:lms_roles,id'],
             'role'       => ['nullable', 'string', 'in:participant,curator,leader,admin'],
+            'profile_status' => ['nullable', 'string', Rule::in(['imported', 'invited', 'active'])],
             'course_ids' => ['nullable', 'array'],
             'course_ids.*' => ['exists:lms_courses,id'],
         ]);
@@ -340,7 +342,7 @@ class UserController extends Controller
             'phone'      => $validated['phone'] ?? $user->phone,
         ]);
 
-        $profile->update([
+        $profileUpdate = [
             'role' => $validated['role'] ?? $profile->role,
             'lms_role_id' => $validated['role_id'] ?? $profile->lms_role_id,
             'position' => $validated['position'] ?? $profile->position,
@@ -348,7 +350,16 @@ class UserController extends Controller
             'phone' => $validated['phone'] ?? $profile->phone,
             'organization' => $validated['organization'] ?? $profile->organization,
             'project_description' => $validated['project_description'] ?? $profile->project_description,
-        ]);
+        ];
+
+        if (array_key_exists('profile_status', $validated) && $validated['profile_status'] !== null) {
+            $profileUpdate['status'] = $validated['profile_status'];
+            if ($validated['profile_status'] === 'active' && $profile->activated_at === null) {
+                $profileUpdate['activated_at'] = now();
+            }
+        }
+
+        $profile->update($profileUpdate);
 
         if (isset($validated['course_ids'])) {
             $existingIds = LmsCourseEnrollment::where('user_id', $user->id)
@@ -375,6 +386,45 @@ class UserController extends Controller
         $profile->delete();
 
         return redirect()->route('lms.admin.users.index', $event)->with('success', 'Участник удалён из события');
+    }
+
+    public function bulkDestroy(Request $request, LmsEvent $event): RedirectResponse
+    {
+        $request->validate([
+            'profile_ids' => ['required', 'array', 'min:1'],
+            'profile_ids.*' => ['integer'],
+        ]);
+
+        $ids = array_values(array_unique(array_map('intval', $request->profile_ids)));
+        $authId = (int) auth()->id();
+
+        $profiles = LmsProfile::where('lms_event_id', $event->id)
+            ->whereIn('id', $ids)
+            ->get();
+
+        $toDelete = $profiles->where('user_id', '!=', $authId)->values();
+        $skippedSelf = $profiles->contains(fn (LmsProfile $p) => $p->user_id === $authId);
+
+        if ($toDelete->isEmpty()) {
+            return redirect()->back()->with(
+                'error',
+                'Нельзя удалить собственный профиль из события через массовое действие. Снимите себя из выбора или удалите профиль по одному.'
+            );
+        }
+
+        DB::transaction(function () use ($toDelete): void {
+            foreach ($toDelete as $profile) {
+                $profile->delete();
+            }
+        });
+
+        $count = $toDelete->count();
+        $msg = "Удалено из события: {$count}";
+        if ($skippedSelf) {
+            $msg .= ' (ваш профиль пропущен)';
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     public function sendInvitations(Request $request, LmsEvent $event): RedirectResponse
@@ -821,13 +871,14 @@ class UserController extends Controller
 
     public function toggleEmailVerified(LmsEvent $event, User $user): RedirectResponse
     {
+        // email_verified_at не в $fillable у User — update([...]) тихо игнорировал бы поле.
         if ($user->email_verified_at) {
-            $user->update(['email_verified_at' => null]);
+            $user->forceFill(['email_verified_at' => null])->save();
 
             return redirect()->back()->with('success', 'Email отмечен как неподтверждённый');
         }
 
-        $user->update(['email_verified_at' => now()]);
+        $user->forceFill(['email_verified_at' => now()])->save();
 
         return redirect()->back()->with('success', 'Email подтверждён');
     }

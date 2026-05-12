@@ -27,6 +27,11 @@
             <p v-if="profile.city" class="text-xs text-gray-400">{{ profile.city }}</p>
             <p class="mt-1 text-sm text-gray-500">{{ profile.user?.email }}</p>
             <p v-if="profile.user?.phone || profile.phone" class="text-sm text-gray-400">{{ profile.user?.phone || profile.phone }}</p>
+            <div v-if="profile.status" class="mt-2 flex justify-center">
+              <RBadge :variant="participationStatusMeta(profile.status).variant" size="sm">
+                {{ participationStatusMeta(profile.status).label }}
+              </RBadge>
+            </div>
             <RBadge v-if="profile.lms_role" :variant="roleBadgeVariant(profile.lms_role.slug)" class="mt-3">
               {{ profile.lms_role.name }}
             </RBadge>
@@ -66,6 +71,24 @@
                 <div class="sm:col-span-2">
                   <label class="mb-1 block text-sm font-medium text-gray-700">Идея проекта</label>
                   <textarea v-model="editForm.project_description" rows="3" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 transition focus:border-rosatom-500 focus:ring-2 focus:ring-rosatom-500/20" placeholder="Описание идеи проекта" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="mb-1 block text-sm font-medium text-gray-700">Статус в событии</label>
+                  <select
+                    v-model="editForm.profile_status"
+                    class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 transition focus:border-rosatom-500 focus:outline-none focus:ring-2 focus:ring-rosatom-500/20"
+                  >
+                    <option
+                      v-for="opt in participantStatusOptions"
+                      :key="opt.value"
+                      :value="opt.value"
+                    >
+                      {{ opt.label }}
+                    </option>
+                  </select>
+                  <p class="mt-1 text-xs text-gray-400">
+                    Импортирован — из списка; приглашён — ожидает активации; активен — участник заходил в LMS.
+                  </p>
                 </div>
                 <div class="sm:col-span-2">
                   <SearchSelect
@@ -341,6 +364,21 @@ const props = defineProps({
   facultyLabels: { type: Object, default: () => ({}) },
 })
 
+const participantStatusOptions = [
+  { value: 'imported', label: 'Импортирован' },
+  { value: 'invited', label: 'Приглашён' },
+  { value: 'active', label: 'Активен' },
+]
+
+function participationStatusMeta(status) {
+  const map = {
+    imported: { label: 'Импортирован', variant: 'neutral' },
+    invited: { label: 'Приглашён', variant: 'warning' },
+    active: { label: 'Активен', variant: 'success' },
+  }
+  return map[status] || { label: status || '—', variant: 'neutral' }
+}
+
 const directionLabel = computed(() => props.directionLabels[props.profile?.direction] || '')
 const facultyLabel = computed(() => props.facultyLabels[props.profile?.faculty] || '')
 
@@ -395,6 +433,7 @@ const editForm = useForm({
   organization: props.profile?.organization || '',
   project_description: props.profile?.project_description || '',
   role_id: props.profile?.lms_role_id || null,
+  profile_status: props.profile?.status || 'imported',
 })
 
 const courseForm = useForm({
