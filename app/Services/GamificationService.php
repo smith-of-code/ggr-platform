@@ -7,6 +7,7 @@ use App\Models\Lms\LmsCourseEnrollment;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGamificationPoint;
 use App\Models\Lms\LmsGamificationRule;
+use App\Models\Lms\LmsProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -17,6 +18,9 @@ class GamificationService
 
     /** Идемпотентное начисление за одобрение конкретного задания. */
     public const SOURCE_ASSIGNMENT_APPROVED = 'lms_assignment_approved';
+
+    /** Начисление группе: учитывается в рейтинге города, не в личном зачёте участника. */
+    public const SOURCE_GROUP_CITY_BONUS = 'group_city_bonus';
 
     public function isGamificationEnabled(LmsEvent $event, User $user): bool
     {
@@ -64,6 +68,7 @@ class GamificationService
             LmsGamificationPoint::create([
                 'lms_event_id' => $event->id,
                 'user_id' => $user->id,
+                'for_city_ranking_only' => false,
                 'lms_gamification_rule_id' => $rule->id,
                 'points' => $rule->points,
                 'reason' => $reason ?? $rule->title,
@@ -104,6 +109,7 @@ class GamificationService
         LmsGamificationPoint::create([
             'lms_event_id' => $event->id,
             'user_id' => $user->id,
+            'for_city_ranking_only' => false,
             'lms_gamification_rule_id' => null,
             'source_type' => $sourceType,
             'source_id' => $sourceId,
@@ -122,6 +128,8 @@ class GamificationService
             ->select('users.id', 'users.name', DB::raw('SUM(lms_gamification_points.points) as total_points'))
             ->join('users', 'users.id', '=', 'lms_gamification_points.user_id')
             ->where('lms_gamification_points.lms_event_id', $event->id)
+            ->where('lms_gamification_points.for_city_ranking_only', false)
+            ->whereNotNull('lms_gamification_points.user_id')
             ->whereNotIn('lms_gamification_points.user_id', $adminUserIds)
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total_points')
@@ -150,6 +158,8 @@ class GamificationService
             )
             ->join('users', 'users.id', '=', 'lms_gamification_points.user_id')
             ->where('lms_gamification_points.lms_event_id', $event->id)
+            ->where('lms_gamification_points.for_city_ranking_only', false)
+            ->whereNotNull('lms_gamification_points.user_id')
             ->whereNotIn('lms_gamification_points.user_id', $adminUserIds)
             ->groupBy('users.id', 'users.name', 'users.email')
             ->orderByDesc('total_points')
@@ -187,6 +197,7 @@ class GamificationService
         $rows = LmsGamificationPoint::query()
             ->where('lms_event_id', $event->id)
             ->whereIn('user_id', $userIds)
+            ->where('for_city_ranking_only', false)
             ->with(['rule:id,title'])
             ->orderByDesc('created_at')
             ->get(['id', 'user_id', 'points', 'reason', 'lms_gamification_rule_id', 'created_at']);
@@ -215,6 +226,7 @@ class GamificationService
     {
         return (int) LmsGamificationPoint::where('lms_event_id', $event->id)
             ->where('user_id', $user->id)
+            ->where('for_city_ranking_only', false)
             ->sum('points');
     }
 
@@ -229,10 +241,80 @@ class GamificationService
         return DB::table('lms_gamification_points')
             ->select('user_id', DB::raw('SUM(points) as total'))
             ->where('lms_event_id', $event->id)
+            ->where('for_city_ranking_only', false)
+            ->whereNotNull('user_id')
             ->whereNotIn('user_id', $adminUserIds)
             ->groupBy('user_id')
             ->having(DB::raw('SUM(points)'), '>', $userTotal)
             ->count() + 1;
+    }
+
+    /**
+     * Рейтинг городов: сумма личных баллов участников города + бонусы групп (for_city_ranking_only), без влияния на личный зачёт.
+     *
+     * @return \Illuminate\Support\Collection<int, object{city: string, members_count: int, total_points: float|int, avg_points: float}>
+     */
+    public function getCityLeaderboardAggregates(LmsEvent $event)
+    {
+        $adminUserIds = LmsProfile::where('lms_event_id', $event->id)
+            ->where('role', 'admin')
+            ->pluck('user_id');
+
+        $baseRows = DB::table('lms_profiles')
+            ->leftJoin('lms_gamification_points', function ($join) use ($event) {
+                $join->on('lms_profiles.user_id', '=', 'lms_gamification_points.user_id')
+                    ->where('lms_gamification_points.lms_event_id', '=', $event->id);
+            })
+            ->where('lms_profiles.lms_event_id', $event->id)
+            ->where('lms_profiles.role', '!=', 'admin')
+            ->whereNotIn('lms_profiles.user_id', $adminUserIds)
+            ->whereNotNull('lms_profiles.city')
+            ->where('lms_profiles.city', '!=', '')
+            ->select(
+                'lms_profiles.city',
+                DB::raw('COUNT(DISTINCT lms_profiles.user_id) as members_count'),
+                DB::raw('COALESCE(SUM(lms_gamification_points.points) FILTER (WHERE NOT COALESCE(lms_gamification_points.for_city_ranking_only, false)), 0) as member_points')
+            )
+            ->groupBy('lms_profiles.city')
+            ->get()
+            ->keyBy('city');
+
+        $cityBonuses = DB::table('lms_gamification_points')
+            ->where('lms_event_id', $event->id)
+            ->where('for_city_ranking_only', true)
+            ->whereNotNull('city_name')
+            ->where('city_name', '!=', '')
+            ->select('city_name', DB::raw('SUM(points) as bonus'))
+            ->groupBy('city_name')
+            ->pluck('bonus', 'city_name');
+
+        $merged = collect();
+        foreach ($baseRows as $city => $row) {
+            $bonus = (int) ($cityBonuses[$city] ?? 0);
+            $members = (int) $row->members_count;
+            $memberPoints = (int) $row->member_points;
+            $total = $memberPoints + $bonus;
+            $merged->push((object) [
+                'city' => $city,
+                'members_count' => $members,
+                'total_points' => $total,
+                'avg_points' => $members > 0 ? round($total / $members, 1) : 0.0,
+            ]);
+        }
+
+        foreach ($cityBonuses as $cityName => $bonus) {
+            if ($baseRows->has($cityName)) {
+                continue;
+            }
+            $merged->push((object) [
+                'city' => $cityName,
+                'members_count' => 0,
+                'total_points' => (int) $bonus,
+                'avg_points' => 0.0,
+            ]);
+        }
+
+        return $merged->sortByDesc(fn ($r) => [$r->avg_points, $r->total_points])->values();
     }
 
     public static array $defaultActions = [

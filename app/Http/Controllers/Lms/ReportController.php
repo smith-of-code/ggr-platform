@@ -86,7 +86,7 @@ class ReportController extends Controller
             ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = '.$eventId.' GROUP BY user_id) as ce'), 'ce.user_id', '=', 'lms_profiles.user_id')
             ->leftJoin(DB::raw('(SELECT user_id, COUNT(DISTINCT lms_test_id) as cnt, AVG(percentage) as avg_pct FROM lms_test_attempts ta JOIN lms_tests t ON t.id = ta.lms_test_id WHERE t.lms_event_id = '.$eventId.' AND ta.passed = true GROUP BY user_id) as tp'), 'tp.user_id', '=', 'lms_profiles.user_id')
             ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_assignment_submissions asub JOIN lms_assignments a ON a.id = asub.lms_assignment_id WHERE a.lms_event_id = '.$eventId." AND asub.status = 'approved' GROUP BY user_id) as aa"), 'aa.user_id', '=', 'lms_profiles.user_id')
-            ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = '.$eventId.' GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_profiles.user_id')
+            ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = '.$eventId.' AND user_id IS NOT NULL AND COALESCE(for_city_ranking_only, false) = false GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_profiles.user_id')
             ->select(
                 'users.id',
                 'users.name',
@@ -158,7 +158,7 @@ class ReportController extends Controller
                 ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_course_enrollments ce JOIN lms_courses c ON c.id = ce.lms_course_id WHERE c.lms_event_id = '.$eventId." AND ce.status = 'completed' GROUP BY user_id) as cc"), 'cc.user_id', '=', 'lms_profiles.user_id')
                 ->leftJoin(DB::raw('(SELECT user_id, COUNT(DISTINCT lms_test_id) as cnt, AVG(percentage) as avg_pct FROM lms_test_attempts ta JOIN lms_tests t ON t.id = ta.lms_test_id WHERE t.lms_event_id = '.$eventId.' AND ta.passed = true GROUP BY user_id) as tp'), 'tp.user_id', '=', 'lms_profiles.user_id')
                 ->leftJoin(DB::raw('(SELECT user_id, COUNT(*) as cnt FROM lms_assignment_submissions asub JOIN lms_assignments a ON a.id = asub.lms_assignment_id WHERE a.lms_event_id = '.$eventId." AND asub.status = 'approved' GROUP BY user_id) as aa"), 'aa.user_id', '=', 'lms_profiles.user_id')
-                ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = '.$eventId.' GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_profiles.user_id')
+                ->leftJoin(DB::raw('(SELECT user_id, SUM(points) as total FROM lms_gamification_points WHERE lms_event_id = '.$eventId.' AND user_id IS NOT NULL AND COALESCE(for_city_ranking_only, false) = false GROUP BY user_id) as gp'), 'gp.user_id', '=', 'lms_profiles.user_id')
                 ->select('users.name', 'users.email', 'lms_profiles.role',
                     DB::raw('COALESCE(ce.cnt, 0) as ce'), DB::raw('COALESCE(cc.cnt, 0) as cc'),
                     DB::raw('COALESCE(tp.cnt, 0) as tp'), DB::raw('COALESCE(ROUND(tp.avg_pct::numeric, 1), 0) as avg_pct'),

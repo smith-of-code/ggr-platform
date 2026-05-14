@@ -14,8 +14,16 @@ class LmsGroup extends Model
     protected $fillable = [
         'lms_event_id',
         'title',
+        'linked_cities',
         'curator_id',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'linked_cities' => 'array',
+        ];
+    }
 
     /** @return BelongsTo<LmsEvent, $this> */
     public function event(): BelongsTo

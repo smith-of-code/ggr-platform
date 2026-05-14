@@ -199,6 +199,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::delete('enrollments/{enrollment}', [AdminEnrollmentController::class, 'destroy'])->name('enrollments.destroy');
         Route::resource('gamification', AdminGamificationController::class);
         Route::post('gamification/manual-points', [AdminGamificationController::class, 'manualPoints'])->name('gamification.manual-points');
+        Route::post('gamification/manual-group-city-points', [AdminGamificationController::class, 'manualGroupCityPoints'])->name('gamification.manual-group-city-points');
         Route::delete('gamification/points/{point}', [AdminGamificationController::class, 'destroyPoint'])->name('gamification.points.destroy');
         Route::resource('roles', AdminRoleController::class)->except(['show']);
         Route::post('upload/image', [AdminUploadController::class, 'image'])->name('upload.image');
