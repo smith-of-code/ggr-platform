@@ -288,6 +288,7 @@
 | id | bigint PK | |
 | title | string | |
 | slug | string unique | |
+| author | string | nullable, автор рецепта |
 | description | text | |
 | content | text | |
 | image | string | |

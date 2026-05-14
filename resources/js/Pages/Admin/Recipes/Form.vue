@@ -32,6 +32,12 @@
           :error="form.errors.slug"
           @input="onSlugManualInput"
         />
+        <RInput
+          v-model="form.author"
+          label="Автор рецепта"
+          placeholder="Имя автора"
+          :error="form.errors.author"
+        />
 
         <div>
           <label class="mb-2 block text-sm font-semibold text-gray-700">Город</label>
@@ -227,6 +233,7 @@ function normalizeIngredients(raw) {
 const form = useForm({
   title: props.recipe?.title ?? '',
   slug: props.recipe?.slug ?? '',
+  author: props.recipe?.author ?? '',
   city_id: props.recipe?.city_id ?? '',
   cooking_time: props.recipe?.cooking_time ?? '',
   difficulty: props.recipe?.difficulty ?? 'easy',

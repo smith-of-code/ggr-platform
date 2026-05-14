@@ -10,6 +10,7 @@ class Recipe extends Model
     protected $fillable = [
         'title',
         'slug',
+        'author',
         'description',
         'content',
         'image',

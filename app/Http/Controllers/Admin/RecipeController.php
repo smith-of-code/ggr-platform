@@ -96,6 +96,7 @@ class RecipeController extends Controller
         return $request->validate([
             'title' => 'required|string|max:255',
             'slug' => $slugRule,
+            'author' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'content' => 'nullable|string',
             'image' => 'nullable|string|max:2048',
