@@ -32,14 +32,19 @@
 
 ### Логика «Коммерческие туры → Архив коммерческих туров»
 
-- Триггер: `TourCabinetCommerceToursFormLinker::tryLinkAfterSubmission` — после `progress->fill(['current_stage' => 3, ...])->save()`. В этой же транзакции (или сразу после save через сервис): собрать снапшот, создать `tour_cabinet_commerce_archives`-запись (`submitted_at = now()`, `status = 'sent'`), затем **сбросить** прогресс пользователя в начальное состояние:
-  - `current_stage = 1`, `city_id = null`, `tour_id = null`, `lms_form_submission_id = null`, `completed_at = null`.
-  - Альтернатива «удалить запись прогресса целиком» отвергнута — `TourCabinetCommerceProgress::firstOrCreate` в контроллерах уже корректно создаст пустую запись при следующем выборе, но обнуление полей сохраняет `id`/`timestamps` для аудита.
-- Сервис `App\Services\TourCabinetCommerceArchiveService::archiveAndResetProgress(TourCabinetCommerceProgress $progress, User $user, LmsFormSubmission $submission): TourCabinetCommerceArchive` — собирает снапшот (город, тур, ответы LMS-формы — через реюз `LmsFormSubmission::with('responses.field')` и текущий `settings.tour_cabinet.commerce_tours_stage3_*`), создаёт архивную запись и сбрасывает прогресс. Ошибки логируются (`tour_cabinet_commerce_archive_failed`) и не валят `current_stage = 3` (на крайний случай юзер увидит уведомление, но архив будет восстановлен скриптом — out-of-scope для текущей фичи).
-- После архивации редирект `forms.public.submit` ведёт куда обычно (`forms.public.show` → `tour-cabinet.dashboard#tour-cabinet-commerce-tours`). В дашборде:
-  - Flash `success` = «Заявка отправлена и сохранена в Архиве коммерческих туров. Новая заявка может быть создана прямо сейчас.» (через `redirect()->with('success', '…')` в `TourCabinetCommerceToursController` или, при невозможности — через session-flash из linker).
-  - Дополнительный flash-флаг `tour_cabinet_commerce_just_archived = true` — фронт `Dashboard.vue` при наличии флага на `onMounted` через `nextTick` скроллит к `#tour-cabinet-commerce-tours` (`scrollIntoView({behavior: 'smooth', block: 'start'})`) и подсвечивает блок (например, временный класс `ring-2 ring-emerald-200` на 2 секунды через `setTimeout`).
-- Цикл повторяется без ограничений — `tour_cabinet_commerce_progress` снова на `current_stage = 1`, пользователь выбирает новый город/тур.
+Архивация — **двухшаговый** пользовательский флоу, чтобы участник увидел экран этапа 3 («Заявка принята» с настраиваемым subject/body) перед очисткой блока:
+
+1. **Шаг 1 — сабмит анкеты этапа 2.** `TourCabinetCommerceToursFormLinker::tryLinkAfterSubmission` переводит прогресс на `current_stage = 3`, сохраняет `lms_form_submission_id` и `completed_at` (как было до фичи). Архивация на этом шаге **НЕ** запускается. Пользователь после сабмита формы возвращается на `forms.public.show` (как обычно для LMS-форм) и, перейдя на дашборд, видит на вкладке «Этап 3» уведомление «Заявка принята» + кнопку «Сохранить в архив и оформить новую заявку».
+2. **Шаг 2 — пользовательский action.** Кнопка в `CommerceToursStage3Panel.vue` (показывается только при `current_stage >= 3 && !locked`) отправляет POST через Inertia `router.post(route('tour-cabinet.commerce-tours.archive-and-reset'))` → `TourCabinetCommerceToursController::archiveAndReset` → вызывает `TourCabinetCommerceArchiveService::archiveAndResetProgress(progress, user)`. Сервис:
+   - Достаёт LMS-сабмит из `progress->lms_form_submission_id` (nullable — если по каким-то причинам null, payload `lms_form.responses = []`).
+   - Собирает снапшот (город, тур, ответы LMS-формы через `LmsFormSubmission::with('responses.field')`, текущий `settings.tour_cabinet.commerce_tours_stage3_*`).
+   - В одной DB-транзакции создаёт `tour_cabinet_commerce_archives`-запись (`submitted_at = now()`, `status = 'sent'`) и **сбрасывает** прогресс: `current_stage = 1`, `city_id = null`, `tour_id = null`, `lms_form_submission_id = null`, `completed_at = null`.
+   - Альтернатива «удалить запись прогресса целиком» отвергнута — `TourCabinetCommerceProgress::firstOrCreate` в контроллерах уже корректно создаст пустую запись, но обнуление полей сохраняет `id`/`timestamps` для аудита.
+3. **Гарды.** Контроллер отбрасывает запросы с `current_stage < 3` (flash-error «Нельзя сохранить в архив, пока не завершена анкета этапа 2.»). При ошибке сервиса (`archive === null`) — flash-error «Не удалось сохранить заявку в архив. Попробуйте ещё раз или обратитесь в поддержку.»; ошибки логируются (`tour_cabinet_commerce_archive_failed`) и не валят первоначальное `current_stage = 3` (try/catch в сервисе).
+4. **Редирект.** `redirect()->route('tour-cabinet.dashboard')->withFragment('tour-cabinet-commerce-tours')->with('success', '…')->with('tour_cabinet_commerce_just_archived', true)`. На дашборде:
+   - Flash `success` = «Заявка отправлена и сохранена в Архиве коммерческих туров. Новая заявка может быть создана прямо сейчас.».
+   - Флаг `tour_cabinet_commerce_just_archived = true` — должен быть зарегистрирован в `HandleInertiaRequests::share()::flash` (иначе Inertia его не передаст в `$page.props.flash`). Vue-watcher в `Dashboard.vue` через `nextTick` вызывает `scrollAndHighlight('tour-cabinet-commerce-tours')` (амбер-подсветка на 2.2 сек).
+5. **Цикл повторяется** без ограничений — после reset блок снова на этапе 1, пользователь выбирает новый город/тур.
 
 ### Архивные страницы в ЛК
 

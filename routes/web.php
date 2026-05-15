@@ -122,6 +122,7 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
             Route::post('/commerce-tours/complete-stage-1', [TourCabinetCommerceToursController::class, 'completeStage1'])->name('commerce-tours.complete-stage-1');
             Route::get('/commerce-tours/stage-2/form', [TourCabinetCommerceToursController::class, 'startCityForm'])->name('commerce-tours.stage-2.form');
             Route::post('/commerce-tours/reopen-selection', [TourCabinetCommerceToursController::class, 'reopenSelection'])->name('commerce-tours.reopen-selection');
+            Route::post('/commerce-tours/archive-and-reset', [TourCabinetCommerceToursController::class, 'archiveAndReset'])->name('commerce-tours.archive-and-reset');
         });
 
         Route::post('/upload/presigned-url', [PresignedUploadController::class, 'presignedUrl'])->name('upload.presigned-url');

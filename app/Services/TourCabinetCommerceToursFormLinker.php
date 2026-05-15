@@ -11,14 +11,6 @@ use Illuminate\Support\Facades\Auth;
 
 class TourCabinetCommerceToursFormLinker
 {
-    /**
-     * Session-маркер, который выставляется linker'ом после успешной архивации;
-     * `FormPublicController::submit` забирает его через `session()->pull(...)`,
-     * чтобы редиректнуть участника на дашборд (`#tour-cabinet-commerce-tours`)
-     * вместо возврата на страницу формы. См. фичу `tour-cabinet-archives`, Task 5.
-     */
-    public const SESSION_KEY_REDIRECT_TO_DASHBOARD = 'tour_cabinet_commerce_redirect_to_dashboard';
-
     public static function tryLinkAfterSubmission(LmsForm $form, LmsFormSubmission $submission): void
     {
         $user = Auth::user();
@@ -65,31 +57,21 @@ class TourCabinetCommerceToursFormLinker
             return;
         }
 
-        // Архивируем заявку и сбрасываем прогресс — блок «Коммерческие туры» в ЛК
-        // снова становится активным для следующей заявки (см. фичу tour-cabinet-archives).
-        $archiveService = app(TourCabinetCommerceArchiveService::class);
-        $archive = $archiveService->archiveAndResetProgress($progress, $user, $submission);
+        // После сабмита анкеты этапа 2 переводим прогресс на этап 3 (экран «Заявка принята»).
+        // Архивация и сброс прогресса — отдельный пользовательский шаг (`archiveAndReset` в
+        // `TourCabinetCommerceToursController`), который участник запускает кнопкой на этапе 3.
+        // Это сохраняет UX: участник видит уведомление этапа 3 перед началом новой заявки.
+        $payload = [
+            'current_stage' => 3,
+            'lms_form_submission_id' => $submission->id,
+        ];
 
-        session()->forget('tour_cabinet_commerce_form_city_id');
-
-        if ($archive === null) {
-            // Архивация упала (ошибка залогирована внутри сервиса). Прогресс при этом тоже
-            // не обновлён — лучше не «терять» сабмит: фолбэк — старая логика (просто пометить
-            // current_stage=3), чтобы пользователь увидел экран ожидания обратной связи.
-            $payload = [
-                'current_stage' => 3,
-                'lms_form_submission_id' => $submission->id,
-            ];
-            if ($progress->completed_at === null) {
-                $payload['completed_at'] = now();
-            }
-            $progress->fill($payload)->save();
-
-            return;
+        if ($progress->completed_at === null) {
+            $payload['completed_at'] = now();
         }
 
-        session()->flash('success', 'Заявка отправлена и сохранена в Архиве коммерческих туров. Новая заявка может быть создана прямо сейчас.');
-        session()->flash('tour_cabinet_commerce_just_archived', true);
-        session()->put(self::SESSION_KEY_REDIRECT_TO_DASHBOARD, true);
+        $progress->fill($payload)->save();
+
+        session()->forget('tour_cabinet_commerce_form_city_id');
     }
 }

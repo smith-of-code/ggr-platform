@@ -174,15 +174,6 @@ class FormPublicController extends Controller
         TourCabinetContestFormLinker::tryLinkAfterSubmission($form, $submission);
         TourCabinetCommerceToursFormLinker::tryLinkAfterSubmission($form, $submission);
 
-        // Если commerce-linker заархивировал заявку — переадресуем участника на дашборд
-        // (`#tour-cabinet-commerce-tours`), чтобы он увидел очищенный блок и flash-сообщение
-        // «Новая заявка может быть создана прямо сейчас». Фича: tour-cabinet-archives.
-        if (session()->pull(TourCabinetCommerceToursFormLinker::SESSION_KEY_REDIRECT_TO_DASHBOARD, false)) {
-            return redirect()
-                ->route('tour-cabinet.dashboard')
-                ->withFragment('tour-cabinet-commerce-tours');
-        }
-
         if ($request->header('X-Inertia')) {
             return redirect()->back()->with('success', 'Ответ отправлен');
         }
