@@ -37,6 +37,20 @@ class GroupController extends Controller
         ]);
     }
 
+    private function cityOptionsForEvent(LmsEvent $event): array
+    {
+        return LmsProfile::query()
+            ->where('lms_event_id', $event->id)
+            ->whereNotNull('city')
+            ->where('city', '!=', '')
+            ->distinct()
+            ->orderBy('city')
+            ->pluck('city')
+            ->map(fn (string $city) => ['value' => $city, 'label' => $city])
+            ->values()
+            ->all();
+    }
+
     public function create(LmsEvent $event): Response
     {
         $profile = $this->currentProfile($event);
@@ -48,6 +62,7 @@ class GroupController extends Controller
             'event' => $event->only(['id', 'slug', 'title']),
             'group' => null,
             'users' => $users,
+            'cityOptions' => $this->cityOptionsForEvent($event),
             'canSetCurator' => $canSetCurator,
             'fixedCuratorName' => auth()->user() ? auth()->user()->name : null,
         ]);
@@ -63,14 +78,23 @@ class GroupController extends Controller
             'curator_id' => ['nullable', 'exists:users,id'],
             'user_ids' => ['nullable', 'array'],
             'user_ids.*' => ['exists:users,id'],
+            'linked_cities' => ['nullable', 'array'],
+            'linked_cities.*' => ['string', 'max:255'],
         ]);
+
+        $linkedCities = $this->normalizeLinkedCities($validated['linked_cities'] ?? []);
 
         $validated['lms_event_id'] = $event->id;
         if (! $canSetCurator) {
             $validated['curator_id'] = auth()->id();
         }
 
-        $group = LmsGroup::create($validated);
+        $group = LmsGroup::create([
+            'lms_event_id' => $event->id,
+            'title' => $validated['title'],
+            'curator_id' => $validated['curator_id'] ?? null,
+            'linked_cities' => $linkedCities,
+        ]);
 
         if ($request->filled('user_ids')) {
             $group->members()->sync($request->user_ids);
@@ -94,6 +118,7 @@ class GroupController extends Controller
             'event' => $event->only(['id', 'slug', 'title']),
             'group' => $group,
             'users' => $users,
+            'cityOptions' => $this->cityOptionsForEvent($event),
             'canSetCurator' => $canSetCurator,
             'fixedCuratorName' => auth()->user() ? auth()->user()->name : null,
         ]);
@@ -111,13 +136,19 @@ class GroupController extends Controller
             'curator_id' => ['nullable', 'exists:users,id'],
             'user_ids' => ['nullable', 'array'],
             'user_ids.*' => ['exists:users,id'],
+            'linked_cities' => ['nullable', 'array'],
+            'linked_cities.*' => ['string', 'max:255'],
         ]);
 
         if (! $canSetCurator) {
             $validated['curator_id'] = auth()->id();
         }
 
-        $group->update($validated);
+        $group->update([
+            'title' => $validated['title'],
+            'curator_id' => $validated['curator_id'] ?? null,
+            'linked_cities' => $this->normalizeLinkedCities($validated['linked_cities'] ?? []),
+        ]);
 
         $group->members()->sync($request->user_ids ?? []);
 
@@ -160,5 +191,22 @@ class GroupController extends Controller
             ->where('user_id', auth()->id())
             ->with('lmsRole:id,name,slug')
             ->first();
+    }
+
+    /**
+     * @param  array<int, string>  $cities
+     * @return list<string>
+     */
+    private function normalizeLinkedCities(array $cities): array
+    {
+        $out = [];
+        foreach ($cities as $c) {
+            $t = is_string($c) ? trim($c) : '';
+            if ($t !== '' && ! in_array($t, $out, true)) {
+                $out[] = $t;
+            }
+        }
+
+        return $out;
     }
 }

@@ -38,6 +38,17 @@
           placeholder="Выберите участников"
         />
 
+        <MultiSelect
+          v-if="cityOptions.length"
+          v-model="form.linked_cities"
+          :options="cityOptions"
+          value-key="value"
+          label-key="label"
+          label="Города для рейтинга"
+          placeholder="Привяжите города (для бонусов группы в геймификации)"
+        />
+        <p v-else class="text-xs text-gray-400">В событии пока нет городов в профилях участников — сначала заполните поле «Город» у участников.</p>
+
         <div class="flex gap-3 border-t border-gray-200 pt-6">
           <RButton type="submit" :disabled="form.processing" :loading="form.processing" variant="primary">
             Сохранить
@@ -60,6 +71,7 @@ const props = defineProps({
   event: Object,
   group: Object,
   users: Array,
+  cityOptions: { type: Array, default: () => [] },
   canSetCurator: { type: Boolean, default: true },
   fixedCuratorName: { type: String, default: '' },
 })
@@ -74,6 +86,7 @@ const form = useForm({
   title: props.group?.title ?? '',
   curator_id: props.group?.curator_id ?? null,
   user_ids: props.group?.members?.map(m => m.id) ?? [],
+  linked_cities: Array.isArray(props.group?.linked_cities) ? [...props.group.linked_cities] : [],
 })
 
 function submit() {

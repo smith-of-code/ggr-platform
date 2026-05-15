@@ -89,12 +89,14 @@ class DashboardController extends Controller
 
         $recentPoints = LmsGamificationPoint::where('lms_event_id', $event->id)
             ->where('user_id', $user->id)
+            ->where('for_city_ranking_only', false)
             ->orderByDesc('created_at')
             ->limit(10)
             ->get(['id', 'points', 'reason', 'created_at']);
 
         $totalPoints = LmsGamificationPoint::where('lms_event_id', $event->id)
             ->where('user_id', $user->id)
+            ->where('for_city_ranking_only', false)
             ->sum('points');
 
         $userRank = app(GamificationService::class)->getUserRank($event, $user);
@@ -102,26 +104,9 @@ class DashboardController extends Controller
         $cityRank = null;
         $cityName = $profile ? $profile->city : null;
         if ($cityName) {
-            $cityAvgs = DB::table('lms_profiles')
-                ->leftJoin('lms_gamification_points', function ($join) use ($event) {
-                    $join->on('lms_profiles.user_id', '=', 'lms_gamification_points.user_id')
-                         ->where('lms_gamification_points.lms_event_id', '=', $event->id);
-                })
-                ->where('lms_profiles.lms_event_id', $event->id)
-                ->where('lms_profiles.role', '!=', 'admin')
-                ->whereNotNull('lms_profiles.city')
-                ->where('lms_profiles.city', '!=', '')
-                ->select(
-                    'lms_profiles.city',
-                    DB::raw('ROUND(COALESCE(SUM(lms_gamification_points.points), 0)::numeric / GREATEST(COUNT(DISTINCT lms_profiles.user_id), 1), 1) as avg_points')
-                )
-                ->groupBy('lms_profiles.city')
-                ->orderByDesc('avg_points')
-                ->pluck('avg_points', 'city');
-
             $rank = 1;
-            foreach ($cityAvgs as $city => $avg) {
-                if ($city === $cityName) {
+            foreach (app(GamificationService::class)->getCityLeaderboardAggregates($event) as $row) {
+                if ($row->city === $cityName) {
                     $cityRank = $rank;
                     break;
                 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lms\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGamificationPoint;
+use App\Models\Lms\LmsGroup;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsGamificationRule;
 use App\Services\GamificationService;
@@ -72,6 +73,10 @@ class GamificationController extends Controller
             ->unique()
             ->values();
 
+        $gamificationGroups = $event->groups()
+            ->orderBy('title')
+            ->get(['id', 'title', 'linked_cities']);
+
         return Inertia::render('Lms/Admin/Gamification/Index', [
             'event' => $event->only(['id', 'slug', 'title']),
             'rules' => $rules,
@@ -87,6 +92,7 @@ class GamificationController extends Controller
                 'date_to' => (string) $request->input('history_date_to', ''),
             ],
             'historyGroupOptions' => $historyGroupOptions,
+            'gamificationGroups' => $gamificationGroups,
             'canManageRules' => $canManageRules,
             'canManagePointAdjustments' => $canManagePointAdjustments,
         ]);
@@ -161,6 +167,7 @@ class GamificationController extends Controller
             LmsGamificationPoint::create([
                 'lms_event_id' => $event->id,
                 'user_id' => $userId,
+                'for_city_ranking_only' => false,
                 'lms_gamification_rule_id' => null,
                 'points' => $validated['points'],
                 'reason' => $validated['reason'],
@@ -168,6 +175,75 @@ class GamificationController extends Controller
         }
 
         return redirect()->back()->with('success', 'Баллы начислены');
+    }
+
+    public function manualGroupCityPoints(Request $request, LmsEvent $event): RedirectResponse
+    {
+        $profile = $event->profiles()
+            ->where('user_id', auth()->id())
+            ->with('lmsRole:id,name,slug')
+            ->first();
+
+        if (! $profile || ! $this->canManagePoints($profile)) {
+            abort(403, 'Недостаточно прав для начисления баллов.');
+        }
+
+        $validated = $request->validate([
+            'lms_group_id' => ['required', 'exists:lms_groups,id'],
+            'points' => ['required', 'integer', 'min:1', 'max:100000'],
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+
+        $group = LmsGroup::query()
+            ->where('lms_event_id', $event->id)
+            ->where('id', $validated['lms_group_id'])
+            ->firstOrFail();
+
+        $cities = array_values(array_filter($group->linked_cities ?? [], fn ($c) => is_string($c) && trim($c) !== ''));
+        if ($cities === []) {
+            return redirect()->back()->withErrors([
+                'lms_group_id' => 'У группы не указаны города. Откройте группу в разделе «Группы» и привяжите города.',
+            ]);
+        }
+
+        $total = (int) $validated['points'];
+        $split = $this->splitIntegerAcrossBuckets($total, count($cities));
+        $batchBase = (int) ((microtime(true) * 10000) % 100000000);
+
+        foreach ($cities as $i => $city) {
+            LmsGamificationPoint::create([
+                'lms_event_id' => $event->id,
+                'user_id' => null,
+                'for_city_ranking_only' => true,
+                'city_name' => $city,
+                'lms_group_id' => $group->id,
+                'lms_gamification_rule_id' => null,
+                'source_type' => GamificationService::SOURCE_GROUP_CITY_BONUS,
+                'source_id' => $batchBase + $i,
+                'points' => $split[$i],
+                'reason' => $validated['reason'].' (группа «'.$group->title.'», город «'.$city.'»)',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Баллы группы учтены в рейтинге городов (личный зачёт участников не изменён).');
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function splitIntegerAcrossBuckets(int $total, int $bucketCount): array
+    {
+        if ($bucketCount <= 0) {
+            return [];
+        }
+        $base = intdiv($total, $bucketCount);
+        $remainder = $total % $bucketCount;
+        $out = array_fill(0, $bucketCount, $base);
+        for ($i = 0; $i < $remainder; $i++) {
+            $out[$i]++;
+        }
+
+        return $out;
     }
 
     public function destroyPoint(LmsEvent $event, LmsGamificationPoint $point): RedirectResponse
@@ -251,6 +327,7 @@ class GamificationController extends Controller
             ->with([
                 'user:id,name,email',
                 'rule:id,title',
+                'group:id,title',
             ])
             ->orderByDesc('created_at')
             ->orderByDesc('id');
@@ -259,27 +336,36 @@ class GamificationController extends Controller
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search) {
                 $builder->where('reason', 'ilike', '%' . $search . '%')
+                    ->orWhere('city_name', 'ilike', '%' . $search . '%')
                     ->orWhereHas('user', function (Builder $userQuery) use ($search) {
                         $userQuery->where('name', 'ilike', '%' . $search . '%')
                             ->orWhere('email', 'ilike', '%' . $search . '%');
                     })
                     ->orWhereHas('rule', function (Builder $ruleQuery) use ($search) {
                         $ruleQuery->where('title', 'ilike', '%' . $search . '%');
+                    })
+                    ->orWhereHas('group', function (Builder $groupQuery) use ($search) {
+                        $groupQuery->where('title', 'ilike', '%' . $search . '%');
                     });
             });
         }
 
         $type = (string) $request->input('history_type', '');
         if ($type === 'manual') {
-            $query->whereNull('lms_gamification_rule_id')
-                ->whereNull('source_type')
-                ->whereNull('source_id');
+            $query->where(function (Builder $q) {
+                $q->where(function (Builder $inner) {
+                    $inner->whereNull('lms_gamification_rule_id')
+                        ->whereNull('source_type')
+                        ->whereNull('source_id');
+                })->orWhere('for_city_ranking_only', true);
+            });
         } elseif ($type === 'auto') {
             $query->where(function (Builder $q) {
                 $q->whereNotNull('lms_gamification_rule_id')
                     ->orWhere(function (Builder $q2) {
                         $q2->whereNotNull('source_type')
-                            ->whereNotNull('source_id');
+                            ->whereNotNull('source_id')
+                            ->where('for_city_ranking_only', false);
                     });
             });
         }
@@ -292,7 +378,23 @@ class GamificationController extends Controller
                 ->where('lms_groups.title', $groupTitle)
                 ->pluck('lms_group_members.user_id');
 
-            $query->whereIn('user_id', $memberIds->all());
+            $groupIds = DB::table('lms_groups')
+                ->where('lms_event_id', $event->id)
+                ->where('title', $groupTitle)
+                ->pluck('id');
+
+            $query->where(function (Builder $builder) use ($memberIds, $groupIds) {
+                if ($memberIds->isNotEmpty() && $groupIds->isNotEmpty()) {
+                    $builder->where(function (Builder $b) use ($memberIds, $groupIds) {
+                        $b->whereIn('user_id', $memberIds->all())
+                            ->orWhereIn('lms_group_id', $groupIds->all());
+                    });
+                } elseif ($memberIds->isNotEmpty()) {
+                    $builder->whereIn('user_id', $memberIds->all());
+                } elseif ($groupIds->isNotEmpty()) {
+                    $builder->whereIn('lms_group_id', $groupIds->all());
+                }
+            });
         }
 
         $dateFrom = trim((string) $request->input('history_date_from', ''));

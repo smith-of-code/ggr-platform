@@ -204,11 +204,17 @@
             <tr v-for="item in historyRows" :key="item.id" class="transition hover:bg-gray-50">
               <td class="whitespace-nowrap px-4 py-2.5 text-sm text-gray-500">{{ formatPointDate(item.created_at) }}</td>
               <td class="px-4 py-2.5">
-                <p class="text-sm font-medium text-gray-900">{{ item.user?.name || 'Пользователь удалён' }}</p>
-                <p class="text-xs text-gray-400">{{ item.user?.email || '—' }}</p>
+                <template v-if="item.for_city_ranking_only">
+                  <p class="text-sm font-medium text-gray-900">Город: {{ item.city_name || '—' }}</p>
+                  <p class="text-xs text-gray-400">{{ item.group?.title ? `Группа: ${item.group.title}` : '—' }}</p>
+                </template>
+                <template v-else>
+                  <p class="text-sm font-medium text-gray-900">{{ item.user?.name || 'Пользователь удалён' }}</p>
+                  <p class="text-xs text-gray-400">{{ item.user?.email || '—' }}</p>
+                </template>
               </td>
               <td class="px-4 py-2.5 text-sm text-gray-500">
-                {{ item.lms_gamification_rule_id ? 'Автоматическое' : 'Ручное' }}
+                {{ item.for_city_ranking_only ? 'Город (группа)' : (item.lms_gamification_rule_id ? 'Автоматическое' : 'Ручное') }}
               </td>
               <td class="px-4 py-2.5">
                 <p class="text-sm text-gray-900">{{ item.reason || '—' }}</p>
@@ -254,6 +260,45 @@
     <!-- Manual points dialog -->
     <RModal v-model="showManualDialog" title="Начислить баллы" size="lg" @update:model-value="onDialogClose">
       <form @submit.prevent="submitManual" class="space-y-5">
+        <div class="flex rounded-xl bg-gray-100 p-1">
+          <button
+            type="button"
+            class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition"
+            :class="manualMode === 'users' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            @click="manualMode = 'users'"
+          >
+            Участникам
+          </button>
+          <button
+            type="button"
+            class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition"
+            :class="manualMode === 'group_cities' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            @click="manualMode = 'group_cities'"
+          >
+            Городам (через группу)
+          </button>
+        </div>
+
+        <template v-if="manualMode === 'group_cities'">
+          <p class="text-xs text-gray-500">
+            Баллы делятся поровну между городами, привязанными к группе. Учитываются только в рейтинге городов, личные баллы участников не меняются.
+          </p>
+          <SearchSelect
+            v-model="groupCityForm.lms_group_id"
+            :options="groupOptionsForBonus"
+            value-key="id"
+            label-key="label"
+            label="Группа"
+            placeholder="Выберите группу с привязанными городами"
+            :searchable="true"
+          />
+          <div class="grid grid-cols-2 gap-4">
+            <RInput v-model.number="groupCityForm.points" label="Баллы (всего)" type="number" required />
+          </div>
+          <RInput v-model="groupCityForm.reason" label="Причина" required placeholder="Например: победа в командном конкурсе" />
+        </template>
+
+        <template v-else>
         <!-- Search & filter -->
         <div>
           <label class="mb-2 block text-sm font-medium text-gray-700">Участники</label>
@@ -342,15 +387,25 @@
           <div />
         </div>
         <RInput v-model="manualForm.reason" label="Причина" required placeholder="За что начислены баллы" />
+        </template>
       </form>
       <template #footer>
         <RButton variant="outline" @click="showManualDialog = false">Отмена</RButton>
         <RButton
+          v-if="manualMode === 'users'"
           variant="primary"
           :disabled="manualForm.user_ids.length === 0 || !manualForm.points || !manualForm.reason?.trim()"
           @click="submitManual"
         >
           Начислить ({{ manualForm.user_ids.length }})
+        </RButton>
+        <RButton
+          v-else
+          variant="primary"
+          :disabled="!groupCityForm.lms_group_id || !groupCityForm.points || !groupCityForm.reason?.trim()"
+          @click="submitManual"
+        >
+          Начислить группе
         </RButton>
       </template>
     </RModal>
@@ -361,6 +416,7 @@
 import { Link, router } from '@inertiajs/vue3'
 import { ref, reactive, computed } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import SearchSelect from '@/Components/SearchSelect.vue'
 
 const props = defineProps({
   event: Object,
@@ -371,6 +427,7 @@ const props = defineProps({
   pointsHistory: { type: Object, default: () => ({ data: [], links: [] }) },
   historyFilters: { type: Object, default: () => ({ search: '', type: '', group: '', date_from: '', date_to: '' }) },
   historyGroupOptions: { type: Array, default: () => [] },
+  gamificationGroups: { type: Array, default: () => [] },
   canManageRules: { type: Boolean, default: true },
   canManagePointAdjustments: { type: Boolean, default: false },
 })
@@ -378,12 +435,14 @@ const props = defineProps({
 const leaderboard = computed(() => props.leaderboard || [])
 
 const showManualDialog = ref(false)
+const manualMode = ref('users')
 const expandedUserId = ref(null)
 const searchQuery = ref('')
 const roleFilter = ref('')
 const cityFilter = ref('')
 const groupFilter = ref('')
 const manualForm = reactive({ user_ids: [], points: 0, reason: '' })
+const groupCityForm = reactive({ lms_group_id: null, points: 0, reason: '' })
 const historyForm = reactive({
   search: props.historyFilters?.search || '',
   type: props.historyFilters?.type || '',
@@ -435,6 +494,15 @@ const availableGroups = computed(() => {
   const groups = new Set((props.users || []).flatMap(u => Array.isArray(u.groups) ? u.groups : []).filter(Boolean))
   return [...groups].sort((a, b) => a.localeCompare(b, 'ru'))
 })
+
+const groupOptionsForBonus = computed(() =>
+  (props.gamificationGroups || [])
+    .filter(g => Array.isArray(g.linked_cities) && g.linked_cities.length > 0)
+    .map(g => ({
+      id: g.id,
+      label: `${g.title} (${g.linked_cities.length} ${g.linked_cities.length === 1 ? 'город' : 'города'})`,
+    }))
+)
 
 const filteredUsers = computed(() => {
   let list = props.users || []
@@ -495,6 +563,10 @@ function resetForm() {
   manualForm.user_ids = []
   manualForm.points = 0
   manualForm.reason = ''
+  groupCityForm.lms_group_id = null
+  groupCityForm.points = 0
+  groupCityForm.reason = ''
+  manualMode.value = 'users'
   searchQuery.value = ''
   roleFilter.value = ''
   cityFilter.value = ''
@@ -534,6 +606,15 @@ function goToHistoryPage(url) {
 }
 
 function submitManual() {
+  if (manualMode.value === 'group_cities') {
+    router.post(route('lms.admin.gamification.manual-group-city-points', props.event.slug), groupCityForm, {
+      onSuccess: () => {
+        showManualDialog.value = false
+        resetForm()
+      },
+    })
+    return
+  }
   router.post(route('lms.admin.gamification.manual-points', props.event.slug), manualForm, {
     onSuccess: () => {
       showManualDialog.value = false

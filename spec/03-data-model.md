@@ -546,6 +546,7 @@
 | lms_event_id | FK → lms_events | cascade |
 | title | string | |
 | curator_id | FK → users | nullable, nullOnDelete |
+| linked_cities | json | nullable, cast: array — названия городов для геймификации (бонус в рейтинг города без личных баллов) |
 | timestamps | | |
 
 **Связи**: `event()` BelongsTo LmsEvent, `curator()` BelongsTo User, `members()` BelongsToMany User через lms_group_members

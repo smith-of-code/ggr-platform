@@ -17,6 +17,7 @@
           <tr class="border-b border-gray-200 bg-gray-50">
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Название</th>
             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Куратор</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Города</th>
             <th class="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Участников</th>
             <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Действия</th>
           </tr>
@@ -25,6 +26,10 @@
           <tr v-for="g in groups.data" :key="g.id" class="transition hover:bg-gray-50">
             <td class="px-5 py-3.5 text-sm font-medium text-gray-900">{{ g.title }}</td>
             <td class="px-5 py-3.5 text-sm text-gray-500">{{ g.curator?.name ?? '—' }}</td>
+            <td class="px-5 py-3.5 text-sm text-gray-500">
+              <span v-if="(g.linked_cities || []).length" class="line-clamp-2">{{ (g.linked_cities || []).join(', ') }}</span>
+              <span v-else>—</span>
+            </td>
             <td class="px-5 py-3.5 text-center text-sm text-gray-500">{{ g.members_count ?? 0 }}</td>
             <td class="px-5 py-3.5 text-right">
               <div class="flex items-center justify-end gap-2">
