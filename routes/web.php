@@ -127,6 +127,18 @@ Route::prefix('tour-cabinet')->name('tour-cabinet.')->group(function () {
         Route::post('/upload/presigned-url', [PresignedUploadController::class, 'presignedUrl'])->name('upload.presigned-url');
         Route::post('/upload/confirm', [PresignedUploadController::class, 'confirm'])->name('upload.confirm');
 
+        // Архивы заявок (read-only, без гейта `profile-complete`). См. фичу tour-cabinet-archives.
+        Route::get('/archives/contest', [\App\Http\Controllers\TourCabinet\Archives\ContestArchiveController::class, 'index'])
+            ->name('archives.contest.index');
+        Route::get('/archives/contest/{archive}', [\App\Http\Controllers\TourCabinet\Archives\ContestArchiveController::class, 'show'])
+            ->whereNumber('archive')
+            ->name('archives.contest.show');
+        Route::get('/archives/commerce', [\App\Http\Controllers\TourCabinet\Archives\CommerceArchiveController::class, 'index'])
+            ->name('archives.commerce.index');
+        Route::get('/archives/commerce/{archive}', [\App\Http\Controllers\TourCabinet\Archives\CommerceArchiveController::class, 'show'])
+            ->whereNumber('archive')
+            ->name('archives.commerce.show');
+
         Route::get('/support', [TourCabinetSupportController::class, 'index'])->name('support.index');
         Route::get('/support/create', [TourCabinetSupportController::class, 'create'])->name('support.create');
         Route::post('/support', [TourCabinetSupportController::class, 'store'])

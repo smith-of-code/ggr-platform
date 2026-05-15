@@ -13,6 +13,16 @@
       <LifebuoyIcon :class="iconClass(isSupportSection)" aria-hidden="true" />
       <span class="whitespace-nowrap">Поддержка</span>
     </Link>
+    <span class="shrink-0 select-none px-1.5 text-slate-300 sm:px-2" aria-hidden="true">|</span>
+    <Link :href="route('tour-cabinet.archives.contest.index')" :class="itemClass(isContestArchiveSection)">
+      <ArchiveBoxIcon :class="iconClass(isContestArchiveSection)" aria-hidden="true" />
+      <span class="whitespace-nowrap">Архив конкурсы</span>
+    </Link>
+    <span class="shrink-0 select-none px-1.5 text-slate-300 sm:px-2" aria-hidden="true">|</span>
+    <Link :href="route('tour-cabinet.archives.commerce.index')" :class="itemClass(isCommerceArchiveSection)">
+      <ArchiveBoxIcon :class="iconClass(isCommerceArchiveSection)" aria-hidden="true" />
+      <span class="whitespace-nowrap">Архив коммерческих туров</span>
+    </Link>
     <template v-if="lmsEntryUrl">
       <span class="shrink-0 select-none px-1.5 text-slate-300 sm:px-2" aria-hidden="true">|</span>
       <a :href="lmsEntryUrl" :class="itemClass(false)">
@@ -27,6 +37,7 @@
 <script setup>
 import {
   AcademicCapIcon,
+  ArchiveBoxIcon,
   ArrowTopRightOnSquareIcon,
   HomeIcon,
   LifebuoyIcon,
@@ -41,6 +52,16 @@ const lmsEntryUrl = computed(() => page.props.lmsEntryUrl || null)
 const isSupportSection = computed(() => {
   const u = page.url || ''
   return u.startsWith('/tour-cabinet/support')
+})
+
+const isContestArchiveSection = computed(() => {
+  const u = page.url || ''
+  return u.startsWith('/tour-cabinet/archives/contest')
+})
+
+const isCommerceArchiveSection = computed(() => {
+  const u = page.url || ''
+  return u.startsWith('/tour-cabinet/archives/commerce')
 })
 
 function itemClass(active) {

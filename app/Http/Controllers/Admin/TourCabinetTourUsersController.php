@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\City;
+use App\Models\TourCabinetCommerceArchive;
+use App\Models\TourCabinetContestArchive;
 use App\Models\TourCabinetDocument;
 use App\Models\User;
 use App\Services\Admin\TourCabinetClientContestDataService;
@@ -113,7 +115,66 @@ class TourCabinetTourUsersController extends Controller
             'user' => $this->userPayload($user),
             'documentRows' => $this->documentRowsForUser($user),
             'contest' => $this->contestData->contestPayloadForUser($user),
+            'contestArchives' => $this->contestArchivesForUser($user),
+            'commerceArchives' => $this->commerceArchivesForUser($user),
         ]);
+    }
+
+    /**
+     * Архивные конкурсные заявки участника (read-only снапшоты). Подгружаются для админ-карточки
+     * клиента; даже после `admin.settings.contest-reset` архив остаётся видим (см. фичу
+     * tour-cabinet-archives, требование «не пропадают заявки из админки»).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function contestArchivesForUser(User $user): array
+    {
+        if (! Schema::hasTable('tour_cabinet_contest_archives')) {
+            return [];
+        }
+
+        return TourCabinetContestArchive::query()
+            ->where('user_id', $user->id)
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (TourCabinetContestArchive $a) => [
+                'id' => $a->id,
+                'submitted_at' => $a->submitted_at?->toIso8601String(),
+                'status' => $a->status,
+                'direction_label' => data_get($a->payload, 'progress.direction_label'),
+                'payload' => $a->payload,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Архивные коммерческие заявки участника (множественные, иммутабельные).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function commerceArchivesForUser(User $user): array
+    {
+        if (! Schema::hasTable('tour_cabinet_commerce_archives')) {
+            return [];
+        }
+
+        return TourCabinetCommerceArchive::query()
+            ->where('user_id', $user->id)
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (TourCabinetCommerceArchive $a) => [
+                'id' => $a->id,
+                'submitted_at' => $a->submitted_at?->toIso8601String(),
+                'status' => $a->status,
+                'city_name' => data_get($a->payload, 'city.name'),
+                'tour_title' => data_get($a->payload, 'tour.title'),
+                'payload' => $a->payload,
+            ])
+            ->values()
+            ->all();
     }
 
     public function downloadDocument(User $user, TourCabinetDocument $document): StreamedResponse
