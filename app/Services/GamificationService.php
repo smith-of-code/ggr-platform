@@ -250,9 +250,9 @@ class GamificationService
     }
 
     /**
-     * Рейтинг городов: сумма личных баллов участников города + бонусы групп (for_city_ranking_only), без влияния на личный зачёт.
+     * Рейтинг городов: сумма личных баллов активных участников системных городских групп + бонусы for_city_ranking_only.
      *
-     * @return \Illuminate\Support\Collection<int, object{city: string, members_count: int, total_points: float|int, avg_points: float}>
+     * @return \Illuminate\Support\Collection<int, object{city: string, members_count: int, total_points: int}>
      */
     public function getCityLeaderboardAggregates(LmsEvent $event)
     {
@@ -260,22 +260,28 @@ class GamificationService
             ->where('role', 'admin')
             ->pluck('user_id');
 
-        $baseRows = DB::table('lms_profiles')
-            ->leftJoin('lms_gamification_points', function ($join) use ($event) {
-                $join->on('lms_profiles.user_id', '=', 'lms_gamification_points.user_id')
-                    ->where('lms_gamification_points.lms_event_id', '=', $event->id);
+        $memberAgg = DB::table('lms_groups')
+            ->join('cities', 'cities.id', '=', 'lms_groups.city_id')
+            ->leftJoin('lms_group_members', function ($join) use ($adminUserIds) {
+                $join->on('lms_group_members.lms_group_id', '=', 'lms_groups.id')
+                    ->where('lms_group_members.is_gamification_inactive', false);
+                if ($adminUserIds->isNotEmpty()) {
+                    $join->whereNotIn('lms_group_members.user_id', $adminUserIds);
+                }
             })
-            ->where('lms_profiles.lms_event_id', $event->id)
-            ->where('lms_profiles.role', '!=', 'admin')
-            ->whereNotIn('lms_profiles.user_id', $adminUserIds)
-            ->whereNotNull('lms_profiles.city')
-            ->where('lms_profiles.city', '!=', '')
+            ->leftJoin('lms_gamification_points', function ($join) use ($event) {
+                $join->on('lms_gamification_points.user_id', '=', 'lms_group_members.user_id')
+                    ->where('lms_gamification_points.lms_event_id', '=', $event->id)
+                    ->where('lms_gamification_points.for_city_ranking_only', '=', false);
+            })
+            ->where('lms_groups.lms_event_id', $event->id)
+            ->where('lms_groups.is_city_group', true)
             ->select(
-                'lms_profiles.city',
-                DB::raw('COUNT(DISTINCT lms_profiles.user_id) as members_count'),
-                DB::raw('COALESCE(SUM(lms_gamification_points.points) FILTER (WHERE NOT COALESCE(lms_gamification_points.for_city_ranking_only, false)), 0) as member_points')
+                'cities.name as city',
+                DB::raw('COUNT(DISTINCT lms_group_members.user_id) as members_count'),
+                DB::raw('COALESCE(SUM(lms_gamification_points.points), 0) as member_points')
             )
-            ->groupBy('lms_profiles.city')
+            ->groupBy('cities.name')
             ->get()
             ->keyBy('city');
 
@@ -289,32 +295,27 @@ class GamificationService
             ->pluck('bonus', 'city_name');
 
         $merged = collect();
-        foreach ($baseRows as $city => $row) {
+        foreach ($memberAgg as $city => $row) {
             $bonus = (int) ($cityBonuses[$city] ?? 0);
-            $members = (int) $row->members_count;
-            $memberPoints = (int) $row->member_points;
-            $total = $memberPoints + $bonus;
             $merged->push((object) [
                 'city' => $city,
-                'members_count' => $members,
-                'total_points' => $total,
-                'avg_points' => $members > 0 ? round($total / $members, 1) : 0.0,
+                'members_count' => (int) $row->members_count,
+                'total_points' => (int) $row->member_points + $bonus,
             ]);
         }
 
         foreach ($cityBonuses as $cityName => $bonus) {
-            if ($baseRows->has($cityName)) {
+            if ($memberAgg->has($cityName)) {
                 continue;
             }
             $merged->push((object) [
                 'city' => $cityName,
                 'members_count' => 0,
                 'total_points' => (int) $bonus,
-                'avg_points' => 0.0,
             ]);
         }
 
-        return $merged->sortByDesc(fn ($r) => [$r->avg_points, $r->total_points])->values();
+        return $merged->sortByDesc('total_points')->values();
     }
 
     public static array $defaultActions = [

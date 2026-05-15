@@ -22,7 +22,7 @@ class DashboardController extends Controller
         $user = auth()->user();
         $profile = LmsProfile::where('lms_event_id', $event->id)
             ->where('user_id', $user->id)
-            ->with('lmsRole:id,name,slug')
+            ->with(['lmsRole:id,name,slug', 'cityRelation:id,name'])
             ->first();
 
         if ($profile && in_array($profile->status, ['imported', 'invited'])) {
@@ -102,7 +102,7 @@ class DashboardController extends Controller
         $userRank = app(GamificationService::class)->getUserRank($event, $user);
 
         $cityRank = null;
-        $cityName = $profile ? $profile->city : null;
+        $cityName = $profile ? ($profile->cityRelation?->name ?? $profile->city) : null;
         if ($cityName) {
             $rank = 1;
             foreach (app(GamificationService::class)->getCityLeaderboardAggregates($event) as $row) {

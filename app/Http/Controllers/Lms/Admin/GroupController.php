@@ -7,6 +7,7 @@ use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsGroup;
 use App\Models\Lms\LmsProfile;
 use App\Models\User;
+use App\Services\LmsCityGroupSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,14 +15,21 @@ use Inertia\Response;
 
 class GroupController extends Controller
 {
+    public function __construct(
+        private readonly LmsCityGroupSyncService $cityGroupSync,
+    ) {}
+
     public function index(LmsEvent $event): Response
     {
+        $this->cityGroupSync->syncForEvent($event);
+
         $profile = $this->currentProfile($event);
         $canManageAllGroups = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
 
         $groupsQuery = $event->groups()
             ->withCount('members')
-            ->with('curator:id,name')
+            ->with(['curator:id,name', 'city:id,name'])
+            ->orderByDesc('is_city_group')
             ->orderBy('title');
 
         if (! $canManageAllGroups) {
@@ -84,7 +92,6 @@ class GroupController extends Controller
 
         $linkedCities = $this->normalizeLinkedCities($validated['linked_cities'] ?? []);
 
-        $validated['lms_event_id'] = $event->id;
         if (! $canSetCurator) {
             $validated['curator_id'] = auth()->id();
         }
@@ -94,6 +101,7 @@ class GroupController extends Controller
             'title' => $validated['title'],
             'curator_id' => $validated['curator_id'] ?? null,
             'linked_cities' => $linkedCities,
+            'is_city_group' => false,
         ]);
 
         if ($request->filled('user_ids')) {
@@ -110,7 +118,16 @@ class GroupController extends Controller
         $canSetCurator = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
         $this->ensureCanManageGroup($group, $canSetCurator);
 
-        $group->load('members:id,name,email');
+        if ($group->is_city_group) {
+            $this->cityGroupSync->syncForEvent($event);
+            $group->refresh()->load([
+                'members:id,name,email',
+                'city:id,name',
+            ]);
+        } else {
+            $group->load('members:id,name,email');
+        }
+
         $profileUsers = $event->profiles()->with('user:id,name,email')->get()->pluck('user')->filter()->unique('id');
         $users = $profileUsers->isNotEmpty() ? $profileUsers->values() : User::orderBy('name')->get(['id', 'name', 'email']);
 
@@ -130,6 +147,25 @@ class GroupController extends Controller
         $profile = $this->currentProfile($event);
         $canSetCurator = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
         $this->ensureCanManageGroup($group, $canSetCurator);
+
+        if ($group->is_city_group) {
+            $validated = $request->validate([
+                'member_inactive' => ['nullable', 'array'],
+                'member_inactive.*' => ['boolean'],
+            ]);
+
+            if (! empty($validated['member_inactive'])) {
+                foreach ($validated['member_inactive'] as $userId => $inactive) {
+                    $this->cityGroupSync->setMemberGamificationInactive(
+                        $group,
+                        (int) $userId,
+                        (bool) $inactive,
+                    );
+                }
+            }
+
+            return redirect()->route('lms.admin.groups.index', $event)->with('success', 'Группа обновлена');
+        }
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -161,6 +197,11 @@ class GroupController extends Controller
         $profile = $this->currentProfile($event);
         $canSetCurator = $profile ? LmsProfile::isBackofficeAdminProfile($profile) : false;
         $this->ensureCanManageGroup($group, $canSetCurator);
+
+        if ($group->is_city_group) {
+            return redirect()->route('lms.admin.groups.index', $event)
+                ->with('error', 'Системную городскую группу нельзя удалить');
+        }
 
         $group->delete();
 

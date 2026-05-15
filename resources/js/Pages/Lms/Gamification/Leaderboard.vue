@@ -156,13 +156,13 @@
             <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-blue-500/5" />
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Ваш город</p>
             <p class="mt-1 truncate text-lg font-bold text-gray-900">{{ userCityName }}</p>
-            <p class="mt-1 text-sm text-gray-500">Средний балл: <span class="font-bold text-blue-600">{{ userCityAvg ?? 0 }}</span></p>
+            <p class="mt-1 text-sm text-gray-500">Баллы города: <span class="font-bold text-blue-600">{{ userCityTotal ?? 0 }}</span></p>
           </RCard>
           <RCard v-if="cityLeaderboard[0]" class="relative overflow-hidden">
             <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-green-500/5" />
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Лидер</p>
             <p class="mt-1 truncate text-lg font-bold text-gray-900">{{ cityLeaderboard[0].city }}</p>
-            <p class="mt-1 text-2xl font-black text-green-600">{{ cityLeaderboard[0].avg_points }} ср. балл</p>
+            <p class="mt-1 text-2xl font-black text-green-600">{{ cityLeaderboard[0].total_points }} баллов</p>
           </RCard>
         </div>
 
@@ -178,8 +178,8 @@
                 <p class="text-sm text-gray-500">{{ cityLeaderboard[0].members_count }} участников</p>
               </div>
               <div class="text-right">
-                <p class="text-3xl font-black text-amber-500">{{ cityLeaderboard[0].avg_points }}</p>
-                <p class="text-xs text-gray-400">ср. балл</p>
+                <p class="text-3xl font-black text-amber-500">{{ cityLeaderboard[0].total_points }}</p>
+                <p class="text-xs text-gray-400">баллов</p>
               </div>
             </div>
           </RCard>
@@ -208,17 +208,17 @@
                     {{ entry.city }}
                     <span v-if="entry.city === userCityName" class="ml-1 text-xs text-rosatom-500">(ваш)</span>
                   </p>
-                  <p class="text-xs text-gray-400">{{ entry.members_count }} участников · {{ entry.total_points }} баллов всего</p>
+                  <p class="text-xs text-gray-400">{{ entry.members_count }} активных участников</p>
                 </div>
                 <div class="text-right">
-                  <p class="text-lg font-bold text-gray-900">{{ entry.avg_points }}</p>
-                  <p class="text-[10px] text-gray-400">ср. балл</p>
+                  <p class="text-lg font-bold text-gray-900">{{ entry.total_points }}</p>
+                  <p class="text-[10px] text-gray-400">баллов</p>
                 </div>
                 <div class="hidden w-32 sm:block">
                   <div class="h-2 overflow-hidden rounded-full bg-gray-100">
                     <div
                       class="h-full rounded-full bg-blue-400 transition-all duration-500"
-                      :style="{ width: `${maxCityAvg ? (entry.avg_points / maxCityAvg) * 100 : 0}%` }"
+                      :style="{ width: `${maxCityTotal ? (entry.total_points / maxCityTotal) * 100 : 0}%` }"
                     />
                   </div>
                 </div>
@@ -249,7 +249,7 @@ const props = defineProps({
   userPoints: { type: Number, default: null },
   userCityRank: { type: Number, default: null },
   userCityName: { type: String, default: null },
-  userCityAvg: { type: Number, default: null },
+  userCityTotal: { type: Number, default: null },
 })
 
 const tabs = [
@@ -268,9 +268,9 @@ const maxUserPoints = computed(() => {
   return props.userLeaderboard[0]?.total_points || 1
 })
 
-const maxCityAvg = computed(() => {
+const maxCityTotal = computed(() => {
   if (!props.cityLeaderboard.length) return 0
-  return props.cityLeaderboard[0]?.avg_points || 1
+  return props.cityLeaderboard[0]?.total_points || 1
 })
 
 const podiumOrder = [
