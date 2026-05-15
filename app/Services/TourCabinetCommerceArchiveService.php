@@ -30,8 +30,11 @@ class TourCabinetCommerceArchiveService
     public function archiveAndResetProgress(
         TourCabinetCommerceProgress $progress,
         User $user,
-        LmsFormSubmission $submission,
     ): ?TourCabinetCommerceArchive {
+        $submission = $progress->lms_form_submission_id !== null
+            ? LmsFormSubmission::query()->find($progress->lms_form_submission_id)
+            : null;
+
         try {
             $payload = $this->buildSnapshotPayload($progress, $submission);
 
@@ -40,7 +43,7 @@ class TourCabinetCommerceArchiveService
                     'user_id' => $progress->user_id,
                     'city_id' => $progress->city_id,
                     'tour_id' => $progress->tour_id,
-                    'lms_form_submission_id' => $submission->id,
+                    'lms_form_submission_id' => $submission?->id,
                     'submitted_at' => now(),
                     'status' => TourCabinetCommerceArchive::STATUS_SENT,
                     'payload' => $payload,
@@ -60,7 +63,7 @@ class TourCabinetCommerceArchiveService
             Log::warning('tour_cabinet_commerce_archive_failed: '.$e->getMessage(), [
                 'user_id' => $progress->user_id,
                 'progress_id' => $progress->id,
-                'submission_id' => $submission->id,
+                'submission_id' => $submission?->id,
             ]);
 
             return null;
@@ -72,21 +75,23 @@ class TourCabinetCommerceArchiveService
      */
     private function buildSnapshotPayload(
         TourCabinetCommerceProgress $progress,
-        LmsFormSubmission $submission,
+        ?LmsFormSubmission $submission,
     ): array {
         $city = $progress->city_id ? City::query()->find($progress->city_id) : null;
         $tour = $progress->tour_id ? Tour::query()->find($progress->tour_id) : null;
 
-        $submission->loadMissing(['form:id,slug,title', 'responses.field:id,label,key']);
-        $form = $submission->relationLoaded('form') ? $submission->form : null;
-
+        $form = null;
         $responses = [];
-        foreach ($submission->responses as $r) {
-            $responses[] = [
-                'label' => $r->field?->label ?? $r->field?->key ?? 'Поле',
-                'key' => $r->field?->key,
-                'value' => $r->value,
-            ];
+        if ($submission !== null) {
+            $submission->loadMissing(['form:id,slug,title', 'responses.field:id,label,key']);
+            $form = $submission->relationLoaded('form') ? $submission->form : null;
+            foreach ($submission->responses as $r) {
+                $responses[] = [
+                    'label' => $r->field?->label ?? $r->field?->key ?? 'Поле',
+                    'key' => $r->field?->key,
+                    'value' => $r->value,
+                ];
+            }
         }
 
         $stage3 = $this->settings->getTourCabinetCommerceToursStage3Notification();
@@ -97,7 +102,7 @@ class TourCabinetCommerceArchiveService
             'lms_form' => [
                 'slug' => $form instanceof LmsForm ? $form->slug : null,
                 'title' => $form instanceof LmsForm ? $form->title : null,
-                'submission_id' => $submission->id,
+                'submission_id' => $submission?->id,
                 'responses' => $responses,
             ],
             'stage3_notification' => [

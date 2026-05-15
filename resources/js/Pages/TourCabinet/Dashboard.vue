@@ -729,6 +729,7 @@
                   :subject="commerceTours.stage3?.subject || ''"
                   :body="commerceTours.stage3?.body || ''"
                   :locked="commerceToursStage3Locked"
+                  :current-stage="Number(commerceTours.currentStage ?? 1)"
                 />
               </div>
             </div>

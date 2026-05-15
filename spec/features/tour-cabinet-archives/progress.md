@@ -4,6 +4,33 @@
 
 ## Completed tasks
 
+### Hotfix — двухшаговая архивация коммерческих туров (после Task 10)
+
+**Проблема (репорт KatriPur, 15 мая 2026):** «Заполнила анкету доп. данных в этапе 2, нажала отправить — Коммерческие туры обнулились. На 2-м этапе получается». То есть архивация триггерилась сразу после сабмита анкеты этапа 2, минуя экран этапа 3 («Заявка принята»). Это противоречит существующему UX коммерческих туров (3 шага: выбор → анкета → уведомление) и пользователь не успевал увидеть уведомление этапа 3.
+
+**Решение:** разделить на два пользовательских шага:
+1. Сабмит анкеты этапа 2 → `tryLinkAfterSubmission` ставит `current_stage = 3` (как было до фичи), архивация **не** запускается.
+2. На экране этапа 3 пользователь видит кнопку «Сохранить в архив и оформить новую заявку» → POST `tour-cabinet.commerce-tours.archive-and-reset` → архивация + сброс прогресса + flash + автоскролл.
+
+Files:
+- `app/Services/TourCabinetCommerceToursFormLinker.php` (откатили авто-архивацию: убрали константу `SESSION_KEY_REDIRECT_TO_DASHBOARD`, восстановили старое `current_stage=3` save)
+- `app/Http/Controllers/Lms/FormPublicController.php` (убрали блок с `session()->pull(...)` — больше не нужен)
+- `app/Services/TourCabinetCommerceArchiveService.php` (изменили сигнатуру: `archiveAndResetProgress(progress, user)` без `submission` — сервис сам достаёт через `progress->lms_form_submission_id`)
+- `app/Http/Controllers/TourCabinetCommerceToursController.php` (новый метод `archiveAndReset` с гардом `current_stage >= 3`, flash + `tour_cabinet_commerce_just_archived`)
+- `routes/web.php` (новый POST `/commerce-tours/archive-and-reset` под `tour-cabinet.profile-complete` группой)
+- `app/Http/Middleware/HandleInertiaRequests.php` (добавлен ключ `tour_cabinet_commerce_just_archived` в shared `flash` — иначе Vue watcher его не получит)
+- `resources/js/Pages/TourCabinet/CommerceTours/CommerceToursStage3Panel.vue` (новый prop `current-stage`, кнопка «Сохранить в архив и оформить новую заявку» с Inertia `router.post`, видна при `current_stage >= 3 && !locked`)
+- `resources/js/Pages/TourCabinet/Dashboard.vue` (прокинут `:current-stage="Number(commerceTours.currentStage ?? 1)"` в `CommerceToursStage3Panel`)
+- `spec/features/tour-cabinet-archives/spec.md` (раздел «Логика → Архив коммерческих туров» переписан под двухшаговый флоу)
+
+Verify:
+- ReadLints чисто.
+- `php artisan route:list --name=commerce-tours` (Docker) — новый маршрут `tour-cabinet.commerce-tours.archive-and-reset` зарегистрирован.
+- tinker-smoke (transaction-rollback) полного флоу с реальным `TourCabinetCommerceCityForm` + LMS submission:
+  - Шаг 1 (linker): `current_stage=3`, данные сохранены, `archive count = 0` (правильно — не архивируем на сабмите).
+  - Шаг 2 (controller→service): архив создан, прогресс сброшен (`current_stage=1`, все nullable = null), payload содержит город/тур/ответы.
+- `npm run build` (Docker) — `built in 6.79s`, без ошибок.
+
 ### Task 10 — Архивы в админ-карточке клиента + sync spec'ов
 
 Files:

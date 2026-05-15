@@ -6,6 +6,7 @@ use App\Models\City;
 use App\Models\Tour;
 use App\Models\TourCabinetCommerceCityForm;
 use App\Models\TourCabinetCommerceProgress;
+use App\Services\TourCabinetCommerceArchiveService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -124,6 +125,35 @@ class TourCabinetCommerceToursController extends Controller
         session(['tour_cabinet_commerce_form_city_id' => (int) $progress->city_id]);
 
         return redirect()->route('forms.public.show', $cityForm->lms_form_slug);
+    }
+
+    /**
+     * Этап 3 → действие участника «Сохранить в архив и оформить новую заявку».
+     * Доступно только при `current_stage >= 3` (анкета этапа 2 уже отправлена).
+     * Архивирует текущую заявку (через `TourCabinetCommerceArchiveService`) и обнуляет
+     * прогресс — блок снова доступен для новой заявки. См. фичу tour-cabinet-archives.
+     */
+    public function archiveAndReset(
+        Request $request,
+        TourCabinetCommerceArchiveService $archiveService,
+    ): RedirectResponse {
+        $progress = $this->progressForUser($request);
+
+        if ((int) $progress->current_stage < 3) {
+            return $this->redirectToBlock()
+                ->with('error', 'Нельзя сохранить в архив, пока не завершена анкета этапа 2.');
+        }
+
+        $archive = $archiveService->archiveAndResetProgress($progress, $request->user());
+
+        if ($archive === null) {
+            return $this->redirectToBlock()
+                ->with('error', 'Не удалось сохранить заявку в архив. Попробуйте ещё раз или обратитесь в поддержку.');
+        }
+
+        return $this->redirectToBlock()
+            ->with('success', 'Заявка отправлена и сохранена в Архиве коммерческих туров. Новая заявка может быть создана прямо сейчас.')
+            ->with('tour_cabinet_commerce_just_archived', true);
     }
 
     public function reopenSelection(Request $request): RedirectResponse
