@@ -5,54 +5,80 @@
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
         Назад к группам
       </Link>
-      <h1 class="text-2xl font-bold text-gray-900">{{ group ? 'Редактировать группу' : 'Новая группа' }}</h1>
+      <h1 class="text-2xl font-bold text-gray-900">
+        {{ isCityGroup ? `Городская группа: ${group?.city?.name ?? group?.title}` : (group ? 'Редактировать группу' : 'Новая группа') }}
+      </h1>
+      <p v-if="isCityGroup" class="mt-1 text-sm text-gray-500">
+        Состав группы формируется автоматически по городу участника в профиле. Можно исключить участника из городской геймификации.
+      </p>
     </div>
 
     <RCard>
-      <form @submit.prevent="submit" class="max-w-2xl space-y-6 p-8">
-        <RInput
-          v-model="form.title"
-          label="Название *"
-          required
-          :error="form.errors.title"
-        />
+      <form class="max-w-2xl space-y-6 p-8" @submit.prevent="submit">
+        <template v-if="isCityGroup">
+          <div class="rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm text-blue-900">
+            Системная группа города <strong>{{ group?.city?.name ?? group?.title }}</strong>. Участники подтягиваются по полю «Город» (city_id) в профиле LMS.
+          </div>
 
-        <template v-if="canSetCurator">
-          <SearchSelect
-            v-model="form.curator_id"
-            :options="userOptions"
-            label="Куратор"
-            placeholder="Выберите куратора"
-            search-placeholder="Поиск по имени или email..."
-          />
+          <div v-if="cityMembers.length" class="space-y-2">
+            <label class="text-sm font-semibold text-gray-700">Участники</label>
+            <div class="divide-y divide-gray-100 rounded-xl border border-gray-200">
+              <div
+                v-for="member in cityMembers"
+                :key="member.id"
+                class="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+              >
+                <div>
+                  <p class="text-sm font-medium text-gray-900">{{ member.name }}</p>
+                  <p class="text-xs text-gray-500">{{ member.email }}</p>
+                </div>
+                <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+                  <input
+                    v-model="memberInactive[member.id]"
+                    type="checkbox"
+                    class="rounded border-gray-300 text-rosatom-600 focus:ring-rosatom-500"
+                  />
+                  Неактивен в геймификации
+                </label>
+              </div>
+            </div>
+          </div>
+          <p v-else class="text-sm text-gray-500">В группе пока нет участников с заполненным городом в профиле.</p>
         </template>
-        <div v-else class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-          <p class="text-xs uppercase tracking-wide text-gray-500">Куратор</p>
-          <p class="mt-1 text-sm font-medium text-gray-900">{{ fixedCuratorName || 'Текущий пользователь' }}</p>
-        </div>
 
-        <MultiSelect
-          v-model="form.user_ids"
-          :options="userOptions"
-          label="Участники"
-          placeholder="Выберите участников"
-        />
+        <template v-else>
+          <RInput v-model="form.title" label="Название *" required :error="form.errors.title" />
 
-        <MultiSelect
-          v-if="cityOptions.length"
-          v-model="form.linked_cities"
-          :options="cityOptions"
-          value-key="value"
-          label-key="label"
-          label="Города для рейтинга"
-          placeholder="Привяжите города (для бонусов группы в геймификации)"
-        />
-        <p v-else class="text-xs text-gray-400">В событии пока нет городов в профилях участников — сначала заполните поле «Город» у участников.</p>
+          <template v-if="canSetCurator">
+            <SearchSelect
+              v-model="form.curator_id"
+              :options="userOptions"
+              label="Куратор"
+              placeholder="Выберите куратора"
+              search-placeholder="Поиск по имени или email..."
+            />
+          </template>
+          <div v-else class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Куратор</p>
+            <p class="mt-1 text-sm font-medium text-gray-900">{{ fixedCuratorName || 'Текущий пользователь' }}</p>
+          </div>
+
+          <MultiSelect v-model="form.user_ids" :options="userOptions" label="Участники" placeholder="Выберите участников" />
+
+          <MultiSelect
+            v-if="cityOptions.length"
+            v-model="form.linked_cities"
+            :options="cityOptions"
+            value-key="value"
+            label-key="label"
+            label="Города для рейтинга"
+            placeholder="Привяжите города (для бонусов группы в геймификации)"
+          />
+          <p v-else class="text-xs text-gray-400">В событии пока нет городов в профилях участников.</p>
+        </template>
 
         <div class="flex gap-3 border-t border-gray-200 pt-6">
-          <RButton type="submit" :disabled="form.processing" :loading="form.processing" variant="primary">
-            Сохранить
-          </RButton>
+          <RButton type="submit" :disabled="form.processing" :loading="form.processing" variant="primary">Сохранить</RButton>
           <Link :href="route('lms.admin.groups.index', event.slug)" class="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">Отмена</Link>
         </div>
       </form>
@@ -61,7 +87,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import SearchSelect from '@/Components/SearchSelect.vue'
@@ -76,10 +102,13 @@ const props = defineProps({
   fixedCuratorName: { type: String, default: '' },
 })
 
+const isCityGroup = computed(() => Boolean(props.group?.is_city_group))
 const canSetCurator = computed(() => props.canSetCurator)
+const userOptions = computed(() => (props.users ?? []).map(u => ({ id: u.id, name: `${u.name} (${u.email})` })))
+const cityMembers = computed(() => props.group?.members ?? [])
 
-const userOptions = computed(() =>
-  (props.users ?? []).map(u => ({ id: u.id, name: `${u.name} (${u.email})` }))
+const memberInactive = reactive(
+  Object.fromEntries((props.group?.members ?? []).map(m => [m.id, Boolean(m.pivot?.is_gamification_inactive)]))
 )
 
 const form = useForm({
@@ -87,9 +116,15 @@ const form = useForm({
   curator_id: props.group?.curator_id ?? null,
   user_ids: props.group?.members?.map(m => m.id) ?? [],
   linked_cities: Array.isArray(props.group?.linked_cities) ? [...props.group.linked_cities] : [],
+  member_inactive: {},
 })
 
 function submit() {
+  if (isCityGroup.value) {
+    form.member_inactive = { ...memberInactive }
+    form.put(route('lms.admin.groups.update', [props.event.slug, props.group.id]))
+    return
+  }
   if (props.group) {
     form.put(route('lms.admin.groups.update', [props.event.slug, props.group.id]))
   } else {

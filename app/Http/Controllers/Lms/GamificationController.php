@@ -46,7 +46,7 @@ class GamificationController extends Controller
         $user = auth()->user();
         $profile = \App\Models\Lms\LmsProfile::where('lms_event_id', $event->id)
             ->where('user_id', $user->id)
-            ->with('lmsRole:id,name,slug')
+            ->with(['lmsRole:id,name,slug', 'cityRelation:id,name'])
             ->first();
         $userLeaderboardData = $userLeaderboard->values()->all();
         $userRank = null;
@@ -62,14 +62,14 @@ class GamificationController extends Controller
             $userPointsTotal = $gamification->getUserPoints($event, $user);
         }
 
-        $userCityName = $profile?->city;
+        $userCityName = $profile?->cityRelation?->name ?? $profile?->city;
         $userCityRank = null;
-        $userCityAvg = null;
+        $userCityTotal = null;
         if ($userCityName) {
             foreach ($cityLeaderboard as $i => $row) {
                 if ($row->city === $userCityName) {
                     $userCityRank = $i + 1;
-                    $userCityAvg = $row->avg_points;
+                    $userCityTotal = $row->total_points;
                     break;
                 }
             }
@@ -85,7 +85,7 @@ class GamificationController extends Controller
             'userPoints' => $userPointsTotal,
             'userCityRank' => $userCityRank,
             'userCityName' => $userCityName,
-            'userCityAvg' => $userCityAvg,
+            'userCityTotal' => $userCityTotal,
         ]);
     }
 

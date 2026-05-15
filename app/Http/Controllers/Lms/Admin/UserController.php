@@ -16,6 +16,7 @@ use App\Models\Lms\LmsProfileDocument;
 use App\Models\Lms\LmsProfileDocumentReplaceRequest;
 use App\Models\Lms\LmsRole;
 use App\Models\User;
+use App\Services\LmsCityGroupSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -599,6 +600,8 @@ class UserController extends Controller
 
             $imported++;
         }
+
+        app(LmsCityGroupSyncService::class)->syncForEvent($event);
 
         $msg = "Импортировано: {$imported} пользователей.";
         if (count($errors) > 0) {

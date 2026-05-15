@@ -122,7 +122,9 @@
 - Подсветка текущего пользователя
 
 ### Города (если включено в UI события)
-- Агрегат по городу: сумма личных баллов участников города + сумма бонусов с `for_city_ranking_only` и соответствующим `city_name` (`getCityLeaderboardAggregates`)
+- Агрегат по городу через системные группы `lms_groups` с `is_city_group = true` и `city_id`: сумма личных баллов **активных** участников группы (`lms_group_members.is_gamification_inactive = false`) + бонусы с `for_city_ranking_only` по `city_name` (`getCityLeaderboardAggregates`)
+- Рейтинг и отображение по **итоговым** баллам города (`total_points`), не по среднему
+- Участники без `lms_profiles.city_id` не попадают в городские группы автоматически
 
 ### Группы
 - Отдельная вкладка «Группы»

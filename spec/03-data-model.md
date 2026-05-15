@@ -546,10 +546,21 @@
 | lms_event_id | FK → lms_events | cascade |
 | title | string | |
 | curator_id | FK → users | nullable, nullOnDelete |
+| city_id | FK → cities | nullable; для системной городской группы |
+| is_city_group | boolean | default false; системная группа города (одна на пару event+city) |
 | linked_cities | json | nullable, cast: array — названия городов для геймификации (бонус в рейтинг города без личных баллов) |
 | timestamps | | |
 
-**Связи**: `event()` BelongsTo LmsEvent, `curator()` BelongsTo User, `members()` BelongsToMany User через lms_group_members
+**Связи**: `event()` BelongsTo LmsEvent, `curator()` BelongsTo User, `city()` BelongsTo City, `members()` BelongsToMany User через `lms_group_members` (pivot: `is_gamification_inactive`)
+
+### lms_group_members (pivot)
+
+| Поле | Тип | Примечание |
+|------|-----|------------|
+| lms_group_id | FK → lms_groups | |
+| user_id | FK → users | |
+| is_gamification_inactive | boolean | default false; только для городских групп: участник не учитывается в городской геймификации |
+| timestamps | | |
 
 ---
 
