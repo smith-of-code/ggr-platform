@@ -16,10 +16,6 @@
     <RCard>
       <form class="max-w-2xl space-y-6 p-8" @submit.prevent="submit">
         <template v-if="isCityGroup">
-          <div class="rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm text-blue-900">
-            Системная группа города <strong>{{ group?.city?.name ?? group?.title }}</strong>. Участники подтягиваются по полю «Город» (city_id) в профиле LMS.
-          </div>
-
           <div v-if="cityMembers.length" class="space-y-2">
             <label class="text-sm font-semibold text-gray-700">Участники</label>
             <div class="divide-y divide-gray-100 rounded-xl border border-gray-200">

@@ -6,7 +6,9 @@
       <div class="flex items-end justify-between">
         <div>
           <h1 class="font-brand text-2xl font-bold text-gray-900">Рейтинг</h1>
-          <p class="mt-1 text-sm text-gray-500">Топ участников и городов по баллам</p>
+          <p class="mt-1 text-sm text-gray-500">
+            {{ activeTab === 'cities' ? 'Города: средний балл = (сумма баллов участников + бонусы города) / число участников' : 'Топ участников и городов по баллам' }}
+          </p>
         </div>
         <div class="flex rounded-xl bg-gray-100 p-1">
           <button
@@ -156,13 +158,22 @@
             <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-blue-500/5" />
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Ваш город</p>
             <p class="mt-1 truncate text-lg font-bold text-gray-900">{{ userCityName }}</p>
-            <p class="mt-1 text-sm text-gray-500">Баллы города: <span class="font-bold text-blue-600">{{ userCityTotal ?? 0 }}</span></p>
+            <p class="mt-1 text-sm text-gray-500">
+              Средний балл города: <span class="font-bold text-blue-600">{{ formatCityAvg(userCityTotal) }}</span>
+            </p>
+            <p v-if="userCityRow" class="mt-1 text-xs text-gray-400">
+              сумма {{ userCityRow.total_sum ?? '—' }} / {{ userCityRow.members_count }} уч.
+            </p>
           </RCard>
           <RCard v-if="cityLeaderboard[0]" class="relative overflow-hidden">
             <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-green-500/5" />
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Лидер</p>
             <p class="mt-1 truncate text-lg font-bold text-gray-900">{{ cityLeaderboard[0].city }}</p>
-            <p class="mt-1 text-2xl font-black text-green-600">{{ cityLeaderboard[0].total_points }} баллов</p>
+            <p class="mt-1 text-2xl font-black text-green-600">{{ formatCityAvg(cityAvg(cityLeaderboard[0])) }}</p>
+            <p class="mt-1 text-xs text-gray-400">средний балл</p>
+            <p v-if="cityLeaderboard[0]" class="mt-0.5 text-xs text-gray-400">
+              сумма {{ cityLeaderboard[0].total_sum ?? '—' }} / {{ cityLeaderboard[0].members_count }} уч.
+            </p>
           </RCard>
         </div>
 
@@ -178,14 +189,23 @@
                 <p class="text-sm text-gray-500">{{ cityLeaderboard[0].members_count }} участников</p>
               </div>
               <div class="text-right">
-                <p class="text-3xl font-black text-amber-500">{{ cityLeaderboard[0].total_points }}</p>
-                <p class="text-xs text-gray-400">баллов</p>
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Средний балл</p>
+                <p class="text-3xl font-black text-amber-500">{{ formatCityAvg(cityAvg(cityLeaderboard[0])) }}</p>
+                <p class="text-xs text-gray-500">
+                  сумма {{ cityLeaderboard[0].total_sum ?? '—' }} / {{ cityLeaderboard[0].members_count }} уч.
+                </p>
               </div>
             </div>
           </RCard>
 
           <!-- Rest of cities -->
           <RCard flush>
+            <div class="hidden border-b border-gray-100 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400 sm:flex sm:items-center sm:gap-4">
+              <span class="w-10 shrink-0" />
+              <span class="min-w-0 flex-1">Город</span>
+              <span class="w-24 shrink-0 text-right">Средний балл</span>
+              <span class="hidden w-32 sm:block" />
+            </div>
             <div class="divide-y divide-gray-100">
               <div
                 v-for="(entry, idx) in cityLeaderboard.slice(1)"
@@ -208,17 +228,20 @@
                     {{ entry.city }}
                     <span v-if="entry.city === userCityName" class="ml-1 text-xs text-rosatom-500">(ваш)</span>
                   </p>
-                  <p class="text-xs text-gray-400">{{ entry.members_count }} активных участников</p>
+                  <p class="text-xs text-gray-400">
+                    {{ entry.members_count }} активных участников
+                    <span v-if="entry.total_sum != null" class="text-gray-300"> · сумма {{ entry.total_sum }}</span>
+                  </p>
                 </div>
                 <div class="text-right">
-                  <p class="text-lg font-bold text-gray-900">{{ entry.total_points }}</p>
-                  <p class="text-[10px] text-gray-400">баллов</p>
+                  <p class="text-lg font-bold text-gray-900">{{ formatCityAvg(cityAvg(entry)) }}</p>
+                  <p class="text-[10px] text-gray-400">средний</p>
                 </div>
                 <div class="hidden w-32 sm:block">
                   <div class="h-2 overflow-hidden rounded-full bg-gray-100">
                     <div
                       class="h-full rounded-full bg-blue-400 transition-all duration-500"
-                      :style="{ width: `${maxCityTotal ? (entry.total_points / maxCityTotal) * 100 : 0}%` }"
+                      :style="{ width: `${maxCityAvg ? (cityAvg(entry) / maxCityAvg) * 100 : 0}%` }"
                     />
                   </div>
                 </div>
@@ -268,10 +291,30 @@ const maxUserPoints = computed(() => {
   return props.userLeaderboard[0]?.total_points || 1
 })
 
-const maxCityTotal = computed(() => {
+const maxCityAvg = computed(() => {
   if (!props.cityLeaderboard.length) return 0
-  return props.cityLeaderboard[0]?.total_points || 1
+  const v = cityAvg(props.cityLeaderboard[0])
+  return v > 0 ? v : 1
 })
+
+/** Средний балл по городу (avg_points); fallback для старых ответов API с total_points как суммой — не используем как среднее */
+function cityAvg(entry) {
+  if (!entry) return 0
+  const raw = entry.avg_points
+  if (raw != null && raw !== '') return Number(raw)
+  return 0
+}
+
+const userCityRow = computed(() => {
+  if (!props.userCityName || !props.cityLeaderboard?.length) return null
+  return props.cityLeaderboard.find(r => r.city === props.userCityName) ?? null
+})
+
+function formatCityAvg(value) {
+  if (value == null || Number.isNaN(Number(value))) return '—'
+  const n = Number(value)
+  return n.toFixed(1)
+}
 
 const podiumOrder = [
   { rank: 2 },

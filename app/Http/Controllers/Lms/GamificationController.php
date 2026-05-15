@@ -69,7 +69,7 @@ class GamificationController extends Controller
             foreach ($cityLeaderboard as $i => $row) {
                 if ($row->city === $userCityName) {
                     $userCityRank = $i + 1;
-                    $userCityTotal = $row->total_points;
+                    $userCityTotal = $row->avg_points;
                     break;
                 }
             }

@@ -250,9 +250,10 @@ class GamificationService
     }
 
     /**
-     * Рейтинг городов: сумма личных баллов активных участников системных городских групп + бонусы for_city_ranking_only.
+     * Рейтинг городов: средний балл = (сумма личных баллов активных участников системных городских групп
+     * + бонусы for_city_ranking_only по городу) / число активных участников. При нуле участников среднее = 0.
      *
-     * @return \Illuminate\Support\Collection<int, object{city: string, members_count: int, total_points: int}>
+     * @return \Illuminate\Support\Collection<int, object{city: string, members_count: int, total_sum: int, avg_points: float}>
      */
     public function getCityLeaderboardAggregates(LmsEvent $event)
     {
@@ -297,10 +298,14 @@ class GamificationService
         $merged = collect();
         foreach ($memberAgg as $city => $row) {
             $bonus = (int) ($cityBonuses[$city] ?? 0);
+            $members = (int) $row->members_count;
+            $sum = (int) $row->member_points + $bonus;
+            $avg = $members > 0 ? $sum / $members : 0.0;
             $merged->push((object) [
                 'city' => $city,
-                'members_count' => (int) $row->members_count,
-                'total_points' => (int) $row->member_points + $bonus,
+                'members_count' => $members,
+                'total_sum' => $sum,
+                'avg_points' => $avg,
             ]);
         }
 
@@ -311,11 +316,12 @@ class GamificationService
             $merged->push((object) [
                 'city' => $cityName,
                 'members_count' => 0,
-                'total_points' => (int) $bonus,
+                'total_sum' => (int) $bonus,
+                'avg_points' => 0.0,
             ]);
         }
 
-        return $merged->sortByDesc('total_points')->values();
+        return $merged->sortByDesc('avg_points')->values();
     }
 
     public static array $defaultActions = [

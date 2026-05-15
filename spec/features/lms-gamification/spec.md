@@ -13,7 +13,7 @@
 - `App\Models\Lms\LmsGamificationPoint`
 
 ### Сервисы
-- `App\Services\GamificationService` — `awardPoints`, `awardFixedPoints` (идемпотентно по `user_id` + `source_type` + `source_id` в рамках события), `getLeaderboard`, `getAdminLeaderboardRows`, `getRecentPointsByUserIds`, `getUserPoints`, `getUserRank`, `getCityLeaderboardAggregates` (личные баллы + бонусы «только город» по `city_name`)
+- `App\Services\GamificationService` — `awardPoints`, `awardFixedPoints` (идемпотентно по `user_id` + `source_type` + `source_id` в рамках события), `getLeaderboard`, `getAdminLeaderboardRows`, `getRecentPointsByUserIds`, `getUserPoints`, `getUserRank`, `getCityLeaderboardAggregates` (средний балл города: личные баллы активных участников + бонусы «только город» по `city_name`, деление на число участников)
 
 ### Observer
 - `App\Observers\LmsProgressObserver` — автоматические триггеры через Eloquent events
@@ -123,7 +123,7 @@
 
 ### Города (если включено в UI события)
 - Агрегат по городу через системные группы `lms_groups` с `is_city_group = true` и `city_id`: сумма личных баллов **активных** участников группы (`lms_group_members.is_gamification_inactive = false`) + бонусы с `for_city_ranking_only` по `city_name` (`getCityLeaderboardAggregates`)
-- Рейтинг и отображение по **итоговым** баллам города (`total_points`), не по среднему
+- Рейтинг и отображение по **среднему баллу** города (`avg_points`): (сумма баллов участников + сумма бонусов города) / число активных участников; в payload также `total_sum` (числитель) для подсказки в UI; при нуле участников среднее = 0
 - Участники без `lms_profiles.city_id` не попадают в городские группы автоматически
 
 ### Группы
