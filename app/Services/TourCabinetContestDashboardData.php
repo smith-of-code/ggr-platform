@@ -145,6 +145,8 @@ final class TourCabinetContestDashboardData
                 'stage2_submitted_at' => $progress->stage2_submitted_at?->toIso8601String(),
                 'max_contest_stages' => $maxContestStages,
                 'stage2_locked' => $this->isStage2LockedForParticipant($progress, $maxContestStages),
+                'archived' => $progress->archived_at !== null,
+                'archived_at' => $progress->archived_at?->toIso8601String(),
             ],
             'contestStage1' => [
                 'step' => $step,

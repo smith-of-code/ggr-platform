@@ -105,6 +105,18 @@ class User extends Authenticatable
         return $this->hasMany(TourCabinetContestCitySubmission::class);
     }
 
+    /** @return HasMany<TourCabinetContestArchive, $this> */
+    public function tourCabinetContestArchives(): HasMany
+    {
+        return $this->hasMany(TourCabinetContestArchive::class);
+    }
+
+    /** @return HasMany<TourCabinetCommerceArchive, $this> */
+    public function tourCabinetCommerceArchives(): HasMany
+    {
+        return $this->hasMany(TourCabinetCommerceArchive::class);
+    }
+
     /** @return HasMany<LmsProfile, $this> */
     public function lmsProfiles(): HasMany
     {

@@ -13,6 +13,7 @@ use App\Models\TourCabinetContestStage3Config;
 use App\Models\TourCabinetDirectionCity;
 use App\Models\User;
 use App\Services\SettingsService;
+use App\Services\TourCabinetContestArchiveService;
 use App\Services\TourCabinetContestStage1FormResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +31,7 @@ class TourCabinetContestController extends Controller
     public function __construct(
         private readonly SettingsService $settings,
         private readonly TourCabinetContestStage1FormResolver $stage1FormResolver,
+        private readonly TourCabinetContestArchiveService $archiveService,
     ) {}
 
     public function show(): RedirectResponse
@@ -39,6 +41,9 @@ class TourCabinetContestController extends Controller
 
     public function completeStage1(Request $request): RedirectResponse
     {
+        if ($redirect = $this->redirectIfContestArchived($request->user()->id)) {
+            return $redirect;
+        }
         $progress = TourCabinetContestProgress::query()->where('user_id', $request->user()->id)->firstOrFail();
         if ((int) $progress->current_stage !== 1) {
             return $this->redirectToContestBlock();
@@ -63,6 +68,9 @@ class TourCabinetContestController extends Controller
 
     public function storeStage2(Request $request): RedirectResponse
     {
+        if ($redirect = $this->redirectIfContestArchived($request->user()->id)) {
+            return $redirect;
+        }
         $user = $request->user();
         $progress = TourCabinetContestProgress::query()->where('user_id', $user->id)->firstOrFail();
         if ((int) $progress->current_stage !== 2) {
@@ -163,6 +171,9 @@ class TourCabinetContestController extends Controller
 
     public function storeStage3(Request $request): RedirectResponse
     {
+        if ($redirect = $this->redirectIfContestArchived($request->user()->id)) {
+            return $redirect;
+        }
         $progress = TourCabinetContestProgress::query()->where('user_id', $request->user()->id)->firstOrFail();
         if ((int) $progress->current_stage < 3) {
             return $this->redirectToContestBlock();
@@ -209,6 +220,7 @@ class TourCabinetContestController extends Controller
             ]);
 
             $this->dispatchContestCompletionNotificationIfReady($progress, $request->user());
+            $this->archiveContestIfReady($progress, $request->user());
 
             return $this->redirectToContestBlock()
                 ->with('success', 'Данные этапа 3 сохранены.');
@@ -237,6 +249,7 @@ class TourCabinetContestController extends Controller
             ]);
 
             $this->dispatchContestCompletionNotificationIfReady($progress, $request->user());
+            $this->archiveContestIfReady($progress, $request->user());
 
             return $this->redirectToContestBlock()
                 ->with('success', 'Данные этапа 3 сохранены.');
@@ -268,9 +281,34 @@ class TourCabinetContestController extends Controller
         ]);
 
         $this->dispatchContestCompletionNotificationIfReady($progress, $request->user());
+        $this->archiveContestIfReady($progress, $request->user());
 
         return $this->redirectToContestBlock()
             ->with('success', 'Данные этапа 3 сохранены.');
+    }
+
+    /**
+     * Архивирует конкурсную заявку после полного завершения этапа 3 (идемпотентно).
+     * Условия архивации идентичны условиям дублирующего notification: `current_stage >= 3`,
+     * `max_contest_stages == 3`, `isStage3ResponseCompleteForLock`. Ошибки не валят сохранение
+     * этапа 3 (см. сервис: внутри `try/catch` + `Log::warning`).
+     */
+    private function archiveContestIfReady(TourCabinetContestProgress $progress, User $user): void
+    {
+        if ($progress->archived_at !== null) {
+            return;
+        }
+        if ((int) $progress->current_stage < 3) {
+            return;
+        }
+        if (TourCabinetContestDirectionSetting::maxContestStagesForDirection($progress->direction_id) !== 3) {
+            return;
+        }
+        if (! $this->isStage3ResponseCompleteForLock($progress)) {
+            return;
+        }
+
+        $this->archiveService->archiveProgress($progress->fresh() ?? $progress, $user);
     }
 
     /**
@@ -433,6 +471,29 @@ class TourCabinetContestController extends Controller
         return redirect()->route('tour-cabinet.dashboard')->withFragment('tour-cabinet-contest');
     }
 
+    /**
+     * Если у участника `tour_cabinet_contest_progress.archived_at` уже выставлен — возвращает
+     * редирект на дашборд с flash-error: заявка отправлена и заархивирована, повторно её
+     * заполнить нельзя (даже после перезагрузки страницы). Если progress'а ещё нет — возвращает
+     * null (новый участник может начать конкурс с нуля).
+     *
+     * Используется во всех mutating-маршрутах конкурса (storeDirection/Cities/Stage{1..3},
+     * removeSelectedCity, reopenCitySelection, startCityForm).
+     */
+    private function redirectIfContestArchived(int $userId): ?RedirectResponse
+    {
+        $archivedAt = TourCabinetContestProgress::query()
+            ->where('user_id', $userId)
+            ->value('archived_at');
+
+        if ($archivedAt === null) {
+            return null;
+        }
+
+        return $this->redirectToContestBlock()
+            ->with('error', 'Заявка на конкурс уже отправлена. Просмотр — в Архиве конкурсы.');
+    }
+
     private function stage1Complete(TourCabinetContestProgress $progress, int $userId): bool
     {
         $ids = array_values(array_map('intval', $progress->selected_city_ids ?? []));
@@ -475,6 +536,9 @@ class TourCabinetContestController extends Controller
 
     public function storeDirection(Request $request): RedirectResponse
     {
+        if ($redirect = $this->redirectIfContestArchived($request->user()->id)) {
+            return $redirect;
+        }
         $validated = $request->validate([
             'direction_id' => ['required', 'integer', 'exists:directions,id'],
         ]);
@@ -495,6 +559,9 @@ class TourCabinetContestController extends Controller
 
     public function storeCities(Request $request): RedirectResponse
     {
+        if ($redirect = $this->redirectIfContestArchived($request->user()->id)) {
+            return $redirect;
+        }
         $progress = TourCabinetContestProgress::query()->where('user_id', $request->user()->id)->firstOrFail();
         if (! $progress->direction_id) {
             throw ValidationException::withMessages([
@@ -541,6 +608,9 @@ class TourCabinetContestController extends Controller
      */
     public function reopenCitySelection(Request $request): RedirectResponse
     {
+        if ($redirect = $this->redirectIfContestArchived($request->user()->id)) {
+            return $redirect;
+        }
         $progress = TourCabinetContestProgress::query()->where('user_id', $request->user()->id)->firstOrFail();
         $selected = array_map('intval', $progress->selected_city_ids ?? []);
         if (! $progress->direction_id || $selected === []) {
@@ -561,6 +631,9 @@ class TourCabinetContestController extends Controller
     public function removeSelectedCity(Request $request, City $city): RedirectResponse
     {
         $userId = $request->user()->id;
+        if ($redirect = $this->redirectIfContestArchived($userId)) {
+            return $redirect;
+        }
         $progress = TourCabinetContestProgress::query()->where('user_id', $userId)->firstOrFail();
         $selected = array_map('intval', $progress->selected_city_ids ?? []);
         if (! in_array($city->id, $selected, true)) {
@@ -595,6 +668,9 @@ class TourCabinetContestController extends Controller
 
     public function startCityForm(Request $request, City $city): RedirectResponse
     {
+        if ($redirect = $this->redirectIfContestArchived($request->user()->id)) {
+            return $redirect;
+        }
         $progress = TourCabinetContestProgress::query()->where('user_id', $request->user()->id)->firstOrFail();
         $selected = array_map('intval', $progress->selected_city_ids ?? []);
         if (! in_array($city->id, $selected, true)) {

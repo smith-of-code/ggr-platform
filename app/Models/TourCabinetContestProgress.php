@@ -20,6 +20,7 @@ class TourCabinetContestProgress extends Model
         'stage3_attachment_path',
         'stage3_attachment_original_name',
         'completion_notified_at',
+        'archived_at',
     ];
 
     protected function casts(): array
@@ -28,6 +29,7 @@ class TourCabinetContestProgress extends Model
             'selected_city_ids' => 'array',
             'stage2_submitted_at' => 'datetime',
             'completion_notified_at' => 'datetime',
+            'archived_at' => 'datetime',
         ];
     }
 

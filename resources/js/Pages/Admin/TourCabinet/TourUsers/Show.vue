@@ -158,6 +158,87 @@
       </div>
     </section>
 
+    <section class="mb-8 space-y-4">
+      <div>
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Архив конкурсы</h2>
+        <p class="mt-1 text-xs text-gray-500">Иммутабельные снапшоты отправленных заявок. Не удаляются при reset прогресса конкурса.</p>
+      </div>
+      <RCard v-if="contestArchives.length === 0" elevation="raised" class="p-4 text-sm text-gray-500">Архивных заявок на конкурс нет.</RCard>
+      <details v-for="a in contestArchives" :key="'ca-' + a.id" class="rounded-2xl border border-gray-200 bg-white">
+        <summary class="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm">
+          <div class="min-w-0">
+            <p class="font-semibold text-gray-900">Заявка №{{ a.id }}<span v-if="a.direction_label"> · {{ a.direction_label }}</span></p>
+            <p class="mt-0.5 text-xs text-gray-500">Отправлено: {{ formatIso(a.submitted_at) }}</p>
+          </div>
+          <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">Отправлено</span>
+        </summary>
+        <div class="border-t border-gray-100 px-4 py-4 text-sm">
+          <div v-if="a.payload?.progress" class="mb-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Прогресс</p>
+            <p class="mt-1 text-gray-900">Этап на момент архивации: {{ a.payload.progress.current_stage }}</p>
+            <p v-if="a.payload.progress.selected_cities?.length" class="text-gray-700">Города: {{ a.payload.progress.selected_cities.map((c) => c.name).join(', ') }}</p>
+          </div>
+          <div v-if="a.payload?.stage1_city_forms?.length" class="mb-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Этап 1 — анкеты по городам</p>
+            <div v-for="(block, i) in a.payload.stage1_city_forms" :key="i" class="mt-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
+              <p class="font-semibold text-gray-900">{{ block.city_name }}</p>
+              <ul class="mt-1 space-y-1">
+                <li v-for="(r, j) in block.responses" :key="j" class="text-gray-800"><span class="text-gray-500">{{ r.label }}:</span> {{ r.value || '—' }}</li>
+              </ul>
+            </div>
+          </div>
+          <div v-if="a.payload?.stage2_qa?.length" class="mb-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Этап 2 — ответы</p>
+            <div v-for="(qa, i) in a.payload.stage2_qa" :key="i" class="mt-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
+              <p class="text-xs text-gray-600">Вопрос: {{ qa.question_body }}</p>
+              <p class="mt-1 whitespace-pre-wrap text-gray-900">{{ qa.answer_text || '—' }}</p>
+            </div>
+          </div>
+          <div v-if="a.payload?.stage3">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Этап 3</p>
+            <p v-if="a.payload.stage3.text" class="mt-1 whitespace-pre-wrap text-gray-900">{{ a.payload.stage3.text }}</p>
+            <p v-if="a.payload.stage3.video_url" class="text-gray-700">Видео: <a :href="a.payload.stage3.video_url" target="_blank" rel="noopener" class="text-[#003274] underline">{{ a.payload.stage3.video_url }}</a></p>
+            <p v-if="a.payload.stage3.attachment_original_name || a.payload.meta?.stage3_attachment_original_name" class="text-gray-700">Файл: {{ a.payload.stage3.attachment_original_name || a.payload.meta?.stage3_attachment_original_name }}</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="mb-8 space-y-4">
+      <div>
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Архив коммерческих туров</h2>
+        <p class="mt-1 text-xs text-gray-500">Иммутабельные снапшоты отправленных заявок по коммерческим турам.</p>
+      </div>
+      <RCard v-if="commerceArchives.length === 0" elevation="raised" class="p-4 text-sm text-gray-500">Архивных коммерческих заявок нет.</RCard>
+      <details v-for="a in commerceArchives" :key="'cma-' + a.id" class="rounded-2xl border border-gray-200 bg-white">
+        <summary class="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm">
+          <div class="min-w-0">
+            <p class="font-semibold text-gray-900">Заявка №{{ a.id }}<span v-if="a.tour_title"> · {{ a.tour_title }}</span></p>
+            <p class="mt-0.5 text-xs text-gray-500">{{ a.city_name ? `Город: ${a.city_name} · ` : '' }}Отправлено: {{ formatIso(a.submitted_at) }}</p>
+          </div>
+          <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">Отправлено</span>
+        </summary>
+        <div class="border-t border-gray-100 px-4 py-4 text-sm">
+          <div class="mb-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Выбор</p>
+            <p class="mt-1 text-gray-900">Город: {{ a.payload?.city?.name || '—' }} · Тур: {{ a.payload?.tour?.title || '—' }}</p>
+          </div>
+          <div v-if="a.payload?.lms_form?.responses?.length" class="mb-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Этап 2 — анкета</p>
+            <p v-if="a.payload.lms_form.title" class="mt-1 text-gray-700">{{ a.payload.lms_form.title }}</p>
+            <ul class="mt-1 space-y-1">
+              <li v-for="(r, j) in a.payload.lms_form.responses" :key="j" class="text-gray-800"><span class="text-gray-500">{{ r.label }}:</span> {{ r.value || '—' }}</li>
+            </ul>
+          </div>
+          <div v-if="a.payload?.stage3_notification">
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Этап 3 — уведомление</p>
+            <p class="mt-1 font-medium text-gray-900">{{ a.payload.stage3_notification.subject || '—' }}</p>
+            <p v-if="a.payload.stage3_notification.body" class="mt-1 whitespace-pre-wrap text-gray-700">{{ a.payload.stage3_notification.body }}</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
     <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Документы ЛК</h2>
     <div class="space-y-4">
       <RCard v-for="row in documentRows" :key="row.type" elevation="raised" class="p-5">
@@ -228,6 +309,8 @@ const props = defineProps({
   user: { type: Object, required: true },
   documentRows: { type: Array, required: true },
   contest: { type: Object, default: () => ({}) },
+  contestArchives: { type: Array, default: () => [] },
+  commerceArchives: { type: Array, default: () => [] },
 })
 
 const annulComments = reactive({})

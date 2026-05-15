@@ -567,9 +567,32 @@
         </div>
 
         <div
+          v-if="contestArchived"
+          class="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:px-6"
+          role="status"
+        >
+          <div class="flex items-start gap-3 text-sm leading-relaxed text-amber-950 sm:items-center">
+            <LockClosedIcon class="mt-0.5 h-6 w-6 shrink-0 text-amber-600 sm:mt-0" aria-hidden="true" />
+            <p class="font-medium">
+              Вы уже оформили заявку на конкурс. Она отображается в «Архиве конкурсы». Новый конкурс стартует в следующем году.
+            </p>
+          </div>
+          <Link
+            href="/tour-cabinet/archives/contest"
+            class="inline-flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-amber-700/20 transition hover:bg-amber-700 sm:w-auto"
+          >
+            Перейти в архив
+          </Link>
+        </div>
+
+        <div
           id="tour-cabinet-contest-detail"
           class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/5 transition duration-500 sm:p-7"
-          :class="highlightedAnchor === 'tour-cabinet-contest-detail' ? 'ring-4 ring-rosatom-400 ring-offset-2' : ''"
+          :class="[
+            highlightedAnchor === 'tour-cabinet-contest-detail' ? 'ring-4 ring-rosatom-400 ring-offset-2' : '',
+            contestArchived ? 'pointer-events-none select-none opacity-50 grayscale' : '',
+          ]"
+          :aria-hidden="contestArchived ? 'true' : undefined"
         >
           <div class="border-b border-slate-100 pb-4">
             <h2 class="text-base font-bold text-slate-900">Конкурс</h2>
@@ -727,10 +750,11 @@ import {
   ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
   IdentificationIcon,
+  LockClosedIcon,
   UserCircleIcon,
 } from '@heroicons/vue/24/outline'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Head, Link, router, useForm } from '@inertiajs/vue3'
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3'
 import TourCabinetHeader from '@/Components/TourCabinet/TourCabinetHeader.vue'
 import ContestStage1Panel from './Contest/ContestStage1Panel.vue'
 import ContestStage2Panel from './Contest/ContestStage2Panel.vue'
@@ -897,10 +921,32 @@ function onProfileHashChange() {
   openFullProfileFromHash()
 }
 
+const inertiaPage = usePage()
+
+function autoScrollToCommerceArchiveIfFlashed() {
+  if (inertiaPage?.props?.flash?.tour_cabinet_commerce_just_archived) {
+    nextTick(() => {
+      scrollAndHighlight('tour-cabinet-commerce-tours')
+    })
+  }
+}
+
 onMounted(() => {
   openFullProfileFromHash()
   window.addEventListener('hashchange', onProfileHashChange)
+  autoScrollToCommerceArchiveIfFlashed()
 })
+
+watch(
+  () => inertiaPage?.props?.flash?.tour_cabinet_commerce_just_archived,
+  (flag) => {
+    if (flag) {
+      nextTick(() => {
+        scrollAndHighlight('tour-cabinet-commerce-tours')
+      })
+    }
+  },
+)
 
 function ruYearsWord(n) {
   const x = Math.abs(Number(n)) % 100
@@ -991,6 +1037,7 @@ function defaultContestTab() {
 const activeContestTab = ref(defaultContestTab())
 
 const contestStage2Locked = computed(() => props.contestProgress?.stage2_locked === true)
+const contestArchived = computed(() => props.contestProgress?.archived === true)
 
 const contestStage1Props = computed(() => ({
   ...props.contestStage1,
