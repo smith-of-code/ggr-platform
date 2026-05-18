@@ -52,6 +52,7 @@ function archiveAndReset() {
     route('tour-cabinet.commerce-tours.archive-and-reset'),
     {},
     {
+      preserveScroll: true,
       onFinish: () => {
         archiving.value = false
       },

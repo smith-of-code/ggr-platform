@@ -11,7 +11,10 @@
       <template #toolbar>
         <div class="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <Link :href="route('tour-cabinet.dashboard')" class="w-full sm:w-auto">
-            <RButton type="button" variant="outline" size="sm" class="w-full min-h-[2.75rem] sm:min-h-0 sm:w-auto">
+            <RButton type="button" variant="primary" size="sm" class="w-full min-h-[2.75rem] sm:min-h-0 sm:w-auto">
+              <template #icon>
+                <HomeIcon class="h-4 w-4" aria-hidden="true" />
+              </template>
               Личный кабинет
             </RButton>
           </Link>
@@ -65,7 +68,7 @@
 </template>
 
 <script setup>
-import { ArchiveBoxIcon, CheckCircleIcon, ClockIcon } from '@heroicons/vue/24/outline'
+import { ArchiveBoxIcon, CheckCircleIcon, ClockIcon, HomeIcon } from '@heroicons/vue/24/outline'
 import { Head, Link, router } from '@inertiajs/vue3'
 import TourCabinetHeader from '@/Components/TourCabinet/TourCabinetHeader.vue'
 

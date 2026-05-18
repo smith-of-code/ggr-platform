@@ -932,14 +932,54 @@ function autoScrollToCommerceArchiveIfFlashed() {
   }
 }
 
+function autoScrollToContestIfFormSubmitted() {
+  if (inertiaPage?.props?.flash?.tour_cabinet_contest_just_form_submitted) {
+    nextTick(() => {
+      scrollAndHighlight('tour-cabinet-contest-detail')
+    })
+  }
+}
+
+function autoScrollToCommerceIfFormSubmitted() {
+  if (inertiaPage?.props?.flash?.tour_cabinet_commerce_just_form_submitted) {
+    nextTick(() => {
+      scrollAndHighlight('tour-cabinet-commerce-tours')
+    })
+  }
+}
+
 onMounted(() => {
   openFullProfileFromHash()
   window.addEventListener('hashchange', onProfileHashChange)
   autoScrollToCommerceArchiveIfFlashed()
+  autoScrollToContestIfFormSubmitted()
+  autoScrollToCommerceIfFormSubmitted()
 })
 
 watch(
   () => inertiaPage?.props?.flash?.tour_cabinet_commerce_just_archived,
+  (flag) => {
+    if (flag) {
+      nextTick(() => {
+        scrollAndHighlight('tour-cabinet-commerce-tours')
+      })
+    }
+  },
+)
+
+watch(
+  () => inertiaPage?.props?.flash?.tour_cabinet_contest_just_form_submitted,
+  (flag) => {
+    if (flag) {
+      nextTick(() => {
+        scrollAndHighlight('tour-cabinet-contest-detail')
+      })
+    }
+  },
+)
+
+watch(
+  () => inertiaPage?.props?.flash?.tour_cabinet_commerce_just_form_submitted,
   (flag) => {
     if (flag) {
       nextTick(() => {

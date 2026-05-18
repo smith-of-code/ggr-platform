@@ -73,5 +73,7 @@ class TourCabinetCommerceToursFormLinker
         $progress->fill($payload)->save();
 
         session()->forget('tour_cabinet_commerce_form_city_id');
+
+        session()->flash('tour_cabinet_commerce_just_form_submitted', true);
     }
 }

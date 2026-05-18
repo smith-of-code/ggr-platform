@@ -55,6 +55,8 @@ class HandleInertiaRequests extends Middleware
                 'subscribed' => fn () => $request->session()->get('subscribed'),
                 'profile_completed' => fn () => $request->session()->get('profile_completed'),
                 'tour_cabinet_commerce_just_archived' => fn () => $request->session()->get('tour_cabinet_commerce_just_archived'),
+                'tour_cabinet_contest_just_form_submitted' => fn () => $request->session()->get('tour_cabinet_contest_just_form_submitted'),
+                'tour_cabinet_commerce_just_form_submitted' => fn () => $request->session()->get('tour_cabinet_commerce_just_form_submitted'),
             ],
             'user' => fn () => $request->user()?->only(['id', 'name', 'email', 'phone']),
             'profile' => function () use ($request) {

@@ -89,6 +89,35 @@ router.on('finish', () => {
     }
 })
 
+/**
+ * Yandex.Metrika: учёт SPA-переходов Inertia.
+ * Первый mount уже посчитан inline-скриптом в layout (`resources/views/app.blade.php`),
+ * поэтому первое срабатывание `navigate` пропускаем.
+ * Сам скрипт счётчика подключается только в production (@production), поэтому
+ * `window.ym` в dev/staging будет undefined — guard ниже это учитывает.
+ * ID счётчика должен совпадать с указанным в layout.
+ */
+const YM_COUNTER_ID = 109286415
+let ymIsInitialNavigate = true
+let ymPreviousUrl = typeof window !== 'undefined' ? window.location.href : ''
+
+router.on('navigate', (event) => {
+    if (ymIsInitialNavigate) {
+        ymIsInitialNavigate = false
+        ymPreviousUrl = event.detail?.page?.url ?? ymPreviousUrl
+        return
+    }
+    if (typeof window === 'undefined' || typeof window.ym !== 'function') {
+        return
+    }
+    const url = window.location.href
+    window.ym(YM_COUNTER_ID, 'hit', url, {
+        referer: ymPreviousUrl,
+        title: document.title,
+    })
+    ymPreviousUrl = url
+})
+
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) =>

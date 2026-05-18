@@ -60,5 +60,7 @@ class TourCabinetContestFormLinker
         );
 
         session()->forget('tour_cabinet_contest_form_city_id');
+
+        session()->flash('tour_cabinet_contest_just_form_submitted', true);
     }
 }
