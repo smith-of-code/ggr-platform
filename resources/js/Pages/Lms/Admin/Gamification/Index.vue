@@ -5,12 +5,22 @@
         <h1 class="text-2xl font-bold text-gray-900">Геймификация</h1>
         <p class="mt-1 text-sm text-gray-500">Правила начисления, рейтинг и расшифровка баллов</p>
       </div>
-      <RButton variant="primary" @click="showManualDialog = true">
-        <template #icon>
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-        </template>
-        Начислить баллы
-      </RButton>
+      <div class="flex flex-wrap items-center gap-2">
+        <a :href="route('lms.admin.gamification.export', event.slug)">
+          <RButton variant="outline">
+            <template #icon>
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12M12 16.5V3" /></svg>
+            </template>
+            Выгрузить Excel
+          </RButton>
+        </a>
+        <RButton variant="primary" @click="showManualDialog = true">
+          <template #icon>
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+          </template>
+          Начислить баллы
+        </RButton>
+      </div>
     </div>
 
     <RCard flush class="mb-6">
@@ -280,9 +290,6 @@
         </div>
 
         <template v-if="manualMode === 'group_cities'">
-          <p class="text-xs text-gray-500">
-            Баллы делятся поровну между городами, привязанными к группе. Учитываются только в рейтинге городов, личные баллы участников не меняются.
-          </p>
           <SearchSelect
             v-model="groupCityForm.lms_group_id"
             :options="groupOptionsForBonus"

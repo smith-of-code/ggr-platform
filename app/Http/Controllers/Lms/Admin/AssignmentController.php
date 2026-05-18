@@ -128,6 +128,15 @@ class AssignmentController extends Controller
         if (! in_array($statusFilter, ['approved', 'submitted', 'revision', 'new', 'overdue'], true)) {
             $statusFilter = '';
         }
+        $directionFilter = trim((string) $request->query('direction', ''));
+        if (! in_array($directionFilter, LmsProfile::DIRECTIONS, true)) {
+            $directionFilter = '';
+        }
+        $facultyFilter = trim((string) $request->query('faculty', ''));
+        if (! in_array($facultyFilter, LmsProfile::FACULTIES, true)
+            || ($directionFilter !== '' && $directionFilter !== LmsProfile::DIRECTION_ENTREPRENEURS)) {
+            $facultyFilter = '';
+        }
 
         $assignment->load('tasks');
 
@@ -151,6 +160,8 @@ class AssignmentController extends Controller
                     ->orWhere('patronymic', 'ilike', '%' . $search . '%');
             });
         }
+
+        $this->applyProfileProgramFilters($baseSubmissionsQuery, $event, $directionFilter, $facultyFilter);
 
         $isAssignmentOverdue = $assignment->deadline !== null && $assignment->deadline->lt(now());
         $overdueSubmissionScope = fn ($query) => $query->whereNotIn('status', ['submitted', 'approved', 'resubmitted']);
@@ -257,7 +268,12 @@ class AssignmentController extends Controller
                 'only_unread' => $onlyUnread,
                 'search' => $search,
                 'status' => $statusFilter,
+                'direction' => $directionFilter,
+                'faculty' => $facultyFilter,
             ],
+            'directionLabels' => LmsProfile::DIRECTION_LABELS,
+            'facultyLabels' => LmsProfile::FACULTY_LABELS,
+            'directionFaculties' => LmsProfile::DIRECTION_FACULTIES,
         ]);
     }
 
@@ -561,5 +577,26 @@ class AssignmentController extends Controller
                 'last_read_at' => now(),
             ]
         );
+    }
+
+    private function applyProfileProgramFilters($submissionsQuery, LmsEvent $event, string $direction, string $faculty): void
+    {
+        if ($direction !== '') {
+            $submissionsQuery->whereIn('user_id', function ($query) use ($event, $direction) {
+                $query->select('user_id')
+                    ->from('lms_profiles')
+                    ->where('lms_event_id', $event->id)
+                    ->where('direction', $direction);
+            });
+        }
+
+        if ($faculty !== '') {
+            $submissionsQuery->whereIn('user_id', function ($query) use ($event, $faculty) {
+                $query->select('user_id')
+                    ->from('lms_profiles')
+                    ->where('lms_event_id', $event->id)
+                    ->where('faculty', $faculty);
+            });
+        }
     }
 }
