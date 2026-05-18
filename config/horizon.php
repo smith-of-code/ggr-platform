@@ -23,6 +23,7 @@ return [
         'redis:default' => 60,
         'redis:emails' => 30,
         'redis:blog-notifications' => 60,
+        'redis:lms-exports' => 120,
     ],
 
     'trim' => [
@@ -93,6 +94,18 @@ return [
             'timeout' => 120,
             'nice' => 0,
         ],
+        'supervisor-lms-exports' => [
+            'connection' => 'redis',
+            'queue' => ['lms-exports'],
+            'balance' => 'simple',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 256,
+            'tries' => 1,
+            'timeout' => 900,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
@@ -112,6 +125,9 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],
+            'supervisor-lms-exports' => [
+                'maxProcesses' => 1,
+            ],
         ],
 
         'local' => [
@@ -122,6 +138,9 @@ return [
                 'maxProcesses' => 2,
             ],
             'supervisor-blog-notifications' => [
+                'maxProcesses' => 1,
+            ],
+            'supervisor-lms-exports' => [
                 'maxProcesses' => 1,
             ],
         ],

@@ -16,7 +16,11 @@ use App\Models\Lms\LmsProfileDocument;
 use App\Models\Lms\LmsProfileDocumentReplaceRequest;
 use App\Models\Lms\LmsRole;
 use App\Models\User;
+use App\Jobs\Lms\BuildLmsParticipantDocumentsArchiveJob;
+use App\Services\Lms\LmsParticipantDocumentsExportStatusStore;
+use App\Services\Lms\LmsProfileListFilterService;
 use App\Services\LmsCityGroupSyncService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,74 +40,11 @@ class UserController extends Controller
             ->with(['user:id,name,last_name,first_name,patronymic,email,phone', 'lmsRole:id,name,slug'])
             ->withCount('documents');
 
-        if ($request->filled('role_id')) {
-            $query->where('lms_role_id', $request->role_id);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('email', 'ilike', "%{$search}%")
-                  ->orWhere('phone', 'ilike', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('city')) {
-            $query->where('city', 'ilike', "%{$request->city}%");
-        }
-
-        if ($request->filled('group')) {
-            $query->whereIn('user_id', function ($q) use ($request) {
-                $q->select('user_id')
-                    ->from('lms_group_members')
-                    ->where('lms_group_id', $request->group);
-            });
-        }
-
-        if ($request->filled('course_id')) {
-            $courseId = (int) $request->course_id;
-            if ($courseId > 0) {
-                $query->whereIn('user_id', function ($q) use ($event, $courseId) {
-                    $q->select('user_id')
-                        ->from('lms_course_enrollments')
-                        ->where('lms_course_id', $courseId)
-                        ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
-                        ->whereExists(function ($sub) use ($event) {
-                            $sub->selectRaw('1')
-                                ->from('lms_courses')
-                                ->whereColumn('lms_courses.id', 'lms_course_enrollments.lms_course_id')
-                                ->where('lms_courses.lms_event_id', $event->id);
-                        });
-                });
-            }
-        }
-
-        if ($request->filled('program_faculty')) {
-            $faculty = trim((string) $request->program_faculty);
-            if ($faculty !== '') {
-                $query->whereIn('user_id', function ($q) use ($event, $faculty) {
-                    $q->select('user_id')
-                        ->from('lms_course_enrollments')
-                        ->where('faculty', $faculty)
-                        ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
-                        ->whereExists(function ($sub) use ($event) {
-                            $sub->selectRaw('1')
-                                ->from('lms_courses')
-                                ->whereColumn('lms_courses.id', 'lms_course_enrollments.lms_course_id')
-                                ->where('lms_courses.lms_event_id', $event->id);
-                        });
-                });
-            }
-        }
-
-        if ($request->filled('docs_no_direction')) {
-            $query->whereNull('direction')->whereHas('documents');
-        }
+        app(LmsProfileListFilterService::class)->apply(
+            $query,
+            app(LmsProfileListFilterService::class)->extractFromRequest($request),
+            $event,
+        );
 
         $profiles = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
         $programsByUser = $this->nonMandatoryProgramsByUserId($event, $profiles->getCollection()->pluck('user_id')->all());
@@ -162,6 +103,8 @@ class UserController extends Controller
             'invitations' => $invitations,
             'directionLabels' => LmsProfile::DIRECTION_LABELS,
             'facultyLabels' => LmsProfile::FACULTY_LABELS,
+            'documentsExport' => app(LmsParticipantDocumentsExportStatusStore::class)
+                ->get($event->id, (int) $request->user()->id),
         ]);
     }
 
@@ -912,6 +855,49 @@ class UserController extends Controller
         return redirect()->back()->with('success', 'Одобрение направления отменено');
     }
 
+    public function exportDocuments(Request $request, LmsEvent $event): RedirectResponse
+    {
+        $userId = (int) $request->user()->id;
+        $statusStore = app(LmsParticipantDocumentsExportStatusStore::class);
+        $filterService = app(LmsProfileListFilterService::class);
+        $filters = $filterService->extractFromRequest($request);
+
+        $current = $statusStore->get($event->id, $userId);
+        if ($statusStore->isInProgress($current)) {
+            return redirect()->back()->with(
+                'success',
+                'Архив документов уже собирается. Ссылка появится на этой странице после завершения.',
+            );
+        }
+
+        $query = $event->profiles();
+        $filterService->apply($query, $filters, $event);
+
+        $hasDocuments = (clone $query)
+            ->whereHas('documents', fn ($q) => $q->whereNotNull('file_path')->where('file_path', '!=', ''))
+            ->exists();
+
+        if (! $hasDocuments) {
+            return redirect()->back()->with('error', 'Нет загруженных документов для выгрузки по выбранным фильтрам.');
+        }
+
+        $statusStore->putQueued($event->id, $userId);
+        BuildLmsParticipantDocumentsArchiveJob::dispatch($event->id, $userId, $filters);
+
+        return redirect()->back()->with(
+            'success',
+            'Сбор архива документов запущен. Ссылка появится на этой странице после завершения.',
+        );
+    }
+
+    public function exportDocumentsStatus(Request $request, LmsEvent $event): JsonResponse
+    {
+        $export = app(LmsParticipantDocumentsExportStatusStore::class)
+            ->get($event->id, (int) $request->user()->id);
+
+        return response()->json(['export' => $export]);
+    }
+
     public function export(Request $request, LmsEvent $event)
     {
         $query = $event->profiles()
@@ -922,74 +908,11 @@ class UserController extends Controller
             ])
             ->withCount('documents');
 
-        if ($request->filled('role_id')) {
-            $query->where('lms_role_id', $request->role_id);
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('email', 'ilike', "%{$search}%")
-                  ->orWhere('phone', 'ilike', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('city')) {
-            $query->where('city', 'ilike', "%{$request->city}%");
-        }
-
-        if ($request->filled('group')) {
-            $query->whereIn('user_id', function ($q) use ($request) {
-                $q->select('user_id')
-                    ->from('lms_group_members')
-                    ->where('lms_group_id', $request->group);
-            });
-        }
-
-        if ($request->filled('course_id')) {
-            $courseId = (int) $request->course_id;
-            if ($courseId > 0) {
-                $query->whereIn('user_id', function ($q) use ($event, $courseId) {
-                    $q->select('user_id')
-                        ->from('lms_course_enrollments')
-                        ->where('lms_course_id', $courseId)
-                        ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
-                        ->whereExists(function ($sub) use ($event) {
-                            $sub->selectRaw('1')
-                                ->from('lms_courses')
-                                ->whereColumn('lms_courses.id', 'lms_course_enrollments.lms_course_id')
-                                ->where('lms_courses.lms_event_id', $event->id);
-                        });
-                });
-            }
-        }
-
-        if ($request->filled('program_faculty')) {
-            $faculty = trim((string) $request->program_faculty);
-            if ($faculty !== '') {
-                $query->whereIn('user_id', function ($q) use ($event, $faculty) {
-                    $q->select('user_id')
-                        ->from('lms_course_enrollments')
-                        ->where('faculty', $faculty)
-                        ->whereIn('status', ['pending', 'enrolled', 'in_progress', 'completed'])
-                        ->whereExists(function ($sub) use ($event) {
-                            $sub->selectRaw('1')
-                                ->from('lms_courses')
-                                ->whereColumn('lms_courses.id', 'lms_course_enrollments.lms_course_id')
-                                ->where('lms_courses.lms_event_id', $event->id);
-                        });
-                });
-            }
-        }
-
-        if ($request->filled('docs_no_direction')) {
-            $query->whereNull('direction')->whereHas('documents');
-        }
+        app(LmsProfileListFilterService::class)->apply(
+            $query,
+            app(LmsProfileListFilterService::class)->extractFromRequest($request),
+            $event,
+        );
 
         $profiles = $query->orderBy('created_at', 'desc')->get();
         $programsByUser = $this->nonMandatoryProgramsByUserId($event, $profiles->pluck('user_id')->all());
@@ -1177,4 +1100,5 @@ class UserController extends Controller
 
         return $rows;
     }
+
 }

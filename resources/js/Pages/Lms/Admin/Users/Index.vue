@@ -13,6 +13,13 @@
           <ArrowDownTrayIcon class="h-4 w-4" />
           Скачать Excel
         </a>
+        <a
+          :href="exportDocumentsUrl"
+          class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+        >
+          <ArrowDownTrayIcon class="h-4 w-4" />
+          Документы (ZIP)
+        </a>
         <RButton variant="outline" @click="showImportModal = true">
           <template #icon><ArrowUpTrayIcon class="h-4 w-4" /></template>
           Импорт из Excel
@@ -209,6 +216,24 @@
         <ExclamationTriangleIcon class="h-4 w-4" />
         Документы без направления
       </button>
+    </div>
+
+    <!-- Documents export status -->
+    <div
+      v-if="documentsExportState"
+      class="mb-4 rounded-xl px-4 py-3 text-sm font-medium"
+      :class="documentsExportBannerClass"
+    >
+      <p>{{ documentsExportState.message }}</p>
+      <a
+        v-if="documentsExportState.status === 'completed' && documentsExportState.url"
+        :href="documentsExportState.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="mt-2 inline-flex font-semibold text-rosatom-700 underline hover:text-rosatom-800"
+      >
+        Скачать архив
+      </a>
     </div>
 
     <!-- Success flash -->
@@ -533,7 +558,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
 import SearchSelect from '@/Components/SearchSelect.vue'
@@ -565,6 +590,7 @@ const props = defineProps({
   invitations: Array,
   directionLabels: { type: Object, default: () => ({}) },
   facultyLabels: { type: Object, default: () => ({}) },
+  documentsExport: { type: Object, default: null },
 })
 
 const showImportModal = ref(false)
@@ -606,6 +632,89 @@ const exportUrl = computed(() => {
   if (f.docs_no_direction) params.set('docs_no_direction', f.docs_no_direction)
   const qs = params.toString()
   return route('lms.admin.users.export', props.event.slug) + (qs ? '?' + qs : '')
+})
+
+const exportDocumentsUrl = computed(() => {
+  const params = new URLSearchParams()
+  const f = props.filters || {}
+  if (f.role_id) params.set('role_id', f.role_id)
+  if (f.search) params.set('search', f.search)
+  if (f.status) params.set('status', f.status)
+  if (f.city) params.set('city', f.city)
+  if (f.group) params.set('group', f.group)
+  if (f.course_id) params.set('course_id', f.course_id)
+  if (f.program_faculty) params.set('program_faculty', f.program_faculty)
+  if (f.docs_no_direction) params.set('docs_no_direction', f.docs_no_direction)
+  const qs = params.toString()
+  return route('lms.admin.users.export-documents', props.event.slug) + (qs ? '?' + qs : '')
+})
+
+const documentsExportStatusUrl = computed(() =>
+  route('lms.admin.users.export-documents-status', props.event.slug),
+)
+
+const documentsExportState = ref(props.documentsExport)
+
+const documentsExportBannerClass = computed(() => {
+  const status = documentsExportState.value?.status
+  if (status === 'failed') return 'bg-red-50 text-red-700'
+  if (status === 'completed') return 'bg-green-50 text-green-700'
+  return 'bg-blue-50 text-blue-700'
+})
+
+const isDocumentsExportInProgress = computed(() =>
+  ['queued', 'processing'].includes(documentsExportState.value?.status),
+)
+
+let documentsExportPollTimer = null
+
+async function pollDocumentsExportStatus() {
+  if (!isDocumentsExportInProgress.value) return
+  try {
+    const { data } = await axios.get(documentsExportStatusUrl.value)
+    if (data?.export) {
+      documentsExportState.value = data.export
+    }
+  } catch {
+    // ignore transient poll errors
+  }
+}
+
+function startDocumentsExportPolling() {
+  stopDocumentsExportPolling()
+  if (!isDocumentsExportInProgress.value) return
+  documentsExportPollTimer = setInterval(pollDocumentsExportStatus, 3000)
+}
+
+function stopDocumentsExportPolling() {
+  if (documentsExportPollTimer) {
+    clearInterval(documentsExportPollTimer)
+    documentsExportPollTimer = null
+  }
+}
+
+watch(
+  () => props.documentsExport,
+  (value) => {
+    documentsExportState.value = value
+    startDocumentsExportPolling()
+  },
+)
+
+watch(isDocumentsExportInProgress, (inProgress) => {
+  if (inProgress) {
+    startDocumentsExportPolling()
+  } else {
+    stopDocumentsExportPolling()
+  }
+})
+
+onMounted(() => {
+  startDocumentsExportPolling()
+})
+
+onUnmounted(() => {
+  stopDocumentsExportPolling()
 })
 
 const allOnPageSelected = computed(() => {
