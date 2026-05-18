@@ -44,41 +44,50 @@ class LmsParticipantDocumentsArchiveService
         $filesCount = 0;
         $participantsWithFiles = 0;
         $usedFolders = [];
+        $tempDocPaths = [];
 
-        foreach ($profiles as $profile) {
-            $profile->loadMissing(['user:id,name,last_name,first_name,patronymic,email', 'documents']);
+        try {
+            foreach ($profiles as $profile) {
+                $profile->loadMissing(['user:id,name,last_name,first_name,patronymic,email', 'documents']);
 
-            $documents = $profile->documents->filter(fn (LmsProfileDocument $doc) => $doc->hasFile());
-            if ($documents->isEmpty()) {
-                continue;
-            }
-
-            $folder = $this->participantFolderName($profile, $usedFolders);
-            $usedNamesInFolder = [];
-            $addedForParticipant = false;
-
-            foreach ($documents as $doc) {
-                if (! $storage->exists($doc->file_path)) {
+                $documents = $profile->documents->filter(fn (LmsProfileDocument $doc) => $doc->hasFile());
+                if ($documents->isEmpty()) {
                     continue;
                 }
 
-                $entryName = $this->zipEntryName($folder, $doc, $usedNamesInFolder);
-                $contents = $storage->get($doc->file_path);
-                if ($contents === null || $contents === '') {
-                    continue;
+                $folder = $this->participantFolderName($profile, $usedFolders);
+                $usedNamesInFolder = [];
+                $addedForParticipant = false;
+
+                foreach ($documents as $doc) {
+                    if (! $storage->exists($doc->file_path)) {
+                        continue;
+                    }
+
+                    $entryName = $this->zipEntryName($folder, $doc, $usedNamesInFolder);
+                    $tempPath = $this->copyStorageFileToTemp($storage, $doc->file_path);
+                    if ($tempPath === null) {
+                        continue;
+                    }
+
+                    $tempDocPaths[] = $tempPath;
+                    if (! $zip->addFile($tempPath, $entryName)) {
+                        continue;
+                    }
+
+                    $filesCount++;
+                    $addedForParticipant = true;
                 }
 
-                $zip->addFromString($entryName, $contents);
-                $filesCount++;
-                $addedForParticipant = true;
+                if ($addedForParticipant) {
+                    $participantsWithFiles++;
+                }
             }
 
-            if ($addedForParticipant) {
-                $participantsWithFiles++;
-            }
+            $zip->close();
+        } finally {
+            $this->unlinkPaths($tempDocPaths);
         }
-
-        $zip->close();
 
         if ($filesCount === 0) {
             @unlink($tmpFile);
@@ -111,11 +120,71 @@ class LmsParticipantDocumentsArchiveService
 
     private function downloadUrl($storage, string $path): string
     {
-        if (method_exists($storage, 'temporaryUrl')) {
-            return $storage->temporaryUrl($path, now()->addDay());
+        try {
+            if (method_exists($storage, 'temporaryUrl')) {
+                return $storage->temporaryUrl($path, now()->addDay());
+            }
+        } catch (\Throwable $e) {
+            throw new RuntimeException('Не удалось получить ссылку на архив: '.$e->getMessage(), 0, $e);
         }
 
         return $storage->url($path);
+    }
+
+    /**
+     * @param  \Illuminate\Contracts\Filesystem\Filesystem  $storage
+     */
+    private function copyStorageFileToTemp($storage, string $filePath): ?string
+    {
+        $stream = $storage->readStream($filePath);
+        if ($stream === false) {
+            return null;
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'lms-doc-');
+        if ($tempPath === false) {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+
+            return null;
+        }
+
+        $local = fopen($tempPath, 'w+b');
+        if ($local === false) {
+            @unlink($tempPath);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+
+            return null;
+        }
+
+        stream_copy_to_stream($stream, $local);
+        fclose($local);
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
+
+        if (! is_file($tempPath) || filesize($tempPath) === 0) {
+            @unlink($tempPath);
+
+            return null;
+        }
+
+        return $tempPath;
+    }
+
+    /**
+     * @param  list<string>  $paths
+     */
+    private function unlinkPaths(array $paths): void
+    {
+        foreach ($paths as $path) {
+            if (is_string($path) && $path !== '') {
+                @unlink($path);
+            }
+        }
     }
 
     /**

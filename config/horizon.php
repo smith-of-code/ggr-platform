@@ -127,6 +127,8 @@ return [
             ],
             'supervisor-lms-exports' => [
                 'maxProcesses' => 1,
+                'memory' => 512,
+                'timeout' => 900,
             ],
         ],
 
@@ -142,6 +144,7 @@ return [
             ],
             'supervisor-lms-exports' => [
                 'maxProcesses' => 1,
+                'memory' => 512,
             ],
         ],
     ],
