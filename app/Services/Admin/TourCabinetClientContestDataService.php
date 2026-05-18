@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\Application;
 use App\Models\City;
 use App\Models\Direction;
+use App\Models\TourCabinetCommerceArchive;
 use App\Models\TourCabinetContestCitySubmission;
 use App\Models\TourCabinetContestProgress;
 use App\Models\TourCabinetContestStage2Answer;
@@ -48,6 +49,15 @@ final class TourCabinetClientContestDataService
                 });
         }
 
+        if (Schema::hasTable('tour_cabinet_commerce_archives')) {
+            $ids = $ids->merge(
+                TourCabinetCommerceArchive::query()
+                    ->whereNotNull('city_id')
+                    ->distinct()
+                    ->pluck('city_id')
+            );
+        }
+
         $ids = $ids->filter(fn ($id) => $id > 0)->unique()->values();
         if ($ids->isEmpty()) {
             return [];
@@ -67,35 +77,54 @@ final class TourCabinetClientContestDataService
      */
     public function listContestSummary(User $user): string
     {
-        if (! Schema::hasTable('tour_cabinet_contest_progress')) {
+        $hasContestProgressTable = Schema::hasTable('tour_cabinet_contest_progress');
+        $hasCommerceArchivesTable = Schema::hasTable('tour_cabinet_commerce_archives');
+
+        if (! $hasContestProgressTable && ! $hasCommerceArchivesTable) {
             return '—';
         }
 
-        $user->loadMissing(['tourCabinetContestProgress', 'tourCabinetContestCitySubmissions.city']);
+        $loads = [];
+        if ($hasContestProgressTable) {
+            $loads[] = 'tourCabinetContestProgress';
+            $loads[] = 'tourCabinetContestCitySubmissions.city';
+        }
+        if ($hasCommerceArchivesTable) {
+            $loads[] = 'tourCabinetCommerceArchives';
+        }
+        $user->loadMissing($loads);
 
-        $progress = $user->tourCabinetContestProgress;
         $parts = [];
 
-        if ($progress?->direction_id) {
-            $parts[] = Direction::allProjectMap()[$progress->direction_id] ?? '—';
+        if ($hasContestProgressTable) {
+            $progress = $user->tourCabinetContestProgress;
+            if ($progress?->direction_id) {
+                $parts[] = Direction::allProjectMap()[$progress->direction_id] ?? '—';
+            }
+            if ($progress) {
+                $parts[] = 'этап '.(int) $progress->current_stage;
+            }
+
+            $cityNames = $user->tourCabinetContestCitySubmissions
+                ->map(fn ($s) => $s->city?->name)
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($cityNames->isNotEmpty()) {
+                $parts[] = 'города: '.$cityNames->implode(', ');
+            } elseif ($progress && is_array($progress->selected_city_ids) && count($progress->selected_city_ids) > 0) {
+                $names = City::query()->whereIn('id', $progress->selected_city_ids)->orderBy('name')->pluck('name');
+                if ($names->isNotEmpty()) {
+                    $parts[] = 'выбор: '.$names->implode(', ');
+                }
+            }
         }
 
-        if ($progress) {
-            $parts[] = 'этап '.(int) $progress->current_stage;
-        }
-
-        $cityNames = $user->tourCabinetContestCitySubmissions
-            ->map(fn ($s) => $s->city?->name)
-            ->filter()
-            ->unique()
-            ->values();
-
-        if ($cityNames->isNotEmpty()) {
-            $parts[] = 'города: '.$cityNames->implode(', ');
-        } elseif ($progress && is_array($progress->selected_city_ids) && count($progress->selected_city_ids) > 0) {
-            $names = City::query()->whereIn('id', $progress->selected_city_ids)->orderBy('name')->pluck('name');
-            if ($names->isNotEmpty()) {
-                $parts[] = 'выбор: '.$names->implode(', ');
+        if ($hasCommerceArchivesTable) {
+            $commerceCount = $user->tourCabinetCommerceArchives->count();
+            if ($commerceCount > 0) {
+                $parts[] = 'коммерческие туры: '.$commerceCount.' архив.';
             }
         }
 

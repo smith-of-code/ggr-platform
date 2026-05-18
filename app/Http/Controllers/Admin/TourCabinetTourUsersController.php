@@ -10,6 +10,7 @@ use App\Models\TourCabinetContestArchive;
 use App\Models\TourCabinetDocument;
 use App\Models\User;
 use App\Services\Admin\TourCabinetClientContestDataService;
+use App\Services\Admin\TourCabinetCommerceArchiveExportRowsService;
 use App\Services\TourCabinetDocumentReviewService;
 use App\Support\PostAuthRedirect;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +26,7 @@ class TourCabinetTourUsersController extends Controller
 {
     public function __construct(
         private readonly TourCabinetClientContestDataService $contestData,
+        private readonly TourCabinetCommerceArchiveExportRowsService $commerceExportRows,
     ) {}
 
     public function index(Request $request): Response
@@ -38,6 +40,9 @@ class TourCabinetTourUsersController extends Controller
         }
         if (Schema::hasTable('tour_cabinet_contest_progress')) {
             $query->with(['tourCabinetContestProgress', 'tourCabinetContestCitySubmissions.city']);
+        }
+        if (Schema::hasTable('tour_cabinet_commerce_archives')) {
+            $query->with(['tourCabinetCommerceArchives']);
         }
 
         $users = $query->paginate(25)->withQueryString()->through(fn (User $user) => $this->userListRow($user));
@@ -63,7 +68,11 @@ class TourCabinetTourUsersController extends Controller
             ->orderByDesc('users.id');
 
         $users = $query->get();
-        $rows = $users->map(fn (User $u) => $this->contestData->buildExportRow($u, $cityIdInt));
+        $rows = $users->map(fn (User $u) => $this->commerceExportRows->appendRowsForUser(
+            $this->contestData->buildExportRow($u, $cityIdInt),
+            $u,
+            $cityIdInt,
+        ));
 
         $allKeys = collect();
         foreach ($rows as $row) {
@@ -302,7 +311,8 @@ class TourCabinetTourUsersController extends Controller
     private function applyCityFilterToQuery(Builder $query, int $cityIdInt): void
     {
         if (! Schema::hasTable('tour_cabinet_contest_city_submissions')
-            && ! Schema::hasTable('tour_cabinet_contest_progress')) {
+            && ! Schema::hasTable('tour_cabinet_contest_progress')
+            && ! Schema::hasTable('tour_cabinet_commerce_archives')) {
             $query->whereRaw('1 = 0');
 
             return;
@@ -327,6 +337,20 @@ class TourCabinetTourUsersController extends Controller
                     $outer->whereHas(
                         'tourCabinetContestProgress',
                         fn ($p) => $p->whereJsonContains('selected_city_ids', $cityIdInt)
+                    );
+                }
+                $hasClause = true;
+            }
+            if (Schema::hasTable('tour_cabinet_commerce_archives')) {
+                if ($hasClause) {
+                    $outer->orWhereHas(
+                        'tourCabinetCommerceArchives',
+                        fn ($a) => $a->where('city_id', $cityIdInt)
+                    );
+                } else {
+                    $outer->whereHas(
+                        'tourCabinetCommerceArchives',
+                        fn ($a) => $a->where('city_id', $cityIdInt)
                     );
                 }
             }
@@ -409,9 +433,26 @@ class TourCabinetTourUsersController extends Controller
             'stage3_attachment_name' => 'Этап 3 — имя файла',
             'tour_applications_count' => 'Число заявок на тур',
             'tour_applications' => 'Заявки на туры (сводка)',
+            'commerce_archives_count' => 'Архивов коммерческих туров (количество)',
+            'commerce_archives_summary' => 'Коммерческие туры — сводка',
         ];
         if (isset($fixed[$key])) {
             return $fixed[$key];
+        }
+
+        if (preg_match('/^commerce_arch_(\d+)_(id|city|tour|submitted_at|status|lms_responses)$/', $key, $m)) {
+            $n = (int) $m[1];
+            $field = $m[2];
+            $labels = [
+                'id' => 'ID архива',
+                'city' => 'Город',
+                'tour' => 'Тур',
+                'submitted_at' => 'Дата отправки',
+                'status' => 'Статус',
+                'lms_responses' => 'Ответы на анкету (JSON)',
+            ];
+
+            return 'Коммерческий тур №'.$n.' — '.$labels[$field];
         }
 
         if (preg_match('/^s1_(\d+)_city_name$/', $key, $m)) {
@@ -467,7 +508,13 @@ class TourCabinetTourUsersController extends Controller
             'contest_current_stage', 'contest_stage2_submitted_at', 'contest_selected_city_names',
             'stage3_text', 'stage3_video_url', 'stage3_attachment_name',
             'tour_applications_count', 'tour_applications',
+            'commerce_archives_count', 'commerce_archives_summary',
         ];
+        foreach (range(1, 10) as $n) {
+            foreach (['id', 'city', 'tour', 'submitted_at', 'status', 'lms_responses'] as $field) {
+                $priority[] = "commerce_arch_{$n}_{$field}";
+            }
+        }
         $first = array_values(array_intersect($priority, $keys));
         $rest = collect($keys)->diff($first)->sort()->values()->all();
 
