@@ -197,6 +197,7 @@ Route::prefix('lms-admin')->name('lms.admin.')->middleware(['auth', 'lms.backoff
         Route::post('enrollments/{enrollment}/reject', [AdminEnrollmentController::class, 'reject'])->name('enrollments.reject');
         Route::post('enrollments/{enrollment}/reassign', [AdminEnrollmentController::class, 'reassign'])->name('enrollments.reassign');
         Route::delete('enrollments/{enrollment}', [AdminEnrollmentController::class, 'destroy'])->name('enrollments.destroy');
+        Route::get('gamification/export', [AdminGamificationController::class, 'export'])->name('gamification.export');
         Route::resource('gamification', AdminGamificationController::class);
         Route::post('gamification/manual-points', [AdminGamificationController::class, 'manualPoints'])->name('gamification.manual-points');
         Route::post('gamification/manual-group-city-points', [AdminGamificationController::class, 'manualGroupCityPoints'])->name('gamification.manual-group-city-points');

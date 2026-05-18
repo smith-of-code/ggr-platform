@@ -26,6 +26,32 @@
     </div>
 
     <RCard class="mb-4">
+      <div class="mb-4 flex flex-wrap gap-3">
+        <div class="w-full min-w-[220px] flex-1 sm:max-w-xs">
+          <label class="mb-1 block text-xs font-medium text-gray-500">Учебная программа</label>
+          <SearchSelect
+            :model-value="filterForm.direction || null"
+            :options="directionSelectOptions"
+            value-key="value"
+            label-key="label"
+            placeholder="Все программы"
+            :searchable="false"
+            @update:model-value="onDirectionChange"
+          />
+        </div>
+        <div v-if="showFacultyFilter" class="w-full min-w-[220px] flex-1 sm:max-w-xs">
+          <label class="mb-1 block text-xs font-medium text-gray-500">Факультет</label>
+          <SearchSelect
+            :model-value="filterForm.faculty || null"
+            :options="facultySelectOptions"
+            value-key="value"
+            label-key="label"
+            placeholder="Все факультеты"
+            :searchable="true"
+            @update:model-value="onFacultyChange"
+          />
+        </div>
+      </div>
       <div class="mb-4 flex flex-wrap gap-2">
         <button
           v-for="item in statusFilterButtons"
@@ -388,8 +414,11 @@
 import { Link, router } from '@inertiajs/vue3'
 import { computed, ref, reactive, watch } from 'vue'
 import LmsAdminLayout from '@/Layouts/LmsAdminLayout.vue'
+import SearchSelect from '@/Components/SearchSelect.vue'
 import { fileUrl } from '@/lib/fileUrl'
 import axios from 'axios'
+
+const ENTREPRENEURS_DIRECTION = 'entrepreneurs'
 
 const props = defineProps({
   event: Object,
@@ -398,16 +427,65 @@ const props = defineProps({
   statusCounts: { type: Object, default: () => ({}) },
   canReviewAssignments: { type: Boolean, default: false },
   filters: { type: Object, default: () => ({}) },
+  directionLabels: { type: Object, default: () => ({}) },
+  facultyLabels: { type: Object, default: () => ({}) },
+  directionFaculties: { type: Object, default: () => ({}) },
 })
 
 const filterForm = reactive({
   search: props.filters?.search || '',
+  direction: props.filters?.direction || '',
+  faculty: props.filters?.faculty || '',
 })
 
 const expanded = ref({})
 
 const reviewForms = reactive({})
 const commentForms = reactive({})
+
+const directionSelectOptions = computed(() =>
+  Object.entries(props.directionLabels || {}).map(([value, label]) => ({ value, label }))
+)
+
+const showFacultyFilter = computed(() => filterForm.direction === ENTREPRENEURS_DIRECTION)
+
+const facultySelectOptions = computed(() => {
+  const keys = props.directionFaculties?.[ENTREPRENEURS_DIRECTION] || []
+  return keys.map(value => ({
+    value,
+    label: props.facultyLabels?.[value] || value,
+  }))
+})
+
+function buildListQuery(overrides = {}) {
+  const direction = filterForm.direction || undefined
+  const query = {
+    search: filterForm.search || undefined,
+    direction,
+    faculty: direction === ENTREPRENEURS_DIRECTION ? (filterForm.faculty || undefined) : undefined,
+  }
+  if (!('status' in overrides)) {
+    if (props.filters?.status) {
+      query.status = props.filters.status
+    } else if (props.filters?.only_unread) {
+      query.status = 'new'
+    }
+  }
+  return { ...query, ...overrides }
+}
+
+function onDirectionChange(value) {
+  filterForm.direction = value || ''
+  if (filterForm.direction !== ENTREPRENEURS_DIRECTION) {
+    filterForm.faculty = ''
+  }
+  applyFilters()
+}
+
+function onFacultyChange(value) {
+  filterForm.faculty = value || ''
+  applyFilters()
+}
 
 const statusFilterButtons = computed(() => [
   { value: 'approved', label: 'Принято', count: props.statusCounts?.approved ?? 0 },
@@ -619,29 +697,21 @@ function isStatusFilterActive(status) {
 
 function applyStatusFilter(status) {
   const nextStatus = isStatusFilterActive(status) ? undefined : status
-  router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), {
-    status: nextStatus,
-    search: filterForm.search || undefined,
-  }, {
+  router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), buildListQuery({ status: nextStatus }), {
     preserveState: false,
     replace: true,
   })
 }
 
 function applyFilters() {
-  router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), {
-    status: props.filters?.status || (props.filters?.only_unread ? 'new' : undefined),
-    search: filterForm.search || undefined,
-  }, {
+  router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), buildListQuery(), {
     preserveState: false,
     replace: true,
   })
 }
 
 function clearStatusFilter() {
-  router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), {
-    search: filterForm.search || undefined,
-  }, {
+  router.get(route('lms.admin.assignments.show', [props.event.slug, props.assignment.id]), buildListQuery({ status: undefined }), {
     preserveState: false,
     replace: true,
   })

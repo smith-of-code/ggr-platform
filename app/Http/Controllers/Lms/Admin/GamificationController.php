@@ -8,14 +8,18 @@ use App\Models\Lms\LmsGamificationPoint;
 use App\Models\Lms\LmsGroup;
 use App\Models\Lms\LmsProfile;
 use App\Models\Lms\LmsGamificationRule;
+use App\Models\User;
 use App\Services\GamificationService;
+use App\Services\StyledXlsxBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class GamificationController extends Controller
 {
@@ -408,5 +412,159 @@ class GamificationController extends Controller
         }
 
         return $query;
+    }
+
+    public function export(LmsEvent $event): StreamedResponse
+    {
+        $adminUserIds = LmsProfile::query()
+            ->where('lms_event_id', $event->id)
+            ->where('role', 'admin')
+            ->pluck('user_id');
+
+        $profiles = $event->profiles()
+            ->with(['user:id,name,last_name,first_name,patronymic,email', 'cityRelation:id,name'])
+            ->whereNotIn('user_id', $adminUserIds)
+            ->get();
+
+        $userIds = $profiles->pluck('user_id')->filter()->unique()->values()->all();
+
+        $pointsByUser = LmsGamificationPoint::query()
+            ->where('lms_event_id', $event->id)
+            ->where('for_city_ranking_only', false)
+            ->whereNotNull('user_id')
+            ->whereIn('user_id', $userIds)
+            ->with(['rule:id,title'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('user_id');
+
+        $byCity = [];
+        foreach ($profiles as $profile) {
+            $user = $profile->user;
+            if (! $user) {
+                continue;
+            }
+            $city = trim((string) ($profile->city ?: $profile->cityRelation?->name ?: ''));
+            if ($city === '') {
+                $city = 'Город не указан';
+            }
+            $userPoints = $pointsByUser->get($user->id, collect());
+            if ($userPoints->isEmpty()) {
+                continue;
+            }
+            $byCity[$city][] = [
+                'user' => $user,
+                'points' => $userPoints,
+            ];
+        }
+
+        ksort($byCity, SORT_LOCALE_STRING);
+
+        $sheets = [];
+        $usedSheetNames = [];
+        foreach ($byCity as $cityName => $participants) {
+            usort(
+                $participants,
+                fn (array $a, array $b) => strcasecmp(
+                    $this->exportUserFullName($a['user']),
+                    $this->exportUserFullName($b['user']),
+                ),
+            );
+
+            $rows = [['Участник', 'Начисление', 'Дата', 'Баллы']];
+            foreach ($participants as $entry) {
+                $rows[] = [$this->exportUserFullName($entry['user']), '', '', ''];
+                $rows[] = ['Начисление', 'Дата', 'Баллы', ''];
+                foreach ($entry['points'] as $point) {
+                    $rows[] = [
+                        '',
+                        $this->exportAccrualLabel($point),
+                        $this->exportPointDate($point->created_at),
+                        $this->exportPointsValue((int) $point->points),
+                    ];
+                }
+                $rows[] = ['', '', '', ''];
+            }
+
+            $sheets[] = [
+                'name' => $this->exportSheetName($cityName, $usedSheetNames),
+                'title' => 'Город: '.$cityName,
+                'rows' => $rows,
+                'widths' => [34, 52, 24, 12],
+            ];
+        }
+
+        if ($sheets === []) {
+            $sheets[] = [
+                'name' => 'Данные',
+                'title' => 'Геймификация — '.$event->title,
+                'rows' => [['Участник', 'Начисление', 'Дата', 'Баллы'], ['', 'Нет начислений для выгрузки', '', '']],
+                'widths' => [34, 52, 24, 12],
+            ];
+        }
+
+        $xlsx = app(StyledXlsxBuilder::class)->build($sheets);
+
+        return response()->streamDownload(
+            static fn () => print($xlsx),
+            'lms-gamification-'.$event->slug.'-by-cities.xlsx',
+            ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+        );
+    }
+
+    private function exportUserFullName(User $user): string
+    {
+        $fromParts = collect([$user->last_name, $user->first_name, $user->patronymic])
+            ->filter(fn ($v) => is_string($v) && trim($v) !== '')
+            ->join(' ');
+
+        return $fromParts !== '' ? $fromParts : (string) $user->name;
+    }
+
+    private function exportAccrualLabel(LmsGamificationPoint $point): string
+    {
+        $reason = trim((string) ($point->reason ?? ''));
+        $ruleTitle = trim((string) ($point->rule?->title ?? ''));
+
+        $main = $reason !== '' ? $reason : ($ruleTitle !== '' ? $ruleTitle : 'Начислены баллы');
+        if ($ruleTitle !== '' && $reason !== '' && $ruleTitle !== $reason) {
+            return $main."\nПравило: ".$ruleTitle;
+        }
+
+        return $main;
+    }
+
+    private function exportPointDate(?Carbon $date): string
+    {
+        if (! $date) {
+            return '';
+        }
+
+        return $date->locale('ru')->translatedFormat('j F Y г., H:i');
+    }
+
+    private function exportPointsValue(int $points): string
+    {
+        return ($points > 0 ? '+' : '').(string) $points;
+    }
+
+    /**
+     * @param  array<string, true>  $usedSheetNames
+     */
+    private function exportSheetName(string $cityName, array &$usedSheetNames): string
+    {
+        $name = preg_replace('/[\[\]\*\?\/\\\\:]/u', '', $cityName) ?: 'Город';
+        $name = mb_substr(trim($name), 0, 31);
+        $base = $name;
+        $suffix = 2;
+        while (isset($usedSheetNames[$name])) {
+            $tail = ' ('.$suffix.')';
+            $name = mb_substr($base, 0, max(1, 31 - mb_strlen($tail))).$tail;
+            $suffix++;
+        }
+        $usedSheetNames[$name] = true;
+
+        return $name;
     }
 }

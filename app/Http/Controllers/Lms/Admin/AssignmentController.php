@@ -15,6 +15,8 @@ use App\Models\Lms\LmsCourseStage;
 use App\Models\Lms\LmsEvent;
 use App\Models\Lms\LmsStageBlock;
 use App\Models\Lms\LmsStageProgress;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -128,6 +130,15 @@ class AssignmentController extends Controller
         if (! in_array($statusFilter, ['approved', 'submitted', 'revision', 'new', 'overdue'], true)) {
             $statusFilter = '';
         }
+        $directionFilter = trim((string) $request->query('direction', ''));
+        if (! in_array($directionFilter, LmsProfile::DIRECTIONS, true)) {
+            $directionFilter = '';
+        }
+        $facultyFilter = trim((string) $request->query('faculty', ''));
+        if (! in_array($facultyFilter, LmsProfile::FACULTIES, true)
+            || ($directionFilter !== '' && $directionFilter !== LmsProfile::DIRECTION_ENTREPRENEURS)) {
+            $facultyFilter = '';
+        }
 
         $assignment->load('tasks');
 
@@ -151,6 +162,8 @@ class AssignmentController extends Controller
                     ->orWhere('patronymic', 'ilike', '%' . $search . '%');
             });
         }
+
+        $this->applyProgramFilters($baseSubmissionsQuery, $event, $assignment, $directionFilter, $facultyFilter);
 
         $isAssignmentOverdue = $assignment->deadline !== null && $assignment->deadline->lt(now());
         $overdueSubmissionScope = fn ($query) => $query->whereNotIn('status', ['submitted', 'approved', 'resubmitted']);
@@ -257,7 +270,12 @@ class AssignmentController extends Controller
                 'only_unread' => $onlyUnread,
                 'search' => $search,
                 'status' => $statusFilter,
+                'direction' => $directionFilter,
+                'faculty' => $facultyFilter,
             ],
+            'directionLabels' => LmsProfile::DIRECTION_LABELS,
+            'facultyLabels' => LmsProfile::FACULTY_LABELS,
+            'directionFaculties' => LmsProfile::DIRECTION_FACULTIES,
         ]);
     }
 
@@ -561,5 +579,98 @@ class AssignmentController extends Controller
                 'last_read_at' => now(),
             ]
         );
+    }
+
+    private function applyProgramFilters(
+        Builder|Relation $submissionsQuery,
+        LmsEvent $event,
+        LmsAssignment $assignment,
+        string $direction,
+        string $faculty,
+    ): void {
+        if ($direction === '' && $faculty === '') {
+            return;
+        }
+
+        $linkedCourseIds = $this->assignmentLinkedCourseIds($assignment);
+        $enrollmentStatuses = ['pending', 'enrolled', 'in_progress', 'completed'];
+
+        $submissionsQuery->where(function (Builder $outer) use (
+            $event,
+            $direction,
+            $faculty,
+            $linkedCourseIds,
+            $enrollmentStatuses,
+        ) {
+            $outer->where(function (Builder $profileMatch) use ($event, $direction, $faculty) {
+                $profileMatch->whereIn('user_id', function ($query) use ($event, $direction, $faculty) {
+                    $query->select('user_id')
+                        ->from('lms_profiles')
+                        ->where('lms_event_id', $event->id);
+
+                    if ($direction !== '') {
+                        $query->where('direction', $direction);
+                    }
+
+                    if ($faculty !== '') {
+                        $query->whereIn('faculty', $this->facultyMatchValues($faculty));
+                    }
+                });
+            });
+
+            $enrollmentFacultyValues = $faculty !== ''
+                ? $this->facultyMatchValues($faculty)
+                : ($direction !== '' ? $this->directionFacultyMatchValues($direction) : []);
+
+            if ($enrollmentFacultyValues !== []) {
+                $outer->orWhereIn('user_id', function ($query) use (
+                    $event,
+                    $linkedCourseIds,
+                    $enrollmentFacultyValues,
+                    $enrollmentStatuses,
+                ) {
+                    $query->select('user_id')
+                        ->from('lms_course_enrollments')
+                        ->whereIn('status', $enrollmentStatuses)
+                        ->whereIn('faculty', $enrollmentFacultyValues);
+
+                    if ($linkedCourseIds->isNotEmpty()) {
+                        $query->whereIn('lms_course_id', $linkedCourseIds);
+                    } else {
+                        $query->whereExists(function ($sub) use ($event) {
+                            $sub->selectRaw('1')
+                                ->from('lms_courses')
+                                ->whereColumn('lms_courses.id', 'lms_course_enrollments.lms_course_id')
+                                ->where('lms_courses.lms_event_id', $event->id);
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Slug факультета и его подпись (в enrollments часто хранится текст из настроек курса).
+     *
+     * @return list<string>
+     */
+    private function facultyMatchValues(string $facultySlug): array
+    {
+        $label = LmsProfile::FACULTY_LABELS[$facultySlug] ?? '';
+
+        return array_values(array_unique(array_filter([$facultySlug, $label])));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function directionFacultyMatchValues(string $direction): array
+    {
+        $values = [];
+        foreach (LmsProfile::DIRECTION_FACULTIES[$direction] ?? [] as $facultySlug) {
+            $values = array_merge($values, $this->facultyMatchValues($facultySlug));
+        }
+
+        return array_values(array_unique($values));
     }
 }
