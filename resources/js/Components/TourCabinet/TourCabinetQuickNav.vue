@@ -68,7 +68,7 @@ function itemClass(active) {
   const base =
     'group inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003274]/25 focus-visible:ring-offset-2 sm:gap-2 sm:px-2.5'
   if (active) {
-    return `${base} bg-[#003274]/10 text-[#003274]`
+    return `${base} bg-[#003274] text-white font-semibold shadow-sm ring-1 ring-[#003274]/30 hover:bg-[#002357]`
   }
   return `${base} text-slate-600 hover:bg-slate-100 hover:text-slate-900`
 }
@@ -76,7 +76,7 @@ function itemClass(active) {
 function iconClass(active) {
   const base = 'h-4 w-4 shrink-0 transition sm:h-5 sm:w-5'
   if (active) {
-    return `${base} text-[#003274]`
+    return `${base} text-white`
   }
   return `${base} text-slate-400 group-hover:text-slate-600`
 }
